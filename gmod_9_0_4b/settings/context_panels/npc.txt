@@ -1,0 +1,224 @@
+"npc"
+{
+	"title"				"NPC Spawning"	
+	
+	"controls"
+	{
+		"toggle"
+		{
+		  	"label"			"Enable/Disable AI"		
+	  	  	"name"			"ai_disable"
+		}
+		
+		"keyvaluecombobox"
+		{
+		  	"label"			"Weapon to give AI"
+	  	  	"name"			"ai_spawn_presets"
+	  	  	"kvfile"		"settings/cp_npc_weapons.txt"
+	  	  	"OpenOffsetY"	"-50"
+	  	  	"multisetting"	"1"
+		}
+		
+		"smalltext"
+		{
+			"name"			"helptext"
+		  	"label"			"Some NPCs can't use some weapons"
+		  	"tall"			"20"
+		}
+		
+		
+		"columns"			"2"	// this only applies to buttons at the moment
+
+
+		"button"
+		{
+		  	"label"			"Combine Regular"
+	  	  	"command"		"npc_create npc_combine"
+		}
+		
+		"button"
+		{
+		  	"label"			"Combine Prison"
+	  	  	"command"		"npc_create npc_combine_p"
+		}
+
+		
+		"button"
+		{
+		  	"label"			"Combine Elite"
+	  	  	"command"		"npc_create npc_combine_e"
+		}
+		
+		"button"
+		{
+		  	"label"			"Metro Police"
+	  	  	"command"		"npc_create npc_metropolice"
+		}
+		
+		"button"
+		{
+		  	"label"			"Monk"
+	  	  	"command"		"npc_create npc_monk"
+		}
+		
+		"button"
+		{
+		  	"label"			"Alyx"
+	  	  	"command"		"npc_create npc_alyx"
+		}
+		
+		"button"
+		{
+		  	"label"			"Barney"
+	  	  	"command"		"npc_create npc_barney"
+		}
+		
+
+		"button"
+		{
+		  	"label"			"Citizen"
+	  	  	"command"		"npc_create npc_citizen"
+		}
+		
+		"button"
+		{
+		  	"label"			"Refugee"
+	  	  	"command"		"npc_create npc_citizen_refugee"
+		}
+		
+		"button"
+		{
+		  	"label"			"Rebel"
+	  	  	"command"		"npc_create npc_citizen_rebel"
+		}
+		
+		"button"
+		{
+		  	"label"			"Vortigaunt"
+	  	  	"command"		"npc_create npc_vortigaunt"
+		}
+		
+		
+		"button"
+		{
+		  	"label"			"DOG"
+	  	  	"command"		"npc_create npc_dog_play"
+		}
+		
+		
+		"button"
+		{
+		  	"label"			"Antlion"
+	  	  	"command"		"npc_create npc_antlion"
+		}
+	
+		"button"
+		{
+		  	"label"			"Ant Guard"
+	  	  	"command"		"npc_create npc_antlionguard"
+		}	
+
+		"button"
+		{
+		  	"label"			"Fast Zombie"
+	  	  	"command"		"npc_create npc_fastzombie"
+		}
+
+		"button"
+		{
+		  	"label"			"Poison Zombie"
+	  	  	"command"		"npc_create npc_poisonzombie"
+		}
+		
+		
+		"button"
+		{
+		  	"label"			"Zombie"
+	  	  	"command"		"npc_create npc_zombie"
+		}
+		
+		"button"
+		{
+		  	"label"			"Zombie Half"
+	  	  	"command"		"npc_create npc_zombie_torso"
+		}
+
+
+		"button"
+		{
+		  	"label"			"Headcrab"
+	  	  	"command"		"npc_create npc_headcrab"
+		}
+		
+		"button"
+		{
+		  	"label"			"Headcrab Black"
+	  	  	"command"		"npc_create npc_headcrab_black"
+		}
+		"button"
+		{
+		  	"label"			"Headcrab Fast"
+	  	  	"command"		"npc_create npc_headcrab_fast"
+		}
+		
+		"button"
+		{
+		  	"label"			"Headcrab Poison"
+	  	  	"command"		"npc_create npc_headcrab_poison"
+		}
+		
+		"button"
+		{
+		  	"label"			"Manhack"
+	  	  	"command"		"npc_create npc_manhack"
+		}
+		
+		"button"
+		{
+		  	"label"			"City Scanner"
+	  	  	"command"		"npc_create npc_cscanner"
+		}
+		
+		"button"
+		{
+		  	"label"			"Shield Scanner"
+	  	  	"command"		"npc_create npc_sscanner"
+		}
+		
+		"button"
+		{
+		  	"label"			"Turret"
+	  	  	"command"		"npc_create npc_turret_floor"
+		}
+		
+		"button"
+		{
+		  	"label"			"Rollermine"
+	  	  	"command"		"npc_create npc_rollermine"
+		}
+		
+		
+		"button"
+		{
+		  	"label"			"Crow"
+	  	  	"command"		"npc_create npc_crow"
+		}
+		
+		"button"
+		{
+		  	"label"			"Pigeon"
+	  	  	"command"		"npc_create npc_pigeon"
+		}
+		
+		"button"
+		{
+		  	"label"			"Seagull"
+	  	  	"command"		"npc_create npc_seagull"
+		}
+		
+
+		
+	}
+}
+
+

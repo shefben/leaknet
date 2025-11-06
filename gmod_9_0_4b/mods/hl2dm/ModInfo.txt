@@ -1,0 +1,10 @@
+"ModInfo"
+{
+	"name"		"HL2:DM Content"
+	"version"	"1.0"
+	"author_name"	"Valve"
+	
+	"icon"	"gmod/mod_icon_hl2mp"
+	
+	// HL2DM content is already included
+}

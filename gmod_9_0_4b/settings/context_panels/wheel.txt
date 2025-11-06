@@ -1,0 +1,71 @@
+"wheel"
+{
+	"title"				"Wheel Gun"
+	
+	"controls"
+	{
+	
+		"keyvaluecombobox"
+		{
+		  	"label"			"Wheel Type"
+	  	  	"name"			"gmod_wheels"
+	  	  	"kvfile"		"settings/gmod_wheels.txt"
+	  	  	"OpenOffsetY"	"-100"
+	  	  	"multisetting"	"1"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Wheel Torque"
+	  	  	"name"			"gm_wheel_torque"
+	  	  	"min"			"-10000"
+	  	  	"max"			"10000"
+		}
+		
+		"smalltext"
+		{
+			"name"			"helptext"
+		  	"label"			"Control wheels with PAGE UP (forwards) and PAGE DOWN (backwards). You can press use (E) on a wheel to reverse the direction."
+		  	"tall"			"55"
+		}
+		
+		"button"
+		{
+		    "label"			"All Wheels On"
+		    "command"		"gm_wheel_allon"
+		}
+		
+		"button"
+		{
+		    "label"			"All Wheels Off"
+		    "command"		"gm_wheel_alloff"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Force Limit (in lbs)"
+	  	  	"name"			"gm_wheel_forcelimit"
+	  	  	"min"			"0"
+	  	  	"max"			"50000"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Wheel Friction"
+	  	  	"name"			"gm_wheel_friction"
+	  	  	"min"			"0"
+	  	  	"max"			"100"
+		}
+		
+		"Toggle"
+		{
+		  	"label"			"Don't Collide"
+	  	  	"name"			"gm_wheel_nocollide"
+		}
+		
+		
+
+		
+	}
+}
+

@@ -1,0 +1,44 @@
+"dynamite"
+{
+	"title"				"Dynamite Settings"
+	
+	
+	"controls"
+	{
+		"button"
+		{
+		  	"label"			"Explode!"
+	  	  	"command"		"gm_Explode"
+		}
+		
+		"smalltext"
+		{
+		  	"label"			"You can also press x (default) to start your dynamite explosions."
+		  	"tall"			"30"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Explosion Delay (seconds)"
+	  	  	"name"			"gm_dynamite_delay"
+	  	  	"min"			"0"
+	  	  	"max"			"360"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Explosion Delay Add"
+	  	  	"name"			"gm_dynamite_delay_add"
+	  	  	"min"			"0"
+	  	  	"max"			"10"
+		}
+		
+		"smalltext"
+		{
+			"name"			"helptext"
+		  	"label"			"If set your next TNT will explode this many seconds after the last one."
+		  	"tall"			"40"
+		}
+		
+	}
+}

@@ -1,0 +1,31 @@
+"axis"
+{
+	"title"				"Axis Constraint Mode Settings"
+	
+	"controls"
+	{
+		"slider"
+		{
+		  	"label"			"Force Limit (in lbs)"
+	  	  	"name"			"gm_weld_axis_forcelimit"
+	  	  	"min"			"0"
+	  	  	"max"			"50000"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Hinge Friction"
+	  	  	"name"			"gm_weld_axis_friction"
+	  	  	"min"			"0"
+	  	  	"max"			"100"
+		}
+		
+		"Toggle"
+		{
+		  	"label"			"Don't Collide"
+	  	  	"name"			"gm_weld_axis_nocollide"
+		}
+	}
+}
+
+

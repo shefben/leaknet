@@ -1,0 +1,101 @@
+// rotations are done in xyz order
+
+"gmod_wheels.txt"
+{
+	"Saw Blade"
+	{
+	 	"gm_wheel_model"		"models/props_junk/sawblade001a.mdl"
+	 	"gm_wheel_rx"		"90"
+	 	"gm_wheel_ry"		"0"
+	 	"gm_wheel_rz"		"0"
+	}
+	
+	"Car Wheel"
+	{
+	 	"gm_wheel_model"		"models/props_vehicles/carparts_wheel01a.mdl"
+	 	"gm_wheel_rx"		"90"
+	 	"gm_wheel_ry"		"0"
+	 	"gm_wheel_rz"		"90"
+	}
+	
+	"APC Wheel"
+	{
+	
+	 	"gm_wheel_model"		"models/props_vehicles/apc_tire001.mdl"
+	 	"gm_wheel_rx"		"0"
+	 	"gm_wheel_ry"		"0"
+	 	"gm_wheel_rz"		"0"
+	}
+	
+	
+	"Tractor Wheel"
+	{
+	
+	 	"gm_wheel_model"		"models/props_vehicles/tire001a_tractor.mdl"
+	 	"gm_wheel_rx"		"0"
+	 	"gm_wheel_ry"		"0"
+	 	"gm_wheel_rz"		"0"
+	}
+
+	"Car Tire"
+	{
+	
+	 	"gm_wheel_model"		"models/props_vehicles/tire001c_car.mdl"
+	 	"gm_wheel_rx"		"0"
+	 	"gm_wheel_ry"		"0"
+	 	"gm_wheel_rz"		"0"
+	}
+	
+	"File Cabinet"
+	{
+	
+	 	"gm_wheel_model"		"models/props_wasteland/controlroom_filecabinet002a.mdl"
+	 	"gm_wheel_rx"		"90"
+	 	"gm_wheel_ry"		"0"
+	 	"gm_wheel_rz"		"0"
+	}
+	
+
+	"Blue Barrel"
+	{
+	
+	 	"gm_wheel_model"		"models/props_borealis/bluebarrel001.mdl"
+	 	"gm_wheel_rx"		"90"
+	 	"gm_wheel_ry"		"0"
+	 	"gm_wheel_rz"		"0"
+	}
+	
+	"Oil Drum"
+	{
+	
+	 	"gm_wheel_model"		"models/props_c17/oildrum001.mdl"
+	 	"gm_wheel_rx"		"90"
+	 	"gm_wheel_ry"		"0"
+	 	"gm_wheel_rz"		"0"
+	}
+	
+	"Carousel"
+	{
+	
+	 	"gm_wheel_model"		"models/props_c17/playground_carousel01.mdl"
+	 	"gm_wheel_rx"		"90"
+	 	"gm_wheel_ry"		"0"
+	 	"gm_wheel_rz"		"0"
+	}
+	
+	"Office Chair"
+	{
+	 	"gm_wheel_model"		"models/props_c17/chair_office01a.mdl"
+	 	"gm_wheel_rx"		"90"
+	 	"gm_wheel_ry"		"0"
+	 	"gm_wheel_rz"		"0"
+	}
+	
+	"Propeller Blade"
+	{
+	 	"gm_wheel_model"		"models\props_c17\TrapPropeller_Blade.mdl"
+	 	"gm_wheel_rx"		"90"
+	 	"gm_wheel_ry"		"0"
+	 	"gm_wheel_rz"		"0"
+	}
+}

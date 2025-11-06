@@ -1,0 +1,8 @@
+"ModInfo"
+{
+	"name"		"Half-Life 2 Levels"
+	"version"	"1.0"
+	"author_name"	"Valve"
+	
+	"icon"		"gmod/mod_icon_hl2"
+}

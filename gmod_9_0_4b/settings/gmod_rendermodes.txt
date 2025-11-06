@@ -1,0 +1,11 @@
+"gmod_rendermodes.txt"
+{
+	"Normal"				"0"
+	"TransColor"			"1"
+	"TransTexture"			"2"
+	"Glow"					"3"	
+	"TransAlpha"			"4"
+	"TransAdd"				"5"	
+	"TransAlphaAdd"			"8"
+	"World Glow"			"9"	
+}

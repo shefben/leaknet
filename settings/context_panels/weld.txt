@@ -1,0 +1,21 @@
+"weld"
+{
+	"title"				"Weld Mode Settings"
+	
+	"controls"
+	{
+		"slider"
+		{
+		  	"label"			"Force Limit (in lbs)"
+	  	  	"name"			"gm_weld_weld_forcelimit"
+	  	  	"min"			"0"
+	  	  	"max"			"50000"
+		}
+		
+		"Toggle"
+		{
+		  	"label"			"Don't Collide"
+	  	  	"name"			"gm_weld_weld_nocollide"
+		}
+	}
+}

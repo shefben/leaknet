@@ -1,0 +1,12 @@
+"ModInfo"
+{
+	"name"		"Tom's Spawn Menu Icons"
+	"version"	"1.2"
+	"author_name"	"Tom Wiseman"
+	"author_email"	"bucketmuncher@hotmail.com"
+	
+	// a 64x64 icon to show next to your mod on the mod panel
+	"icon"	"gmod/mod_icon_spawnmenu"
+	
+	"description"	"This mod adds icons to the spawn menu."
+}

@@ -1,0 +1,87 @@
+"Half-Life 2"
+{
+	"Chapter 1"
+	{
+		"map"		"d1_trainstation_01"
+		"material"	"vgui/chapters/chapter1"
+		"credits"	"Valve"
+	}
+	"Chapter 2"
+	{
+		"map"		"d1_trainstation_05"
+		"material"	"vgui/chapters/chapter2"
+		"credits"	"Valve"
+	}
+	"Chapter 3"
+	{
+		"map"		"d1_canals_01"
+		"material"	"vgui/chapters/chapter3"
+		"credits"	"Valve"
+	}
+	"Chapter 4"
+	{
+		"map"		"d1_canals_06"
+		"material"	"vgui/chapters/chapter4"
+		"credits"	"Valve"
+	}
+	"Chapter 5"
+	{
+		"map"		"d1_eli_01"
+		"material"	"vgui/chapters/chapter5"
+		"credits"	"Valve"
+	}
+	"Chapter 6"
+	{
+		"map"		"d1_town_01"
+		"material"	"vgui/chapters/chapter6"
+		"credits"	"Valve"
+	}
+	"Chapter 7"
+	{
+		"map"		"d2_coast_01"
+		"material"	"vgui/chapters/chapter7"
+		"credits"	"Valve"
+	}
+	"Chapter 8"
+	{
+		"map"		"d2_coast_09"
+		"material"	"vgui/chapters/chapter8"
+		"credits"	"Valve"
+	}
+	"Chapter 9"
+	{
+		"map"		"d1_d2_prison_02"
+		"material"	"vgui/chapters/chapter9"
+		"credits"	"Valve"
+	}
+	"Chapter 9a"
+	{
+		"map"		"d2_prison_06"
+		"material"	"vgui/chapters/chapter9a"
+		"credits"	"Valve"
+	}
+	"Chapter 10"
+	{
+		"map"		"d3_c17_02"
+		"material"	"vgui/chapters/chapter10"
+		"credits"	"Valve"
+	}
+	"Chapter 11"
+	{
+		"map"		"d3_c17_09"
+		"material"	"vgui/chapters/chapter11"
+		"credits"	"Valve"
+	}
+	"Chapter 12"
+	{
+		"map"		"d3_citadel_01"
+		"material"	"vgui/chapters/chapter12"
+		"credits"	"Valve"
+	}
+	"Chapter 13"
+	{
+		"map"		"d3_breen_01"
+		"material"	"vgui/chapters/chapter13"
+		"credits"	"Valve"
+	}
+}

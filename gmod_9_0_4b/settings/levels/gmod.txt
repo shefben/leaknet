@@ -1,0 +1,129 @@
+
+// Please Please Please Please Please Create your own category for maps
+// for your mimimod - overriding this file will cause a shit load of 
+// problems for me (and probably you) in later updates.
+
+// Simply name your levels file <yourmodname>.txt
+
+"Garry's Mod"
+{
+	"GM_Construct"
+	{
+		"map"		"gm_construct"
+		"material"	"vgui/chapters/gm_construct"
+		"credits"	"Garry Newman"
+	}
+	
+	"Melonrace - Test"
+	{
+		"map"		"gm_melonrace"
+		"material"	"vgui/chapters/gm_melonrace"
+		"credits"	"Garry Newman"
+	}
+	
+	"Laser Dance"
+	{
+		"map"		"gm_laserdance"
+		"material"	"vgui/chapters/gm_laserdance"
+		"credits"	"Garry Newman"
+	}
+	
+	"Nine 10ths"
+	{
+		"map"		"gm_910"
+		"material"	"vgui/chapters/gm_910"
+		"credits"	"Garry Newman"
+	}
+
+	"Melonrace - Lockdown"
+	{
+		"map"		"gm_melonlockdown"
+		"material"	"vgui/chapters/gm_melonlockdown"
+		"credits"	"Garry Newman / Valve"
+	}
+
+	"Football (soccer)"
+	{
+		"map"		"gm_football"
+		"material"	"vgui/chapters/gm_football"
+		"credits"	"Tristan Pemble (n42)"
+	}
+
+	"Bird Poo"
+	{
+		"map"		"gm_birdpoo"
+		"material"	"vgui/chapters/gm_birdpoo"
+		"credits"	"Andy Vincent"
+	}
+
+	"Graveyard"
+	{
+		"map"		"gm_graveyard"
+		"material"	"vgui/chapters/gm_graveyard"
+		"credits"	"Matt Mullins (g33k)"
+	}
+
+
+	"Hide+Seek - Outland"
+	{
+		"map"		"gm_hideandseek_outland"
+		"material"	"vgui/chapters/gm_hideandseek_outland"
+		"credits"	"Greg Hughes + 'MrSteak63'"
+	}
+
+	"Hide+Seek - Yard"
+	{
+		"map"		"gm_hideandseek_yard"
+		"material"	"vgui/chapters/gm_hideandseek_yard"
+		"credits"	"Greg Hughes + 'TrickyClock'"
+	}
+
+	"Long Sight"
+	{
+		"map"		"gm_longsight"
+		"material"	"vgui/chapters/gm_longsight"
+		"credits"	"MrSteak63"
+	}
+
+	"Build - Bridge"
+	{
+		"map"		"gm_build_bridge"
+		"material"	"vgui/chapters/gm_build_bridge"
+		"credits"	"Matt Mullins (g33k)"
+	}
+
+	"GM_Freeze"
+	{
+		"map"		"gm_freeze"
+		"material"	"vgui/chapters/gm_freeze"
+		"credits"	"Jon Sully (Jonny)"
+	}
+
+	"Build - To The Top"
+	{
+		"map"		"gm_build_tothetop"
+		"material"	"vgui/chapters/gm_build_tothetop"
+		"credits"	"Matt Mullins (g33k)"
+	}
+
+	"Tactical Police Cops - Test"
+	{
+		"map"		"gm_tpc_test"
+		"material"	"vgui/chapters/gm_tpc_test"
+		"credits"	"Garry Newman"
+	}
+
+	"Build - Fortwars"
+	{
+		"map"		"gm_build_fortwars"
+		"material"	"vgui/chapters/gm_build_fortwars"
+		"credits"	"Matt Mullins (g33k)"
+	}
+
+	"Birdman"
+	{
+		"map"		"gm_birdman"
+		"material"	"vgui/chapters/gm_birdman"
+		"credits"	"Andy Vincent"
+	}
+}

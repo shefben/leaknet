@@ -1,0 +1,67 @@
+"camera"
+{
+	"title"				"Camera Mode/Settings"
+	
+	
+	"controls"
+	{
+		"button"
+		{
+			"name"			"Normal Camera"
+		  	"label"			"Normal Camera"
+	  	  	"command"		"gm_toolmode 22"
+		}
+		
+		"smalltext"
+		{
+			"name"			"helptext"
+		  	"label"			"Zoom in/out using the right mouse button and take photos using the left. Photos are saved in the gmod/screenshots folder."
+		  	"tall"			"40"
+		}
+		
+		"button"
+		{
+			"name"			"Static Camera"
+		  	"label"			"Static Camera"
+	  	  	"command"		"gm_toolmode 30"
+		}
+		
+		"smalltext"
+		{
+			"name"			"helptext"
+		  	"label"			"Place by pressing fire then look through it by pressing 9."
+		  	"tall"			"40"
+		}
+		
+		
+		"button"
+		{
+			"name"			"Spawn Prop Camera"
+		  	"label"			"Spawn Prop Camera"
+	  	  	"command"		"gm_make_propcam"
+		}
+		
+		"smalltext"
+		{
+			"name"			"helptext"
+		  	"label"			"Look through it by pressing 0."
+		  	"tall"			"30"
+		}
+		
+		"button"
+		{
+			"name"			"View Camera"
+		  	"label"			"View Camera"
+	  	  	"command"		"gm_toolmode 31"
+		}
+		
+		"smalltext"
+		{
+			"name"			"helptext"
+		  	"label"			"Fire at an object then view througfh that objects eyes by holding down 8."
+		  	"tall"			"40"
+		}
+		
+	}
+}
+

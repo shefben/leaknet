@@ -1,0 +1,120 @@
+// A list of things that are allowed on your server
+
+// these rules aren't applied in single player
+
+"Server Allows"
+{
+
+
+// which npc's are people allowed to spawn
+"npc"
+{
+	"npc_combine"				"1"
+	"npc_combine_p"				"1"
+	"npc_combine_e"				"1"
+	"npc_metropolice"			"1"
+	"npc_monk"					"1"
+	"npc_alyx"					"1"
+	"npc_barney"				"1"
+	"npc_citizen"				"1"
+	"npc_citizen_refugee"		"1"
+	"npc_citizen_rebel"			"1"
+	"npc_vortigaunt"			"1"
+	"npc_dog_play"				"1"
+	"npc_antlion"				"1"
+	"npc_antlionguard"			"1"
+	"npc_poisonzombie"			"1"
+	"npc_fastzombie"			"1"
+	"npc_zombie"				"1"
+	"npc_zombie_torso"			"1"
+	"npc_headcrab"				"1"
+	"npc_headcrab_black"		"1"
+	"npc_headcrab_fast"			"1"
+	"npc_headcrab_poison"		"1"
+	"npc_manhack"				"1"
+	"npc_cscanner"				"1"
+	"npc_sscanner"				"1"
+	"npc_turret_floor"			"1"
+	"npc_crow"					"1"
+	"npc_pigeon"				"1"
+	"npc_seagull"				"1"
+	"npc_rollermine"			"1"
+}
+
+// what weapons people are allowed to give to the npcs
+"npcweapons"
+{
+	"weapon_crowbar"			"1"
+ 	"weapon_stunstick"			"1"
+ 	"weapon_pistol"				"1"
+ 	"weapon_smg1"				"1"
+	"weapon_ar2"				"1"
+	"weapon_shotgun"			"1"
+	"weapon_annabelle"			"1"
+	"weapon_alyxgun"			"1"
+	"weapon_citizenpackage"		"1"
+	"weapon_citizensuitcase"	"1"
+}
+
+// what player models people are allowed to be
+"playermodels"
+{
+	"models/player/alyx.mdl"							"1"
+	"models/player/barney.mdl"							"1"
+	"models/player/breen.mdl"							"1"
+	"models/player/combine_soldier.mdl"					"1"
+	"models/player/combine_soldier_prisonguard.mdl"		"1"
+	"models/player/combine_super_soldier.mdl"				"1"
+	"models/player/eli.mdl"				"1"
+	"models/player/gman_high.mdl"		"1"
+	"models/player/Kleiner.mdl"			"1"
+	"models/player/monk.mdl"			"1"
+	"models/player/mossman.mdl"			"1"
+	"models/player/odessa.mdl"			"1"
+	"models/player/police.mdl"			"1"
+	"models/player/stripped.mdl"		"1"
+	"models/player/female_04.mdl"		"1"
+	"models/player/male_02.mdl"			"1"
+	"models/player/male_03.mdl"			"1"
+	"models/player/male_08.mdl"			"1"
+	"models/player/female_06.mdl"		"1"
+	"models/player/female_07.mdl"		"1"
+	"models/player/classic.mdl"			"1"
+	"models/player/gordon_classic.mdl"	"1"
+	"models/player/charple01.mdl"		"1"
+	"models/player/corpse1.mdl"			"1"
+	"models/player/stalker.mdl"			"1"
+}
+
+"setmodeltranslate"
+{
+	"alyx"		"models/player/alyx.mdl"
+	"barney"	"models/player/barney.mdl"	
+	"breen"		"models/player/breen.mdl"		
+	"combine"	"models/player/combine_soldier.mdl"				
+	"prison"	"models/player/combine_soldier_prisonguard.mdl"		
+	"super"		"models/player/combine_super_soldier.mdl"				
+	"eli"		"models/player/eli.mdl"				
+	"gman"		"models/player/gman_high.mdl"		
+	"kleiner"	"models/player/Kleiner.mdl"
+	"scientist"	"models/player/Kleiner.mdl"
+	"monk"		"models/player/monk.mdl"		
+	"mossman"	"models/player/mossman.mdl"		
+	"gina"		"models/player/mossman.mdl"	
+	"odessa"	"models/player/odessa.mdl"		
+	"police"	"models/player/police.mdl"		
+	"stripped"	"models/player/stripped.mdl"		
+	"female1"	"models/player/female_04.mdl"	
+	"female2"	"models/player/female_06.mdl"		
+	"female3"	"models/player/female_07.mdl"
+	"male1"		"models/player/male_02.mdl"			
+	"male2"		"models/player/male_03.mdl"			
+	"male3"		"models/player/male_08.mdl"		
+	"zombie"	"models/player/classic.mdl"		
+	"gordon"	"models/player/gordon_classic.mdl"
+	"burnt"		"models/player/charple01.mdl"	
+	"corpse"	"models/player/corpse1.mdl"
+	"stalker"	"models/player/stalker.mdl"
+}
+
+}

@@ -1,0 +1,52 @@
+"NPC Weapons"
+{
+	"Crowbar"
+	{
+	 	"npc_create_equipment"			"weapon_crowbar"
+	}
+	
+	"Stunstick"
+	{
+	 	"npc_create_equipment"			"weapon_stunstick"
+	}
+	
+	"Pistol"
+	{
+	 	"npc_create_equipment"			"weapon_pistol"
+	}
+	
+	"SMG"
+	{
+	 	"npc_create_equipment"			"weapon_smg1"
+	}
+	
+	"AR2"
+	{
+	 	"npc_create_equipment"			"weapon_ar2"
+	}
+	
+	"Shotgun"
+	{
+	 	"npc_create_equipment"			"weapon_shotgun"
+	}
+	
+	"Annabelle"
+	{
+	 	"npc_create_equipment"			"weapon_annabelle"
+	}
+	
+	"Alyx's gun"
+	{
+	 	"npc_create_equipment"			"weapon_alyxgun"
+	}
+	
+	"Package"
+	{
+	 	"npc_create_equipment"			"weapon_citizenpackage"
+	}
+	
+	"Suitcase"
+	{
+	 	"npc_create_equipment"			"weapon_citizensuitcase"
+	}
+}

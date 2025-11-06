@@ -1,0 +1,376 @@
+// 
+// this defines all the preset expressions for the face poser
+//
+// It only changes the parts you tell it to change
+// 
+// I did most of my testing on Mossman - here's all the flex names from her (I think)
+//
+//
+//
+// EYE LIDS:
+// "right_lid_raiser"
+// "left_lid_raiser"
+// "right_lid_tightener"
+// "left_lid_tightener"
+// "right_lid_droop"
+// "left_lid_droop"
+// "right_lid_closer"
+// "left_lid_closer"
+// "half_closed"
+// "blink"
+//
+// EYE BROWS:
+// "right_inner_raiser"
+// "left_inner_raiser"
+// "right_outer_raiser"
+// "left_outer_raiser"
+// "right_lowerer"
+// "left_lowerer"
+//
+// CHEEKS
+// "right_cheek_raiser"
+// "left_cheek_raiser"
+//
+// NOSE (?):
+// "wrinkler"
+// "dilator"
+//
+// MOUTH:
+// "right_upper_raiser"
+// "left_upper_raiser"
+// "right_corner_puller"
+// "left_corner_puller"
+// "right_corner_depressor"
+// "left_corner_depressor"
+// "chin_raiser"
+// "right_part"
+// "left_part"
+// "right_puckerer"
+// "left_puckerer"
+// "right_funneler"
+// "left_funneler"
+// "right_stretcher"
+// "left_stretcher"
+// "bite"
+// "presser"
+// "tightener"
+// "jaw_clencher"
+// "jaw_drop"
+// "right_mouth_drop"
+// "left_mouth_drop"
+// "smile"
+// "lower_lip"
+//
+// RUBBISH:
+// "head_rightleft"
+// "head_updown"
+// "head_tilt"
+// "eyes_updown"
+// "eyes_rightleft"
+// "body_rightleft"
+// "chest_rightleft"
+// "head_forwardback"
+// "gesture_updown"
+// "gesture_rightleft"
+
+
+"gmod_expressions.txt"
+{
+
+"Mouth: Normal"
+ {
+	"right_puckerer"		"0"
+	"left_puckerer"			"0"
+	"right_corner_puller"		"0"
+	"left_corner_puller"		"0"
+	"left_upper_raiser"		"0"
+	"right_upper_raiser"		"0"
+	"right_cheek_raiser"		"0"
+	"left_cheek_raiser"		"0"
+	"right_funneler"		"0"
+	"left_funneler"			"0"
+	"left_corner_depressor"		"0"
+	"right_corner_depressor"	"0"
+	"right_mouth_drop"		"0"
+	"left_mouth_drop"		"0"
+	"jaw_drop"			"0"
+	"chin_raiser"			"0"
+	"jaw_clencher"			"0"
+	"tightener"			"0"
+	"smile"				"0"
+	"lower_lip"			"0"
+	"left_stretcher"		"0"
+	"right_stretcher"		"0"
+	"right_part"			"0"
+	"left_part"			"0"
+	"bite"				"0"
+	"presser"			"0"
+ }
+
+"Mouth: Sad"
+ {
+	"right_puckerer"		"0"
+	"left_puckerer"			"0"
+	"right_corner_puller"		"0"
+	"left_corner_puller"		"0"
+	"left_upper_raiser"		"1"
+	"right_upper_raiser"		"1"
+	"right_cheek_raiser"		"0"
+	"left_cheek_raiser"		"0"
+	"right_funneler"		"0"
+	"left_funneler"			"0"
+	"left_corner_depressor"		"1"
+	"right_corner_depressor"	"1"
+	"right_mouth_drop"		"1"
+	"left_mouth_drop"		"1"
+	"jaw_drop"			"0"
+	"chin_raiser"			"1"
+	"jaw_clencher"			"0"
+	"tightener"			"1"
+	"smile"				"0"
+	"lower_lip"			"1"
+	"left_stretcher"		"0"
+	"right_stretcher"		"0"
+	"right_part"			"0"
+	"left_part"			"0"
+	"bite"				"0.0"
+	"presser"			"0.5"
+ }
+
+"Mouth: Grin"
+ {
+	"right_puckerer"		"0"
+	"left_puckerer"			"0"
+	"right_corner_puller"		"1"
+	"left_corner_puller"		"1"
+	"left_upper_raiser"		"1"
+	"right_upper_raiser"		"1"
+	"right_cheek_raiser"		"1"
+	"left_cheek_raiser"		"1"
+	"right_funneler"		"1"
+	"left_funneler"			"1"
+	"left_corner_depressor"		"0"
+	"right_corner_depressor"	"0"
+	"right_mouth_drop"		"1"
+	"left_mouth_drop"		"1"
+	"jaw_drop"			"1"
+	"chin_raiser"			"0"
+	"jaw_clencher"			"1"
+	"tightener"			"0"
+	"smile"				"2"
+	"lower_lip"			"0"
+	"left_stretcher"		"1"
+	"right_stretcher"		"1"
+	"right_part"			"0"
+	"left_part"			"0"
+	"bite"				"0"
+	"presser"			"0"
+ }
+
+
+// I know I'm gonna regret adding this.. 
+
+"Mouth: Kiss"
+ {
+	"right_puckerer"		"1"
+	"left_puckerer"			"1"
+	"right_corner_puller"		"0"
+	"left_corner_puller"		"0"
+	"left_upper_raiser"		"0"
+	"right_upper_raiser"		"0"
+	"right_cheek_raiser"		"0"
+	"left_cheek_raiser"		"0"
+	"right_funneler"		"0"
+	"left_funneler"			"0"
+	"left_corner_depressor"		"0"
+	"right_corner_depressor"	"0"
+	"right_mouth_drop"		"0"
+	"left_mouth_drop"		"0"
+	"jaw_drop"			"0"
+	"chin_raiser"			"1"
+	"jaw_clencher"			"0"
+	"tightener"			"0"
+	"smile"				"0"
+	"lower_lip"			"0"
+	"left_stretcher"		"0"
+	"right_stretcher"		"0"
+	"right_part"			"0"
+	"left_part"			"0"
+	"bite"				"0"
+	"presser"			"0"
+ }
+
+
+"Mouth: Open"
+ {
+	"right_puckerer"		"0"
+	"left_puckerer"			"0"
+	"right_corner_puller"		"0"
+	"left_corner_puller"		"0"
+	"left_upper_raiser"		"0"
+	"right_upper_raiser"		"0"
+	"right_cheek_raiser"		"0"
+	"left_cheek_raiser"		"1"
+	"right_funneler"		"1"
+	"left_funneler"			"0"
+	"left_corner_depressor"		"0"
+	"right_corner_depressor"	"0"
+	"right_mouth_drop"		"1"
+	"left_mouth_drop"		"1"
+	"jaw_drop"			"1"
+	"chin_raiser"			"1"
+	"jaw_clencher"			"0"
+	"tightener"			"0"
+	"smile"				"0"
+	"lower_lip"			"0"
+	"left_stretcher"		"1"
+	"right_stretcher"		"1"
+	"right_part"			"1"
+	"left_part"			"1"
+	"bite"				"0"
+	"presser"			"0"
+ }
+
+
+
+
+"Mouth: Smirk"
+ {
+	"right_puckerer"		"0"
+	"left_puckerer"			"0"
+	"right_corner_puller"		"1"
+	"left_corner_puller"		"1"
+	"left_upper_raiser"		"1"
+	"right_upper_raiser"		"1"
+	"right_cheek_raiser"		"0"
+	"left_cheek_raiser"		"0"
+	"right_funneler"		"0"
+	"left_funneler"			"0"
+	"left_corner_depressor"		"0"
+	"right_corner_depressor"	"0"
+	"right_mouth_drop"		"0"
+	"left_mouth_drop"		"0"
+	"jaw_drop"			"0"
+	"chin_raiser"			"0"
+	"jaw_clencher"			"0"
+	"tightener"			"0"
+	"smile"				"0"
+	"lower_lip"			"0"
+	"left_stretcher"		"0"
+	"right_stretcher"		"0"
+	"right_part"			"0"
+	"left_part"			"0"
+	"bite"				"0"
+	"presser"			"0"
+ }
+
+"Mouth: Suave"
+ {
+	"right_puckerer"		"0"
+	"left_puckerer"			"0"
+	"right_corner_puller"		"1"
+	"left_corner_puller"		"0"
+	"left_upper_raiser"		"0"
+	"right_upper_raiser"		"1"
+	"right_cheek_raiser"		"1"
+	"left_cheek_raiser"		"0"
+	"right_funneler"		"0"
+	"left_funneler"			"0"
+	"left_corner_depressor"		"0"
+	"right_corner_depressor"	"0"
+	"right_mouth_drop"		"0"
+	"left_mouth_drop"		"0"
+	"jaw_drop"			"0"
+	"chin_raiser"			"0"
+	"jaw_clencher"			"0"
+	"tightener"			"0"
+	"smile"				"0"
+	"lower_lip"			"0"
+	"left_stretcher"		"1"
+	"right_stretcher"		"0"
+	"right_part"			"0"
+	"left_part"			"0.5"
+	"bite"				"0"
+	"presser"			"0"
+ }
+
+
+"EyeBrows: Angry"
+ {
+	"right_inner_raiser"		"0"
+	"left_inner_raiser"		"0"
+	"left_outer_raiser"		"1"
+	"right_outer_raiser"		"1"
+	"right_lowerer"			"1"
+	"left_lowerer"			"1"
+ }
+
+"EyeBrows: Sorry"
+ {
+	"right_inner_raiser"		"1"
+	"left_inner_raiser"		"1"
+	"left_outer_raiser"		"0"
+	"right_outer_raiser"		"0"
+	"right_lowerer"			"0"
+	"left_lowerer"			"0"
+ }
+
+"EyeBrows: One up"
+ {
+	"right_inner_raiser"		"0"
+	"left_inner_raiser"		"1"
+	"left_outer_raiser"		"1"
+	"right_outer_raiser"		"0"
+	"right_lowerer"			"0"
+	"left_lowerer"			"0"
+ }
+
+"EyeBrows: Normal"
+ {
+	"right_inner_raiser"		"0"
+	"left_inner_raiser"		"0"
+	"left_outer_raiser"		"0"
+	"right_outer_raiser"		"0"
+	"right_lowerer"			"0"
+	"left_lowerer"			"0"
+ }
+
+"Eyes: Open"
+ {
+	"right_lid_raiser"		"0"
+	"right_lid_droop"		"0"	
+	"right_lid_closer"		"0"
+	"left_lid_raiser"		"0"
+	"left_lid_droop"		"0"	
+	"left_lid_closer"		"0"
+	"right_cheek_raiser"		"0"
+	"left_cheek_raiser"		"0"
+	"right_lid_tightener"		"0"
+	"left_lid_tightener"		"0"
+ }
+
+"Eyes: Close"
+ {
+	"right_lid_raiser"		"1"
+	"right_lid_droop"		"1"	
+	"right_lid_closer"		"0.7"
+	"left_lid_raiser"		"1"
+	"left_lid_droop"		"1"	
+	"left_lid_closer"		"0.7"
+ }
+
+"Eyes: Wink"
+ {
+	"right_lid_raiser"		"1"
+	"right_lid_droop"		"1"	
+	"right_lid_closer"		"1"
+	"left_lid_raiser"		"0"
+	"left_lid_droop"		"0"	
+	"left_lid_closer"		"0"
+	"right_cheek_raiser"		"0.5"
+	"left_cheek_raiser"		"0"
+ }
+
+
+
+}

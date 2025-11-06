@@ -1,0 +1,139 @@
+"Random Crap"
+ {
+	"Rock 1"                		"models/props_wasteland/rockcliff01b.mdl"
+	"Rock 2"                		"models/props_wasteland/rockcliff01c.mdl"
+	"Rock 3"                		"models/props_wasteland/rockcliff01e.mdl"
+	"Speaker Clust"                		"models/props_wasteland/SpeakerCluster01a.mdl"
+	"Tram Bracket"                		"models/props_wasteland/tram_bracket01.mdl"
+	"Door Track"                	"models/props_wasteland/prison_doortrack001a.mdl"
+	"Huge chimney"                		"models/props_animated_breakable/Smokestack.mdl"
+	
+	"Bluebarrel Bent"                 "models/props_borealis/bluebarrel001_chunk01.mdl"
+
+	"Canister 1"                		"models/props_c17/canister01a.mdl"
+	"Canister 2"                		"models/props_c17/canister02a.mdl"
+	"Canister 3"        	        "models/props_c17/canister_propane01a.mdl"
+
+	"Column"                		"models/props_c17/column02a.mdl"
+	
+	
+	
+	"Display Cooler"            	        "models/props_c17/display_cooler01a.mdl"
+	
+
+	
+	"Fountain"                		"models/props_c17/fountain_01.mdl"
+
+
+	
+	"Gravestone 1"              		"models/props_c17/gravestone001a.mdl"
+	"Gravestone 2"              		"models/props_c17/gravestone002a.mdl"
+	"Gravestone 3"              		"models/props_c17/gravestone003a.mdl"
+	"Gravestone 4"              		"models/props_c17/gravestone004a.mdl"
+	"Gravestone 5"            "models/props_c17/gravestone_coffinpiece001a.mdl"
+	"Gravestone 6"            "models/props_c17/gravestone_coffinpiece002a.mdl"
+	"Gravestone 7"                	"models/props_c17/gravestone_cross001a.mdl"
+	"Gravestone 8"                	"models/props_c17/gravestone_cross001b.mdl"
+	"Gravestone Statue"                	"models/props_c17/gravestone_statue001a.mdl"
+	
+	
+	"Floodlight"                "models/props_c17/light_floodlight02_off.mdl"
+	
+	"Lockers"                		"models/props_c17/Lockers001a.mdl"
+	
+	"Metal Ladder 1"                	"models/props_c17/metalladder002.mdl"
+	"Metal Ladder 2"                	"models/props_c17/metalladder002b.mdl"
+	"Metal Ladder 3"                	"models/props_c17/metalladder003.mdl"
+
+	"Slide"                	"models/props_c17/playgroundslide01.mdl"
+	"TickTac"                	"models/props_c17/playgroundTick-tack-toe_block01a.mdl"
+	"TickTac Post"                	"models/props_c17/playgroundTick-tack-toe_post01.mdl"
+	"Carousel"                	"models/props_c17/playground_carousel01.mdl"
+	"Jungle_Gym"              "models/props_c17/playground_jungle_gym01a.mdl"
+	"Jungle_Gym"              "models/props_c17/playground_jungle_gym01b.mdl"
+	"Swings"                	"models/props_c17/playground_swingset01.mdl"
+	"swing Seat"           "models/props_c17/playground_swingset_seat01a.mdl"
+	"Teetertoter Seat"           "models/props_c17/playground_teetertoter_seat.mdl"
+	"Teetertoter_Stand"           "models/props_c17/playground_teetertoter_stan.mdl"
+	
+	"Pulley Hook"                		"models/props_c17/pulleyhook01.mdl"
+	"Pulley wheel 1"                	"models/props_c17/pulleywheels_large01.mdl"
+	"Pulley wheel 2"                	"models/props_c17/pulleywheels_small01.mdl"
+	
+	"Shelf Unit"                		"models/props_c17/shelfunit01a.mdl"
+
+	"Horse"                		"models/props_c17/statue_horse.mdl"
+	
+	"Support"                		"models/props_c17/support01.mdl"
+	"TrapPropeller_Blade"              	"models/props_c17/TrapPropeller_Blade.mdl"
+	"TrapPropeller_Engine"             	"models/props_c17/TrapPropeller_Engine.mdl"
+	"TrapPropeller_Lever"              	"models/props_c17/TrapPropeller_Lever.mdl"
+	
+	"Utility Pole"                	"models/props_c17/utilitypole01a.mdl"
+
+	
+
+	"Crab Cannister 1"                	"models/props_combine/headcrabcannister01a.mdl"
+	"Crab Cannister 2"                	"models/props_combine/headcrabcannister01b.mdl"
+	"Weapon Stripper"                	"models/props_combine/weaponstripper.mdl"
+
+	
+	"Dock Crossbeam"                	"models/props_docks/dock01_crossbeam01b.mdl"
+	
+	
+	
+	"Door Slotted"                	"models/props_doors/door03_slotted_left.mdl"
+	
+	"Oak Tree"                		"models/props_foliage/oak_tree01.mdl"
+	"Cliff Tree"                	"models/props_foliage/tree_cliff_01a.mdl"
+	"Tree_Deciduous"                	"models/props_foliage/tree_deciduous_01a-lod.mdl"
+	"Tree_Deciduous"                	"models/props_foliage/tree_deciduous_01a.mdl"
+	"Tree_Deciduous"                	"models/props_foliage/tree_deciduous_02a.mdl"
+	"Tree_Deciduous"                	"models/props_foliage/tree_deciduous_03a.mdl"
+	"Tree_Deciduous"                	"models/props_foliage/tree_deciduous_03b.mdl"
+
+	"Tree_Poplar"                	"models/props_foliage/tree_poplar_01.mdl"
+	
+
+	
+	"Bicycle"               		"models/props_junk/bicycle01a.mdl"
+	"Cardboard_Box 1"                	"models/props_junk/cardboard_box004a.mdl"
+	"Cardboard_Box 2"                	"models/props_junk/cardboard_box001b.mdl"
+	"Cardboard_Box 3"                	"models/props_junk/cardboard_box002a.mdl"
+	"Cardboard_Box 4"                	"models/props_junk/cardboard_box002b.mdl"
+	"Cardboard_Box 5"                	"models/props_junk/cardboard_box003a.mdl"
+	"Cardboard_Box 6"                	"models/props_junk/cardboard_box003b.mdl"
+	
+	
+	
+	
+	"Garbage 1"              "models/props_junk/garbage128_composite001a.mdl"
+	"Garbage 2"              "models/props_junk/garbage128_composite001b.mdl"
+	"Garbage 3"              "models/props_junk/garbage128_composite001c.mdl"
+	"Garbage 4"              "models/props_junk/garbage128_composite001d.mdl"
+	"Garbage 5"                	"models/props_junk/TrashCluster01a.mdl"
+
+
+	
+	"Carboard 1"                	"models/props_junk/garbage_carboard001a.mdl"
+	"Carboard 2"                	"models/props_junk/garbage_carboard002a.mdl"
+	"Push Cart"                		"models/props_junk/PushCart01a.mdl"
+	
+	
+	"Harpoon"                		"models/props_junk/harpoon002a.mdl"
+
+
+	"Trash Bin"                		"models/props_junk/TrashBin01a.mdl"
+
+	"Wood_Board 1"                		"models/props_debris/wood_board01a.mdl"
+	"Wood_Board 2"                		"models/props_debris/wood_board02a.mdl"
+	"Wood_Board 3"                		"models/props_debris/wood_board03a.mdl"
+	"Wood_Board 4"                		"models/props_debris/wood_board04a.mdl"
+	"Wood_Board 5"                		"models/props_debris/wood_board05a.mdl"
+	"Wood_Board 6"                		"models/props_debris/wood_board06a.mdl"
+	"Wood_Board 7"                		"models/props_debris/wood_board07a.mdl"
+
+	"Pipe 1"                		"models/props_pipes/concrete_pipe001a.mdl"
+	"Pipe 2"                		"models/props_pipes/concrete_pipe001b.mdl"
+	
+}

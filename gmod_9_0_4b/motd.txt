@@ -1,0 +1,26 @@
+<html>
+<body>
+
+
+<div style="text-align: center;">
+
+
+
+<div style="width: 70%; margin: 0px auto; border: 5px solid #ccc; background-color: #eee; padding: 10px; font-size: 12px; font-family: Tahoma; margin-top: 30px; color: #222; text-align: left;">
+
+<div style="font-size: 30px; font-family: impact; width: 100%; margin-bottom: 20px;">Garry's Mod 9.0.4</div>
+
+This is where the MOTD should be.
+
+
+
+
+<div style="width: 100%; text-align: right; margin: 30px; font-weight: bold;">- TEAM GARRY</div>
+
+</div>
+
+</div>
+
+
+</body>
+</html>

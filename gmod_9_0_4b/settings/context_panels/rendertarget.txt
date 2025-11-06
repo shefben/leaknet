@@ -1,0 +1,49 @@
+"rendertarget"
+{
+	"title"				"Render Target"
+	
+	"controls"
+	{
+		"Toggle"
+		{
+		  	"label"			"Show on HUD"
+	  	  	"name"			"gm_rendertarget_on"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Position X"
+	  	  	"name"			"gm_rendertarget_x"
+	  	  	"min"			"0"
+	  	  	"max"			"1"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Position Y"
+	  	  	"name"			"gm_rendertarget_y"
+	  	  	"min"			"0"
+	  	  	"max"			"1"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Scale X"
+	  	  	"name"			"gm_rendertarget_sx"
+	  	  	"min"			"0"
+	  	  	"max"			"1"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Scale Y"
+	  	  	"name"			"gm_rendertarget_sy"
+	  	  	"min"			"0"
+	  	  	"max"			"1"
+		}
+		
+	}
+	
+}
+
+

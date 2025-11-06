@@ -1,0 +1,5 @@
+This folder is for "death icons".
+
+These are the icons that appear between the 2 names on the top right of the GUI when someone gets killed.
+
+Icons should be 64x64.

@@ -1,0 +1,89 @@
+"Counter-Strike"
+{
+	"de_dust"
+	{
+		"map"		"de_dust"
+		"material"	"vgui/chapters/de_dust"
+		"credits"	"Valve"
+	}
+	
+	"cs_office"
+	{
+		"map"		"cs_office"
+		"material"	"vgui/chapters/cs_office"
+		"credits"	"Turtle Rock"
+	}
+	"cs_havana"
+	{
+		"map"		"cs_havana"
+		"material"	"vgui/chapters/cs_havana"
+		"credits"	"Valve"
+	}
+	"cs_italy"
+	{
+		"map"		"cs_italy"
+		"material"	"vgui/chapters/cs_italy"
+		"credits"	"Valve"
+	}
+	"de_aztec"
+	{
+		"map"		"de_aztec"
+		"material"	"vgui/chapters/de_aztec"
+		"credits"	"Valve (narby!!)"
+	}
+	"de_cbble"
+	{
+		"map"		"de_cbble"
+		"material"	"vgui/chapters/de_cbble"
+		"credits"	"Valve"
+	}
+	"de_chateau"
+	{
+		"map"		"de_chateau"
+		"material"	"vgui/chapters/de_chateau"
+		"credits"	"Valve"
+	}
+	"de_piranesi"
+	{
+		"map"		"de_piranesi"
+		"material"	"vgui/chapters/de_piranesi"
+		"credits"	"Valve"
+	}
+	"de_prodigy"
+	{
+		"map"		"de_prodigy"
+		"material"	"vgui/chapters/de_prodigy"
+		"credits"	"Turtle Rock"
+	}
+	"de_tides"
+	{
+		"map"		"de_tides"
+		"material"	"vgui/chapters/de_tides"
+		"credits"	"Turtle Rock"
+	}
+	"de_train"
+	{
+		"map"		"de_train"
+		"material"	"vgui/chapters/de_train"
+		"credits"	"Turtle Rock"
+	}
+	"de_inferno"
+	{
+		"map"		"de_inferno"
+		"material"	"vgui/chapters/de_inferno"
+		"credits"	"Turtle Rock (Narby!!)"
+	}
+	"de_port"
+	{
+		"map"		"de_port"
+		"material"	"vgui/chapters/de_port"
+		"credits"	"Valve"
+	}
+
+	"cs_assault"
+	{
+		"map"		"cs_assault"
+		"material"	"vgui/chapters/cs_assault"
+		"credits"	"Valve"
+	}
+}

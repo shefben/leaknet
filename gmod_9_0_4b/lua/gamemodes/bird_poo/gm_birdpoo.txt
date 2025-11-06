@@ -1,0 +1,39 @@
+gm_birdpoo by Andy Vincent
+
+General Controls
+----------------
+F1 - Help
+F2 - Change Team
+F3 - Menu
+
+Bird Contols
+------------
+LMB   - Poo
+RMB   - Overhead View (can aid aiming)
+Shift - Fly/Walk Fast
+Duck  - Walk
+
+Console Commands
+----------------
+menu - show a general menu with change team / change bird type options
+changeteam - show the change team menu
+changebirdtype - show the change bird type menu
+draw_poop_line_on - draw poop lines
+draw_poop_line_off - stop drawing poop lines
+
+Changelog
+---------
+V2 - Changes to code:
+	Added Poop Decals to world
+	Added Poop Decals to HUD if you get pooped on
+	Added Overhead view mode
+	Changed RMB from fly fast to overhead view mode
+	Changed shift to fly fast
+	Added Walk mode
+	Added Animations
+	Beam drawn when birds poo is optional
+	Bug fix where birds crapping on other birds wouldn't be detected
+	
+V1 - Initial Release
+
+

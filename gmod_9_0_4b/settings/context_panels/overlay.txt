@@ -1,0 +1,29 @@
+"overlay"
+{
+	"title"				"Material Screen Overlay"
+	
+	"controls"
+	{
+	
+		"keyvaluecombobox"
+		{
+		  	"label"			"Material"
+	  	  	"name"			"pp_overlay"
+	  	  	"kvfile"		"settings/gmod_overlay.txt"
+	  	  	"OpenOffsetY"	"-150"
+		}
+		
+		// todo: find more shit to put here
+		
+		"slider"
+		{
+		  	"label"			"Refract Amount"
+	  	  	"name"			"pp_overlay_refractamount"
+	  	  	"min"			"-1"
+	  	  	"max"			"1"
+		}		
+		
+	}
+}
+
+

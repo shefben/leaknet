@@ -1,0 +1,34 @@
+"facepose"
+{
+	"title"				"Expression Settings"
+	
+	"controls"
+	{
+		"keyvaluecombobox"
+		{
+		  	"label"			"Expression"
+	  	  	"name"			"expression"
+	  	  	"kvfile"		"settings/gmod_expressions.txt"
+	  	  	"OpenOffsetY"	"-160"
+		}
+		
+		"button"
+		{
+		  		"label"			"Randomise"
+	  	  		"command"		"randomise"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Multiply"
+	  	  	"name"			"gm_facescale"
+	  	  	"min"			"0"
+	  	  	"max"			"10"
+		}
+		
+		"special_facepose"
+		{
+		}
+	
+	}
+}

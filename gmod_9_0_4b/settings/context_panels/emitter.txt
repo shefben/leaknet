@@ -1,0 +1,28 @@
+"emitter"
+{
+	"title"				"Emitter Settings"
+	
+	"controls"
+	{
+		"slider"
+		{
+		  	"label"			"Type"
+	  	  	"name"			"gm_emitter_type"
+	  	  	"min"			"0"
+	  	  	"max"			"10"
+	  	  	"integer"		"1"
+		}
+		
+		"slider"
+		{			
+		  	"label"			"Delay"
+	  	  	"name"			"gm_emitter_delay"
+	  	  	"min"			"0.01f"
+	  	  	"max"			"3.0f"
+		}
+		
+	}
+}
+
+
+

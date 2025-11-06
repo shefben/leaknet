@@ -1,0 +1,56 @@
+error D8016 : '/ZI' and '/Gy-' command-line options are incompatible
+	https://stackoverflow.com/questions/43141401/visual-studio-error-d8016-zi-and-gy-command-line-options-are-incompatible
+		"You are choosing "Edit and Continue" (/ZI) to be able to fix code during debugging, but also "Disable Function-Level Linking" (/Gy-).
+		Those two will not work together, as you cannot just change one function in the middle of the code. So just choose one of them, like changing /Gy- to /Gy."
+		Меняю Debug Information Format на Program Database
+			+Может, наоборот, оставить "Edit and Continue", но отключить "Disable Function-Level Linking"?
+
+stricmp, strcmpi, strupr, strlwr
+
+devtools\bin\fxc.exe и другие возможно заменить на современные версии
+shaderapidx8 (shaderdx8) адаптировать под Platform Toolset v142 (VS2019)
+	-Временный workaround - выставил Platform Toolset в v100 (VS2010). Скорее всего, для компиляции будет требовать установки VS2010 или SDK
+		https://stackoverflow.com/questions/34885286/how-to-install-visual-studio-build-tools-2010-on-visual-studio-2015-community
+	+Install C++ Windows XP Support for VS2017 (v141) tools [Deprecated] and add legacy_stdio_definitions.lib to Additional Dependencies
+
+_CRT_NON_CONFORMING_SWPRINTFS для swprintf в KeyValues.cpp
+	Заменить на ISOшный вариант?
+
+Пофиксить "The intermediate directory (...) contains files shared from another project ..."
+
+miles WINDOWS_IGNORE_PACKING_MISMATCH
+
+Worldcraft: include/ignore nafxcwd.lib;Libcmtd.lib for non-Unicode, and uafxcwd.lib;Libcmtd.lib for Unicode
+			for Release: nafxcw.lib;Libcmt.lib and uafxcw.lib;Libcmt.lib
+			https://stackoverflow.com/questions/1146338/error-lnk2005-new-and-delete-already-defined-in-libcmtd-libnew-obj
+
+?Переделать shader_nvfx и shader_nvfx_ps20? Не вмешиваясь в проекты с Notepad++
+
+Partial commits: https://stackoverflow.com/questions/32527097/can-you-do-partial-commit-in-tortoisegit/32527098
+
+https://docs.microsoft.com/en-us/cpp/build/reference/z7-zi-zi-debug-information-format?view=vs-2019
+	The Edit and Continue feature can cause issues in code size, performance, and compiler conformance.
+	Because most optimizations are incompatible with Edit and Continue, using /ZI disables any #pragma optimize statements in your code.
+	The /ZI option is also incompatible with use of the __LINE__ predefined macro; code compiled with /ZI cannot use __LINE__ as a non-type template argument, although __LINE__ can be used in macro expansions.
+
+pdbs:
+	+vrad/vvis/vtex need to be renamed as vrad_dll, vvis_dll and vtex_dll (and properties updated) for convenience
+		+Debug
+		+Release
+	-Remove all pdb copying stuff from static libs
+		-Debug
+			I guess not needed, because pdb's for static libs being generated only in Debug mode.
+			Or else I need to put every static library into the right Debug Information Format
+			I think I'll leave copying stuff anyway, even in Release
+		+Release
+	Need to update all Outputs too
+		+Debug
+		+Release
+
+Unify all the paths in the project names, linker outputs, build tools and such
+	The same output files as project names(?)
+	"warning MSB8012: TargetPath/TargetName(...) does not match the Linker's OutputFile property value (...). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile)."
+
++Send scenemanager to Microsoft for exclusion from Windows Defender's base
+	classcheck now doesn't get detected for some reason.
+Add vcrtrace, normal2dudv

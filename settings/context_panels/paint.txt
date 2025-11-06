@@ -1,0 +1,16 @@
+"paint"
+{
+	"title"				"Paint Settings"
+	
+	"controls"
+	{
+		"keyvaluecombobox"
+		{
+		  	"label"			"Paint"
+	  	  	"name"			"gm_paintmode"
+	  	  	"kvfile"		"settings/gmod_paint.txt"
+	  	  	"OpenOffsetY"	"-320"
+		}
+	}
+}
+

@@ -1,0 +1,21 @@
+"Custom Models"
+{
+	"~Eric Ladick (Mixerman3D)"	"1"
+	
+	"Bowling Pin"				"models/mixerman3d/bowling/bowling_pin.mdl"
+	"Bowling Ball"				"models/mixerman3d/bowling/bowling_ball.mdl"
+	"Skateboard"				"models/mixerman3d/other/skateboard.mdl"
+	"Vinyl"					"models/mixerman3d/other/vinyl.mdl"
+	"Axe"					"models/mixerman3d/weapons/axe01.mdl"
+	"Cricket Bat"				"models/mixerman3d/weapons/cricket_bat.mdl"
+	"Machete"				"models/mixerman3d/weapons/machete.mdl"
+	"Laser Pistol"				"models/mixerman3d/guns/laser_pistol.mdl"
+	"Arrow"					"models/mixerman3d/other/arrow.mdl"		
+	
+	"~Tom Wiseman (BucketMuncher)"	"1"
+	"Basketball"			"models/bm/basketball.mdl"
+	"Dart"					"models/bm/dart.mdl"		
+	
+	// todo - send me your models!
+	
+}

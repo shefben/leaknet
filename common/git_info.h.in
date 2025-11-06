@@ -1,0 +1,7 @@
+#if !defined( GIT_INFO_H )
+#define GIT_INFO_H
+
+#cmakedefine GIT_COMMIT_HASH "@GIT_COMMIT_HASH@"
+#cmakedefine GIT_CURRENT_BRANCH "@GIT_CURRENT_BRANCH@"
+
+#endif

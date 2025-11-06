@@ -1,0 +1,55 @@
+"gmod_bloompresets"
+{
+	"Default"
+	{
+	 	"pp_bloom_levelr"			"1.0"
+	 	"pp_bloom_levelg"			"1.0"
+	 	"pp_bloom_levelb"			"1.0"
+	 	"pp_bloom_colour"			"0.75"
+	 	"pp_bloom_sizeh"			"6.0"
+	 	"pp_bloom_sizev"			"6.0"
+	 	"pp_bloom_darken"			"0.35"
+	 	"pp_bloom_multiply"			"0.9"
+		"pp_bloom_blurpasses"			"2"
+	}
+
+	"8 Bit"
+	{
+	 	"pp_bloom_levelr"			"1.0"
+	 	"pp_bloom_levelg"			"1.0"
+	 	"pp_bloom_levelb"			"1.0"
+	 	"pp_bloom_colour"			"3.3"
+	 	"pp_bloom_sizeh"			"6.0"
+	 	"pp_bloom_sizev"			"6.0"
+	 	"pp_bloom_darken"			"0.18"
+	 	"pp_bloom_multiply"			"1.20"
+		"pp_bloom_blurpasses"			"0"
+	}
+
+	"FarCry"
+	{
+	 	"pp_bloom_levelr"			"1.0"
+	 	"pp_bloom_levelg"			"1.0"
+	 	"pp_bloom_levelb"			"1.0"
+	 	"pp_bloom_colour"			"2.4"
+	 	"pp_bloom_sizeh"			"9.0"
+	 	"pp_bloom_sizev"			"9.0"
+	 	"pp_bloom_darken"			"0.35"
+	 	"pp_bloom_multiply"			"1.93"
+		"pp_bloom_blurpasses"			"2"
+	}
+
+	"Silent Hill"
+	{
+	 	"pp_bloom_levelr"			"1.0"
+	 	"pp_bloom_levelg"			"1.0"
+	 	"pp_bloom_levelb"			"1.0"
+	 	"pp_bloom_colour"			"0.0"
+	 	"pp_bloom_sizeh"			"6.0"
+	 	"pp_bloom_sizev"			"6.0"
+	 	"pp_bloom_darken"			"0.35"
+	 	"pp_bloom_multiply"			"1.30"
+		"pp_bloom_blurpasses"			"1"
+	}
+	
+}

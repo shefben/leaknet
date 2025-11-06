@@ -1,0 +1,16 @@
+// .vmf files.. a list of materials to offer up as overlays
+
+"gmod_overlay.txt"
+{
+	"No Overlay"		""
+	"Waterfall"			"models/shadertest/shader3"
+	"Jelly"				"models/shadertest/shader4"
+	"Stained Glass"		"models/shadertest/shader5"
+	"Combine Stasis"	"models/props_combine/stasisshield_sheet"
+	"Combine Shield"	"models/props_combine/com_shield001a"
+	"Frosted Glass"		"models/props_c17/frostedglass_01a"
+	"Tank Glass"		"models/props_lab/Tank_Glass001"
+	"tprings_globe"		"models/props_combine/tprings_globe"
+	"Fisheye"			"models/props_c17/fisheyelens"
+	"Render Target"		"gmod/dev_tvmonitor1a"
+}

@@ -1,0 +1,18 @@
+v1.1
+[FIX] Code has been immensely cleaned up and reorganised
+[FIX] Team names now display properly, as was always intended
+[FIX] Made it slightly more difficult for Hiders to gain points
+[FIX] Seekers now gain 8 points per 'catch'
+[FIX] The Catcher weapon now fires at a slower rate
+[FIX] The gm_hideandseek map has been renamed to gm_hideandseek_outland
+[ADD] Brand new gm_hideandseek_yard map by TrickyClock included
+[ADD] Added a brief help screen for when F1 is pressed
+[ADD] Created a new team select menu
+[ADD] Seekers now have a gravcannon at their disposal
+[ADD] Seekers now have the new SuperCatcher 6000 (gives 2 extra points if used for a catch)
+[ADD] Hiders now win the round if they accumulate 75 points
+[ADD] Hiders now get a melon gun containing 2 melons
+[ADD] Hiders now get a baby gun containing 2 babies
+
+v1.0
+Initial release

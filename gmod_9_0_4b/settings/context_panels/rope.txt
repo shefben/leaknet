@@ -1,0 +1,48 @@
+"rope"
+{
+	"title"				"Rope Mode Settings"
+	
+	"controls"
+	{
+	
+		"slider"
+		{
+		  	"label"			"Rope Type"
+	  	  	"name"			"gm_weld_rope_type"
+	  	  	"min"			"1"
+	  	  	"max"			"5"
+	  	  	"integer"		"1"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Rope Width"
+	  	  	"name"			"gm_weld_rope_width"
+	  	  	"min"			"0.2"
+	  	  	"max"			"10"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Extra rope length"
+	  	  	"name"			"gm_weld_rope_length"
+	  	  	"min"			"-100"
+	  	  	"max"			"100"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Force Limit (in lbs)"
+	  	  	"name"			"gm_weld_rope_forcelimit"
+	  	  	"min"			"0"
+	  	  	"max"			"50000"
+		}
+		
+		"toggle"
+		{
+		  	"label"			"Rigid Rope"
+	  	  	"name"			"gm_weld_rope_rigid"
+		}
+	}
+}
+

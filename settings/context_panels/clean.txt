@@ -1,0 +1,76 @@
+"clean"
+{
+	"title"				"Clean up your.."
+	
+	"controls"
+	{
+		
+		"button"
+		{
+		  		"label"			"Remove all my stuff"
+	  	  		"command"		"gm_remove_all"
+		}
+		
+		"columns"				"2"
+	
+		"button"
+		{
+		  		"label"			"Thrusters"
+	  	  		"command"		"gm_remove_my thrusters"
+		}
+		"button"
+		{
+		  		"label"			"Ragdolls"
+	  	  		"command"		"gm_remove_my ragdolls"
+		}
+		"button"
+		{
+		  		"label"			"Props"
+	  	  		"command"		"gm_remove_my props"
+		}
+		"button"
+		{
+		  		"label"			"Balloons"
+	  	  		"command"		"gm_remove_my balloons"
+		}
+		"button"
+		{
+		  		"label"			"Effects"
+	  	  		"command"		"gm_remove_my effects"
+		}
+		"button"
+		{
+		  		"label"			"Sprites"
+	  	  		"command"		"gm_remove_my sprites"
+		}
+		"button"
+		{
+		  		"label"			"Emitters"
+	  	  		"command"		"gm_remove_my emitters"
+		}
+		"button"
+		{
+		  		"label"			"Wheels"
+	  	  		"command"		"gm_remove_my wheels"
+		}
+		
+		"button"
+		{
+		  		"label"			"NPCs"
+	  	  		"command"		"gm_remove_my npcs"
+		}
+		
+		"button"
+		{
+		  		"label"			"Dynamite"
+	  	  		"command"		"gm_remove_my dynamite"
+		}
+		
+		"columns"				"1"
+		
+
+		
+	}
+}
+
+

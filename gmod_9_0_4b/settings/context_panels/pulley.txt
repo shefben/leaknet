@@ -1,0 +1,42 @@
+
+"pulley"
+{
+	"title"				"Pulley Mode Settings"
+	
+	"controls"
+	{
+		"slider"
+		{
+		  	"label"			"Rope Type"
+	  	  	"name"			"gm_weld_pulley_type"
+	  	  	"min"			"1"
+	  	  	"max"			"5"
+	  	  	"integer"		"1"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Rope Width"
+	  	  	"name"			"gm_weld_pulley_width"
+	  	  	"min"			"0.2"
+	  	  	"max"			"10"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Force Limit (in lbs)"
+	  	  	"name"			"gm_weld_pulley_forcelimit"
+	  	  	"min"			"0"
+	  	  	"max"			"50000"
+		}
+		
+		"toggle"
+		{
+		  	"label"			"Rigid"
+	  	  	"name"			"gm_weld_pulley_rigid"
+		}
+		
+	}
+}
+
+

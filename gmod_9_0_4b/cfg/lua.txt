@@ -1,0 +1,21 @@
+
+// This is the Lua configuration file.
+
+"Lua Config"
+{
+
+	"Settings"
+	{	
+		"AllowLuaCommand"		"1" // set to 0 to disable "lua" console command
+		"AllowLua_OpenScriptCommand"	"1" // set to 0 to disable "lua_openscript" command
+	}
+
+	// Adding a command here stops GMod registering that Lua command
+	// which means it's completely disabled on your server.
+
+	"Disable"
+	{
+		// see lua.txt.secure for examples
+	}
+
+}

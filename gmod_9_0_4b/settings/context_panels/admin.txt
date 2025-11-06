@@ -1,0 +1,115 @@
+"admin"
+{
+	"title"                         "Server Admin"
+
+    "controls"
+    {
+		
+		"slider"
+		{
+		  	"label"			"Physics Slow Motion"
+	  	  	"name"			"phys_timescale"
+	  	  	"min"			"0"
+	  	  	"max"			"2"
+		}	
+		
+		"slider"
+		{
+		  	"label"			"Gravity"
+	  	  	"name"			"sv_gravity"
+	  	  	"min"			"-1000"
+	  	  	"max"			"1000"
+		}	
+		
+		"slider"
+		{
+		  	"label"			"Wind X"
+	  	  	"name"			"sv_gravityx"
+	  	  	"min"			"-1000"
+	  	  	"max"			"1000"
+		}	
+		
+		"slider"
+		{
+		  	"label"			"Wind Y"
+	  	  	"name"			"sv_gravityy"
+	  	  	"min"			"-1000"
+	  	  	"max"			"1000"
+		}	
+		
+
+		"toggle"
+		{
+			"label"			"Player Damage"
+			"name"			"gm_sv_playerdamage"
+		}
+		
+		"toggle"
+		{
+			"label"			"Player v Player Damage"
+			"name"			"gm_sv_pvpdamage"
+		}
+		
+		"toggle"
+		{
+			"label"			"Team Damage"
+			"name"			"gm_sv_teamdamage"
+		}
+
+		"toggle"
+		{
+			"label"			"Allow Spawning"
+			"name"			"gm_sv_allowspawning"
+		}
+		
+		"toggle"
+		{
+			"label"			"Allow Toolgun"
+			"name"			"gm_sv_allowmultigun"
+		}
+		
+		"toggle"
+		{
+			"label"			"Allow Physgun"
+			"name"			"gm_sv_allowphysgun"
+		}
+		
+		"toggle"
+		{
+			"label"			"All Weapons"
+			"name"			"gm_sv_allweapons"
+		}
+    
+		"toggle"
+		{
+			"label"			"Allow Ignite"
+			"name"			"gm_sv_allowignite"
+		}
+                
+		"toggle"
+		{
+			"label"			"Allow 'noclip' Command"
+			"name"			"gm_sv_noclip"
+		}
+		
+		"toggle"
+		{
+			"label"			"Allow NPC spawning"
+			"name"			"gm_sv_allownpc"
+		}	
+			
+		"toggle"
+		{
+			"label"			"Allow Lamps"
+			"name"			"gm_sv_allowlamps"
+		}
+		
+		"button"
+		{
+			"name"			"Apply Changes"
+		  	"label"			"Apply Changes"
+	  	  	"command"		"gm_sv_setrules"
+		}		
+		
+	}
+}

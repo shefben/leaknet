@@ -1,0 +1,17 @@
+"pproperties"
+{
+	"title"				"Physical Properties"
+	
+	"controls"
+	{
+		"keyvaluecombobox"
+		{
+		  	"label"			"Property"
+	  	  	"name"			"gm_phys_property_mode"
+	  	  	"kvfile"		"settings/gmod_physproperties.txt"
+	  	  	"OpenOffsetY"	"-40"
+		}
+	}
+}
+
+

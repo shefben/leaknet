@@ -1,0 +1,15 @@
+"Effects"
+{
+	"=Dynamic Lamp"                		"lamp"
+	"=Cannister"                		"cannister"
+	
+	"~3D Effects"	""
+	"!Portal Funnel"                	"models/Effects/portalfunnel.mdl"
+	"!Portal Rift"                		"models/Effects/portalrift.mdl"
+	"!Explode"                			"models/Effects/splode.mdl"
+	"!Lightning"                		"models/Effects/splodearc.mdl"
+	"!Explode Glass"                	"models/Effects/splodeglass.mdl"
+	"!Volumetric Light"                	"models/Effects/vol_light.mdl"
+	"!Portal Ball"                		"models/props_combine/portalball.mdl"
+	"!Portal Skydome"                	"models/props_combine/portalskydome.mdl"
+}

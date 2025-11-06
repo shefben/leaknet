@@ -1,0 +1,42 @@
+"slider"
+{
+	"title"				"Slider Mode Settings"
+	
+	"controls"
+	{
+	
+		"slider"
+		{
+		  	"label"			"Rail Type"
+	  	  	"name"			"gm_weld_slider_type"
+	  	  	"min"			"1"
+	  	  	"max"			"5"
+	  	  	"integer"		"1"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Rail Width"
+	  	  	"name"			"gm_weld_slider_width"
+	  	  	"min"			"0.0"
+	  	  	"max"			"10"
+		}
+			
+		"slider"
+		{
+		  	"label"			"Force Limit (in lbs)"
+	  	  	"name"			"gm_weld_slider_forcelimit"
+	  	  	"min"			"0"
+	  	  	"max"			"50000"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Friction"
+	  	  	"name"			"gm_weld_slider_friction"
+	  	  	"min"			"0"
+	  	  	"max"			"1000"
+		}
+	}
+}
+

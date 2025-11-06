@@ -1,0 +1,91 @@
+"fog"
+{
+	"title"				"Fog Settings"	// Title shows on top of the panel
+	
+	"controls"								// Lists the controls to add to our control
+	{
+		"toggle"
+		{
+		  	"label"			"Fog On"		
+	  	  	"name"			"fog_override"		// the control should share the name with the console variable it wants to change
+		}
+		
+		"slider"
+		{
+		  	"label"			"Fog Start"
+	  	  	"name"			"fog_start"
+	  	  	"min"			"0"
+	  	  	"max"			"5000"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Fog End"
+	  	  	"name"			"fog_end"
+	  	  	"min"			"0"
+	  	  	"max"			"10000"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Red"
+	  	  	"name"			"fog_color_r"
+	  	  	"min"			"0"
+	  	  	"max"			"255"
+		}
+		"slider"
+		{
+		  	"label"			"Green"
+	  	  	"name"			"fog_color_g"
+	  	  	"min"			"0"
+	  	  	"max"			"255"
+		}
+		"slider"
+		{
+		  	"label"			"Blue"
+	  	  	"name"			"fog_color_b"
+	  	  	"min"			"0"
+	  	  	"max"			"255"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Skybox Fog Start"
+	  	  	"name"			"fog_startskybox"
+	  	  	"min"			"0"
+	  	  	"max"			"5000"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Skybox Fog End"
+	  	  	"name"			"fog_endskybox"
+	  	  	"min"			"0"
+	  	  	"max"			"10000"
+		}
+		
+
+		"slider"
+		{
+		  	"label"			"Skybox Red"
+	  	  	"name"			"fog_colorskybox_r"
+	  	  	"min"			"0"
+	  	  	"max"			"255"
+		}
+		"slider"
+		{
+		  	"label"			"Skybox Green"
+	  	  	"name"			"fog_colorskybox_g"
+	  	  	"min"			"0"
+	  	  	"max"			"255"
+		}
+		"slider"
+		{
+		  	"label"			"Skybox Blue"
+	  	  	"name"			"fog_colorskybox_b"
+	  	  	"min"			"0"
+	  	  	"max"			"255"
+		}
+
+	}
+}

@@ -1,0 +1,46 @@
+"dof"
+{
+	"title"				"Depth of Field"
+	
+	"controls"
+	{
+		"toggle"
+		{
+		  	"label"			"DoF On"
+	  	  	"name"			"pp_dof"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Sprites"
+	  	  	"name"			"pp_dof_passes"
+	  	  	"min"			"1"
+	  	  	"max"			"6"
+	  	  	"integer"		"1"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Spacing"
+	  	  	"name"			"pp_dof_spacing"
+	  	  	"min"			"50"
+	  	  	"max"			"1000"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Start Distance"
+	  	  	"name"			"pp_dof_initialspace"
+	  	  	"min"			"1"
+	  	  	"max"			"5000"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Size"
+	  	  	"name"			"pp_dof_size"
+	  	  	"min"			"100"
+	  	  	"max"			"1000"
+		}
+	}
+}

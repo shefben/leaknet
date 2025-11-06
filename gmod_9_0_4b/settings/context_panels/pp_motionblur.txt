@@ -1,0 +1,34 @@
+"motionblur"
+{
+	"title"				"Motion Blur Settings"	// Title shows on top of the panel
+	
+	"controls"								// Lists the controls to add to our control
+	{
+		"toggle"
+		{
+		  	"label"			"Motion Blur On"		
+	  	  	"name"			"pp_motionblur"		// the control should share the name with the console variable it wants to change
+		}
+		"slider"
+		{
+		  	"label"			"Add Alpha"
+	  	  	"name"			"pp_motionblur_addalpha"
+	  	  	"min"			"0.001"
+	  	  	"max"			"1.0"
+		}
+		"slider"
+		{
+		  	"label"			"Draw Alpha"
+	  	  	"name"			"pp_motionblur_drawalpha"
+	  	  	"min"			"0"
+	  	  	"max"			"1"
+		}
+		"slider"
+		{
+		  	"label"			"Add Delay"
+	  	  	"name"			"pp_motionblur_time"
+	  	  	"min"			"0"
+	  	  	"max"			"0.5"
+		}
+	}
+}

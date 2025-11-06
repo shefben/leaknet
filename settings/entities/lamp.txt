@@ -1,0 +1,12 @@
+"Lamp"
+{
+
+	"classname"			"prop_flashlight"
+	"type"				"prop"
+	
+	"keyvalues"
+	{
+		"model"				"models/props_wasteland/prison_lamp001c.mdl"
+	}
+	
+}

@@ -1,0 +1,14 @@
+"ModInfo"
+{
+	"name"		"Counter-Strike Content"
+	"version"	"1.0"
+	"author_name"	"Valve"
+	
+	"icon"	"gmod/mod_icon_css"
+	
+	"requires"
+	{
+		"gfc"			"240"
+		"searchpath"	"cstrike"
+	}
+}

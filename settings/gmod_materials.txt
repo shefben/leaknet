@@ -1,0 +1,23 @@
+// .vmf files!
+
+"garry_materials.txt"
+{
+	"Wireframe (buggy)"	"gmod/wireframe"
+	"EnvCubeMap"		"debug/env_cubemap_model"
+	"Water"				"models/shadertest/shader3"
+	"Jelly"				"models/shadertest/shader4"
+	"Stained Glass"		"models/shadertest/shader5"
+	"Shiny White"		"gmod/shiny"
+	"Matte White"		"models/debug/debugwhite"
+	"Combine Ball"		"Models/effects/comball_sphere"
+	"Combine Ball 2"	"Models/effects/comball_tape"
+	"Blue Glow"			"Models/effects/splodearc_sheet"
+	"Volume-Light"		"Models/effects/vol_light001"
+	"Combine Stasis"	"models/props_combine/stasisshield_sheet"
+	"Combine Funnel"	"models/props_combine/portalball001_sheet"
+	"Combine Shield"	"models/props_combine/com_shield001a"
+	"Frosted Glass"		"models/props_c17/frostedglass_01a"
+	"Tank Glass"		"models/props_lab/Tank_Glass001"
+	"tprings_globe"		"models/props_combine/tprings_globe"
+	"Render Target"		"gmod/rendertarget"
+}

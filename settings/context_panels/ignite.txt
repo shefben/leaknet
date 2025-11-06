@@ -1,0 +1,15 @@
+"ignite"
+{
+	"title"				"Ignite Settings"
+	
+	"controls"
+	{
+		"slider"
+		{
+		  	"label"			"Burn Length (seconds)"
+	  	  	"name"			"gm_firelength"
+	  	  	"min"			"1"
+	  	  	"max"			"360"
+		}
+	}
+}

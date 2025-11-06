@@ -1,0 +1,25 @@
+
+// This is the super secure Lua configuration file.
+
+"Lua Config"
+{
+
+	"Settings"
+	{	
+		"AllowLuaCommand"		"0"
+		"AllowLua_OpenScriptCommand"	"0"
+	}
+
+	"Disable"
+	{
+		"_file.Delete"		"1"
+		"_file.Read"		"1"
+		"_file.Write"		"1"
+		"_file.CreateDir"	"1"
+		"_file.Find"		"1"
+		"_file.Rename"		"1"
+		"_file.IsDir"		"1"
+		"_file.Exists"		"1"
+	}
+
+}

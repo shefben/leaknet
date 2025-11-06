@@ -1,0 +1,72 @@
+
+// this creates the main buttons for the MAIN menu
+
+// 
+// ~ = label
+// # = twice the size
+//
+
+// Adding this line will clear everything in the menu up until this point and start fresh.
+// You should put it at the top of your spawn menu only if you want to override EVERY button.
+//
+// "clear"				"1"
+
+"menu"
+{
+	"~Constraints"		""
+	"Rope"					"gm_toolmode 0; gm_context rope;"
+	"Elastic"				"gm_toolmode 1; gm_context spring;"
+	"Weld"					"gm_toolmode 2; gm_context weld;"
+	"Ballsocket"			"gm_toolmode 3; gm_context ballsocket;"
+	"Pulley"				"gm_toolmode 4; gm_context pulley;"
+	"EASY Weld"				"gm_toolmode 5; gm_context weldez;"
+	"EASY Ball"				"gm_toolmode 6; gm_context ballez;"
+	"Axis"					"gm_toolmode 7; gm_context axis;"
+	"Slider"				"gm_toolmode 8; gm_context slider;"
+	"Nail gun"				"gm_toolmode 9; gm_context nail;"
+		
+
+	
+	"~Construction"		""
+	
+	"Remover"				"gm_toolmode 12;"
+	"Ignite"				"gm_toolmode 13; gm_context ignite"
+	"Duplicate"				"gm_toolmode 15;"
+	"Magnetise"				"gm_toolmode 17; gm_context magnetise"
+	"Phys Props"			"gm_toolmode 24; gm_context pproperties"
+	"No Collide"			"gm_toolmode 18;"
+	"Thrusters"				"gm_toolmode 23; gm_context thruster"
+	"Balloons"				"gm_toolmode 26; gm_context balloon"
+	"Statue"				"gm_toolmode 25;"
+	"Wheels"				"gm_toolmode 29; gm_context wheel"
+	"Dynamite"				"gm_toolmode 19; gm_context dynamite"
+		
+	"~Visual"			""
+	
+	"Material"				"gm_toolmode 20; gm_context material"
+	"Paint"					"gm_toolmode 14; gm_context paint"
+	"Colour"				"gm_toolmode 16; gm_context colour"
+	"Face Poser"			"gm_toolmode 10; gm_context facepose"
+	"Eyes Poser"			"gm_toolmode 11; gm_context null"
+	"Emitter"				"gm_toolmode 27; gm_context emitter"
+	"Sprites"				"gm_toolmode 28; gm_context sprite"
+	"Fog"					"gm_context fog"
+	
+	"~Other Tools"			""	
+	"Camera"				"gm_context camera;"
+	"RT Camera"				"gm_toolmode 21; gm_context rendertarget"
+	"NPC Spawn"				"gm_context npc"
+	"Undo"					"gmod_undo"
+	"#Export to Hammer"		"gm_hammer_export"
+	"Clean Up"				"gm_context clean"
+	"Admin"					"gm_context admin"
+		
+	"~Post Processing"			""
+	"Bloom"					"gm_context bloom"
+	"Depth"					"gm_context dof"
+	"Overlay"				"gm_context overlay"
+	"Colour Mod"			"gm_context colourmodify"
+	"Motion Blur"			"gm_context motionblur"
+	
+	
+}

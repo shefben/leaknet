@@ -1,0 +1,22 @@
+"ballez"
+{
+	"title"				"Easy Ball Mode Settings"
+	
+	"controls"
+	{
+		"slider"
+		{
+		  	"label"			"Force Limit (in lbs)"
+	  	  	"name"			"gm_weld_ballez_forcelimit"
+	  	  	"min"			"0"
+	  	  	"max"			"50000"
+		}
+		
+		"Toggle"
+		{
+		  	"label"			"Don't Collide"
+	  	  	"name"			"gm_weld_ballez_nocollide"
+		}
+	}
+}
+

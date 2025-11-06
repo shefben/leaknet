@@ -1,0 +1,95 @@
+"thruster"
+{
+	"title"				"Thruster Mode Settings"
+	"resourcefile"		"resource/ui/context_thrust.res" 
+	
+	"controls"
+	{
+		"button"
+		{
+			"name"			"tb_0"
+		  	"label"			"0"
+	  	  	"command"		"gm_thrust_key 0; gm_toolmode 23;"
+		}
+
+		"button"
+		{
+			"name"			"tb_1"
+		  	"label"			"1"
+	  	  	"command"		"gm_thrust_key 1; gm_toolmode 23;"
+		}
+		
+		"button"
+		{
+			"name"			"tb_2"
+		  	"label"			"2"
+	  	  	"command"		"gm_thrust_key 2; gm_toolmode 23;"
+		}
+		
+		"button"
+		{
+			"name"			"tb_3"
+		  	"label"			"3"
+	  	  	"command"		"gm_thrust_key 3; gm_toolmode 23;"
+		}
+		
+		"button"
+		{
+			"name"			"tb_4"
+		  	"label"			"4"
+	  	  	"command"		"gm_thrust_key 4; gm_toolmode 23;"
+		}
+		
+		"button"
+		{
+			"name"			"tb_5"
+		  	"label"			"5"
+	  	  	"command"		"gm_thrust_key 5; gm_toolmode 23;"
+		}
+		
+		"button"
+		{
+			"name"			"tb_6"
+		  	"label"			"6"
+	  	  	"command"		"gm_thrust_key 6; gm_toolmode 23;"
+		}
+		
+		"button"
+		{
+			"name"			"tb_7"
+		  	"label"			"7"
+	  	  	"command"		"gm_thrust_key 7; gm_toolmode 23;"
+		}
+		
+		"button"
+		{
+			"name"			"tb_8"
+		  	"label"			"8"
+	  	  	"command"		"gm_thrust_key 8; gm_toolmode 23;"
+		}
+	
+		"button"
+		{
+			"name"			"tb_9"
+		  	"label"			"9"
+	  	  	"command"		"gm_thrust_key 9; gm_toolmode 23;"
+		}
+		
+		"slider"
+		{			
+		  	"label"			"Thruster Power"
+	  	  	"name"			"gm_thrust_power"
+	  	  	"min"			"1"
+	  	  	"max"			"30000"
+		}
+		
+		"toggle"
+		{			
+		  	"label"			"Play Thruster Sounds"
+	  	  	"name"			"gm_thruster_sounds"
+		}
+		
+		
+	}
+}
+

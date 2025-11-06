@@ -1,0 +1,66 @@
+"colour"
+{
+	"title"				"Colour Settings"
+	
+	"controls"
+	{
+		"slider"
+		{
+		  	"label"			"Red"
+	  	  	"name"			"gm_colourset_r"
+	  	  	"min"			"0"
+	  	  	"max"			"255"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Green"
+	  	  	"name"			"gm_colourset_g"
+	  	  	"min"			"0"
+	  	  	"max"			"255"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Blue"
+	  	  	"name"			"gm_colourset_b"
+	  	  	"min"			"0"
+	  	  	"max"			"255"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Alpha"
+	  	  	"name"			"gm_colourset_a"
+	  	  	"min"			"0"
+	  	  	"max"			"255"
+		}
+		
+		"colour"
+		{
+	  	  	"red"			"gm_colourset_r"
+	  	  	"green"			"gm_colourset_g"
+	  	  	"blue"			"gm_colourset_b"
+	  	  	"alpha"			"gm_colourset_a"
+		}
+		
+		"keyvaluecombobox"
+		{
+		  	"label"			"Render Mode"
+	  	  	"name"			"gm_colourset_rm"
+	  	  	"kvfile"		"settings/gmod_rendermodes.txt"
+	  	  	"OpenOffsetY"	"-100"
+	  	  	"usevalues"		"1"
+		}
+		
+		"keyvaluecombobox"
+		{
+		  	"label"			"Render FX"
+	  	  	"name"			"gm_colourset_fx"
+	  	  	"kvfile"		"settings/gmod_renderfx.txt"
+	  	  	"OpenOffsetY"	"-130"
+	  	  	"usevalues"		"1"
+		}
+		
+	}
+}

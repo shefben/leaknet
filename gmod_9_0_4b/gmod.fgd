@@ -1,0 +1,67 @@
+//====== Copyright © 1996-2005, Team Garry, All rights reserved. ==============
+//
+// Purpose: Garry's Mod fdg file!
+//
+//=============================================================================
+
+@include "base.fgd"
+@include "halflife2.fgd"
+
+
+@PointClass base(Targetname) studio() = gmod_gamesetup : "Defines what kind of mode you want to make the map play."
+[
+	spawnflags(Flags) =
+	[
+		1 : "Teamplay" : 0
+		2 : "Allow Team Damage" : 1
+		4 : "Allow Player vs Player Damage" : 1
+		8 : "Allow Player Damage" : 1
+		16 : "Allow Object Spawning" : 1
+		32 : "Allow Multigun" : 1
+		64 : "Allow Physgun" : 1
+		128 : "Allow Noclip" : 1
+		256 : "Allow NPC Spawning" : 1
+		512 : "Spawn with all weapons" : 1
+	]
+	
+	
+	GamemodeScript(string) : "Gamemode Script" : "" : "Leave blank for default"
+		
+]
+
+
+@PointClass base(PlayerClass, Angles) studio("models/editor/playerstart.mdl") = gmod_player_start : "gmod player start!"
+[
+
+	spawnflags(flags) =
+	[
+		1 : "Blue Team" : 1
+		2 : "Yellow Team" : 1
+		4 : "Green Team" : 1
+		8 : "Red Team" : 1
+	]
+	
+	MaterialOverride(string) : "Material Override" : "" : "Leave blank for no override"
+	
+]
+
+@PointClass base(Targetname) = gmod_runfunction : 
+	"Runs a LUa function. The function must exist, and have the right syntax."
+[
+	
+	FunctionName(string) : "Function Name" : "" : "The function name only"
+	
+	input RunScript(void) : "Runs the script"
+	input RunScriptString(string) : "Runs the script with a string parameter [ function( activator, caller, string) ]"
+	input RunScriptVector(vector) : "Runs the script with a vector parameter [ function( activator, caller, vector) ]"
+	input RunScriptInteger(integer) : "Runs the script with an integer parameter [ function( activator, caller, integer) ]"
+	input RunScriptFloat(float) : "Runs the script with a float parameter [ function( activator, caller, float) ]"
+	
+]
+
+
+@PointClass base(Weapon) studio("models/weapons/w_smg2.mdl") = weapon_swep : "SWEP - Scripted Weapon" 
+[
+	Script(string) : "Script" : "weapons/weapon_boltgun.lua" : "The script you want to use."
+]
+

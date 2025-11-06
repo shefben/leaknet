@@ -1,0 +1,3 @@
+Any scripts dropped into this folder get run every time the global Lua instance is created.
+
+The order that the scripts are called in isn't guaranteed but init.lua is always called first everything else.

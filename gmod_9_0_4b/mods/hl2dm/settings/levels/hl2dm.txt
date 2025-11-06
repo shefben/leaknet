@@ -1,0 +1,45 @@
+"Half-Life 2: Deathmatch"
+{
+	"dm_lockdown"
+	{
+		"map"		"dm_lockdown"
+		"material"	"vgui/chapters/dm_lockdown"
+		"credits"	"Valve"
+	}
+	"dm_steamlabs"
+	{
+		"map"		"dm_steamlabs"
+		"material"	"vgui/chapters/dm_steamlabs"
+		"credits"	"Valve"
+	}
+	"dm_overwatch"
+	{
+		"map"		"dm_overwatch"
+		"material"	"vgui/chapters/dm_overwatch"
+		"credits"	"Valve"
+	}
+	"dm_runoff"
+	{
+		"map"		"dm_runoff"
+		"material"	"vgui/chapters/dm_runoff"
+		"credits"	"Valve"
+	}
+	"dm_powerhouse"
+	{
+		"map"		"dm_powerhouse"
+		"material"	"vgui/chapters/dm_powerhouse"
+		"credits"	"Michael Schulz"
+	}
+	"dm_underpass"
+	{
+		"map"		"dm_underpass"
+		"material"	"vgui/chapters/dm_underpass"
+		"credits"	"Scott M Jordan"
+	}
+	"dm_resistance"
+	{
+		"map"		"dm_resistance"
+		"material"	"vgui/chapters/dm_resistance"
+		"credits"	"Jonathan Linker"
+	}
+}

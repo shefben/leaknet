@@ -1,0 +1,27 @@
+
+// These files are server side
+// Changes to these files will only effect a server that you create
+
+
+"Jeep"
+{
+
+	// The classname of the entity you're going to spawn.
+
+	"classname"			"prop_vehicle_airboat"
+	
+	
+	// the type of entity - this is for the server limit stuff.. and if you don't set it
+	// player will be able to spawn an unlimited amount of these on your server!
+	// Valid values are "vehicle", "prop", "ragdoll" or "effect"
+	
+	"type"				"vehicle"
+	
+	// These are any keyvalues that you can assign to an entity normally
+	"keyvalues"
+	{
+		"model"				"models/airboat.mdl"
+		"vehiclescript"		"scripts/vehicles/airboat.txt"
+		"solid"				"6"
+	}
+}

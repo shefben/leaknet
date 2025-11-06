@@ -1,0 +1,673 @@
+// "surface group"
+// {
+// "property" 	"value"
+// ...
+// }
+//
+// thickness: If this value is present, the material is not volumetrically solid
+// it means that the volume should be computed as the surface area times this
+// thickness (for automatic mass).  The inside space beneath the thickness value is air.
+//
+// physics parameters are:
+// density: this is the material density in kg / m^3 (water is 1000)
+// elasticity: This is the collision elasticity (0 - 1.0, 0.01 is soft, 1.0 is hard)
+// friction: this is the physical friction (0 - 1.0, 0.01 is slick, 1.0 is totally rough)
+// dampening: this is the physical drag on an object when in contact with this surface (0 - x, 0 none to x a lot)
+//
+// !!! Do not edit the physics properties (especially density) without the proper references !!!
+//
+// Sounds
+//
+// stepleft: footstep sound for left foot
+// stepright: footstep sound for right foot
+// impactsoft: Physical impact sound when hitting soft surfaces
+// impacthard: Physical impact sound when hitting hard surfaces
+// scrapesmooth: Looping physics friction sound (when scraping smooth surfaces)
+// scraperough: Looping physics friction sound (when scraping rough surfaces)
+// bulletimpact: bullet impact sound
+// gamematerial: game material index (can be a single letter or a number)
+//
+
+// NOTE: The properties of "default" will get copied into EVERY material who does not
+// 	 override them!!!
+//
+// "base" means to use the parameters from that material as a base.
+// "base" must appear as the first key in a material
+//
+
+// -----------------------------
+// world materials
+// -----------------------------
+
+// NOTE: "default" properties are assigned to ALL other materials unless overriden!!!
+"default"
+{
+	"density"	"2500"
+	"elasticity"	"0.25"
+	"friction"	"0.8"
+	"dampening"	"0.0"
+
+	"stepleft"	"Default.StepLeft"
+	"stepright"	"Default.StepRight"
+	"bulletimpact"	"Default.BulletImpact"
+	"scraperough"	"Default.ScrapeRough"
+	"scrapesmooth"	"Default.ScrapeSmooth"
+	"impacthard"	"Default.ImpactHard"
+	"impactsoft"	"Default.ImpactSoft"
+
+	"audioreflectivity" "0.66"
+	"audiohardnessfactor" "1.0"
+	"audioroughnessfactor" "1.0"
+
+	"scrapeRoughThreshold" "0.5"
+	"impactHardThreshold" "0.5"
+
+	"gamematerial"	"C"
+	"jumpfactor" "1.0"
+	"maxspeedfactor" "1.0"
+	"climbable"	"0"
+}
+
+// NOTE: Almost nothing is solid metal - so "metal" is sheet metal
+"solidmetal"
+{
+	"density"	"2700"
+	"elasticity"	"0.1"
+	"audioreflectivity" "0.83"
+	"friction"	"0.8"
+	"stepleft"	"SolidMetal.StepLeft"
+	"stepright"	"SolidMetal.StepRight"
+	"impacthard"	"SolidMetal.ImpactHard"
+	"impactsoft"	"SolidMetal.ImpactSoft"
+	"scraperough"	"SolidMetal.ScrapeRough"
+	"scrapesmooth"	"SolidMetal.ScrapeSmooth"
+	"bulletimpact"	"SolidMetal.BulletImpact"
+
+	"gamematerial"	"M"
+}
+
+"Metal_Box"
+{
+	"base"	"solidmetal"
+	"thickness"	"0.1"
+
+	"stepleft"	"Metal_Box.StepLeft"
+	"stepright"	"Metal_Box.StepRight"
+	"bulletimpact"	"Metal_Box.BulletImpact"
+	"scraperough"	"Metal_Box.ScrapeRough"
+	"scrapesmooth"	"Metal_Box.ScrapeSmooth"
+	"impacthard"	"Metal_Box.ImpactHard"
+	"impactsoft"	"Metal_Box.ImpactSoft"
+}
+
+"metal"
+{
+	"base"	"solidmetal"
+	"thickness"	"0.1"
+}
+
+"slipperymetal"
+{
+	"base"	"metal"
+	"friction"	"0.1"
+	"elasticity"	"0.15"
+	"jumpfactor" "0.7"
+	"maxspeedfactor" "1.2"
+}
+
+"metalgrate"
+{
+	"base"	"metal"
+	"thickness"	"0.5"
+	"stepleft"	"MetalGrate.StepLeft"
+	"stepright"	"MetalGrate.StepRight"
+	"impacthard"	"MetalGrate.ImpactHard"
+	"impactsoft"	"MetalGrate.ImpactSoft"
+	"scraperough"	"MetalGrate.ScrapeRough"
+	"scrapesmooth"	"MetalGrate.ScrapeSmooth"
+	"bulletimpact"	"MetalGrate.BulletImpact"
+}
+
+"metalvent"
+{
+	"base"	"metalgrate"
+	"stepleft"	"MetalVent.StepLeft"
+	"stepright"	"MetalVent.StepRight"
+	"impacthard"	"MetalVent.ImpactHard"
+	"impactsoft"	"MetalVent.ImpactSoft"
+	"scraperough"	"MetalVent.ScrapeRough"
+	"scrapesmooth"	"MetalVent.ScrapeSmooth"
+	"bulletimpact"	"MetalVent.BulletImpact"
+}
+
+"metalpanel"
+{
+	"base"	"metal"
+	"stepleft"	"MetalPanel.StepLeft"
+	"stepright"	"MetalPanel.StepRight"
+	"impacthard"	"MetalPanel.ImpactHard"
+	"impactsoft"	"MetalPanel.ImpactSoft"
+	"scraperough"	"MetalPanel.ScrapeRough"
+	"scrapesmooth"	"MetalPanel.ScrapeSmooth"
+	"bulletimpact"	"MetalPanel.BulletImpact"
+}
+
+"dirt"
+{
+	"density"	"1600"
+	"elasticity"	"0.01"
+	"friction"	"0.8"
+	"audioreflectivity" "0.03"
+	"audioroughnessfactor" "0.25"
+	"stepleft"	"Dirt.StepLeft"
+	"stepright"	"Dirt.StepRight"
+	"impacthard"	"Dirt.Impact"
+	"impactsoft"	"Dirt.Impact"
+	"scraperough"	"Dirt.Scrape"
+	"scrapesmooth"	"Dirt.Scrape"
+	"bulletimpact"	"Dirt.BulletImpact"
+	"gamematerial"	"D"
+}
+
+"mud"
+{
+	"base"	"dirt"
+	"friction"	"0.6"
+	"dampening"	"6.0"
+	"audioreflectivity" "0.01"
+	"audioroughnessfactor" "0.1"
+	"stepleft"	"Mud.StepLeft"
+	"stepright"	"Mud.StepRight"
+	"impacthard"	"Mud.Impact"
+	"impactsoft"	"Mud.Impact"
+	"scraperough"	"Mud.Scrape"
+	"scrapesmooth"	"Mud.Scrape"
+	"bulletimpact"	"Mud.BulletImpact"
+	"maxspeedfactor" "0.9"
+}
+
+"slipperyslime"
+{
+	"base"	"mud"
+	"friction"	"0.1"
+	"jumpfactor" "0.7"
+	"maxspeedfactor" "1.2"
+}
+
+"grass"
+{
+	"base"	"dirt"
+	"stepleft"	"Grass.StepLeft"
+	"stepright"	"Grass.StepRight"
+	"impacthard"	"Grass.Impact"
+	"impactsoft"	"Grass.Impact"
+	"scraperough"	"Grass.Scrape"
+	"scrapesmooth"	"Grass.Scrape"
+	"bulletimpact"	"Grass.BulletImpact"
+}
+
+"tile"
+{
+	"density"	"2700"
+	"elasticity"	"0.3"
+	"friction"	"0.8"
+	"audioreflectivity" "0.99"
+	"audioroughnessfactor" "0.1"
+	"stepleft"	"Tile.StepLeft"
+	"stepright"	"Tile.StepRight"
+	"impacthard"	"Tile.ImpactHard"
+	"impactsoft"	"Tile.ImpactSoft"
+	"scraperough"	"Tile.ScrapeRough"
+	"scrapesmooth"	"Tile.ScrapeSmooth"
+	"bulletimpact"	"Tile.BulletImpact"
+	"gamematerial"	"T"
+}
+
+"wood"
+{
+	"density"	"700"
+	"elasticity"	"0.1"
+	"friction"	"0.8"
+	"audioreflectivity" "0.33"
+	"audioroughnessfactor" "0.25"
+	"stepleft"	"Wood.StepLeft"
+	"stepright"	"Wood.StepRight"
+	"impacthard"	"Wood.ImpactHard"
+	"impactsoft"	"Wood.ImpactSoft"
+	"scraperough"	"Wood.ScrapeRough"
+	"scrapesmooth"	"Wood.ScrapeSmooth"
+	"bulletimpact"	"Wood.BulletImpact"
+	"gamematerial"	"W"
+}
+
+"Wood_Box"
+{
+	"base"	"wood"
+	"thickness"	"0.1"
+	"stepleft"	"Wood_Box.StepLeft"
+	"stepright"	"Wood_Box.StepRight"
+	"bulletimpact"	"Wood_Box.BulletImpact"
+	"scraperough"	"Wood_Box.ScrapeRough"
+	"scrapesmooth"	"Wood_Box.ScrapeSmooth"
+	"impacthard"	"Wood_Box.ImpactHard"
+	"impactsoft"	"Wood_Box.ImpactSoft"
+}
+
+"Wood_Crate"
+{
+	"base"	"Wood_Box"
+	"stepleft"	"Wood_Crate.StepLeft"
+	"stepright"	"Wood_Crate.StepRight"
+	"impacthard"	"Wood_Crate.ImpactHard"
+	"impactsoft"	"Wood_Crate.ImpactSoft"
+	"scraperough"	"Wood_Crate.ScrapeRough"
+	"scrapesmooth"	"Wood_Crate.ScrapeSmooth"
+	"bulletimpact"	"Wood_Crate.BulletImpact"
+}
+
+"Wood_Plank"
+{
+	"base"	"wood"
+	"thickness"	"0.1"
+	"stepleft"	"Wood_Plank.StepLeft"
+	"stepright"	"Wood_Plank.StepRight"
+	"impacthard"	"Wood_Plank.ImpactHard"
+	"impactsoft"	"Wood_Plank.ImpactSoft"
+	"scraperough"	"Wood_Plank.ScrapeRough"
+	"scrapesmooth"	"Wood_Plank.ScrapeSmooth"
+	"bulletimpact"	"Wood_Plank.BulletImpact"
+}
+
+"Wood_Solid"
+{
+	"base"	"wood"
+	"stepleft"	"Wood_Solid.StepLeft"
+	"stepright"	"Wood_Solid.StepRight"
+	"impacthard"	"Wood_Solid.ImpactHard"
+	"impactsoft"	"Wood_Solid.ImpactSoft"
+	"scraperough"	"Wood_Solid.ScrapeRough"
+	"scrapesmooth"	"Wood_Solid.ScrapeSmooth"
+	"bulletimpact"	"Wood_Solid.BulletImpact"
+}
+
+"concrete"
+{
+	"density"	"2400"
+	"elasticity"	"0.2"
+	"friction"	"0.8"
+	"stepleft"	"Concrete.StepLeft"
+	"stepright"	"Concrete.StepRight"
+	"impacthard"	"Concrete.ImpactHard"
+	"impactsoft"	"Concrete.ImpactSoft"
+	"scraperough"	"Concrete.ScrapeRough"
+	"scrapesmooth"	"Concrete.ScrapeSmooth"
+	"bulletimpact"	"Concrete.BulletImpact"
+	"gamematerial"	"C"
+}
+
+"rock"
+{
+	"base"	"concrete"
+	"stepleft"	"Rock.StepLeft"
+	"stepright"	"Rock.StepRight"
+	"impacthard"	"Rock.ImpactHard"
+	"impactsoft"	"Rock.ImpactSoft"
+	"scraperough"	"Rock.ScrapeRough"
+	"scrapesmooth"	"Rock.ScrapeSmooth"
+	"bulletimpact"	"Rock.BulletImpact"
+}
+
+"concrete_block"
+{
+	"base"	"concrete"
+	"thickness"	"0.3"
+	"stepleft"	"Concrete_Block.StepLeft"
+	"stepright"	"Concrete_Block.StepRight"
+	"impacthard"	"Concrete_Block.ImpactHard"
+	"impactsoft"	"Concrete_Block.ImpactSoft"
+	"scraperough"	"Concrete_Block.ScrapeRough"
+	"scrapesmooth"	"Concrete_Block.ScrapeSmooth"
+	"bulletimpact"	"Concrete_Block.BulletImpact"
+}
+
+"chainlink"
+{
+	"density"	"1300"
+	"elasticity"	"0.25"
+	"friction"	"0.8"
+	"thickness"	"0.1"
+	"stepleft"	"ChainLink.StepLeft"
+	"stepright"	"ChainLink.StepRight"
+	"impacthard"	"ChainLink.ImpactHard"
+	"impactsoft"	"ChainLink.ImpactSoft"
+	"scraperough"	"ChainLink.ScrapeRough"
+	"scrapesmooth"	"ChainLink.ScrapeSmooth"
+	"bulletimpact"	"ChainLink.BulletImpact"
+	"gamematerial"	"G"
+}
+
+"chain"
+{
+	"base"	"chainlink"
+	"density"	"4000"
+	"stepleft"	"Chain.StepLeft"
+	"stepright"	"Chain.StepRight"
+	"impacthard"	"Chain.ImpactHard"
+	"impactsoft"	"Chain.ImpactSoft"
+	"scraperough"	"Chain.ScrapeRough"
+	"scrapesmooth"	"Chain.ScrapeSmooth"
+	"bulletimpact"	"Chain.BulletImpact"
+}
+
+"flesh"
+{
+	"density"	"900"
+	"elasticity"	"0.2"
+	"friction"	"0.8"
+	"stepleft"	"Flesh.StepLeft"
+	"stepright"	"Flesh.StepRight"
+	"impacthard"	"Flesh.ImpactHard"
+	"impactsoft"	"Flesh.ImpactSoft"
+	"scraperough"	"Flesh.ScrapeRough"
+	"scrapesmooth"	"Flesh.ScrapeSmooth"
+	"bulletimpact"	"Flesh.BulletImpact"
+	"gamematerial"	"F"
+}
+
+"bloodyflesh"
+{
+	"base"	"flesh"
+	"stepleft"	"BloodyFlesh.StepLeft"
+	"stepright"	"BloodyFlesh.StepRight"
+	"impacthard"	"BloodyFlesh.ImpactHard"
+	"impactsoft"	"BloodyFlesh.ImpactSoft"
+	"scraperough"	"BloodyFlesh.ScrapeRough"
+	"scrapesmooth"	"BloodyFlesh.ScrapeSmooth"
+	"bulletimpact"	"BloodyFlesh.BulletImpact"
+}
+
+"alienflesh"
+{
+	"base"	"flesh"
+	"stepleft"	"AlienFlesh.StepLeft"
+	"stepright"	"AlienFlesh.StepRight"
+	"impacthard"	"AlienFlesh.ImpactHard"
+	"impactsoft"	"AlienFlesh.ImpactSoft"
+	"scraperough"	"AlienFlesh.ScrapeRough"
+	"scrapesmooth"	"AlienFlesh.ScrapeSmooth"
+	"bulletimpact"	"AlienFlesh.BulletImpact"
+}
+
+"armorflesh"
+{
+	"base"	"flesh"
+	"density"	"1300"
+	"elasticity"	"0.2"
+	"friction"	"0.8"
+	"stepleft"	"ArmorFlesh.StepLeft"
+	"stepright"	"ArmorFlesh.StepRight"
+	"impacthard"	"ArmorFlesh.ImpactHard"
+	"impactsoft"	"ArmorFlesh.ImpactSoft"
+	"scraperough"	"ArmorFlesh.ScrapeRough"
+	"scrapesmooth"	"ArmorFlesh.ScrapeSmooth"
+	"bulletimpact"	"ArmorFlesh.BulletImpact"
+}
+
+"watermelon"
+{
+	"base"	"flesh"
+	"stepleft"	"Watermelon.StepLeft"
+	"stepright"	"Watermelon.StepRight"
+	"impacthard"	"Watermelon.Impact"
+	"impactsoft"	"Watermelon.Impact"
+	"scraperough"	"Watermelon.Scrape"
+	"scrapesmooth"	"Watermelon.Scrape"
+	"bulletimpact"	"Watermelon.BulletImpact"
+}
+
+"glass"
+{
+	"density"	"2700"
+	"elasticity"	"0.2"
+	"friction"	"0.5"
+	"audioreflectivity" "0.99"
+	"audioroughnessfactor" "0.0"
+	"stepleft"	"Glass.StepLeft"
+	"stepright"	"Glass.StepRight"
+	"impacthard"	"Glass.ImpactHard"
+	"impactsoft"	"Glass.ImpactSoft"
+	"scraperough"	"Glass.ScrapeRough"
+	"scrapesmooth"	"Glass.ScrapeSmooth"
+	"bulletimpact"	"Glass.BulletImpact"
+	"gamematerial"	"G"
+}
+
+"computer"
+{
+	"base"	"metal"
+	"stepleft"	"Computer.StepLeft"
+	"stepright"	"Computer.StepRight"
+	"impacthard"	"Computer.ImpactHard"
+	"impactsoft"	"Computer.ImpactSoft"
+	"scraperough"	"Computer.ScrapeRough"
+	"scrapesmooth"	"Computer.ScrapeSmooth"
+	"bulletimpact"	"Computer.BulletImpact"
+}
+
+"sand"
+{
+	"density"	"1500"
+	"elasticity"	"0.05"
+	"friction"	"0.8"
+	"audioreflectivity" "0.01"
+	"audioroughnessfactor" "0.2"
+	"stepleft"	"Sand.StepLeft"
+	"stepright"	"Sand.StepRight"
+	"impacthard"	"Sand.Impact"
+	"impactsoft"	"Sand.Impact"
+	"scraperough"	"Sand.Scrape"
+	"scrapesmooth"	"Sand.Scrape"
+	"bulletimpact"	"Sand.BulletImpact"
+	"gamematerial"	"S"
+}
+
+"foliage"
+{
+	"density"	"700"
+	"elasticity"	"0.2"
+	"friction"	"0.8"
+	"audioreflectivity" "0.00"
+	"audioroughnessfactor" "0.1"
+	"stepleft"	"Foliage.StepLeft"
+	"stepright"	"Foliage.StepRight"
+	"impacthard"	"Foliage.Impact"
+	"impactsoft"	"Foliage.Impact"
+	"scraperough"	"Foliage.Scrape"
+	"scrapesmooth"	"Foliage.Scrape"
+	"bulletimpact"	"Foliage.BulletImpact"
+	"gamematerial"	"F"
+}
+
+"paper"
+{
+	"density"	"900"
+	"thickness"	"0.1"
+	"elasticity"	"0.1"
+	"friction"	"0.8"
+	"audioreflectivity" "0.01"
+	"audioroughnessfactor" "0.1"
+	"stepleft"	"Cardboard.StepLeft"
+	"stepright"	"Cardboard.StepRight"
+	"impacthard"	"Cardboard.ImpactHard"
+	"impactsoft"	"Cardboard.ImpactSoft"
+	"scraperough"	"Cardboard.ScrapeRough"
+	"scrapesmooth"	"Cardboard.ScrapeSmooth"
+	"bulletimpact"	"Cardboard.BulletImpact"
+	"gamematerial"	"P"
+}
+
+"cardboard"
+{
+	"base"	"paper"
+	"thickness"	"0.1"
+	"stepleft"	"Cardboard.StepLeft"
+	"stepright"	"Cardboard.StepRight"
+	"impacthard"	"Cardboard.ImpactHard"
+	"impactsoft"	"Cardboard.ImpactSoft"
+	"scraperough"	"Cardboard.ScrapeRough"
+	"scrapesmooth"	"Cardboard.ScrapeSmooth"
+	"bulletimpact"	"Cardboard.BulletImpact"
+}
+
+"plastic_barrel"
+{
+	"density"	"500"
+	"elasticity"	"0.2"
+	"friction"	"0.8"
+	"thickness"	"0.1"
+	"stepleft"	"Plastic_Barrel.StepLeft"
+	"stepright"	"Plastic_Barrel.StepRight"
+	"impacthard"	"Plastic_Barrel.ImpactHard"
+	"impactsoft"	"Plastic_Barrel.ImpactSoft"
+	"scraperough"	"Plastic_Barrel.ScrapeRough"
+	"scrapesmooth"	"Plastic_Barrel.ScrapeSmooth"
+	"bulletimpact"	"Plastic_Barrel.BulletImpact"
+	"gamematerial"	"P"
+}
+
+"plastic_barrel_buoyant"
+{
+	"base"	"plastic_barrel"
+	"density"	"100"
+}
+
+"plastic"
+{
+	"density"	"900"
+	"elasticity"	"0.2"
+	"friction"	"0.8"
+	"audioreflectivity" "0.25"
+	"audioroughnessfactor" "0.1"
+	"stepleft"	"Plastic_Box.StepLeft"
+	"stepright"	"Plastic_Box.StepRight"
+	"impacthard"	"Plastic_Box.ImpactHard"
+	"impactsoft"	"Plastic_Box.ImpactSoft"
+	"scraperough"	"Plastic_Box.ScrapeRough"
+	"scrapesmooth"	"Plastic_Box.ScrapeSmooth"
+	"bulletimpact"	"Plastic_Box.BulletImpact"
+	"gamematerial"	"P"
+}
+
+"Plastic_Box"
+{
+	"base"	"plastic"
+	"thickness"	"0.1"
+}
+
+"rubber"
+{
+	"density"	"900"
+	"elasticity"	"0.8"
+	"friction"	"0.8"
+	"audioreflectivity" "0.01"
+	"audioroughnessfactor" "0.1"
+	"stepleft"	"Rubber.StepLeft"
+	"stepright"	"Rubber.StepRight"
+	"impacthard"	"Rubber.ImpactHard"
+	"impactsoft"	"Rubber.ImpactSoft"
+	"scraperough"	"Rubber.ScrapeRough"
+	"scrapesmooth"	"Rubber.ScrapeSmooth"
+	"bulletimpact"	"Rubber.BulletImpact"
+	"gamematerial"	"R"
+}
+
+"rubbertire"
+{
+	"base"	"rubber"
+	"stepleft"	"RubberTire.StepLeft"
+	"stepright"	"RubberTire.StepRight"
+	"impacthard"	"RubberTire.ImpactHard"
+	"impactsoft"	"RubberTire.ImpactSoft"
+	"scraperough"	"RubberTire.ScrapeRough"
+	"scrapesmooth"	"RubberTire.ScrapeSmooth"
+	"bulletimpact"	"RubberTire.BulletImpact"
+}
+
+"jeeptire"
+{
+	"base"	"rubbertire"
+	"stepleft"	"JeepTire.StepLeft"
+	"stepright"	"JeepTire.StepRight"
+	"impacthard"	"JeepTire.ImpactHard"
+	"impactsoft"	"JeepTire.ImpactSoft"
+	"scraperough"	"JeepTire.ScrapeRough"
+	"scrapesmooth"	"JeepTire.ScrapeSmooth"
+	"bulletimpact"	"JeepTire.BulletImpact"
+}
+
+"slidingrubbertire"
+{
+	"base"	"rubbertire"
+	"friction"	"0.3"
+	"stepleft"	"SlidingRubberTire.StepLeft"
+	"stepright"	"SlidingRubberTire.StepRight"
+	"impacthard"	"SlidingRubberTire.ImpactHard"
+	"impactsoft"	"SlidingRubberTire.ImpactSoft"
+	"scraperough"	"SlidingRubberTire.ScrapeRough"
+	"scrapesmooth"	"SlidingRubberTire.ScrapeSmooth"
+	"bulletimpact"	"SlidingRubberTire.BulletImpact"
+}
+
+"slidingrubbertire_front"
+{
+	"base"	"slidingrubbertire"
+	"stepleft"	"SlidingRubberTire_Front.StepLeft"
+	"stepright"	"SlidingRubberTire_Front.StepRight"
+	"impacthard"	"SlidingRubberTire_Front.ImpactHard"
+	"impactsoft"	"SlidingRubberTire_Front.ImpactSoft"
+	"scraperough"	"SlidingRubberTire_Front.ScrapeRough"
+	"scrapesmooth"	"SlidingRubberTire_Front.ScrapeSmooth"
+	"bulletimpact"	"SlidingRubberTire_Front.BulletImpact"
+}
+
+"slidingrubbertire_rear"
+{
+	"base"	"slidingrubbertire"
+	"stepleft"	"SlidingRubberTire_Rear.StepLeft"
+	"stepright"	"SlidingRubberTire_Rear.StepRight"
+	"impacthard"	"SlidingRubberTire_Rear.ImpactHard"
+	"impactsoft"	"SlidingRubberTire_Rear.ImpactSoft"
+	"scraperough"	"SlidingRubberTire_Rear.ScrapeRough"
+	"scrapesmooth"	"SlidingRubberTire_Rear.ScrapeSmooth"
+	"bulletimpact"	"SlidingRubberTire_Rear.BulletImpact"
+}
+
+"brakingrubbertire"
+{
+	"base"	"rubbertire"
+	"friction"	"0.9"
+	"stepleft"	"BrakingRubberTire.StepLeft"
+	"stepright"	"BrakingRubberTire.StepRight"
+	"impacthard"	"BrakingRubberTire.ImpactHard"
+	"impactsoft"	"BrakingRubberTire.ImpactSoft"
+	"scraperough"	"BrakingRubberTire.ScrapeRough"
+	"scrapesmooth"	"BrakingRubberTire.ScrapeSmooth"
+	"bulletimpact"	"BrakingRubberTire.BulletImpact"
+}
+
+"water"
+{
+	"density"	"1000"
+	"elasticity"	"0.1"
+	"friction"	"0.8"
+	"audioreflectivity" "0.33"
+	"audioroughnessfactor" "0.1"
+	"stepleft"	"Water.StepLeft"
+	"stepright"	"Water.StepRight"
+	"impacthard"	"Water.ImpactHard"
+	"impactsoft"	"Water.ImpactSoft"
+	"scraperough"	"Water.ScrapeRough"
+	"scrapesmooth"	"Water.ScrapeSmooth"
+	"bulletimpact"	"Water.BulletImpact"
+	"gamematerial"	"S"
+}

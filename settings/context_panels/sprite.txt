@@ -1,0 +1,79 @@
+"sprite"
+{
+	"title"				"Sprite Settings"
+	
+	"controls"
+	{
+		"slider"
+		{
+		  	"label"			"Sprite"
+	  	  	"name"			"gm_sprite_id"
+	  	  	"min"			"0"
+	  	  	"max"			"35"
+	  	  	"integer"		"1"
+		}		
+		"slider"
+		{			
+		  	"label"			"Sprite Scale"
+	  	  	"name"			"gm_sprite_size"
+	  	  	"min"			"0.05f"
+	  	  	"max"			"10.0f"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Red"
+	  	  	"name"			"gm_sprite_colour_r"
+	  	  	"min"			"0"
+	  	  	"max"			"255"
+	  	  	"integer"		"1"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Green"
+	  	  	"name"			"gm_sprite_colour_g"
+	  	  	"min"			"0"
+	  	  	"max"			"255"
+	  	  	"integer"		"1"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Blue"
+	  	  	"name"			"gm_sprite_colour_b"
+	  	  	"min"			"0"
+	  	  	"max"			"255"
+	  	  	"integer"		"1"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Alpha"
+	  	  	"name"			"gm_sprite_colour_a"
+	  	  	"min"			"0"
+	  	  	"max"			"255"
+	  	  	"integer"		"1"
+		}
+		
+		"keyvaluecombobox"
+		{
+		  	"label"			"Render Mode"
+	  	  	"name"			"gm_sprite_rm"
+	  	  	"kvfile"		"settings/gmod_rendermodes.txt"
+	  	  	"OpenOffsetY"	"-100"
+	  	  	"usevalues"		"1"
+		}
+		
+		"keyvaluecombobox"
+		{
+		  	"label"			"Render FX"
+	  	  	"name"			"gm_sprite_rfx"
+	  	  	"kvfile"		"settings/gmod_renderfx.txt"
+	  	  	"OpenOffsetY"	"-130"
+	  	  	"usevalues"		"1"
+		}
+		
+	}
+}
+

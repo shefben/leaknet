@@ -1,0 +1,15 @@
+"material"
+{
+	"title"				"Material Settings"
+	
+	"controls"
+	{
+		"keyvaluecombobox"
+		{
+		  	"label"			"Material"
+	  	  	"name"			"gm_matmode"
+	  	  	"kvfile"		"settings/gmod_materials.txt"
+	  	  	"OpenOffsetY"	"-230"
+		}
+	}
+}

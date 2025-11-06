@@ -1,0 +1,21 @@
+"ballsocket"
+{
+	"title"				"Ballsocket Settings"
+	
+	"controls"
+	{
+		"slider"
+		{
+		  	"label"			"Force Limit (in lbs)"
+	  	  	"name"			"gm_weld_ball_forcelimit"
+	  	  	"min"			"0"
+	  	  	"max"			"50000"
+		}
+		
+		"Toggle"
+		{
+		  	"label"			"Don't Collide"
+	  	  	"name"			"gm_weld_ball_nocollide"
+		}
+	}
+}

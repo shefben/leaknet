@@ -1,0 +1,98 @@
+"colourmodify"
+{
+	"title"				"Colour Settings"	
+
+	"controls"
+	{
+		"toggle"
+		{
+		  	"label"			"ColourMod On"		
+	  	  	"name"			"pp_colour"
+		}
+		
+		"keyvaluecombobox"
+		{
+		  	"label"			"Presets"
+	  	  	"name"			"pp_colour_presets" // name isn't important here
+	  	  	"kvfile"		"settings/gmod_colourmod.txt"
+	  	  	"OpenOffsetY"	"-50"
+	  	  	"multisetting"	"1"
+		}
+		
+		
+		"slider"
+		{
+		  	"label"			"Colour"
+	  	  	"name"			"pp_colour_colour"
+	  	  	"min"			"-5"
+	  	  	"max"			"5"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Brightness"
+	  	  	"name"			"pp_colour_brightness"
+	  	  	"min"			"-2"
+	  	  	"max"			"2"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Contrast"
+	  	  	"name"			"pp_colour_contrast"
+	  	  	"min"			"0"
+	  	  	"max"			"5"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Red Add"
+	  	  	"name"			"pp_colour_addr"
+	  	  	"min"			"-1"
+	  	  	"max"			"1"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Green Add"
+	  	  	"name"			"pp_colour_addg"
+	  	  	"min"			"-1"
+	  	  	"max"			"1"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Blue Add"
+	  	  	"name"			"pp_colour_addb"
+	  	  	"min"			"-1"
+	  	  	"max"			"1"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Red Multiply"
+	  	  	"name"			"pp_colour_mulr"
+	  	  	"min"			"-5"
+	  	  	"max"			"5"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Green Multiply"
+	  	  	"name"			"pp_colour_mulg"
+	  	  	"min"			"-5"
+	  	  	"max"			"5"
+		}
+		
+		"slider"
+		{
+		  	"label"			"Blue Multiply"
+	  	  	"name"			"pp_colour_mulb"
+	  	  	"min"			"-5"
+	  	  	"max"			"5"
+		}
+		
+	}
+}
+
+

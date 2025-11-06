@@ -1,0 +1,24 @@
+"nail"
+{
+	"title"				"Nailgun Mode Settings"
+	
+	"controls"
+	{
+		"slider"
+		{
+		  	"label"			"Force Limit (in lbs)"
+	  	  	"name"			"gm_weld_nail_forcelimit"
+	  	  	"min"			"0"
+	  	  	"max"			"50000"
+		}
+		
+		"Toggle"
+		{
+		  	"label"			"Don't Collide"
+	  	  	"name"			"gm_weld_nail_nocollide"
+		}
+	}
+}
+
+
+

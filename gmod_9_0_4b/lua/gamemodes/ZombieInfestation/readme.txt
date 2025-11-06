@@ -1,0 +1,22 @@
+-- Zombie Infestation
+-- Created by g33k (mattmullins@gmail.com)
+-- Version 1.1
+--
+-- Try to be the last to survive. If a zombie kills you then you respawn as a zombie.
+-- The zombies health is dynamic. If you start out as a zombie you will have alot more
+-- health to compinsate for the lack of teamates. The more humans that turn into zombies
+-- the less health zombies get.
+------------------------------------------------------------------------------------------
+--
+-- You can change some settings in the init.lua file.
+-- The map isn't too great and this is my first gamemode for Lua
+-- so if you find any bugs just email me (mattmullins@gmail.com)
+--
+-- If you want to make changes to the script it's fine by me.
+--
+--
+-- Installation
+--
+-- Extract the zip file to SourceMods\gmold_gold\ directory
+-- The SourceMods folder can usually be found in
+-- C:\Program Files\Valve\Steam\SteamApps\SourceMods\

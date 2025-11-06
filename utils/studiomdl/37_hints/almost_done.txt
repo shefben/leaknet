@@ -1,0 +1,7 @@
+Not working anims:
+some before
+115 run_protected_all
+171 ragdoll
+172 helper_bones
+
+Max animgroup 172 - It's WRONG (because of g_numseq instead of g_numani)

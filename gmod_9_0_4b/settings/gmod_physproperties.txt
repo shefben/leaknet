@@ -1,0 +1,25 @@
+
+// BOOM BIDDY BOOM BOOM!!!
+
+// these can be found, added from and edited in 'surfaceproperties.txt'
+
+"gmod_physproperties.txt"
+{
+	"Rubber Ball"				"gm_bouncy1"
+	"Tennis Ball"				"gm_bouncy2"
+	"Polished Metal"			"gm_lowfriction1"
+	"Ice on Ice"				"gm_lowfriction2"
+	"Solid Metal"				"solidmetal"
+	"Floats"					"gm_halfwaterdensity"
+	"Tile"						"tile"
+	"Wood"						"Wood"
+	"Glass"						"glass"
+	"Computer"					"computer"
+	"Concrete"					"concrete"
+	"Chain link"				"chainlink"
+	"Flesh"						"flesh"
+	"Alien flesh"				"alienflesh"
+	"Cardboard"					"cardboard"
+	"Plastic barrel"			"plastic_barrel"
+	"Paint can"					"paintcan"
+}

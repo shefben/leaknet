@@ -1,0 +1,68 @@
+"bloom"
+{
+	"title"			"Bloom Settings"	// Title shows on top of the panel
+	// "resourcefile"	"resource/ui/context_bloom.res"  // You can override the layout using a res file if you feel the need
+	
+	"controls"								// Lists the controls to add to our control
+	{
+		"toggle"
+		{
+		  	"label"			"Bloom On"		
+	  	  	"name"			"pp_bloom"		// the control should share the name with the console variable it wants to change
+		}
+
+		"keyvaluecombobox"
+		{
+		  	"label"			"Presets"
+	  	  	"name"			"pp_bloom_presets"  // name isn't important here
+	  	  	"kvfile"		"settings/gmod_bloompresets.txt"
+	  	  	"OpenOffsetY"	"0"
+	  	  	"multisetting"	"1"
+		}
+
+
+		"slider"
+		{
+		  	"label"			"Passes"
+	  	  	"name"			"pp_bloom_blurpasses"
+	  	  	"min"			"0"
+	  	  	"max"			"5"
+	  	  	"integer"		"1"
+		}
+		"slider"
+		{
+		  	"label"			"Darken"
+	  	  	"name"			"pp_bloom_darken"
+	  	  	"min"			"0"
+	  	  	"max"			"1"
+		}
+		"slider"
+		{
+		  	"label"			"Multiply"
+	  	  	"name"			"pp_bloom_multiply"
+	  	  	"min"			"0"
+	  	  	"max"			"10.0"
+		}
+		"slider"
+		{
+		  	"label"			"Colour"
+	  	  	"name"			"pp_bloom_colour"
+	  	  	"min"			"0"
+	  	  	"max"			"5"
+		}
+		"slider"
+		{
+		  	"label"			"Size H"
+	  	  	"name"			"pp_bloom_sizeh"
+	  	  	"min"			"0"
+	  	  	"max"			"20"
+		}
+		"slider"
+		{
+		  	"label"			"Size V"
+	  	  	"name"			"pp_bloom_sizev"
+	  	  	"min"			"0"
+	  	  	"max"			"20"
+		}
+	}
+}

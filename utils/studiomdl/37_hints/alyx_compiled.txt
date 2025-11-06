@@ -1,0 +1,163 @@
+alyx modified  (blends on 3, 12-24, 88-91, 115, 156):
+seqdesc 0 (sequence 0)
+animgroup 0 (0,0)(0,1)(1,0)(1,1)
+	group 0
+	index 0
+seqgroup 0
+bone setup should return pAnimdesc( 0 )
+
+
+
+seqdesc 1 (sequence 1)
+animgroup 1 (0,0)(0,1)(1,0)(1,1)
+	group 0
+	index 1
+seqgroup 0
+bone setup should return pAnimdesc( 1 )
+
+...
+
+seqdesc 3 (sequence 3)
+animgroup 3 (0,0)
+	group 0
+	index 3
+seqgroup 0
+bone setup should return pAnimdesc( 3 )
+
+animgroup 10 (1,0)
+	group 0
+	index 10
+seqgroup 0
+bone setup should return pAnimdesc( 10 )
+
+animgroup 9 (2,0)
+	group 0
+	index 9
+seqgroup 0
+bone setup should return pAnimdesc( 9 )
+
+animgroup 8 (3,0)
+	group 0
+	index 8
+seqgroup 0
+bone setup should return pAnimdesc( 8 )
+...
+animgroup 3 (8,0)
+	group 0
+	index 3
+seqgroup 0
+bone setup should return pAnimdesc( 3 )
+
+...
+
+seqdesc 24 (sequence 24)
+animgroup 42 (0,0)
+	group 0
+	index 42
+seqgroup 0
+bone setup should return pAnimdesc( 42 )
+
+animgroup 41 (1,0)
+	group 0
+	index 41
+seqgroup 0
+bone setup should return pAnimdesc( 41 )
+
+animgroup 43 (2,0)
+	group 0
+	index 43
+seqgroup 0
+bone setup should return pAnimdesc( 43 )
+
+
+
+seqdesc 31 (sequence 31)
+animgroup 58 (0,0)(0,1)(1,0)(1,1)
+	group 0
+	index 58
+seqgroup 0
+bone setup should return pAnimdesc( 58 )
+
+
+
+seqdesc 32 (sequence 32)
+animgroup 59 (0,0)(0,1)(1,0)(1,1)
+	group 0
+	index 59
+seqgroup 0
+bone setup should return pAnimdesc( 59 )
+
+
+
+seqdesc 87 (sequence 87)
+animgroup 131 (0,0)
+	group 0
+	index 131
+seqgroup 0
+bone setup should return pAnimdesc( 131 )
+
+
+
+seqdesc 88 (sequence 88)
+animgroup 118 (0,0)
+	group 0
+	index 118
+seqgroup 0
+bone setup should return pAnimdesc( 118 )
+
+animgroup 119 (1,0)
+	group 0
+	index 119
+seqgroup 0
+bone setup should return pAnimdesc( 119 )
+...
+animgroup 125 (7,0)
+	group 0
+	index 125
+seqgroup 0
+bone setup should return pAnimdesc( 125 )
+
+animgroup 118 (8,0)
+	group 0
+	index 118
+seqgroup 0
+bone setup should return pAnimdesc( 118 )
+
+
+
+seqdesc 115 (sequence 115)
+animgroup 118 (0,0)
+	group 0
+	index 118
+seqgroup 0
+bone setup should return pAnimdesc( 118 )
+
+animgroup 119 (1,0)
+	group 0
+	index 119
+seqgroup 0
+bone setup should return pAnimdesc( 119 )
+...
+animgroup 125 (7,0)
+	group 0
+	index 125
+seqgroup 0
+bone setup should return pAnimdesc( 125 )
+
+
+
+seqdesc 171 (sequence 171)
+animgroup 240 (0,0)
+	group 0
+	index 0!!!
+seqgroup 0
+bone setup should return pAnimdesc( 0 )
+
+
+
+seqdesc 172 (sequence 172)
+animgroup 241 (0,0)
+	group 0
+	index 0!!!
+seqgroup 0
+bone setup should return pAnimdesc( 0 )

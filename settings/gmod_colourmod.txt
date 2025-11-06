@@ -1,0 +1,94 @@
+"gmod_colourmod.txt"
+{
+	"Normal"
+	{
+	 	"pp_colour_addr"			"0"
+	 	"pp_colour_addg"			"0"
+	 	"pp_colour_addb"			"0"
+	 	"pp_colour_brightness"		"0"
+	 	"pp_colour_contrast"		"1"
+	 	"pp_colour_colour"			"1"
+	 	"pp_colour_mulr"			"0"
+	 	"pp_colour_mulg"			"0"
+	 	"pp_colour_mulb"			"0"
+	}
+
+	"Inverted"
+	{
+	 	"pp_colour_addr"			"0"
+	 	"pp_colour_addg"			"0"
+	 	"pp_colour_addb"			"0"
+	 	"pp_colour_brightness"		"0"
+	 	"pp_colour_contrast"		"1"
+	 	"pp_colour_colour"			"-1"
+	 	"pp_colour_mulr"			"0"
+	 	"pp_colour_mulg"			"0"
+	 	"pp_colour_mulb"			"0"
+	}	
+
+	"Greyscale"
+	{
+	 	"pp_colour_addr"			"0"
+	 	"pp_colour_addg"			"0"
+	 	"pp_colour_addb"			"0"
+	 	"pp_colour_brightness"		"0"
+	 	"pp_colour_contrast"		"1"
+	 	"pp_colour_colour"			"0"
+	 	"pp_colour_mulr"			"0"
+	 	"pp_colour_mulg"			"0"
+	 	"pp_colour_mulb"			"0"
+	}	
+	
+	"In The Matrix"
+	{
+	 	"pp_colour_addr"			"-0.15"
+	 	"pp_colour_addg"			"0.07"
+	 	"pp_colour_addb"			"-0.06"
+	 	"pp_colour_brightness"		"-0.08"
+	 	"pp_colour_contrast"		"1.3"
+	 	"pp_colour_colour"			"0.7"
+	 	"pp_colour_mulr"			"-0.5"
+	 	"pp_colour_mulg"			"0.1"
+	 	"pp_colour_mulb"			"-0.5"
+	}	
+
+	"Old Western"
+	{
+	 	"pp_colour_addr"			"0.0"
+	 	"pp_colour_addg"			"-0.1"
+	 	"pp_colour_addb"			"-1.0"
+	 	"pp_colour_brightness"		"0.17"
+	 	"pp_colour_contrast"		"1.05"
+	 	"pp_colour_colour"			"0.3"
+	 	"pp_colour_mulr"			"0"
+	 	"pp_colour_mulg"			"0"
+	 	"pp_colour_mulb"			"0"
+	}	
+	
+	"Night Vision"
+	{
+	 	"pp_colour_addr"			"-1.0"
+	 	"pp_colour_addg"			"0.0"
+	 	"pp_colour_addb"			"-1.0"
+	 	"pp_colour_brightness"		"0.02"
+	 	"pp_colour_contrast"		"5.00"
+	 	"pp_colour_colour"			"1.00"
+	 	"pp_colour_mulr"			"0"
+	 	"pp_colour_mulg"			"0"
+	 	"pp_colour_mulb"			"0"
+	}	
+	
+	"Artist's Impression"
+	{
+	 	"pp_colour_addr"			"0"
+	 	"pp_colour_addg"			"0"
+	 	"pp_colour_addb"			"0"
+	 	"pp_colour_brightness"		"-0.1"
+	 	"pp_colour_contrast"		"5"
+	 	"pp_colour_colour"			"0"
+	 	"pp_colour_mulr"			"0"
+	 	"pp_colour_mulg"			"0"
+	 	"pp_colour_mulb"			"0"
+	}	
+	
+}
