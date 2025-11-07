@@ -1,0 +1,37 @@
+# Build directories
+build/
+build_*/
+leaknet-install/
+
+# Temporary analysis documentation
+ANALYSIS_DOCUMENTATION_INDEX.md
+COMPILATION_FIXES_SUMMARY.md
+LEAKNET_ARCHITECTURE_ANALYSIS.md
+
+# IDE and editor files
+.vscode/
+.vs/
+*.swp
+*.swo
+*~
+
+# Compiled Object files
+*.o
+*.obj
+
+# Precompiled Headers
+*.pch
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects
+*.dll
+*.so
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
