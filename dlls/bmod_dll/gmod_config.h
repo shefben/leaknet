@@ -12,9 +12,8 @@
 #endif
 
 #include "cbase.h"
-#include "tier1/utlvector.h"
-#include "tier1/utlstring.h"
-#include "tier1/KeyValues.h"
+#include "utlvector.h"
+#include "KeyValues.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -43,10 +42,10 @@ enum ConfigFileType_t
 //-----------------------------------------------------------------------------
 struct ConfigEntry_t
 {
-    CUtlString key;
-    CUtlString value;
-    CUtlString section;
-    CUtlString comment;
+    char key[256];
+    char value[512];
+    char section[64];
+    char comment[256];
     bool modified;
 };
 

@@ -237,8 +237,8 @@ enum
 
 // Rendering constants
 // if this is changed, update common/MaterialSystem/Sprite.cpp
-enum 
-{	
+enum
+{
 	kRenderNormal,			// src
 	kRenderTransColor,		// c*a+dest*(1-a)
 	kRenderTransTexture,	// src*a+dest*(1-a)
@@ -251,6 +251,8 @@ enum
 	kRenderWorldGlow,		// Same as kRenderGlow but not fixed size in screen space
 	kRenderNone,			// Don't render.
 };
+
+typedef int RenderMode_t;
 
 enum RenderFx_t
 {	

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -136,7 +136,12 @@ class CAutoGameSystem : public CBaseGameSystem
 {
 public:
 	CAutoGameSystem();	// hooks in at startup, no need to explicitly add
+	CAutoGameSystem(const char *name);	// hooks in at startup with a name, no need to explicitly add
+	const char *Name() { return m_pszName; }
 	CAutoGameSystem		*m_pNext;
+
+private:
+	const char			*m_pszName;
 };
 
 

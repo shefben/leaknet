@@ -167,8 +167,8 @@ void CGModUndoSystem::CaptureEntityState(CBaseEntity* pEntity, UndoActionData_t&
         pPhys->GetVelocity(&actionData.velocity, &actionData.angularVelocity);
     }
 
-    actionData.color = Color(pEntity->GetRenderColor().r, pEntity->GetRenderColor().g,
-                            pEntity->GetRenderColor().b, pEntity->GetRenderColor().a);
+    color32 renderColor = pEntity->GetRenderColor();
+    actionData.color = Color(renderColor.r, renderColor.g, renderColor.b, renderColor.a);
     actionData.renderMode = pEntity->GetRenderMode();
     actionData.renderFX = pEntity->GetRenderFX();
 
@@ -397,7 +397,7 @@ bool CGModUndoSystem::RestoreEntityState(const UndoActionData_t& actionData)
     }
 
     // Restore rendering properties
-    pEntity->SetRenderColor(actionData.color.r(), actionData.color.g(), actionData.color.b(), actionData.color.a());
+    pEntity->SetRenderColor(actionData.color[0], actionData.color[1], actionData.color[2], actionData.color[3]);
     pEntity->SetRenderMode((RenderMode_t)actionData.renderMode);
     pEntity->SetRenderFX((RenderFx_t)actionData.renderFX);
 
@@ -422,7 +422,9 @@ void CGModUndoSystem::UndoAll(CBasePlayer* pPlayer)
             break; // Stop if undo fails
     }
 
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Undid %d actions", undoCount);
+    char msg[256];
+    Q_snprintf(msg, sizeof(msg), "Undid %d actions", undoCount);
+    ClientPrint(pPlayer, HUD_PRINTTALK, msg);
 }
 
 void CGModUndoSystem::ClearUndoHistory(CBasePlayer* pPlayer)
@@ -473,15 +475,22 @@ void CGModUndoSystem::ListUndoActions(CBasePlayer* pPlayer)
     if (!pData)
         return;
 
+    char msg[256];
+
     ClientPrint(pPlayer, HUD_PRINTTALK, "=== Undo History ===");
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Undo actions: %d", pData->undoStack.Count());
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Redo actions: %d", pData->redoStack.Count());
+
+    Q_snprintf(msg, sizeof(msg), "Undo actions: %d", pData->undoStack.Count());
+    ClientPrint(pPlayer, HUD_PRINTTALK, msg);
+
+    Q_snprintf(msg, sizeof(msg), "Redo actions: %d", pData->redoStack.Count());
+    ClientPrint(pPlayer, HUD_PRINTTALK, msg);
 
     for (int i = pData->undoStack.Count() - 1; i >= MAX(0, pData->undoStack.Count() - 5); i--)
     {
         const UndoActionData_t& action = pData->undoStack[i];
-        ClientPrint(pPlayer, HUD_PRINTTALK, "%d. Type: %d, Entity: %d, Time: %.1f",
+        Q_snprintf(msg, sizeof(msg), "%d. Type: %d, Entity: %d, Time: %.1f",
                    i + 1, action.actionType, action.entityIndex, gpGlobals->curtime - action.timeStamp);
+        ClientPrint(pPlayer, HUD_PRINTTALK, msg);
     }
 }
 
@@ -614,7 +623,9 @@ void CMD_gmod_undo_count(void)
     int undoCount = CGModUndoSystem::GetUndoStackSize(pPlayer);
     int redoCount = CGModUndoSystem::GetRedoStackSize(pPlayer);
 
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Undo actions: %d, Redo actions: %d", undoCount, redoCount);
+    char msg[256];
+    Q_snprintf(msg, sizeof(msg), "Undo actions: %d, Redo actions: %d", undoCount, redoCount);
+    ClientPrint(pPlayer, HUD_PRINTTALK, msg);
 }
 
 void CMD_gmod_undo_info(void)
@@ -623,12 +634,24 @@ void CMD_gmod_undo_info(void)
     if (!pPlayer)
         return;
 
+    char msg[256];
+
     ClientPrint(pPlayer, HUD_PRINTTALK, "=== Undo System Info ===");
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Enabled: %s", gmod_undo_enabled.GetBool() ? "Yes" : "No");
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Max actions: %d", gmod_undo_maxactions.GetInt());
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Time limit: %.1f seconds", gmod_undo_timelimit.GetFloat());
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Your undo count: %d", CGModUndoSystem::GetUndoStackSize(pPlayer));
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Your redo count: %d", CGModUndoSystem::GetRedoStackSize(pPlayer));
+
+    Q_snprintf(msg, sizeof(msg), "Enabled: %s", gmod_undo_enabled.GetBool() ? "Yes" : "No");
+    ClientPrint(pPlayer, HUD_PRINTTALK, msg);
+
+    Q_snprintf(msg, sizeof(msg), "Max actions: %d", gmod_undo_maxactions.GetInt());
+    ClientPrint(pPlayer, HUD_PRINTTALK, msg);
+
+    Q_snprintf(msg, sizeof(msg), "Time limit: %.1f seconds", gmod_undo_timelimit.GetFloat());
+    ClientPrint(pPlayer, HUD_PRINTTALK, msg);
+
+    Q_snprintf(msg, sizeof(msg), "Your undo count: %d", CGModUndoSystem::GetUndoStackSize(pPlayer));
+    ClientPrint(pPlayer, HUD_PRINTTALK, msg);
+
+    Q_snprintf(msg, sizeof(msg), "Your redo count: %d", CGModUndoSystem::GetRedoStackSize(pPlayer));
+    ClientPrint(pPlayer, HUD_PRINTTALK, msg);
 }
 
 void CMD_gmod_undo_entity(void)
@@ -718,7 +741,9 @@ void CMD_gmod_undo_autosave(void)
     if (!pPlayer)
         return;
 
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Autosave: %s", gmod_undo_autosave.GetBool() ? "enabled" : "disabled");
+    char msg[256];
+    Q_snprintf(msg, sizeof(msg), "Autosave: %s", gmod_undo_autosave.GetBool() ? "enabled" : "disabled");
+    ClientPrint(pPlayer, HUD_PRINTTALK, msg);
 }
 
 //-----------------------------------------------------------------------------

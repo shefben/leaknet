@@ -131,4 +131,17 @@ char (*RtlpNumberOf( UNALIGNED T (&)[N] ))[N];
 #define CLEARBITS(flBitVector, bits)	((flBitVector) = (int)(flBitVector) & ~(bits))
 #define FBitSet(flBitVector, bit)		((flBitVector) & (bit))
 
+// MIN/MAX macros
+#ifndef MAX
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
+#endif
+#ifndef MIN
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
+// Container iteration macros
+#define FOR_EACH_VEC(vec, i) for(int i = 0; i < (vec).Count(); i++)
+#define FOR_EACH_MAP(map, i) for(int i = (map).FirstInorder(); (map).IsValidIndex(i); i = (map).NextInorder(i))
+#define FOR_EACH_LL(list, i) for(int i = (list).Head(); (list).IsValidIndex(i); i = (list).Next(i))
+
 #endif		// COMMONMACROS_H
