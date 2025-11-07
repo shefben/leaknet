@@ -7,7 +7,6 @@
 #include "igameevents.h"
 #include "convar.h"
 #include "utlvector.h"
-#include "utlstring.h"
 #include "utldict.h"
 
 // Forward declarations
@@ -34,8 +33,8 @@ enum PhysMaterialType_t
 // Physics properties configuration data loaded from settings/gmod_physproperties.txt
 struct PhysProperties_t
 {
-    CUtlString materialName;
-    CUtlString surfaceProperty;
+    char materialName[64];
+    char surfaceProperty[64];
 
     // Basic physics properties
     float flDensity;           // Material density (kg/m³)
@@ -49,15 +48,15 @@ struct PhysProperties_t
     bool bBreakable;           // Can this material break
 
     // Sound properties
-    CUtlString impactSoundLight;   // Light impact sound
-    CUtlString impactSoundHeavy;   // Heavy impact sound
-    CUtlString breakSound;         // Break/shatter sound
-    CUtlString rollSound;          // Rolling sound
+    char impactSoundLight[256];   // Light impact sound
+    char impactSoundHeavy[256];   // Heavy impact sound
+    char breakSound[256];         // Break/shatter sound
+    char rollSound[256];          // Rolling sound
 
     // Visual properties
-    CUtlString breakEffect;        // Break particle effect
-    CUtlString impactEffect;       // Impact particle effect
-    CUtlString scrapeEffect;       // Scrape particle effect
+    char breakEffect[256];        // Break particle effect
+    char impactEffect[256];       // Impact particle effect
+    char scrapeEffect[256];       // Scrape particle effect
 
     // Gameplay properties
     float flMassMult;          // Mass multiplier
@@ -87,7 +86,7 @@ struct PhysProperties_t
 // Surface properties for different material interactions
 struct SurfaceData_t
 {
-    CUtlString surfaceName;
+    char surfaceName[64];
     float flHardness;          // Surface hardness
     float flRoughness;         // Surface roughness
     Color surfaceColor;        // Material color tint

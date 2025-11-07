@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -638,6 +638,11 @@ public:
 	void SetRenderColorG( byte g );
 	void SetRenderColorB( byte b );
 	void SetRenderColorA( byte a );
+
+	int GetRenderMode() const;
+	void SetRenderMode( int nRenderMode );
+	int GetRenderFX() const;
+	void SetRenderFX( int nRenderFX );
 
 	CNetworkVar( int, m_nModelIndex );
 
@@ -1928,9 +1933,29 @@ inline void CBaseEntity::SetRenderColorA( byte a )
 	m_clrRender.SetA( a );
 }
 
+inline int CBaseEntity::GetRenderMode() const
+{
+	return m_nRenderMode;
+}
+
+inline void CBaseEntity::SetRenderMode( int nRenderMode )
+{
+	m_nRenderMode = nRenderMode;
+}
+
+inline int CBaseEntity::GetRenderFX() const
+{
+	return m_nRenderFX;
+}
+
+inline void CBaseEntity::SetRenderFX( int nRenderFX )
+{
+	m_nRenderFX = nRenderFX;
+}
+
 inline void CBaseEntity::SetMoveCollide( MoveCollide_t val )
-{ 
-	m_MoveCollide = val; 
+{
+	m_MoveCollide = val;
 }
 
 inline EntityChange_t CBaseEntity::DetectNetworkStateChanges()

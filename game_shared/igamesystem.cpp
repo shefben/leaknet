@@ -39,6 +39,14 @@ static	CAutoGameSystem *s_pSystemList = NULL;
 
 CAutoGameSystem::CAutoGameSystem()
 {
+	m_pszName = NULL;
+	m_pNext = s_pSystemList;
+	s_pSystemList = this;
+}
+
+CAutoGameSystem::CAutoGameSystem(const char *name)
+{
+	m_pszName = name;
 	m_pNext = s_pSystemList;
 	s_pSystemList = this;
 }
