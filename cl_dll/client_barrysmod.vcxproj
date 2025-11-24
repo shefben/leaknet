@@ -1,0 +1,532 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2F48A5C5-2E87-4D8C-9F87-4B8F91E8C567}</ProjectGuid>
+    <RootNamespace>client_barrysmod</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>client_barrysmod</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)leaknet-install\bin\</OutDir>
+    <IntDir>$(SolutionDir)build\client\$(Configuration)\</IntDir>
+    <TargetName>client</TargetName>
+    <TargetExt>.dll</TargetExt>
+    <IncludePath>$(SolutionDir)public;$(SolutionDir)public\tier0;$(SolutionDir)public\tier1;$(SolutionDir)public\vstdlib;$(SolutionDir)public\mathlib;$(SolutionDir)public\engine;$(SolutionDir)public\vgui;$(SolutionDir)public\vgui_controls;$(SolutionDir)public\materialsystem;$(SolutionDir)public\soundemittersystem;$(SolutionDir)cl_dll;$(SolutionDir)cl_dll\hl2_hud;$(SolutionDir)cl_dll\bmod_hud;$(SolutionDir)dlls;$(SolutionDir)game_shared;$(SolutionDir)dx8sdk\include;$(SolutionDir)dx9sdk\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)lib\public;$(SolutionDir)dx8sdk\lib;$(SolutionDir)dx9sdk\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)leaknet-install\bin\</OutDir>
+    <IntDir>$(SolutionDir)build\client\$(Configuration)\</IntDir>
+    <TargetName>client</TargetName>
+    <TargetExt>.dll</TargetExt>
+    <IncludePath>$(SolutionDir)public;$(SolutionDir)public\tier0;$(SolutionDir)public\tier1;$(SolutionDir)public\vstdlib;$(SolutionDir)public\mathlib;$(SolutionDir)public\engine;$(SolutionDir)public\vgui;$(SolutionDir)public\vgui_controls;$(SolutionDir)public\materialsystem;$(SolutionDir)public\soundemittersystem;$(SolutionDir)cl_dll;$(SolutionDir)cl_dll\hl2_hud;$(SolutionDir)cl_dll\bmod_hud;$(SolutionDir)dlls;$(SolutionDir)game_shared;$(SolutionDir)dx8sdk\include;$(SolutionDir)dx9sdk\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)lib\public;$(SolutionDir)dx8sdk\lib;$(SolutionDir)dx9sdk\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;CLIENT_DLL;_WINDOWS;_USRDLL;CLIENT_BARRYSMOD_EXPORTS;VECTOR;VERSION_SAFE_STEAM_API_INTERFACES;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>false</ConformanceMode>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+      <AdditionalOptions>/arch:IA32 %(AdditionalOptions)</AdditionalOptions>
+      <ForcedIncludeFiles>cbase.h</ForcedIncludeFiles>
+      <StringPooling>true</StringPooling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <ExceptionHandling>false</ExceptionHandling>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FloatingPointModel>Fast</FloatingPointModel>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;tier0.lib;tier1.lib;vstdlib.lib;vgui_controls.lib;dmxloader.lib;mathlib.lib;matsys_controls.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>$(SolutionDir)cl_dll\client.def</ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ImportLibrary>$(OutDir)client.lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PreBuildEvent>
+      <Command>if not exist "$(OutDir)" mkdir "$(OutDir)"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;CLIENT_DLL;_WINDOWS;_USRDLL;CLIENT_BARRYSMOD_EXPORTS;VECTOR;VERSION_SAFE_STEAM_API_INTERFACES;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>false</ConformanceMode>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+      <AdditionalOptions>/arch:IA32 %(AdditionalOptions)</AdditionalOptions>
+      <ForcedIncludeFiles>cbase.h</ForcedIncludeFiles>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling>false</ExceptionHandling>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;tier0.lib;tier1.lib;vstdlib.lib;vgui_controls.lib;dmxloader.lib;mathlib.lib;matsys_controls.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>$(SolutionDir)cl_dll\client.def</ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ImportLibrary>$(OutDir)client.lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+    <PreBuildEvent>
+      <Command>if not exist "$(OutDir)" mkdir "$(OutDir)"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <!-- Core Client Files -->
+    <ClCompile Include="cdll_client_int.cpp" />
+    <ClCompile Include="cdll_util.cpp" />
+    <ClCompile Include="cl_mat_stub.cpp" />
+    <ClCompile Include="clientmode_shared.cpp" />
+    <ClCompile Include="clientsideeffects.cpp" />
+    <ClCompile Include="death.cpp" />
+    <ClCompile Include="fx.cpp" />
+    <ClCompile Include="fx_blood.cpp" />
+    <ClCompile Include="fx_explosion.cpp" />
+    <ClCompile Include="fx_fleck.cpp" />
+    <ClCompile Include="fx_impact.cpp" />
+    <ClCompile Include="fx_line.cpp" />
+    <ClCompile Include="fx_quad.cpp" />
+    <ClCompile Include="fx_sparks.cpp" />
+    <ClCompile Include="fx_tracer.cpp" />
+    <ClCompile Include="initializer.cpp" />
+    <ClCompile Include="in_camera.cpp" />
+    <ClCompile Include="in_joystick.cpp" />
+    <ClCompile Include="in_keys.cpp" />
+    <ClCompile Include="in_main.cpp" />
+    <ClCompile Include="in_mouse.cpp" />
+    <ClCompile Include="prediction.cpp" />
+    <ClCompile Include="studioevent.cpp" />
+    <ClCompile Include="studio_stats.cpp" />
+    <ClCompile Include="text_message.cpp" />
+    <ClCompile Include="train.cpp" />
+    <ClCompile Include="tri.cpp" />
+    <ClCompile Include="util.cpp" />
+    <ClCompile Include="view.cpp" />
+    <ClCompile Include="view_beams.cpp" />
+    <ClCompile Include="view_effects.cpp" />
+    <ClCompile Include="view_scene.cpp" />
+    <ClCompile Include="ViewConeHUD.cpp" />
+    <ClCompile Include="voice_menu.cpp" />
+    <ClCompile Include="voice_status.cpp" />
+
+    <!-- Entity Files -->
+    <ClCompile Include="c_baseentity.cpp" />
+    <ClCompile Include="c_baseplayer.cpp" />
+    <ClCompile Include="c_basetempentity.cpp" />
+    <ClCompile Include="c_effects.cpp" />
+    <ClCompile Include="c_entitydissolve.cpp" />
+    <ClCompile Include="c_entityparticletrail.cpp" />
+    <ClCompile Include="c_fire_smoke.cpp" />
+    <ClCompile Include="c_func_areaportalwindow.cpp" />
+    <ClCompile Include="c_func_breakablesurf.cpp" />
+    <ClCompile Include="c_func_conveyor.cpp" />
+    <ClCompile Include="c_func_dust.cpp" />
+    <ClCompile Include="c_func_ladder.cpp" />
+    <ClCompile Include="c_func_lod.cpp" />
+    <ClCompile Include="c_func_occluder.cpp" />
+    <ClCompile Include="c_func_reflective_glass.cpp" />
+    <ClCompile Include="c_func_rotating.cpp" />
+    <ClCompile Include="c_func_smokevolume.cpp" />
+    <ClCompile Include="c_func_tracktrain.cpp" />
+    <ClCompile Include="c_info_overlay_accessor.cpp" />
+    <ClCompile Include="c_lightglow.cpp" />
+    <ClCompile Include="c_movie_explosion.cpp" />
+    <ClCompile Include="c_particle_system.cpp" />
+    <ClCompile Include="c_physicsprop.cpp" />
+    <ClCompile Include="c_physbox.cpp" />
+    <ClCompile Include="c_pixel_visibility.cpp" />
+    <ClCompile Include="c_plasma.cpp" />
+    <ClCompile Include="c_playerresource.cpp" />
+    <ClCompile Include="c_point_camera.cpp" />
+    <ClCompile Include="c_point_commentary_node.cpp" />
+    <ClCompile Include="c_props.cpp" />
+    <ClCompile Include="c_ragdoll.cpp" />
+    <ClCompile Include="c_recipientfilter.cpp" />
+    <ClCompile Include="c_rope.cpp" />
+    <ClCompile Include="c_sceneentity.cpp" />
+    <ClCompile Include="c_shadowcontrol.cpp" />
+    <ClCompile Include="c_spatialentity.cpp" />
+    <ClCompile Include="c_spotlight_end.cpp" />
+    <ClCompile Include="c_sprite.cpp" />
+    <ClCompile Include="c_sprite_perfmonitor.cpp" />
+    <ClCompile Include="c_steamjet.cpp" />
+    <ClCompile Include="c_stickybolt.cpp" />
+    <ClCompile Include="c_sun.cpp" />
+    <ClCompile Include="c_te_armorricochet.cpp" />
+    <ClCompile Include="c_te_basebeam.cpp" />
+    <ClCompile Include="c_te_beamentpoint.cpp" />
+    <ClCompile Include="c_te_beaments.cpp" />
+    <ClCompile Include="c_te_beamfollow.cpp" />
+    <ClCompile Include="c_te_beamlaser.cpp" />
+    <ClCompile Include="c_te_beampoints.cpp" />
+    <ClCompile Include="c_te_beamring.cpp" />
+    <ClCompile Include="c_te_beamringpoint.cpp" />
+    <ClCompile Include="c_te_beamspline.cpp" />
+    <ClCompile Include="c_te_bloodsprite.cpp" />
+    <ClCompile Include="c_te_bloodstream.cpp" />
+    <ClCompile Include="c_te_breakmodel.cpp" />
+    <ClCompile Include="c_te_bspdecal.cpp" />
+    <ClCompile Include="c_te_bubbles.cpp" />
+    <ClCompile Include="c_te_bubbletrail.cpp" />
+    <ClCompile Include="c_te_clientprojectile.cpp" />
+    <ClCompile Include="c_te_decal.cpp" />
+    <ClCompile Include="c_te_dynamiclight.cpp" />
+    <ClCompile Include="c_te_effect_dispatch.cpp" />
+    <ClCompile Include="c_te_energysplash.cpp" />
+    <ClCompile Include="c_te_explosion.cpp" />
+    <ClCompile Include="c_te_fizz.cpp" />
+    <ClCompile Include="c_te_footprintdecal.cpp" />
+    <ClCompile Include="c_te_glassshatter.cpp" />
+    <ClCompile Include="c_te_glowsprite.cpp" />
+    <ClCompile Include="c_te_impact.cpp" />
+    <ClCompile Include="c_te_killplayerattachments.cpp" />
+    <ClCompile Include="c_te_largefunnel.cpp" />
+    <ClCompile Include="c_te_muzzleflash.cpp" />
+    <ClCompile Include="c_te_particlesystem.cpp" />
+    <ClCompile Include="c_te_playerdecal.cpp" />
+    <ClCompile Include="c_te_projecteddecal.cpp" />
+    <ClCompile Include="c_te_showline.cpp" />
+    <ClCompile Include="c_te_smoke.cpp" />
+    <ClCompile Include="c_te_sparks.cpp" />
+    <ClCompile Include="c_te_sprite.cpp" />
+    <ClCompile Include="c_te_spritespray.cpp" />
+    <ClCompile Include="c_te_worlddecal.cpp" />
+    <ClCompile Include="c_testtraceline.cpp" />
+    <ClCompile Include="c_tracer.cpp" />
+    <ClCompile Include="c_user_message_register.cpp" />
+    <ClCompile Include="c_vehicle_choreo_generic.cpp" />
+    <ClCompile Include="c_vehicle_jeep.cpp" />
+    <ClCompile Include="c_vguiscreen.cpp" />
+    <ClCompile Include="c_waterlod.cpp" />
+    <ClCompile Include="c_world.cpp" />
+
+    <!-- HUD Files -->
+    <ClCompile Include="hl2_hud\hud_ammo.cpp" />
+    <ClCompile Include="hl2_hud\hud_battery.cpp" />
+    <ClCompile Include="hl2_hud\hud_blood.cpp" />
+    <ClCompile Include="hl2_hud\hud_credits.cpp" />
+    <ClCompile Include="hl2_hud\hud_crosshair.cpp" />
+    <ClCompile Include="hl2_hud\hud_damageindicator.cpp" />
+    <ClCompile Include="hl2_hud\hud_flashlight.cpp" />
+    <ClCompile Include="hl2_hud\hud_health.cpp" />
+    <ClCompile Include="hl2_hud\hud_poisondamageindicator.cpp" />
+    <ClCompile Include="hl2_hud\hud_quickinfo.cpp" />
+    <ClCompile Include="hl2_hud\hud_radar.cpp" />
+    <ClCompile Include="hl2_hud\hud_suitpower.cpp" />
+    <ClCompile Include="hl2_hud\hud_weaponselection.cpp" />
+    <ClCompile Include="hl2_hud\hud_zoom.cpp" />
+
+    <!-- Weapon Files -->
+    <ClCompile Include="hl2_hud\c_weapon_357.cpp" />
+    <ClCompile Include="hl2_hud\c_weapon_ar2.cpp" />
+    <ClCompile Include="hl2_hud\c_weapon_crossbow.cpp" />
+    <ClCompile Include="hl2_hud\c_weapon_crowbar.cpp" />
+    <ClCompile Include="hl2_hud\c_weapon_frag.cpp" />
+    <ClCompile Include="hl2_hud\c_weapon_physcannon.cpp" />
+    <ClCompile Include="hl2_hud\c_weapon_pistol.cpp" />
+    <ClCompile Include="hl2_hud\c_weapon_rpg.cpp" />
+    <ClCompile Include="hl2_hud\c_weapon_shotgun.cpp" />
+    <ClCompile Include="hl2_hud\c_weapon_smg1.cpp" />
+    <ClCompile Include="hl2_hud\c_weapon_stunstick.cpp" />
+
+    <!-- BarrysMod Client Systems -->
+    <ClCompile Include="bmod_hud\gmod_facepose.cpp" />
+    <ClCompile Include="bmod_hud\gmod_spawnlist.cpp" />
+    <ClCompile Include="bmod_hud\gmod_color.cpp" />
+    <ClCompile Include="bmod_hud\gmod_commandmenu.cpp" />
+    <ClCompile Include="bmod_hud\gmod_teammenu.cpp" />
+    <ClCompile Include="bmod_hud\c_weapon_gravitygun.cpp" />
+    <ClCompile Include="bmod_hud\context_panel.cpp" />
+    <ClCompile Include="bmod_hud\gmod_message.cpp" />
+
+    <!-- Game Shared Files -->
+    <ClCompile Include="..\game_shared\achievementmgr.cpp" />
+    <ClCompile Include="..\game_shared\achievements_hl2.cpp" />
+    <ClCompile Include="..\game_shared\activitylist.cpp" />
+    <ClCompile Include="..\game_shared\ammodef.cpp" />
+    <ClCompile Include="..\game_shared\animation.cpp" />
+    <ClCompile Include="..\game_shared\basegrenade_shared.cpp" />
+    <ClCompile Include="..\game_shared\baseplayer_shared.cpp" />
+    <ClCompile Include="..\game_shared\baseviewmodel_shared.cpp" />
+    <ClCompile Include="..\game_shared\beam_shared.cpp" />
+    <ClCompile Include="..\game_shared\choreoactor.cpp" />
+    <ClCompile Include="..\game_shared\choreochannel.cpp" />
+    <ClCompile Include="..\game_shared\choreoevent.cpp" />
+    <ClCompile Include="..\game_shared\choreoscene.cpp" />
+    <ClCompile Include="..\game_shared\collisionproperty.cpp" />
+    <ClCompile Include="..\game_shared\death_pose.cpp" />
+    <ClCompile Include="..\game_shared\debugoverlay_shared.cpp" />
+    <ClCompile Include="..\game_shared\decals.cpp" />
+    <ClCompile Include="..\game_shared\effect_dispatch_data.cpp" />
+    <ClCompile Include="..\game_shared\ehandle.cpp" />
+    <ClCompile Include="..\game_shared\entitylist_base.cpp" />
+    <ClCompile Include="..\game_shared\EntityParticleTrail_Shared.cpp" />
+    <ClCompile Include="..\game_shared\env_detail_controller.cpp" />
+    <ClCompile Include="..\game_shared\env_wind_shared.cpp" />
+    <ClCompile Include="..\game_shared\eventlist.cpp" />
+    <ClCompile Include="..\game_shared\gamemovement.cpp" />
+    <ClCompile Include="..\game_shared\gamerules.cpp" />
+    <ClCompile Include="..\game_shared\gamerules_register.cpp" />
+    <ClCompile Include="..\game_shared\GameStats.cpp" />
+    <ClCompile Include="..\game_shared\gamestringpool.cpp" />
+    <ClCompile Include="..\game_shared\gamevars_shared.cpp" />
+    <ClCompile Include="..\game_shared\hintmessage.cpp" />
+    <ClCompile Include="..\game_shared\hintsystem.cpp" />
+    <ClCompile Include="..\game_shared\hl2\basehlcombatweapon_shared.cpp" />
+    <ClCompile Include="..\game_shared\hl2\hl2_gamerules.cpp" />
+    <ClCompile Include="..\game_shared\hl2\hl2_usermessages.cpp" />
+    <ClCompile Include="..\game_shared\hl2\survival_gamerules.cpp" />
+    <ClCompile Include="..\game_shared\igamesystem.cpp" />
+    <ClCompile Include="..\game_shared\interval.cpp" />
+    <ClCompile Include="..\game_shared\mapentities_shared.cpp" />
+    <ClCompile Include="..\game_shared\movevars_shared.cpp" />
+    <ClCompile Include="..\game_shared\mp_shareddefs.cpp" />
+    <ClCompile Include="..\game_shared\multiplay_gamerules.cpp" />
+    <ClCompile Include="..\game_shared\obstacle_pushaway.cpp" />
+    <ClCompile Include="..\game_shared\particlesystemquery.cpp" />
+    <ClCompile Include="..\game_shared\physics_main_shared.cpp" />
+    <ClCompile Include="..\game_shared\physics_saverestore.cpp" />
+    <ClCompile Include="..\game_shared\physics_shared.cpp" />
+    <ClCompile Include="..\game_shared\point_bonusmaps_accessor.cpp" />
+    <ClCompile Include="..\game_shared\point_posecontroller.cpp" />
+    <ClCompile Include="..\game_shared\precache_register.cpp" />
+    <ClCompile Include="..\game_shared\predictableid.cpp" />
+    <ClCompile Include="..\game_shared\props_shared.cpp" />
+    <ClCompile Include="..\game_shared\ragdoll_shared.cpp" />
+    <ClCompile Include="..\game_shared\rope_helpers.cpp" />
+    <ClCompile Include="..\game_shared\saverestore.cpp" />
+    <ClCompile Include="..\game_shared\sceneentity_shared.cpp" />
+    <ClCompile Include="..\game_shared\sequence_Transitioner.cpp" />
+    <ClCompile Include="..\game_shared\sheetsimulator.cpp" />
+    <ClCompile Include="..\game_shared\simtimer.cpp" />
+    <ClCompile Include="..\game_shared\singleplay_gamerules.cpp" />
+    <ClCompile Include="..\game_shared\SoundEmitterSystem.cpp" />
+    <ClCompile Include="..\game_shared\soundenvelope.cpp" />
+    <ClCompile Include="..\game_shared\Sprite.cpp" />
+    <ClCompile Include="..\game_shared\SpriteTrail.cpp" />
+    <ClCompile Include="..\game_shared\studio_shared.cpp" />
+    <ClCompile Include="..\game_shared\takedamageinfo.cpp" />
+    <ClCompile Include="..\game_shared\teamplay_gamerules.cpp" />
+    <ClCompile Include="..\game_shared\test_ehandle.cpp" />
+    <ClCompile Include="..\game_shared\usercmd.cpp" />
+    <ClCompile Include="..\game_shared\usermessages.cpp" />
+    <ClCompile Include="..\game_shared\util_shared.cpp" />
+    <ClCompile Include="..\game_shared\vehicle_viewblend_shared.cpp" />
+    <ClCompile Include="..\game_shared\voice_gamemgr.cpp" />
+    <ClCompile Include="..\game_shared\weapon_parse.cpp" />
+    <ClCompile Include="..\game_shared\weapon_proficiency.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Core Client Headers -->
+    <ClInclude Include="cdll_client_int.h" />
+    <ClInclude Include="cdll_util.h" />
+    <ClInclude Include="cl_mat_stub.h" />
+    <ClInclude Include="clientmode_shared.h" />
+    <ClInclude Include="clientsideeffects.h" />
+    <ClInclude Include="fx.h" />
+    <ClInclude Include="fx_quad.h" />
+    <ClInclude Include="hud.h" />
+    <ClInclude Include="hud_base.h" />
+    <ClInclude Include="hud_element_helper.h" />
+    <ClInclude Include="hud_macros.h" />
+    <ClInclude Include="hud_numericdisplay.h" />
+    <ClInclude Include="iclientmode.h" />
+    <ClInclude Include="iinput.h" />
+    <ClInclude Include="in_buttons.h" />
+    <ClInclude Include="kbutton.h" />
+    <ClInclude Include="prediction.h" />
+    <ClInclude Include="view.h" />
+    <ClInclude Include="view_beams.h" />
+    <ClInclude Include="view_effects.h" />
+    <ClInclude Include="view_scene.h" />
+    <ClInclude Include="ViewConeHUD.h" />
+    <ClInclude Include="voice_status.h" />
+
+    <!-- Entity Headers -->
+    <ClInclude Include="c_baseentity.h" />
+    <ClInclude Include="c_baseplayer.h" />
+    <ClInclude Include="c_basetempentity.h" />
+    <ClInclude Include="c_effects.h" />
+    <ClInclude Include="c_entitydissolve.h" />
+    <ClInclude Include="c_entityparticletrail.h" />
+    <ClInclude Include="c_fire_smoke.h" />
+    <ClInclude Include="c_func_areaportalwindow.h" />
+    <ClInclude Include="c_func_breakablesurf.h" />
+    <ClInclude Include="c_func_conveyor.h" />
+    <ClInclude Include="c_func_dust.h" />
+    <ClInclude Include="c_func_ladder.h" />
+    <ClInclude Include="c_func_lod.h" />
+    <ClInclude Include="c_func_occluder.h" />
+    <ClInclude Include="c_func_reflective_glass.h" />
+    <ClInclude Include="c_func_rotating.h" />
+    <ClInclude Include="c_func_smokevolume.h" />
+    <ClInclude Include="c_func_tracktrain.h" />
+    <ClInclude Include="c_info_overlay_accessor.h" />
+    <ClInclude Include="c_lightglow.h" />
+    <ClInclude Include="c_movie_explosion.h" />
+    <ClInclude Include="c_particle_system.h" />
+    <ClInclude Include="c_physicsprop.h" />
+    <ClInclude Include="c_physbox.h" />
+    <ClInclude Include="c_pixel_visibility.h" />
+    <ClInclude Include="c_plasma.h" />
+    <ClInclude Include="c_playerresource.h" />
+    <ClInclude Include="c_point_camera.h" />
+    <ClInclude Include="c_point_commentary_node.h" />
+    <ClInclude Include="c_props.h" />
+    <ClInclude Include="c_ragdoll.h" />
+    <ClInclude Include="c_recipientfilter.h" />
+    <ClInclude Include="c_rope.h" />
+    <ClInclude Include="c_sceneentity.h" />
+    <ClInclude Include="c_shadowcontrol.h" />
+    <ClInclude Include="c_spatialentity.h" />
+    <ClInclude Include="c_spotlight_end.h" />
+    <ClInclude Include="c_sprite.h" />
+    <ClInclude Include="c_sprite_perfmonitor.h" />
+    <ClInclude Include="c_steamjet.h" />
+    <ClInclude Include="c_stickybolt.h" />
+    <ClInclude Include="c_sun.h" />
+    <ClInclude Include="c_te_armorricochet.h" />
+    <ClInclude Include="c_te_basebeam.h" />
+    <ClInclude Include="c_te_beamentpoint.h" />
+    <ClInclude Include="c_te_beaments.h" />
+    <ClInclude Include="c_te_beamfollow.h" />
+    <ClInclude Include="c_te_beamlaser.h" />
+    <ClInclude Include="c_te_beampoints.h" />
+    <ClInclude Include="c_te_beamring.h" />
+    <ClInclude Include="c_te_beamringpoint.h" />
+    <ClInclude Include="c_te_beamspline.h" />
+    <ClInclude Include="c_te_bloodsprite.h" />
+    <ClInclude Include="c_te_bloodstream.h" />
+    <ClInclude Include="c_te_breakmodel.h" />
+    <ClInclude Include="c_te_bspdecal.h" />
+    <ClInclude Include="c_te_bubbles.h" />
+    <ClInclude Include="c_te_bubbletrail.h" />
+    <ClInclude Include="c_te_clientprojectile.h" />
+    <ClInclude Include="c_te_decal.h" />
+    <ClInclude Include="c_te_dynamiclight.h" />
+    <ClInclude Include="c_te_effect_dispatch.h" />
+    <ClInclude Include="c_te_energysplash.h" />
+    <ClInclude Include="c_te_explosion.h" />
+    <ClInclude Include="c_te_fizz.h" />
+    <ClInclude Include="c_te_footprintdecal.h" />
+    <ClInclude Include="c_te_glassshatter.h" />
+    <ClInclude Include="c_te_glowsprite.h" />
+    <ClInclude Include="c_te_impact.h" />
+    <ClInclude Include="c_te_killplayerattachments.h" />
+    <ClInclude Include="c_te_largefunnel.h" />
+    <ClInclude Include="c_te_muzzleflash.h" />
+    <ClInclude Include="c_te_particlesystem.h" />
+    <ClInclude Include="c_te_playerdecal.h" />
+    <ClInclude Include="c_te_projecteddecal.h" />
+    <ClInclude Include="c_te_showline.h" />
+    <ClInclude Include="c_te_smoke.h" />
+    <ClInclude Include="c_te_sparks.h" />
+    <ClInclude Include="c_te_sprite.h" />
+    <ClInclude Include="c_te_spritespray.h" />
+    <ClInclude Include="c_te_worlddecal.h" />
+    <ClInclude Include="c_testtraceline.h" />
+    <ClInclude Include="c_tracer.h" />
+    <ClInclude Include="c_user_message_register.h" />
+    <ClInclude Include="c_vehicle_choreo_generic.h" />
+    <ClInclude Include="c_vehicle_jeep.h" />
+    <ClInclude Include="c_vguiscreen.h" />
+    <ClInclude Include="c_waterlod.h" />
+    <ClInclude Include="c_world.h" />
+
+    <!-- HUD Headers -->
+    <ClInclude Include="hl2_hud\hud_ammo.h" />
+    <ClInclude Include="hl2_hud\hud_battery.h" />
+    <ClInclude Include="hl2_hud\hud_blood.h" />
+    <ClInclude Include="hl2_hud\hud_credits.h" />
+    <ClInclude Include="hl2_hud\hud_crosshair.h" />
+    <ClInclude Include="hl2_hud\hud_damageindicator.h" />
+    <ClInclude Include="hl2_hud\hud_flashlight.h" />
+    <ClInclude Include="hl2_hud\hud_health.h" />
+    <ClInclude Include="hl2_hud\hud_poisondamageindicator.h" />
+    <ClInclude Include="hl2_hud\hud_quickinfo.h" />
+    <ClInclude Include="hl2_hud\hud_radar.h" />
+    <ClInclude Include="hl2_hud\hud_suitpower.h" />
+    <ClInclude Include="hl2_hud\hud_weaponselection.h" />
+    <ClInclude Include="hl2_hud\hud_zoom.h" />
+
+    <!-- Weapon Headers -->
+    <ClInclude Include="hl2_hud\c_weapon_357.h" />
+    <ClInclude Include="hl2_hud\c_weapon_ar2.h" />
+    <ClInclude Include="hl2_hud\c_weapon_crossbow.h" />
+    <ClInclude Include="hl2_hud\c_weapon_crowbar.h" />
+    <ClInclude Include="hl2_hud\c_weapon_frag.h" />
+    <ClInclude Include="hl2_hud\c_weapon_physcannon.h" />
+    <ClInclude Include="hl2_hud\c_weapon_pistol.h" />
+    <ClInclude Include="hl2_hud\c_weapon_rpg.h" />
+    <ClInclude Include="hl2_hud\c_weapon_shotgun.h" />
+    <ClInclude Include="hl2_hud\c_weapon_smg1.h" />
+    <ClInclude Include="hl2_hud\c_weapon_stunstick.h" />
+
+    <!-- BarrysMod Client Headers -->
+    <ClInclude Include="bmod_hud\gmod_facepose.h" />
+    <ClInclude Include="bmod_hud\gmod_spawnlist.h" />
+    <ClInclude Include="bmod_hud\gmod_color.h" />
+    <ClInclude Include="bmod_hud\gmod_commandmenu.h" />
+    <ClInclude Include="bmod_hud\gmod_teammenu.h" />
+    <ClInclude Include="bmod_hud\context_panel.h" />
+    <ClInclude Include="bmod_hud\gmod_message.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Module Definition File -->
+    <None Include="client.def" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
