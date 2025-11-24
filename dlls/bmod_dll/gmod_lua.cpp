@@ -8,6 +8,29 @@
 #include "gmod_paint.h"
 #include "tier0/memdbgon.h"
 
+namespace
+{
+    struct LuaBinding
+    {
+        const char* name;
+        lua_CFunction function;
+    };
+
+    template <size_t N>
+    int RegisterLuaBindings(lua_State* L, const LuaBinding (&bindings)[N])
+    {
+        if (!L)
+            return 0;
+
+        for (const auto& binding : bindings)
+        {
+            lua_register(L, binding.name, binding.function);
+        }
+
+        return static_cast<int>(N);
+    }
+}
+
 // Static member definitions
 lua_State* CGModLuaSystem::s_pLuaState = NULL;
 CUtlVector<LuaContext_t> CGModLuaSystem::s_LoadedScripts;
@@ -156,61 +179,123 @@ void CGModLuaSystem::RegisterEngineBindings()
     RegisterSoundFunctions();
     RegisterMathFunctions();
 
-    DevMsg("Registered %d engine bindings for Lua\n", 40); // Approximate count
+    DevMsg("Registered engine bindings for Lua\n");
 }
 
 void CGModLuaSystem::RegisterPlayerFunctions()
 {
-    // Player functions would be registered here in full Lua implementation
-    DevMsg("Lua: Registering player functions (stub mode)\n");
+    static const LuaBinding bindings[] = {
+        {"_PlayerInfo", lua_PlayerInfo},
+        {"_PlayerGetShootPos", lua_PlayerGetShootPos},
+        {"_PlayerGetShootAng", lua_PlayerGetShootAng},
+        {"_PlayerFreeze", lua_PlayerFreeze},
+        {"_PrintMessage", lua_PrintMessage},
+        {"_PlayerAllowDecalPaint", lua_PlayerAllowDecalPaint},
+    };
+
+    int registered = RegisterLuaBindings(s_pLuaState, bindings);
+    DevMsg("Lua: Registered %d player functions\n", registered);
 }
 
 void CGModLuaSystem::RegisterEntityFunctions()
 {
-    // Entity functions would be registered here in full Lua implementation
-    DevMsg("Lua: Registering entity functions (stub mode)\n");
+    static const LuaBinding bindings[] = {
+        {"_EntCreate", lua_EntCreate},
+        {"_EntSetKeyValue", lua_EntSetKeyValue},
+        {"_EntSetPos", lua_EntSetPos},
+        {"_EntSetAng", lua_EntSetAng},
+        {"_EntSpawn", lua_EntSpawn},
+        {"_EntRemove", lua_EntRemove},
+    };
+
+    int registered = RegisterLuaBindings(s_pLuaState, bindings);
+    DevMsg("Lua: Registered %d entity functions\n", registered);
 }
 
 void CGModLuaSystem::RegisterTraceFunctions()
 {
-    // Trace functions would be registered here in full Lua implementation
-    DevMsg("Lua: Registering trace functions (stub mode)\n");
+    static const LuaBinding bindings[] = {
+        {"_TraceLine", lua_TraceLine},
+        {"_TraceEndPos", lua_TraceEndPos},
+        {"_TraceHit", lua_TraceHit},
+        {"_TraceHitWorld", lua_TraceHitWorld},
+    };
+
+    int registered = RegisterLuaBindings(s_pLuaState, bindings);
+    DevMsg("Lua: Registered %d trace functions\n", registered);
 }
 
 void CGModLuaSystem::RegisterPhysicsFunctions()
 {
-    // Physics functions would be registered here in full Lua implementation
-    DevMsg("Lua: Registering physics functions (stub mode)\n");
+    static const LuaBinding bindings[] = {
+        {"_PhysSetMass", lua_PhysSetMass},
+        {"_PhysGetMass", lua_PhysGetMass},
+        {"_PhysSetVelocity", lua_PhysSetVelocity},
+    };
+
+    int registered = RegisterLuaBindings(s_pLuaState, bindings);
+    DevMsg("Lua: Registered %d physics functions\n", registered);
 }
 
 void CGModLuaSystem::RegisterUtilityFunctions()
 {
-    // Utility functions would be registered here in full Lua implementation
-    DevMsg("Lua: Registering utility functions (stub mode)\n");
+    static const LuaBinding bindings[] = {
+        {"_RunString", lua_RunString},
+        {"_CurTime", lua_CurTime},
+        {"_Msg", lua_Msg},
+        {"_OpenScript", lua_OpenScript},
+    };
+
+    int registered = RegisterLuaBindings(s_pLuaState, bindings);
+    DevMsg("Lua: Registered %d utility functions\n", registered);
 }
 
 void CGModLuaSystem::RegisterGamemodeFunctions()
 {
-    // Gamemode functions would be registered here in full Lua implementation
-    DevMsg("Lua: Registering gamemode functions (stub mode)\n");
+    static const LuaBinding bindings[] = {
+        {"_StartNextLevel", lua_StartNextLevel},
+    };
+
+    int registered = RegisterLuaBindings(s_pLuaState, bindings);
+    DevMsg("Lua: Registered %d gamemode functions\n", registered);
 }
 
 void CGModLuaSystem::RegisterConVarFunctions()
 {
-    // ConVar functions would be registered here in full Lua implementation
-    DevMsg("Lua: Registering ConVar functions (stub mode)\n");
+    static const LuaBinding bindings[] = {
+        {"_GetConVar_Float", lua_GetConVar_Float},
+        {"_GetConVar_Int", lua_GetConVar_Int},
+        {"_GetConVar_String", lua_GetConVar_String},
+        {"_SetConVar", lua_SetConVar},
+    };
+
+    int registered = RegisterLuaBindings(s_pLuaState, bindings);
+    DevMsg("Lua: Registered %d ConVar functions\n", registered);
 }
 
 void CGModLuaSystem::RegisterSoundFunctions()
 {
-    // Sound functions would be registered here in full Lua implementation
-    DevMsg("Lua: Registering sound functions (stub mode)\n");
+    static const LuaBinding bindings[] = {
+        {"_SWEPSetSound", lua_SWEPSetSound},
+    };
+
+    int registered = RegisterLuaBindings(s_pLuaState, bindings);
+    DevMsg("Lua: Registered %d sound functions\n", registered);
 }
 
 void CGModLuaSystem::RegisterMathFunctions()
 {
-    // Math and vector functions would be registered here in full Lua implementation
-    DevMsg("Lua: Registering math/vector functions (stub mode)\n");
+    static const LuaBinding bindings[] = {
+        {"vector3", lua_vector3},
+        {"vecAdd", lua_vecAdd},
+        {"vecSub", lua_vecSub},
+        {"vecMul", lua_vecMul},
+        {"vecLength", lua_vecLength},
+        {"vecNormalize", lua_vecNormalize},
+    };
+
+    int registered = RegisterLuaBindings(s_pLuaState, bindings);
+    DevMsg("Lua: Registered %d math/vector functions\n", registered);
 }
 
 LuaFunctionResult_t CGModLuaSystem::LoadScript(const char* pszFileName, LuaScriptType_t type)
