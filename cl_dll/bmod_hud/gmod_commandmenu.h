@@ -21,7 +21,7 @@
 #include "vgui/IScheme.h"
 #include "vgui/ISurface.h"
 #include "vgui/ILocalize.h"
-#include "tier1/utlvector.h"
+#include "utlvector.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -79,7 +79,7 @@ public:
     virtual void PerformLayout();
     virtual void OnCommand(const char* command);
     virtual void OnKeyCodePressed(vgui::KeyCode code);
-    virtual void OnMessage(const KeyValues *params, vgui::VPANEL fromPanel);
+    virtual void OnMessage(KeyValues *params, vgui::VPANEL fromPanel);
 
     // Menu management
     void ShowMenu();
@@ -132,11 +132,11 @@ private:
     void UpdateDescription();
     void ExecuteSelectedCommand();
 
-    // Event handlers
-    MESSAGE_FUNC_PARAMS(OnItemSelected, "ItemSelected", data);
-    MESSAGE_FUNC_PARAMS(OnItemDoubleClicked, "ItemDoubleClicked", data);
-    MESSAGE_FUNC_PARAMS(OnTextChanged, "TextChanged", data);
-    MESSAGE_FUNC_PARAMS(OnCategoryChanged, "CategoryChanged", data);
+    // Event handlers - 2003 VGUI style
+    void OnItemSelected();
+    void OnItemDoubleClicked();
+    void OnTextChanged();
+    void OnCategoryChanged();
 
     // Utility functions
     const char* GetCategoryName(int category);

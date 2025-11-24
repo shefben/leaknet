@@ -12,6 +12,7 @@
 #include <vgui_controls/AnimationController.h>
 #include "convar.h"
 #include "c_baseentity.h"
+#include "iclientmode.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -286,12 +287,12 @@ void CGModMessage::StartAnimation(GModAnimationType_t type, float duration)
 	switch (type)
 	{
 	case GMOD_ANIM_FADEIN:
-		m_AnimationStartColor = Color(m_Color.r(), m_Color.g(), m_Color.b(), 0);
+		m_AnimationStartColor = Color(m_Color[0], m_Color[1], m_Color[2], 0);
 		m_AnimationEndColor = m_Color;
 		break;
 	case GMOD_ANIM_FADEOUT:
 		m_AnimationStartColor = m_Color;
-		m_AnimationEndColor = Color(m_Color.r(), m_Color.g(), m_Color.b(), 0);
+		m_AnimationEndColor = Color(m_Color[0], m_Color[1], m_Color[2], 0);
 		break;
 	case GMOD_ANIM_SLIDE:
 		m_vecAnimationEnd.x = x + 100;
@@ -378,10 +379,10 @@ void CGModMessage::UpdateAnimation()
 		{
 			Color newColor;
 			newColor.SetColor(
-				Lerp(progress, m_AnimationStartColor.r(), m_AnimationEndColor.r()),
-				Lerp(progress, m_AnimationStartColor.g(), m_AnimationEndColor.g()),
-				Lerp(progress, m_AnimationStartColor.b(), m_AnimationEndColor.b()),
-				Lerp(progress, m_AnimationStartColor.a(), m_AnimationEndColor.a())
+				Lerp(progress, m_AnimationStartColor[0], m_AnimationEndColor[0]),
+				Lerp(progress, m_AnimationStartColor[1], m_AnimationEndColor[1]),
+				Lerp(progress, m_AnimationStartColor[2], m_AnimationEndColor[2]),
+				Lerp(progress, m_AnimationStartColor[3], m_AnimationEndColor[3])
 			);
 			SetColor(newColor);
 		}
@@ -453,10 +454,10 @@ void CGModMessage::UpdateFromEntity()
 	if (!pEntity)
 		return;
 
-	Vector screenPos;
-	if (GetVectorInScreenSpace(pEntity->GetAbsOrigin(), screenPos))
+	int screenX, screenY;
+	if (GetVectorInScreenSpace(pEntity->GetAbsOrigin(), screenX, screenY))
 	{
-		SetPos(screenPos.x, screenPos.y);
+		SetPos(screenX, screenY);
 	}
 }
 
@@ -660,12 +661,12 @@ void CGModRect::StartAnimation(GModAnimationType_t type, float duration)
 		m_iAnimationEndTall = tall * 2;
 		break;
 	case GMOD_ANIM_FADEIN:
-		m_AnimationStartColor = Color(m_Color.r(), m_Color.g(), m_Color.b(), 0);
+		m_AnimationStartColor = Color(m_Color[0], m_Color[1], m_Color[2], 0);
 		m_AnimationEndColor = m_Color;
 		break;
 	case GMOD_ANIM_FADEOUT:
 		m_AnimationStartColor = m_Color;
-		m_AnimationEndColor = Color(m_Color.r(), m_Color.g(), m_Color.b(), 0);
+		m_AnimationEndColor = Color(m_Color[0], m_Color[1], m_Color[2], 0);
 		break;
 	}
 }
@@ -744,10 +745,10 @@ void CGModRect::UpdateAnimation()
 		{
 			Color newColor;
 			newColor.SetColor(
-				Lerp(progress, m_AnimationStartColor.r(), m_AnimationEndColor.r()),
-				Lerp(progress, m_AnimationStartColor.g(), m_AnimationEndColor.g()),
-				Lerp(progress, m_AnimationStartColor.b(), m_AnimationEndColor.b()),
-				Lerp(progress, m_AnimationStartColor.a(), m_AnimationEndColor.a())
+				Lerp(progress, m_AnimationStartColor[0], m_AnimationEndColor[0]),
+				Lerp(progress, m_AnimationStartColor[1], m_AnimationEndColor[1]),
+				Lerp(progress, m_AnimationStartColor[2], m_AnimationEndColor[2]),
+				Lerp(progress, m_AnimationStartColor[3], m_AnimationEndColor[3])
 			);
 			SetColor(newColor);
 		}
@@ -822,7 +823,7 @@ CGModMessage* CGModMessageManager::CreateMessage(const char *name)
 		name = autoName;
 	}
 
-	CGModMessage *message = new CGModMessage(GetClientModeVGUI()->GetViewport(), name);
+	CGModMessage *message = new CGModMessage(g_pClientMode->GetViewport(), name);
 	m_Messages.AddToTail(message);
 
 	if (gmod_message_debug.GetBool())
@@ -843,7 +844,7 @@ CGModRect* CGModMessageManager::CreateRect(const char *name)
 		name = autoName;
 	}
 
-	CGModRect *rect = new CGModRect(GetClientModeVGUI()->GetViewport(), name);
+	CGModRect *rect = new CGModRect(g_pClientMode->GetViewport(), name);
 	m_Rects.AddToTail(rect);
 
 	if (gmod_message_debug.GetBool())
@@ -1016,87 +1017,88 @@ void CGModMessageManager::Update()
 //-----------------------------------------------------------------------------
 // Text Commands
 //-----------------------------------------------------------------------------
-void GModTextStart_f(const CCommand &args)
+void GModTextStart_f(void)
 {
 	if (!g_pGModMessageManager)
 		return;
 
-	const char *name = args.ArgC() > 1 ? args[1] : NULL;
+	// 2003 engine doesn't have CCommand - use engine->Cmd_Argc/Argv
+	const char *name = engine->Cmd_Argc() > 1 ? engine->Cmd_Argv(1) : NULL;
 	s_pCurrentMessage = g_pGModMessageManager->CreateMessage(name);
 
-	if (args.ArgC() > 2)
+	if (engine->Cmd_Argc() > 2)
 	{
-		s_pCurrentMessage->SetFont(args[2]);
+		s_pCurrentMessage->SetFont(engine->Cmd_Argv(2));
 	}
 }
 
-void GModTextSetPos_f(const CCommand &args)
+void GModTextSetPos_f(void)
 {
-	if (!s_pCurrentMessage || args.ArgC() < 3)
+	if (!s_pCurrentMessage || engine->Cmd_Argc() < 3)
 		return;
 
-	int x = atoi(args[1]);
-	int y = atoi(args[2]);
+	int x = atoi(engine->Cmd_Argv(1));
+	int y = atoi(engine->Cmd_Argv(2));
 	s_pCurrentMessage->SetPosition(x, y);
 }
 
-void GModTextSetColor_f(const CCommand &args)
+void GModTextSetColor_f(void)
 {
-	if (!s_pCurrentMessage || args.ArgC() < 4)
+	if (!s_pCurrentMessage || engine->Cmd_Argc() < 4)
 		return;
 
-	int r = atoi(args[1]);
-	int g = atoi(args[2]);
-	int b = atoi(args[3]);
-	int a = args.ArgC() > 4 ? atoi(args[4]) : 255;
+	int r = atoi(engine->Cmd_Argv(1));
+	int g = atoi(engine->Cmd_Argv(2));
+	int b = atoi(engine->Cmd_Argv(3));
+	int a = engine->Cmd_Argc() > 4 ? atoi(engine->Cmd_Argv(4)) : 255;
 
 	s_pCurrentMessage->SetColor(Color(r, g, b, a));
 }
 
-void GModTextSetTime_f(const CCommand &args)
+void GModTextSetTime_f(void)
 {
-	if (!s_pCurrentMessage || args.ArgC() < 2)
+	if (!s_pCurrentMessage || engine->Cmd_Argc() < 2)
 		return;
 
-	float time = atof(args[1]);
+	float time = atof(engine->Cmd_Argv(1));
 	s_pCurrentMessage->SetTime(time);
 }
 
-void GModTextSetDelay_f(const CCommand &args)
+void GModTextSetDelay_f(void)
 {
-	if (!s_pCurrentMessage || args.ArgC() < 2)
+	if (!s_pCurrentMessage || engine->Cmd_Argc() < 2)
 		return;
 
-	float delay = atof(args[1]);
+	float delay = atof(engine->Cmd_Argv(1));
 	s_pCurrentMessage->SetDelay(delay);
 }
 
-void GModTextSetText_f(const CCommand &args)
+void GModTextSetText_f(void)
 {
-	if (!s_pCurrentMessage || args.ArgC() < 2)
+	if (!s_pCurrentMessage || engine->Cmd_Argc() < 2)
 		return;
 
-	s_pCurrentMessage->SetText(args[1]);
+	s_pCurrentMessage->SetText(engine->Cmd_Argv(1));
 	s_pCurrentMessage->ShowMessage(true);
 }
 
-void GModTextSetEntity_f(const CCommand &args)
+void GModTextSetEntity_f(void)
 {
-	if (!s_pCurrentMessage || args.ArgC() < 2)
+	if (!s_pCurrentMessage || engine->Cmd_Argc() < 2)
 		return;
 
-	int entityIndex = atoi(args[1]);
+	int entityIndex = atoi(engine->Cmd_Argv(1));
 	s_pCurrentMessage->SetEntity(entityIndex);
 }
 
-void GModTextAnimate_f(const CCommand &args)
+void GModTextAnimate_f(void)
 {
-	if (args.ArgC() < 3)
+	if (engine->Cmd_Argc() < 3)
 		return;
 
-	const char *name = args[1];
-	const char *animType = args[2];
-	float duration = args.ArgC() > 3 ? atof(args[3]) : 1.0f;
+	const char *name = engine->Cmd_Argv(1);
+	const char *animType = engine->Cmd_Argv(2);
+	float duration = engine->Cmd_Argc() > 3 ? atof(engine->Cmd_Argv(3)) : 1.0f;
 
 	GModAnimationType_t type = GMOD_ANIM_FADEIN;
 	if (Q_stricmp(animType, "fadein") == 0)
@@ -1110,17 +1112,17 @@ void GModTextAnimate_f(const CCommand &args)
 		g_pGModMessageManager->AnimateMessage(name, type, duration);
 }
 
-void GModTextHide_f(const CCommand &args)
+void GModTextHide_f(void)
 {
-	if (args.ArgC() < 2 || !g_pGModMessageManager)
+	if (engine->Cmd_Argc() < 2 || !g_pGModMessageManager)
 		return;
 
-	CGModMessage *message = g_pGModMessageManager->FindMessage(args[1]);
+	CGModMessage *message = g_pGModMessageManager->FindMessage(engine->Cmd_Argv(1));
 	if (message)
 		message->HideAll();
 }
 
-void GModTextHideAll_f(const CCommand &args)
+void GModTextHideAll_f(void)
 {
 	if (g_pGModMessageManager)
 		g_pGModMessageManager->HideAllMessages();
@@ -1129,75 +1131,75 @@ void GModTextHideAll_f(const CCommand &args)
 //-----------------------------------------------------------------------------
 // Rectangle Commands
 //-----------------------------------------------------------------------------
-void GModRectStart_f(const CCommand &args)
+void GModRectStart_f(void)
 {
 	if (!g_pGModMessageManager)
 		return;
 
-	const char *name = args.ArgC() > 1 ? args[1] : NULL;
+	const char *name = engine->Cmd_Argc() > 1 ? engine->Cmd_Argv(1) : NULL;
 	s_pCurrentRect = g_pGModMessageManager->CreateRect(name);
 }
 
-void GModRectSetPos_f(const CCommand &args)
+void GModRectSetPos_f(void)
 {
-	if (!s_pCurrentRect || args.ArgC() < 3)
+	if (!s_pCurrentRect || engine->Cmd_Argc() < 3)
 		return;
 
-	int x = atoi(args[1]);
-	int y = atoi(args[2]);
+	int x = atoi(engine->Cmd_Argv(1));
+	int y = atoi(engine->Cmd_Argv(2));
 	s_pCurrentRect->SetPosition(x, y);
 }
 
-void GModRectSetSize_f(const CCommand &args)
+void GModRectSetSize_f(void)
 {
-	if (!s_pCurrentRect || args.ArgC() < 3)
+	if (!s_pCurrentRect || engine->Cmd_Argc() < 3)
 		return;
 
-	int wide = atoi(args[1]);
-	int tall = atoi(args[2]);
+	int wide = atoi(engine->Cmd_Argv(1));
+	int tall = atoi(engine->Cmd_Argv(2));
 	s_pCurrentRect->SetSize(wide, tall);
 	s_pCurrentRect->ShowRect(true);
 }
 
-void GModRectSetColor_f(const CCommand &args)
+void GModRectSetColor_f(void)
 {
-	if (!s_pCurrentRect || args.ArgC() < 4)
+	if (!s_pCurrentRect || engine->Cmd_Argc() < 4)
 		return;
 
-	int r = atoi(args[1]);
-	int g = atoi(args[2]);
-	int b = atoi(args[3]);
-	int a = args.ArgC() > 4 ? atoi(args[4]) : 100;
+	int r = atoi(engine->Cmd_Argv(1));
+	int g = atoi(engine->Cmd_Argv(2));
+	int b = atoi(engine->Cmd_Argv(3));
+	int a = engine->Cmd_Argc() > 4 ? atoi(engine->Cmd_Argv(4)) : 100;
 
 	s_pCurrentRect->SetColor(Color(r, g, b, a));
 }
 
-void GModRectSetTime_f(const CCommand &args)
+void GModRectSetTime_f(void)
 {
-	if (!s_pCurrentRect || args.ArgC() < 2)
+	if (!s_pCurrentRect || engine->Cmd_Argc() < 2)
 		return;
 
-	float time = atof(args[1]);
+	float time = atof(engine->Cmd_Argv(1));
 	s_pCurrentRect->SetTime(time);
 }
 
-void GModRectSetDelay_f(const CCommand &args)
+void GModRectSetDelay_f(void)
 {
-	if (!s_pCurrentRect || args.ArgC() < 2)
+	if (!s_pCurrentRect || engine->Cmd_Argc() < 2)
 		return;
 
-	float delay = atof(args[1]);
+	float delay = atof(engine->Cmd_Argv(1));
 	s_pCurrentRect->SetDelay(delay);
 }
 
-void GModRectAnimate_f(const CCommand &args)
+void GModRectAnimate_f(void)
 {
-	if (args.ArgC() < 3)
+	if (engine->Cmd_Argc() < 3)
 		return;
 
-	const char *name = args[1];
-	const char *animType = args[2];
-	float duration = args.ArgC() > 3 ? atof(args[3]) : 1.0f;
+	const char *name = engine->Cmd_Argv(1);
+	const char *animType = engine->Cmd_Argv(2);
+	float duration = engine->Cmd_Argc() > 3 ? atof(engine->Cmd_Argv(3)) : 1.0f;
 
 	GModAnimationType_t type = GMOD_ANIM_SCALE;
 	if (Q_stricmp(animType, "scale") == 0)
@@ -1211,17 +1213,17 @@ void GModRectAnimate_f(const CCommand &args)
 		g_pGModMessageManager->AnimateRect(name, type, duration);
 }
 
-void GModRectHide_f(const CCommand &args)
+void GModRectHide_f(void)
 {
-	if (args.ArgC() < 2 || !g_pGModMessageManager)
+	if (engine->Cmd_Argc() < 2 || !g_pGModMessageManager)
 		return;
 
-	CGModRect *rect = g_pGModMessageManager->FindRect(args[1]);
+	CGModRect *rect = g_pGModMessageManager->FindRect(engine->Cmd_Argv(1));
 	if (rect)
 		rect->HideAll();
 }
 
-void GModRectHideAll_f(const CCommand &args)
+void GModRectHideAll_f(void)
 {
 	if (g_pGModMessageManager)
 		g_pGModMessageManager->HideAllRects();

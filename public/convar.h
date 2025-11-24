@@ -22,8 +22,36 @@
 
 #include "tier0/dbg.h"
 
+// Forward declarations
+class IVEngineClient;
+
+//-----------------------------------------------------------------------------
+// Purpose: 2003 Source Engine compatible command argument wrapper
+// Provides modern CCommand interface using legacy Cmd_Argc/Cmd_Argv functions
+//-----------------------------------------------------------------------------
+class CCommand
+{
+public:
+	CCommand();
+
+	// Access to command arguments - compatible with modern Source Engine API
+	int ArgC() const;
+	const char *Arg(int nIndex) const;
+	const char *ArgS() const;  // Gets args starting at index 1
+
+	// operator[] for compatibility
+	const char *operator[](int nIndex) const { return Arg(nIndex); }
+
+private:
+	// Cache for argument string (ArgS)
+	mutable char m_pArgSBuffer[2048];
+	mutable bool m_bArgSBuilt;
+
+	void BuildArgS() const;
+};
+
 // The default, no flags at all
-#define FCVAR_NONE				0 
+#define FCVAR_NONE				0
 
 // Command to ConVars and ConCommands
 #define FCVAR_UNREGISTERED		(1<<0) // If this is set, don't add to linked list, etc.
@@ -31,6 +59,8 @@
 #define FCVAR_EXTDLL			(1<<2)	// defined by external DLL
 #define FCVAR_CLIENTDLL			(1<<3)  // defined by the client dll
 #define FCVAR_MATERIAL_SYSTEM	(1<<4)	// Defined by the material system.
+#define FCVAR_GAMEDLL			(1<<15)	// defined by the game DLL
+#define FCVAR_NOTIFY			(1<<16)	// notifies players when changed
 #define FCVAR_CHEAT				(1<<14) // Only useable in singleplayer / debug / multiplayer & sv_cheats
 
 // ConVar only
@@ -179,7 +209,7 @@ public:
 	typedef ConCommandBase BaseClass;
 
 								ConCommand( void );
-								ConCommand( char const *pName, FnCommandCallback callback, 
+								ConCommand( char const *pName, FnCommandCallback callback,
 									char const *pHelpString = 0, int flags = 0, FnCommandCompletionCallback completionFunc = 0 );
 
 	virtual						~ConCommand( void );

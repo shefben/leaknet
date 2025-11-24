@@ -7,7 +7,6 @@
 #include "igameevents.h"
 #include "convar.h"
 #include "utlvector.h"
-#include "utlstring.h"
 
 // Forward declarations
 class CBaseEntity;
@@ -49,8 +48,8 @@ struct PaintData_t
 // Paint configuration data loaded from settings/gmod_paint.txt
 struct PaintConfig_t
 {
-    CUtlString materialName;
-    CUtlString soundName;
+    char materialName[256];
+    char soundName[256];
     float flDecalSize;
     float flDecalDuration;
     Color paintColor;
@@ -58,6 +57,8 @@ struct PaintConfig_t
 
     PaintConfig_t()
     {
+        materialName[0] = '\0';
+        soundName[0] = '\0';
         flDecalSize = 64.0f;
         flDecalDuration = 60.0f;
         paintColor = Color(255, 255, 255, 255);

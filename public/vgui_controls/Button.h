@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // The copyright to the contents herein is the property of Valve, L.L.C.
 // The contents may be used and/or copied only with the written permission of
@@ -124,6 +124,10 @@ public:
 	// Set the message to send when the button is pressed
 	virtual void SetCommand( KeyValues *message );
 
+	// Tooltip support - 2003 engine compatibility (stores text but doesn't display)
+	virtual void SetTooltip( const char *text );
+	virtual const char *GetTooltip();
+
 	// sound handling
 	void SetArmedSound(const char *sound);
 	void SetDepressedSound(const char *sound);
@@ -188,6 +192,9 @@ private:
 
 	unsigned short	   m_sArmedSoundName, m_sDepressedSoundName, m_sReleasedSoundName;
 	bool _defaultButton;	// true if this is the button that gets activated by default when the user hits enter
+
+	// Tooltip storage - 2003 engine compatibility
+	char			  *_tooltipText;
 
 public:
 	typedef Label BaseClass;

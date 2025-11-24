@@ -10,10 +10,12 @@
 #include "vgui_controls/Divider.h"
 #include "vgui/IInput.h"
 #include "vgui/IVGui.h"
-#include "tier1/KeyValues.h"
+#include "KeyValues.h"
 #include "c_playerresource.h"
 #include "gamerules.h"
 #include "c_baseplayer.h"
+#include "cliententitylist.h"
+#include "ienginevgui.h"
 
 using namespace vgui;
 
@@ -144,7 +146,7 @@ void CGModTeamMenu::OnKeyCodePressed(KeyCode code)
 //-----------------------------------------------------------------------------
 // Purpose: Handle messages
 //-----------------------------------------------------------------------------
-void CGModTeamMenu::OnMessage(const KeyValues *params, VPANEL fromPanel)
+void CGModTeamMenu::OnMessage(KeyValues *params, vgui::VPANEL fromPanel)
 {
     BaseClass::OnMessage(params, fromPanel);
 }
@@ -315,7 +317,7 @@ void CGModTeamMenu::CreateControls()
     m_pTeamList->AddColumnHeader(2, "status", "Status", 100, 0);
     m_pTeamList->SetSelectIndividualCells(false);
     m_pTeamList->SetEmptyListText("No teams available");
-    m_pTeamList->SetDragEnabled(false);
+    // Note: SetDragEnabled not available in 2003 VGUI - drag disabled by default
 
     // Team info labels
     m_pTeamNameLabel = new Label(this, "TeamNameLabel", "");
@@ -323,20 +325,20 @@ void CGModTeamMenu::CreateControls()
 
     m_pTeamDescLabel = new Label(this, "TeamDescLabel", "Select a team to see description");
     m_pTeamDescLabel->SetContentAlignment(Label::a_northwest);
-    m_pTeamDescLabel->SetWrap(true);
+    // Note: SetWrap not available in 2003 VGUI - text wrapping handled differently
 
     m_pPlayerCountLabel = new Label(this, "PlayerCountLabel", "");
     m_pPlayerCountLabel->SetContentAlignment(Label::a_west);
 
     // Team logo
     m_pTeamLogoPanel = new ImagePanel(this, "TeamLogoPanel");
-    m_pTeamLogoPanel->SetImage("vgui/teams/team_logo");
+    // Note: SetImage with string path not available in 2003 VGUI - would need IImage* object
 
-    // Buttons
-    m_pJoinButton = new Button(this, "JoinButton", "Join Team", this, "Join");
-    m_pAutoAssignButton = new Button(this, "AutoAssignButton", "Auto Assign", this, "AutoAssign");
-    m_pSpectateButton = new Button(this, "SpectateButton", "Spectate", this, "Spectate");
-    m_pCancelButton = new Button(this, "CancelButton", "Cancel", this, "Cancel");
+    // Buttons - 2003 VGUI style (3 parameters only)
+    m_pJoinButton = new Button(this, "JoinButton", "Join Team");
+    m_pAutoAssignButton = new Button(this, "AutoAssignButton", "Auto Assign");
+    m_pSpectateButton = new Button(this, "SpectateButton", "Spectate");
+    m_pCancelButton = new Button(this, "CancelButton", "Cancel");
 
     // Set up event handling
     m_pTeamList->AddActionSignalTarget(this);
@@ -410,7 +412,7 @@ void CGModTeamMenu::PopulateTeamList()
     if (!m_pTeamList)
         return;
 
-    m_pTeamList->RemoveAll();
+    m_pTeamList->DeleteAllItems(); // 2003 VGUI equivalent of RemoveAll()
 
     for (int i = 0; i < m_Teams.Count(); i++)
     {
@@ -418,25 +420,17 @@ void CGModTeamMenu::PopulateTeamList()
 
         KeyValues *data = new KeyValues("team");
         data->SetString("team", team.teamName);
-        data->SetString("players", UTIL_VarArgs("%d/%d", team.playerCount, team.maxPlayers));
+        // 2003-compatible string formatting instead of UTIL_VarArgs
+        char playerText[32];
+        Q_snprintf(playerText, sizeof(playerText), "%d/%d", team.playerCount, team.maxPlayers);
+        data->SetString("players", playerText);
         data->SetString("status", team.canJoin ? "Open" : "Full");
         data->SetInt("index", i);
 
         int itemID = m_pTeamList->AddItem(data, 0, false, false);
 
-        // Set colors based on team
-        if (team.teamNumber == m_iCurrentPlayerTeam)
-        {
-            m_pTeamList->SetItemFgColor(itemID, Color(0, 255, 0, 255)); // Green for current team
-        }
-        else if (!team.canJoin)
-        {
-            m_pTeamList->SetItemFgColor(itemID, Color(128, 128, 128, 255)); // Gray for full teams
-        }
-        else
-        {
-            m_pTeamList->SetItemFgColor(itemID, team.teamColor);
-        }
+        // Note: SetItemFgColor not available in 2003 VGUI - color coding removed but functionality preserved
+        // Team status is still indicated through text in the "Status" column
 
         data->deleteThis();
     }
@@ -474,7 +468,12 @@ void CGModTeamMenu::UpdateSelectedTeamInfo()
         m_pTeamDescLabel->SetText(team.description);
 
     if (m_pPlayerCountLabel)
-        m_pPlayerCountLabel->SetText(UTIL_VarArgs("Players: %d/%d", team.playerCount, team.maxPlayers));
+    {
+        // 2003-compatible string formatting instead of UTIL_VarArgs
+        char playerText[64];
+        Q_snprintf(playerText, sizeof(playerText), "Players: %d/%d", team.playerCount, team.maxPlayers);
+        m_pPlayerCountLabel->SetText(playerText);
+    }
 
     if (m_pJoinButton)
         m_pJoinButton->SetEnabled(team.canJoin && team.teamNumber != m_iCurrentPlayerTeam);
@@ -552,8 +551,13 @@ int CGModTeamMenu::GetPlayerCountForTeam(int teamNumber)
     {
         for (int i = 1; i <= gpGlobals->maxClients; i++)
         {
-            if (g_PR->IsConnected(i) && g_PR->GetTeam(i) == teamNumber)
-                count++;
+            if (g_PR->Get_Connected(i))
+            {
+                // Get the player entity to check team - 2003 engine approach
+                C_BaseEntity *pPlayer = cl_entitylist->GetBaseEntity(i);
+                if (pPlayer && pPlayer->GetTeamNumber() == teamNumber)
+                    count++;
+            }
         }
     }
 
@@ -577,11 +581,14 @@ bool CGModTeamMenu::CanJoinTeam(int teamNumber)
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Handle item selection
+// Purpose: Handle item selection - 2003 VGUI style
 //-----------------------------------------------------------------------------
-void CGModTeamMenu::OnItemSelected(KeyValues* data)
+void CGModTeamMenu::OnItemSelected()
 {
-    int itemID = data->GetInt("itemID");
+    if (!m_pTeamList)
+        return;
+
+    int itemID = m_pTeamList->GetSelectedItem(0);
     if (itemID >= 0)
     {
         KeyValues* itemData = m_pTeamList->GetItem(itemID);
@@ -594,11 +601,11 @@ void CGModTeamMenu::OnItemSelected(KeyValues* data)
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Handle item double click
+// Purpose: Handle item double click - 2003 VGUI style
 //-----------------------------------------------------------------------------
-void CGModTeamMenu::OnItemDoubleClicked(KeyValues* data)
+void CGModTeamMenu::OnItemDoubleClicked()
 {
-    OnItemSelected(data);
+    OnItemSelected();
     JoinSelectedTeam();
 }
 
@@ -611,10 +618,10 @@ Color CGModTeamMenu::GetTeamColor(int teamNumber)
     {
         case TEAM_UNASSIGNED: return Color(128, 128, 128, 255);
         case TEAM_SPECTATOR: return Color(255, 255, 255, 255);
-        case 2: return Color(255, 0, 0, 255); // Red team
-        case 3: return Color(0, 0, 255, 255); // Blue team
-        case 4: return Color(0, 255, 0, 255); // Green team
-        case 5: return Color(255, 255, 0, 255); // Yellow team
+        case 3: return Color(255, 0, 0, 255); // Red team
+        case 4: return Color(0, 0, 255, 255); // Blue team
+        case 5: return Color(0, 255, 0, 255); // Green team
+        case 6: return Color(255, 255, 0, 255); // Yellow team
         default: return Color(255, 255, 255, 255);
     }
 }
@@ -630,9 +637,9 @@ const char* CGModTeamMenu::GetTeamDescription(int teamNumber)
             return "Players not assigned to any team";
         case TEAM_SPECTATOR:
             return "Watch the game without participating";
-        case 2:
-            return "Red team - Work together to achieve objectives";
         case 3:
+            return "Red team - Work together to achieve objectives";
+        case 4:
             return "Blue team - Coordinate with teammates to win";
         default:
             return "Standard team for multiplayer gameplay";

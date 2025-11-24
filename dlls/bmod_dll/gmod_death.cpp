@@ -42,17 +42,17 @@ CGModDeathSystem* g_pGModDeathSystem = &g_GMod_DeathSystem;
 LINK_ENTITY_TO_CLASS(gmod_death, CGModDeathEntity);
 
 BEGIN_DATADESC(CGModDeathEntity)
-    DEFINE_KEYFIELD(m_szDeathMessage, FIELD_STRING, "death_message"),
-    DEFINE_KEYFIELD(m_szDeathEffect, FIELD_STRING, "death_effect"),
-    DEFINE_KEYFIELD(m_bInstantDeath, FIELD_BOOLEAN, "instant_death"),
-    DEFINE_KEYFIELD(m_flDamageAmount, FIELD_FLOAT, "damage_amount"),
+    DEFINE_KEYFIELD(CGModDeathEntity, m_szDeathMessage, FIELD_STRING, "death_message"),
+    DEFINE_KEYFIELD(CGModDeathEntity, m_szDeathEffect, FIELD_STRING, "death_effect"),
+    DEFINE_KEYFIELD(CGModDeathEntity, m_bInstantDeath, FIELD_BOOLEAN, "instant_death"),
+    DEFINE_KEYFIELD(CGModDeathEntity, m_flDamageAmount, FIELD_FLOAT, "damage_amount"),
 
-    DEFINE_INPUTFUNC(FIELD_VOID, "KillPlayer", InputKillPlayer),
-    DEFINE_INPUTFUNC(FIELD_STRING, "SetDeathMessage", InputSetDeathMessage),
-    DEFINE_INPUTFUNC(FIELD_STRING, "SetDeathEffect", InputSetDeathEffect),
+    DEFINE_INPUTFUNC(CGModDeathEntity, FIELD_VOID, "KillPlayer", InputKillPlayer),
+    DEFINE_INPUTFUNC(CGModDeathEntity, FIELD_STRING, "SetDeathMessage", InputSetDeathMessage),
+    DEFINE_INPUTFUNC(CGModDeathEntity, FIELD_STRING, "SetDeathEffect", InputSetDeathEffect),
 
-    DEFINE_OUTPUT(m_OnPlayerDeath, "OnPlayerDeath"),
-    DEFINE_OUTPUT(m_OnPlayerKilled, "OnPlayerKilled"),
+    DEFINE_OUTPUT(CGModDeathEntity, m_OnPlayerDeath, "OnPlayerDeath"),
+    DEFINE_OUTPUT(CGModDeathEntity, m_OnPlayerKilled, "OnPlayerKilled"),
 END_DATADESC()
 
 CGModDeathEntity::CGModDeathEntity()

@@ -109,8 +109,8 @@ bool CGModSWEPSystem::RegisterSWEP(const char* pszClassName, const char* pszScri
     }
 
     SWEPData_t swepData;
-    swepData.className = pszClassName;
-    swepData.scriptPath = pszScriptPath;
+    Q_strncpy(swepData.className, pszClassName, sizeof(swepData.className));
+    Q_strncpy(swepData.scriptPath, pszScriptPath, sizeof(swepData.scriptPath));
     swepData.isRegistered = true;
 
     s_SWEPRegistry.AddToTail(swepData);
@@ -686,7 +686,7 @@ void CMD_gmod_give_swep(void)
     }
 
     // Give the weapon to the player
-    CBaseCombatWeapon* pWeapon = pPlayer->GiveNamedItem(swepName);
+    CBaseCombatWeapon* pWeapon = dynamic_cast<CBaseCombatWeapon*>(pPlayer->GiveNamedItem(swepName));
     if (pWeapon)
     {
         CGModSWEPSystem::InitializeSWEPInstance(pWeapon, swepName);
@@ -727,7 +727,9 @@ void CMD_gmod_list_sweps(void)
         }
     }
 
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Total: %d SWEPs", count);
+    char msg[256];
+    Q_snprintf(msg, sizeof(msg), "Total: %d SWEPs", count);
+    ClientPrint(pPlayer, HUD_PRINTTALK, msg);
 }
 
 // Individual SWEP commands discovered from IDA analysis
@@ -736,7 +738,7 @@ void CMD_gmod_give_propmaker(void)
     CBasePlayer* pPlayer = GetCommandPlayer();
     if (!pPlayer) return;
 
-    CBaseCombatWeapon* pWeapon = pPlayer->GiveNamedItem("weapon_propmaker");
+    CBaseCombatWeapon* pWeapon = dynamic_cast<CBaseCombatWeapon*>(pPlayer->GiveNamedItem("weapon_propmaker"));
     if (pWeapon)
     {
         CGModSWEPSystem::InitializeSWEPInstance(pWeapon, "weapon_propmaker");
@@ -749,7 +751,7 @@ void CMD_gmod_give_cratemaker(void)
     CBasePlayer* pPlayer = GetCommandPlayer();
     if (!pPlayer) return;
 
-    CBaseCombatWeapon* pWeapon = pPlayer->GiveNamedItem("weapon_cratemaker");
+    CBaseCombatWeapon* pWeapon = dynamic_cast<CBaseCombatWeapon*>(pPlayer->GiveNamedItem("weapon_cratemaker"));
     if (pWeapon)
     {
         CGModSWEPSystem::InitializeSWEPInstance(pWeapon, "weapon_cratemaker");
@@ -762,7 +764,7 @@ void CMD_gmod_give_freeze(void)
     CBasePlayer* pPlayer = GetCommandPlayer();
     if (!pPlayer) return;
 
-    CBaseCombatWeapon* pWeapon = pPlayer->GiveNamedItem("weapon_freeze");
+    CBaseCombatWeapon* pWeapon = dynamic_cast<CBaseCombatWeapon*>(pPlayer->GiveNamedItem("weapon_freeze"));
     if (pWeapon)
     {
         CGModSWEPSystem::InitializeSWEPInstance(pWeapon, "weapon_freeze");
@@ -775,7 +777,7 @@ void CMD_gmod_give_remover(void)
     CBasePlayer* pPlayer = GetCommandPlayer();
     if (!pPlayer) return;
 
-    CBaseCombatWeapon* pWeapon = pPlayer->GiveNamedItem("weapon_remover");
+    CBaseCombatWeapon* pWeapon = dynamic_cast<CBaseCombatWeapon*>(pPlayer->GiveNamedItem("weapon_remover"));
     if (pWeapon)
     {
         CGModSWEPSystem::InitializeSWEPInstance(pWeapon, "weapon_remover");
@@ -788,7 +790,7 @@ void CMD_gmod_give_spawn(void)
     CBasePlayer* pPlayer = GetCommandPlayer();
     if (!pPlayer) return;
 
-    CBaseCombatWeapon* pWeapon = pPlayer->GiveNamedItem("weapon_spawn");
+    CBaseCombatWeapon* pWeapon = dynamic_cast<CBaseCombatWeapon*>(pPlayer->GiveNamedItem("weapon_spawn"));
     if (pWeapon)
     {
         CGModSWEPSystem::InitializeSWEPInstance(pWeapon, "weapon_spawn");

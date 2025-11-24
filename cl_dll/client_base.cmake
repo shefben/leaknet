@@ -823,6 +823,7 @@ function( target_use_client_base target EXCLUDE_SOURCES )
 		"${LIBCOMMON}/s3tc.lib"
 		game_controls
 		vgui_controls
+		vstdlib
 	)
 
 endfunction()

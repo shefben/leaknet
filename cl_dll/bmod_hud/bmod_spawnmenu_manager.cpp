@@ -36,6 +36,10 @@ public:
 	virtual void SafeRemoveIfDesired() {}
 	virtual bool IsPerFrame() { return false; }
 
+	// CLIENT_DLL specific IGameSystem methods
+	virtual void PreRender() {}
+	virtual void Update( float frametime ) {}
+
 	// Spawn menu access
 	CClientSpawnDialog *GetSpawnMenu() { return m_pSpawnMenu; }
 	void CreateSpawnMenu();

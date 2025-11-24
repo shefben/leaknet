@@ -193,6 +193,9 @@ public:
     static const char* GetSWEPTypeName(SWEPType_t swepType);
     static SWEPType_t GetSWEPTypeFromName(const char* pszName);
 
+    // Public registry access for console commands
+    static CUtlVector<SWEPData_t> s_SWEPRegistry;
+
 private:
     struct SWEPInstance_t
     {
@@ -210,7 +213,6 @@ private:
         }
     };
 
-    static CUtlVector<SWEPData_t> s_SWEPRegistry;
     static CUtlVector<SWEPInstance_t> s_SWEPInstances;
     static bool s_bSystemInitialized;
 

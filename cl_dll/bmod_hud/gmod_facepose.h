@@ -43,6 +43,9 @@ public:
     static void SetFaceScale(float scale);
     static float GetFaceScale();
 
+    // Callback functions (need public access for ConVar registration)
+    static void FlexCallback(ConVar *var, const char *pOldString);
+
 private:
     static float m_flFlexValues[MAX_FACE_POSE_FLEXES];
     static float m_flFaceScale;
@@ -51,9 +54,6 @@ private:
     // Console variable creation
     static void CreateFlexConVars();
     static void DestroyFlexConVars();
-
-    // Internal flex management
-    static void FlexCallback(ConVar *var, const char *pOldString);
 };
 
 // Console variable declarations

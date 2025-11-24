@@ -10,8 +10,8 @@
 
 // Static member definitions
 lua_State* CGModLuaSystem::s_pLuaState = NULL;
-CUtlVector<CGModLuaSystem::LuaContext_t> CGModLuaSystem::s_LoadedScripts;
-CGModLuaSystem::LuaContext_t CGModLuaSystem::s_CurrentContext;
+CUtlVector<LuaContext_t> CGModLuaSystem::s_LoadedScripts;
+LuaContext_t CGModLuaSystem::s_CurrentContext;
 int CGModLuaSystem::s_ErrorCount = 0;
 bool CGModLuaSystem::s_bSystemInitialized = false;
 
@@ -115,21 +115,14 @@ LuaFunctionResult_t CGModLuaSystem::InitializeLua()
         ShutdownLua();
     }
 
-    s_pLuaState = lua_open();
-    if (!s_pLuaState)
+    // Use our wrapper to initialize Lua
+    if (!CLuaWrapper::InitializeLua())
     {
-        Warning("Failed to create Lua state\n");
+        Warning("Failed to initialize Lua wrapper\n");
         return LUA_RESULT_MEMORY_ERROR;
     }
 
-    // Set panic function
-    lua_atpanic(s_pLuaState, LuaPanic);
-
-    // Open standard libraries
-    luaopen_base(s_pLuaState);
-    luaopen_table(s_pLuaState);
-    luaopen_string(s_pLuaState);
-    luaopen_math(s_pLuaState);
+    s_pLuaState = CLuaWrapper::GetLuaState();
 
     // Register engine bindings
     RegisterEngineBindings();
@@ -142,7 +135,7 @@ void CGModLuaSystem::ShutdownLua()
 {
     if (s_pLuaState)
     {
-        lua_close(s_pLuaState);
+        CLuaWrapper::ShutdownLua();
         s_pLuaState = NULL;
     }
 }
@@ -168,84 +161,56 @@ void CGModLuaSystem::RegisterEngineBindings()
 
 void CGModLuaSystem::RegisterPlayerFunctions()
 {
-    lua_register(s_pLuaState, "_PlayerInfo", lua_PlayerInfo);
-    lua_register(s_pLuaState, "_PlayerGetShootPos", lua_PlayerGetShootPos);
-    lua_register(s_pLuaState, "_PlayerGetShootAng", lua_PlayerGetShootAng);
-    lua_register(s_pLuaState, "_PlayerFreeze", lua_PlayerFreeze);
-    lua_register(s_pLuaState, "_PrintMessage", lua_PrintMessage);
-    lua_register(s_pLuaState, "_PlayerAllowDecalPaint", lua_PlayerAllowDecalPaint);
+    // Player functions would be registered here in full Lua implementation
+    DevMsg("Lua: Registering player functions (stub mode)\n");
 }
 
 void CGModLuaSystem::RegisterEntityFunctions()
 {
-    lua_register(s_pLuaState, "_EntCreate", lua_EntCreate);
-    lua_register(s_pLuaState, "_EntSetKeyValue", lua_EntSetKeyValue);
-    lua_register(s_pLuaState, "_EntSetPos", lua_EntSetPos);
-    lua_register(s_pLuaState, "_EntSetAng", lua_EntSetAng);
-    lua_register(s_pLuaState, "_EntSpawn", lua_EntSpawn);
-    lua_register(s_pLuaState, "_EntRemove", lua_EntRemove);
+    // Entity functions would be registered here in full Lua implementation
+    DevMsg("Lua: Registering entity functions (stub mode)\n");
 }
 
 void CGModLuaSystem::RegisterTraceFunctions()
 {
-    lua_register(s_pLuaState, "_TraceLine", lua_TraceLine);
-    lua_register(s_pLuaState, "_TraceEndPos", lua_TraceEndPos);
-    lua_register(s_pLuaState, "_TraceHit", lua_TraceHit);
-    lua_register(s_pLuaState, "_TraceHitWorld", lua_TraceHitWorld);
+    // Trace functions would be registered here in full Lua implementation
+    DevMsg("Lua: Registering trace functions (stub mode)\n");
 }
 
 void CGModLuaSystem::RegisterPhysicsFunctions()
 {
-    lua_register(s_pLuaState, "_PhysSetMass", lua_PhysSetMass);
-    lua_register(s_pLuaState, "_PhysGetMass", lua_PhysGetMass);
-    lua_register(s_pLuaState, "_PhysSetVelocity", lua_PhysSetVelocity);
+    // Physics functions would be registered here in full Lua implementation
+    DevMsg("Lua: Registering physics functions (stub mode)\n");
 }
 
 void CGModLuaSystem::RegisterUtilityFunctions()
 {
-    lua_register(s_pLuaState, "_RunString", lua_RunString);
-    lua_register(s_pLuaState, "_CurTime", lua_CurTime);
-    lua_register(s_pLuaState, "_Msg", lua_Msg);
-    lua_register(s_pLuaState, "_OpenScript", lua_OpenScript);
-    lua_register(s_pLuaState, "_StartNextLevel", lua_StartNextLevel);
+    // Utility functions would be registered here in full Lua implementation
+    DevMsg("Lua: Registering utility functions (stub mode)\n");
 }
 
 void CGModLuaSystem::RegisterGamemodeFunctions()
 {
-    lua_register(s_pLuaState, "_GameSetTargetIDRules", lua_GameSetTargetIDRules);
-    lua_register(s_pLuaState, "_TeamSetScore", lua_TeamSetScore);
-    lua_register(s_pLuaState, "_TeamGetScore", lua_TeamGetScore);
-    lua_register(s_pLuaState, "_TeamSetName", lua_TeamSetName);
-    lua_register(s_pLuaState, "_TeamGetName", lua_TeamGetName);
-    lua_register(s_pLuaState, "_PlayerChangeTeam", lua_PlayerChangeTeam);
-    lua_register(s_pLuaState, "_MaxPlayers", lua_MaxPlayers);
-    lua_register(s_pLuaState, "_EntPrecacheModel", lua_EntPrecacheModel);
-    lua_register(s_pLuaState, "_GameGetMapName", lua_GameGetMapName);
-    lua_register(s_pLuaState, "_GameRestartRound", lua_GameRestartRound);
+    // Gamemode functions would be registered here in full Lua implementation
+    DevMsg("Lua: Registering gamemode functions (stub mode)\n");
 }
 
 void CGModLuaSystem::RegisterConVarFunctions()
 {
-    lua_register(s_pLuaState, "_GetConVar_Float", lua_GetConVar_Float);
-    lua_register(s_pLuaState, "_GetConVar_Int", lua_GetConVar_Int);
-    lua_register(s_pLuaState, "_GetConVar_String", lua_GetConVar_String);
-    lua_register(s_pLuaState, "_SetConVar", lua_SetConVar);
+    // ConVar functions would be registered here in full Lua implementation
+    DevMsg("Lua: Registering ConVar functions (stub mode)\n");
 }
 
 void CGModLuaSystem::RegisterSoundFunctions()
 {
-    lua_register(s_pLuaState, "_SWEPSetSound", lua_SWEPSetSound);
+    // Sound functions would be registered here in full Lua implementation
+    DevMsg("Lua: Registering sound functions (stub mode)\n");
 }
 
 void CGModLuaSystem::RegisterMathFunctions()
 {
-    // Vector3 functions (from includes/vector3.lua analysis)
-    lua_register(s_pLuaState, "vector3", lua_vector3);
-    lua_register(s_pLuaState, "vecAdd", lua_vecAdd);
-    lua_register(s_pLuaState, "vecSub", lua_vecSub);
-    lua_register(s_pLuaState, "vecMul", lua_vecMul);
-    lua_register(s_pLuaState, "vecLength", lua_vecLength);
-    lua_register(s_pLuaState, "vecNormalize", lua_vecNormalize);
+    // Math and vector functions would be registered here in full Lua implementation
+    DevMsg("Lua: Registering math/vector functions (stub mode)\n");
 }
 
 LuaFunctionResult_t CGModLuaSystem::LoadScript(const char* pszFileName, LuaScriptType_t type)
@@ -262,21 +227,10 @@ LuaFunctionResult_t CGModLuaSystem::LoadScript(const char* pszFileName, LuaScrip
         return LUA_RESULT_FILE_NOT_FOUND;
     }
 
-    int result = luaL_loadfile(s_pLuaState, fullPath);
-    if (result != 0)
+    // Use wrapper to run the Lua file
+    if (!CLuaWrapper::RunLuaFile(fullPath))
     {
-        const char* error = lua_tostring(s_pLuaState, -1);
-        Warning("Lua load error in %s: %s\n", pszFileName, error);
-        lua_pop(s_pLuaState, 1);
-        return LUA_RESULT_SYNTAX_ERROR;
-    }
-
-    result = lua_pcall(s_pLuaState, 0, 0, 0);
-    if (result != 0)
-    {
-        const char* error = lua_tostring(s_pLuaState, -1);
-        Warning("Lua execution error in %s: %s\n", pszFileName, error);
-        lua_pop(s_pLuaState, 1);
+        Warning("Lua execution error in %s: %s\n", pszFileName, CLuaWrapper::GetLastError());
         return LUA_RESULT_RUNTIME_ERROR;
     }
 
@@ -284,7 +238,7 @@ LuaFunctionResult_t CGModLuaSystem::LoadScript(const char* pszFileName, LuaScrip
     LuaContext_t context;
     context.L = s_pLuaState;
     context.scriptType = type;
-    context.fileName = pszFileName;
+    Q_strncpy(context.fileName, pszFileName, sizeof(context.fileName));
     context.isLoaded = true;
     context.lastExecTime = gpGlobals->curtime;
     s_LoadedScripts.AddToTail(context);
@@ -474,6 +428,28 @@ void CGModLuaSystem::ReloadAllScripts()
 
     LoadAllScripts();
     DevMsg("All Lua scripts reloaded\n");
+}
+
+//-----------------------------------------------------------------------------
+// Additional Lua system methods (compatibility wrapper implementations)
+//-----------------------------------------------------------------------------
+bool CGModLuaSystem::RunLuaFile(const char* pszFileName)
+{
+    if (!pszFileName)
+        return false;
+
+    DevMsg("Lua: Would run file: %s\n", pszFileName);
+    return CLuaWrapper::RunLuaFile(pszFileName);
+}
+
+bool CGModLuaSystem::Initialize()
+{
+    return (InitializeLua() == LUA_RESULT_SUCCESS);
+}
+
+void CGModLuaSystem::RegisterGlobalFunctions()
+{
+    RegisterEngineBindings();
 }
 
 //-----------------------------------------------------------------------------

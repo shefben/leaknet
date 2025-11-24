@@ -9,12 +9,11 @@
 #include "convar.h"
 #include "utlvector.h"
 #include "utlsymbol.h"
+#include "lua_wrapper.h"
 
-// Lua 5.0 includes (determined correct version from directory analysis)
+// Lua types for compatibility
 extern "C" {
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
+    typedef struct lua_State lua_State;
 }
 
 // Forward declarations
@@ -95,6 +94,9 @@ public:
     static LuaFunctionResult_t ExecuteString(const char* pszCode);
     static LuaFunctionResult_t ExecuteFunction(const char* pszFunctionName, int numArgs = 0);
     static LuaFunctionResult_t ReloadScript(const char* pszFileName);
+    static bool RunLuaFile(const char* pszFileName);
+    static bool Initialize();
+    static void RegisterGlobalFunctions();
 
     // SWEP system integration
     static bool LoadSWEP(const char* pszWeaponName);
@@ -130,6 +132,7 @@ public:
     static LuaContext_t* GetCurrentContext();
     static void SetContextPlayer(CBasePlayer* pPlayer);
     static void SetContextEntity(CBaseEntity* pEntity);
+    static bool IsInitialized() { return s_bSystemInitialized; }
 
 private:
     static lua_State* s_pLuaState;

@@ -8,7 +8,8 @@
 #include "cbase.h"
 #include "gmod_spawnlist.h"
 #include "filesystem.h"
-#include "tier1/strtools.h"
+#include "sharedInterface.h"
+#include "vstdlib/strtools.h"
 #include "engine/IEngineSound.h"
 
 // Initialize static members
@@ -113,7 +114,7 @@ void CGModSpawnList::RecursiveScanDirectory(const char* directory, const char* b
     char searchPath[MAX_PATH];
     Q_snprintf(searchPath, sizeof(searchPath), "%s/*", directory);
 
-    const char* pFileName = g_pFullFileSystem->FindFirstEx(searchPath, "GAME", &findHandle);
+    const char* pFileName = filesystem->FindFirst(searchPath, &findHandle);
 
     while (pFileName)
     {
@@ -122,7 +123,7 @@ void CGModSpawnList::RecursiveScanDirectory(const char* directory, const char* b
             char fullPath[MAX_PATH];
             Q_snprintf(fullPath, sizeof(fullPath), "%s/%s", directory, pFileName);
 
-            if (g_pFullFileSystem->FindIsDirectory(findHandle))
+            if (filesystem->FindIsDirectory(findHandle))
             {
                 // Recurse into subdirectory
                 RecursiveScanDirectory(fullPath, baseDir);
@@ -145,10 +146,10 @@ void CGModSpawnList::RecursiveScanDirectory(const char* directory, const char* b
             }
         }
 
-        pFileName = g_pFullFileSystem->FindNext(findHandle);
+        pFileName = filesystem->FindNext(findHandle);
     }
 
-    g_pFullFileSystem->FindClose(findHandle);
+    filesystem->FindClose(findHandle);
 }
 
 //-----------------------------------------------------------------------------
@@ -160,9 +161,9 @@ void CGModSpawnList::ProcessModelFile(const char* filePath, const char* baseDir)
         return;
 
     SpawnListEntry_t entry;
-    entry.modelPath = filePath;
-    entry.displayName = ExtractModelName(filePath);
-    entry.category = ExtractCategory(filePath);
+    Q_strncpy(entry.modelPath, filePath, sizeof(entry.modelPath));
+    Q_strncpy(entry.displayName, ExtractModelName(filePath), sizeof(entry.displayName));
+    Q_strncpy(entry.category, ExtractCategory(filePath), sizeof(entry.category));
     entry.isRagdoll = IsRagdollModel(filePath);
     entry.isValid = true;
 
@@ -191,7 +192,7 @@ void CGModSpawnList::SaveSpawnListToFile(const char* pszFilename)
     if (!pszFilename || m_SpawnEntries.Count() == 0)
         return;
 
-    FileHandle_t file = g_pFullFileSystem->Open(pszFilename, "w", "MOD");
+    FileHandle_t file = filesystem->Open(pszFilename, "w", "MOD");
     if (file == FILESYSTEM_INVALID_HANDLE)
     {
         Msg("Failed to create spawn list file: %s\n", pszFilename);
@@ -200,14 +201,26 @@ void CGModSpawnList::SaveSpawnListToFile(const char* pszFilename)
 
     WriteFileHeader(file);
 
-    // Write all entries grouped by category
-    CUtlVector<CUtlString> categories;
+    // Write all entries grouped by category - 2003 compatible version
+    CUtlVector<const char*> categories;
 
     // Collect unique categories
     for (int i = 0; i < m_SpawnEntries.Count(); i++)
     {
         const SpawnListEntry_t& entry = m_SpawnEntries[i];
-        if (categories.Find(entry.category) == categories.InvalidIndex())
+
+        // Check if category already exists
+        bool bFound = false;
+        for (int j = 0; j < categories.Count(); j++)
+        {
+            if (Q_strcmp(categories[j], entry.category) == 0)
+            {
+                bFound = true;
+                break;
+            }
+        }
+
+        if (!bFound)
         {
             categories.AddToTail(entry.category);
         }
@@ -216,26 +229,26 @@ void CGModSpawnList::SaveSpawnListToFile(const char* pszFilename)
     // Write entries by category
     for (int c = 0; c < categories.Count(); c++)
     {
-        const char* category = categories[c].String();
+        const char* category = categories[c];
 
         // Write category header
-        g_pFullFileSystem->FPrintf(file, "\n\t\"%s\"\n\t{\n", category);
+        filesystem->FPrintf(file, "\n\t\"%s\"\n\t{\n", category);
 
         // Write all entries in this category
         for (int i = 0; i < m_SpawnEntries.Count(); i++)
         {
             const SpawnListEntry_t& entry = m_SpawnEntries[i];
-            if (Q_strcmp(entry.category.String(), category) == 0)
+            if (Q_strcmp(entry.category, category) == 0)
             {
                 WriteFileEntry(file, entry);
             }
         }
 
-        g_pFullFileSystem->FPrintf(file, "\t}\n");
+        filesystem->FPrintf(file, "\t}\n");
     }
 
     WriteFileFooter(file);
-    g_pFullFileSystem->Close(file);
+    filesystem->Close(file);
 
     Msg("Spawn list saved to %s with %d entries\n", pszFilename, m_SpawnEntries.Count());
 }
@@ -245,9 +258,9 @@ void CGModSpawnList::SaveSpawnListToFile(const char* pszFilename)
 //-----------------------------------------------------------------------------
 void CGModSpawnList::WriteFileHeader(FileHandle_t file)
 {
-    g_pFullFileSystem->FPrintf(file, "\"spawnlist\"\n{\n");
-    g_pFullFileSystem->FPrintf(file, "\t// Auto-generated complete spawn list\n");
-    g_pFullFileSystem->FPrintf(file, "\t// Generated by gm_makecompletespawnlist\n\n");
+    filesystem->FPrintf(file, "\"spawnlist\"\n{\n");
+    filesystem->FPrintf(file, "\t// Auto-generated complete spawn list\n");
+    filesystem->FPrintf(file, "\t// Generated by gm_makecompletespawnlist\n\n");
 }
 
 //-----------------------------------------------------------------------------
@@ -255,19 +268,19 @@ void CGModSpawnList::WriteFileHeader(FileHandle_t file)
 //-----------------------------------------------------------------------------
 void CGModSpawnList::WriteFileEntry(FileHandle_t file, const SpawnListEntry_t& entry)
 {
-    g_pFullFileSystem->FPrintf(file, "\t\t\"%s\"\n\t\t{\n", entry.displayName.String());
-    g_pFullFileSystem->FPrintf(file, "\t\t\t\"model\"\t\t\"%s\"\n", entry.modelPath.String());
+    filesystem->FPrintf(file, "\t\t\"%s\"\n\t\t{\n", entry.displayName);
+    filesystem->FPrintf(file, "\t\t\t\"model\"\t\t\"%s\"\n", entry.modelPath);
 
     if (entry.isRagdoll)
     {
-        g_pFullFileSystem->FPrintf(file, "\t\t\t\"type\"\t\t\"ragdoll\"\n");
+        filesystem->FPrintf(file, "\t\t\t\"type\"\t\t\"ragdoll\"\n");
     }
     else
     {
-        g_pFullFileSystem->FPrintf(file, "\t\t\t\"type\"\t\t\"prop\"\n");
+        filesystem->FPrintf(file, "\t\t\t\"type\"\t\t\"prop\"\n");
     }
 
-    g_pFullFileSystem->FPrintf(file, "\t\t}\n");
+    filesystem->FPrintf(file, "\t\t}\n");
 }
 
 //-----------------------------------------------------------------------------
@@ -275,7 +288,7 @@ void CGModSpawnList::WriteFileEntry(FileHandle_t file, const SpawnListEntry_t& e
 //-----------------------------------------------------------------------------
 void CGModSpawnList::WriteFileFooter(FileHandle_t file)
 {
-    g_pFullFileSystem->FPrintf(file, "}\n");
+    filesystem->FPrintf(file, "}\n");
 }
 
 //-----------------------------------------------------------------------------
@@ -287,7 +300,7 @@ bool CGModSpawnList::IsModelValid(const char* modelPath)
         return false;
 
     // Check if file exists
-    return g_pFullFileSystem->FileExists(modelPath, "GAME");
+    return filesystem->FileExists(modelPath, "GAME");
 }
 
 //-----------------------------------------------------------------------------

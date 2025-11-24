@@ -4,6 +4,7 @@
 #include "cbase.h"
 #include "igamesystem.h"
 #include "filesystem.h"
+#include "utlmap.h"
 
 // Forward declarations
 class CBasePlayer;
@@ -109,7 +110,7 @@ public:
 private:
     // Internal data
     CUtlVector<ExpressionData_t> m_RegisteredExpressions;
-    CUtlVector<PlayerExpressionState_t> m_PlayerExpressionStates; // Player expression states
+    CUtlMap<int, PlayerExpressionState_t> m_PlayerExpressionStates; // Player expression states mapped by player index
     FlexControllerMapping_t m_FlexControllers[MAX_FLEX_CONTROLLERS];
     int m_iNumFlexControllers;
 

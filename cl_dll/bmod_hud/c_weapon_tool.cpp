@@ -9,7 +9,7 @@
 #include "c_weapon__stubs.h"
 #include "basehlcombatweapon_shared.h"
 #include "c_basehlcombatweapon.h"
-#include "weapon_tool.h"
+#include "weapon_tool_shared.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -21,6 +21,7 @@ class C_WeaponTool : public C_BaseHLCombatWeapon
 {
 	DECLARE_CLASS( C_WeaponTool, C_BaseHLCombatWeapon );
 	DECLARE_CLIENTCLASS();
+	DECLARE_PREDICTABLE(); // Required for weapon prediction system
 
 public:
 	C_WeaponTool();

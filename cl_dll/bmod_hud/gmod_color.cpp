@@ -8,8 +8,9 @@
 #include "cbase.h"
 #include "gmod_color.h"
 #include "filesystem.h"
-#include "tier1/strtools.h"
-#include "tier1/KeyValues.h"
+#include "vstdlib/strtools.h"
+#include "keyvalues.h"
+#include "bmod_render_extensions.h"
 
 // Initialize static members
 float CGModColorSystem::m_flColorComponents[COLOR_COMPONENT_COUNT] = {1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f};
@@ -233,14 +234,16 @@ void CGModColorSystem::ApplyColorToEntity(CBaseEntity* pEntity, const Color& col
     if (!pEntity)
         return;
 
-    // Set entity color
-    pEntity->SetRenderColor(color.r(), color.g(), color.b(), color.a());
+    // Set entity color using BarrysMod render extensions (full 2003 engine implementation)
+    int r, g, b, a;
+    color.GetColor(r, g, b, a);
+    BMod::SetRenderColor(pEntity, r, g, b, a);
 
-    // Set render mode
-    pEntity->SetRenderMode((RenderMode_t)renderMode);
+    // Set render mode using BarrysMod render extensions (full 2003 engine implementation)
+    BMod::SetRenderMode(pEntity, (RenderMode_t)renderMode);
 
-    // Set render FX
-    pEntity->SetRenderFX((RenderFx_t)renderFX);
+    // Set render FX using BarrysMod render extensions (full 2003 engine implementation)
+    BMod::SetRenderFX(pEntity, (RenderFx_t)renderFX);
 
     // Network the changes
     pEntity->NetworkStateChanged();

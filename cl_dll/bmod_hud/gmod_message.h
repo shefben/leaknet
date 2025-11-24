@@ -16,6 +16,7 @@
 #include <vgui/IScheme.h>
 #include "Color.h"
 #include "utlvector.h"
+#include "convar.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -246,28 +247,28 @@ extern CGModMessageManager *g_pGModMessageManager;
 // Console Command Functions (matching Garry's Mod pattern)
 //-----------------------------------------------------------------------------
 
-// Text functions
-void GModTextStart_f(const CCommand &args);
-void GModTextSetPos_f(const CCommand &args);
-void GModTextSetColor_f(const CCommand &args);
-void GModTextSetTime_f(const CCommand &args);
-void GModTextSetDelay_f(const CCommand &args);
-void GModTextSetText_f(const CCommand &args);
-void GModTextSetEntity_f(const CCommand &args);
-void GModTextAnimate_f(const CCommand &args);
-void GModTextHide_f(const CCommand &args);
-void GModTextHideAll_f(const CCommand &args);
+// Text functions - 2003 engine ConCommand callbacks
+void GModTextStart_f(void);
+void GModTextSetPos_f(void);
+void GModTextSetColor_f(void);
+void GModTextSetTime_f(void);
+void GModTextSetDelay_f(void);
+void GModTextSetText_f(void);
+void GModTextSetEntity_f(void);
+void GModTextAnimate_f(void);
+void GModTextHide_f(void);
+void GModTextHideAll_f(void);
 
-// Rectangle functions
-void GModRectStart_f(const CCommand &args);
-void GModRectSetPos_f(const CCommand &args);
-void GModRectSetSize_f(const CCommand &args);
-void GModRectSetColor_f(const CCommand &args);
-void GModRectSetTime_f(const CCommand &args);
-void GModRectSetDelay_f(const CCommand &args);
-void GModRectAnimate_f(const CCommand &args);
-void GModRectHide_f(const CCommand &args);
-void GModRectHideAll_f(const CCommand &args);
+// Rectangle functions - 2003 engine ConCommand callbacks
+void GModRectStart_f(void);
+void GModRectSetPos_f(void);
+void GModRectSetSize_f(void);
+void GModRectSetColor_f(void);
+void GModRectSetTime_f(void);
+void GModRectSetDelay_f(void);
+void GModRectAnimate_f(void);
+void GModRectHide_f(void);
+void GModRectHideAll_f(void);
 
 // Utility functions
 void InitGModMessageSystem();

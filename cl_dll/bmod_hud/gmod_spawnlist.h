@@ -13,18 +13,27 @@
 
 #include "cbase.h"
 #include "utlvector.h"
-#include "utlstring.h"
+#include "filesystem.h"
 
 //-----------------------------------------------------------------------------
 // Spawn List Entry Structure
 //-----------------------------------------------------------------------------
 struct SpawnListEntry_t
 {
-    CUtlString modelPath;       // Full path to model file
-    CUtlString displayName;     // Display name for UI
-    CUtlString category;        // Category folder
+    char modelPath[256];        // Full path to model file
+    char displayName[128];      // Display name for UI
+    char category[64];          // Category folder
     bool isRagdoll;            // Whether this is a ragdoll or prop
     bool isValid;              // Whether the model exists and is valid
+
+    SpawnListEntry_t()
+    {
+        modelPath[0] = '\0';
+        displayName[0] = '\0';
+        category[0] = '\0';
+        isRagdoll = false;
+        isValid = false;
+    }
 };
 
 //-----------------------------------------------------------------------------

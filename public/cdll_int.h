@@ -142,6 +142,7 @@ public:
 	// command handlers
 	virtual int					ServerCmd( const char *szCmdString, bool bReliable = true ) = 0;
 	virtual int					ClientCmd( const char *szCmdString ) = 0;
+	virtual int					ClientCmd_Unrestricted( const char *szCmdString ) = 0;
 
 	virtual void				GetPlayerInfo( int ent_num, hud_player_info_t *pinfo ) = 0;
 

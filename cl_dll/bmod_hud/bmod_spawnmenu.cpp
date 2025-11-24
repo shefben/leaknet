@@ -9,6 +9,7 @@
 #include <vgui/IVGui.h>
 #include <vgui/ISurface.h>
 #include <vgui/IScheme.h>
+#include <vgui/KeyCode.h>
 #include <vgui_controls/Button.h>
 #include <vgui_controls/Panel.h>
 #include <vgui_controls/Frame.h>
@@ -18,7 +19,7 @@
 #include "convar.h"
 #include "iclientmode.h"
 #include "ienginevgui.h"
-#include "tier0/icommandline.h"
+#include "vstdlib/icommandline.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -267,8 +268,8 @@ void CClientSpawnDialog::LoadGModMenuConfiguration()
 	}
 	filesystem->FindClose( findHandle );
 
-	// Load tool buttons resource file
-	LoadControlSettingsFromFile( TOOLBUTTONS_RES_FILE );
+	// Load tool buttons resource file (2003 compatible)
+	LoadControlSettings( TOOLBUTTONS_RES_FILE );
 }
 
 //-----------------------------------------------------------------------------
@@ -286,7 +287,7 @@ void CClientSpawnDialog::LoadFromKeyValueInternal( KeyValues *pKeyValues )
 		// Process specific configuration keys
 		if ( Q_stricmp( keyName, "AutoUpdate" ) == 0 )
 		{
-			m_bAutoUpdate = pSubKey->GetBool();
+			m_bAutoUpdate = pSubKey->GetInt() != 0; // 2003 engine compatibility - GetBool() not available
 		}
 		// Add more configuration processing as needed
 	}
@@ -457,7 +458,7 @@ void CClientSpawnDialog::OnKeyCodePressed( vgui::KeyCode code )
 {
 	switch ( code )
 	{
-		case KEY_ESCAPE:
+		case vgui::KEY_ESCAPE:
 			ShowPanel( false );
 			break;
 

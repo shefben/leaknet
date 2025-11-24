@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: Contains the implementation of game rules for multiplayer.
 //
@@ -393,9 +393,16 @@ END_NETWORK_TABLE()
 
 		if ( addDefault )
 		{
-			pPlayer->GiveNamedItem( "weapon_crowbar" );
-			pPlayer->GiveNamedItem( "weapon_pistol" );
-			pPlayer->GiveAmmo( 72, "MediumRound");// 4 full reloads
+			// Give default BarrysMod starting weapons
+			pPlayer->GiveNamedItem( "weapon_crowbar" );     // Melee weapon
+			pPlayer->GiveNamedItem( "weapon_pistol" );      // Secondary weapon
+			pPlayer->GiveNamedItem( "weapon_smg1" );        // Primary weapon (SMG)
+			pPlayer->GiveNamedItem( "weapon_physcannon" );  // Gravity gun (physics cannon)
+			pPlayer->GiveNamedItem( "weapon_tool" );        // Phys gun (tool system)
+
+			// Give appropriate ammo for weapons
+			pPlayer->GiveAmmo( 72, "MediumRound");  // 4 full reloads for pistol
+			pPlayer->GiveAmmo( 135, "SmallRound");  // 4.5 full reloads for SMG1 (30 rounds per clip)
 		}
 	}
 

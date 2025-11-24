@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -183,4 +183,39 @@ int C_BaseHLPlayer::DrawModel( int flags )
 	SetLocalAngles( saveAngles );
 
 	return iret;
+}
+
+//-----------------------------------------------------------------------------
+// Garry's Mod face pose system - using native 2003 C_BaseFlex functionality
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Purpose: Set flex weight using native C_BaseFlex system
+//-----------------------------------------------------------------------------
+void C_BaseHLPlayer::SetFlexWeight( int flexIndex, float value )
+{
+	// Bounds check - C_BaseFlex uses 64 flex weights
+	if ( flexIndex < 0 || flexIndex >= 64 )
+		return;
+
+	// Clamp value between 0 and 1
+	value = clamp( value, 0.0f, 1.0f );
+
+	// Use the inherited m_flexWeight array from C_BaseFlex
+	m_flexWeight[flexIndex] = value;
+
+	DevMsg( "SetFlexWeight: flex %d = %f (using native C_BaseFlex)\n", flexIndex, value );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Get flex weight using native C_BaseFlex system
+//-----------------------------------------------------------------------------
+float C_BaseHLPlayer::GetFlexWeight( int flexIndex )
+{
+	// Bounds check - C_BaseFlex uses 64 flex weights
+	if ( flexIndex < 0 || flexIndex >= 64 )
+		return 0.0f;
+
+	// Use the inherited m_flexWeight array from C_BaseFlex
+	return m_flexWeight[flexIndex];
 }

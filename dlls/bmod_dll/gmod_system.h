@@ -103,6 +103,9 @@ public:
     bool IsSystemInitialized() const { return m_SystemState.bInitialized; }
     void ReloadAllSystems();
 
+    // Game event management
+    void ListenForGameEvent(const char* pszEventName);
+
     // Configuration management (based on settings file analysis)
     void LoadAllConfigurations();
     void ReloadConfigurations();
@@ -174,6 +177,19 @@ private:
 
 // Global access to main GMod system
 extern CGModSystem* g_pGModSystem;
+
+// Global access to all GMod subsystems
+extern CGModWeldSystem* g_pGModWeldSystem;
+extern CGModUndoSystem* g_pGModUndoSystem;
+extern CGModLuaSystem* g_pGModLuaSystem;
+extern CGModToolsSystem* g_pGModToolsSystem;
+extern CGModSWEPSystem* g_pGModSWEPSystem;
+extern CGModGamemodeSystem* g_pGModGamemodeSystem;
+extern CGModModSystem* g_pGModModSystem;
+extern CGModOverlaySystem* g_pGModOverlaySystem;
+extern CGModExpressionsSystem* g_pGModExpressionsSystem;
+extern CGModDeathSystem* g_pGModDeathSystem;
+extern CGModSchemeSystem* g_pGModSchemeSystem;
 
 // Console commands for system management
 void CC_GMod_SystemStatus(void);

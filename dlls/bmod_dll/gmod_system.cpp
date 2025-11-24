@@ -6,6 +6,7 @@
 #include "convar.h"
 #include "gameeventdefs.h"
 #include "igameevents.h"
+#include "gameinterface.h"
 
 // Include all GMod subsystems
 #include "gmod_weld.h"
@@ -25,7 +26,7 @@
 
 // Console variables for GMod system
 ConVar gmod_enable("gmod_enable", "1", FCVAR_NONE, "Enable GMod functionality");
-ConVar gmod_gamemode("gmod_gamemode", "sandbox", FCVAR_NOTIFY, "Current gamemode");
+ConVar gmod_gamemode("gmod_gamemode", "sandbox", FCVAR_NONE, "Current gamemode");
 ConVar gmod_debug("gmod_debug", "0", FCVAR_NONE, "Enable GMod debug output");
 
 // Console commands for system management
@@ -38,6 +39,33 @@ ConCommand gmod_load_gamemode("gmod_load_gamemode", CC_GMod_LoadGamemode, "Load 
 // Global instance
 CGModSystem g_GMod_System;
 CGModSystem* g_pGModSystem = &g_GMod_System;
+
+// Global pointers to all GMod subsystems - needed for system coordination
+// These point to the actual global instances defined in each subsystem's .cpp file
+extern CGModWeldSystem g_GMod_WeldSystem;
+extern CGModUndoSystem g_GMod_UndoSystem;
+extern CGModLuaSystem g_GMod_LuaSystem;
+extern CGModToolsSystem g_GMod_ToolsSystem;
+extern CGModSWEPSystem g_GMod_SWEPSystem;
+extern CGModGamemodeSystem g_GMod_GamemodeSystem;
+extern CGModModSystem g_GMod_ModSystem;
+extern CGModOverlaySystem g_GMod_OverlaySystem;
+extern CGModExpressionsSystem g_GMod_ExpressionsSystem;
+extern CGModDeathSystem g_GMod_DeathSystem;
+extern CGModSchemeSystem g_GMod_SchemeSystem;
+
+// Global pointers for easy access
+CGModWeldSystem* g_pGModWeldSystem = &g_GMod_WeldSystem;
+CGModUndoSystem* g_pGModUndoSystem = &g_GMod_UndoSystem;
+CGModLuaSystem* g_pGModLuaSystem = &g_GMod_LuaSystem;
+CGModToolsSystem* g_pGModToolsSystem = &g_GMod_ToolsSystem;
+CGModSWEPSystem* g_pGModSWEPSystem = &g_GMod_SWEPSystem;
+CGModGamemodeSystem* g_pGModGamemodeSystem = &g_GMod_GamemodeSystem;
+CGModModSystem* g_pGModModSystem = &g_GMod_ModSystem;
+CGModOverlaySystem* g_pGModOverlaySystem = &g_GMod_OverlaySystem;
+CGModExpressionsSystem* g_pGModExpressionsSystem = &g_GMod_ExpressionsSystem;
+CGModDeathSystem* g_pGModDeathSystem = &g_GMod_DeathSystem;
+CGModSchemeSystem* g_pGModSchemeSystem = &g_GMod_SchemeSystem;
 
 //-----------------------------------------------------------------------------
 // CGModSystem implementation - Main system coordinator
@@ -109,7 +137,11 @@ void CGModSystem::PostInit()
 
 void CGModSystem::Shutdown()
 {
-    StopListeningForAllEvents();
+    // Stop listening to all game events
+    if (gameeventmanager)
+    {
+        gameeventmanager->RemoveListener(this);
+    }
 
     m_SystemState.bInitialized = false;
     m_SystemState.bGamemodeLoaded = false;
@@ -200,6 +232,38 @@ void CGModSystem::FrameUpdatePostEntityThink()
     }
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Helper to listen for game events (compatibility wrapper)
+//-----------------------------------------------------------------------------
+void CGModSystem::ListenForGameEvent(const char* pszEventName)
+{
+    if (!pszEventName)
+        return;
+
+    // Get the game event manager and add listener for this event
+    if (gameeventmanager)
+    {
+        gameeventmanager->AddListener(this, pszEventName);
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Helper function to get player by user ID (for game events)
+//-----------------------------------------------------------------------------
+static CBasePlayer* GetPlayerByUserId(int userid)
+{
+    // Iterate through all players to find matching user ID
+    for (int i = 1; i <= gpGlobals->maxClients; i++)
+    {
+        CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
+        if (pPlayer && engine->GetPlayerUserId(pPlayer->edict()) == userid)
+        {
+            return pPlayer;
+        }
+    }
+    return NULL;
+}
+
 void CGModSystem::FireGameEvent(KeyValues* event)
 {
     const char* pszEventName = event->GetName();
@@ -207,7 +271,7 @@ void CGModSystem::FireGameEvent(KeyValues* event)
     if (Q_stricmp(pszEventName, "player_connect") == 0)
     {
         int userid = event->GetInt("userid");
-        CBasePlayer* pPlayer = UTIL_PlayerByUserId(userid);
+        CBasePlayer* pPlayer = GetPlayerByUserId(userid);
         if (pPlayer)
         {
             OnPlayerConnect(pPlayer);
@@ -216,7 +280,7 @@ void CGModSystem::FireGameEvent(KeyValues* event)
     else if (Q_stricmp(pszEventName, "player_disconnect") == 0)
     {
         int userid = event->GetInt("userid");
-        CBasePlayer* pPlayer = UTIL_PlayerByUserId(userid);
+        CBasePlayer* pPlayer = GetPlayerByUserId(userid);
         if (pPlayer)
         {
             OnPlayerDisconnect(pPlayer);
@@ -225,7 +289,7 @@ void CGModSystem::FireGameEvent(KeyValues* event)
     else if (Q_stricmp(pszEventName, "player_spawn") == 0)
     {
         int userid = event->GetInt("userid");
-        CBasePlayer* pPlayer = UTIL_PlayerByUserId(userid);
+        CBasePlayer* pPlayer = GetPlayerByUserId(userid);
         if (pPlayer)
         {
             OnPlayerSpawn(pPlayer);
@@ -234,7 +298,7 @@ void CGModSystem::FireGameEvent(KeyValues* event)
     else if (Q_stricmp(pszEventName, "player_death") == 0)
     {
         int userid = event->GetInt("userid");
-        CBasePlayer* pPlayer = UTIL_PlayerByUserId(userid);
+        CBasePlayer* pPlayer = GetPlayerByUserId(userid);
         if (pPlayer)
         {
             OnPlayerDeath(pPlayer);
@@ -349,7 +413,9 @@ bool CGModSystem::LoadServerConfiguration()
     if (engine->IsDedicatedServer())
     {
         DevMsg("Executing dedicated server config file\n");
-        engine->ServerCommand(VarArgs("exec %s\n", pszServerCfg));
+        char szCommand[256];
+        Q_snprintf(szCommand, sizeof(szCommand), "exec %s\n", pszServerCfg);
+        engine->ServerCommand(szCommand);
     }
     else
     {

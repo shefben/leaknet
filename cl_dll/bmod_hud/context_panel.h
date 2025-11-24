@@ -24,6 +24,7 @@
 #include "vgui/ILocalize.h"
 #include "KeyValues.h"
 #include "utlvector.h"
+#include "convar.h"
 
 namespace vgui
 {
@@ -292,7 +293,7 @@ private:
 extern CContextPanelManager *g_pContextPanelManager;
 
 // Console command functions
-void ContextMode_f(const CCommand &args);
+void ContextMode_f(void);
 void ContextBuild_f();
 void ContextReload_f();
 

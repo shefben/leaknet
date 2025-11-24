@@ -376,9 +376,17 @@ bool CGModToolsSystem::ExecuteTool(CBasePlayer* pPlayer, CBaseEntity* pTarget, c
         {
             if (pTarget)
             {
-                pTarget->Ignite(30.0f, false);
-                ClientPrint(pPlayer, HUD_PRINTTALK, "Entity ignited");
-                success = true;
+                CBaseAnimating* pAnimating = dynamic_cast<CBaseAnimating*>(pTarget);
+                if (pAnimating)
+                {
+                    pAnimating->Ignite(30.0f);
+                    ClientPrint(pPlayer, HUD_PRINTTALK, "Entity ignited");
+                    success = true;
+                }
+                else
+                {
+                    ClientPrint(pPlayer, HUD_PRINTTALK, "Entity cannot be ignited");
+                }
             }
             break;
         }

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: Utility code.
 //
@@ -2223,4 +2223,12 @@ AngularImpulse WorldToLocalRotation( const VMatrix &localToWorld, const Vector &
 	AngularImpulse ang = localToWorld.VMul3x3Transpose( rot );
 
 	return ang;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Get entity by index
+//-----------------------------------------------------------------------------
+CBaseEntity *UTIL_EntityByIndex( int index )
+{
+	return CBaseEntity::Instance( index );
 }

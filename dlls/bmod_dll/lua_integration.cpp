@@ -10,7 +10,8 @@
 #include "player.h"
 #include "filesystem.h"
 #include "convar.h"
-#include "tier1/fmtstr.h"
+#include "fmtstr.h"
+#include "ammodef.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

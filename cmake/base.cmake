@@ -78,8 +78,8 @@ endif()
 
 include( "${SRCDIR}/cmake/parse_git_info.cmake" )
 
-set( GAMES_TO_BUILD "cstrike,hl2,hl1,tf2" CACHE STRING "Games which will be built" )
-set_property( CACHE GAMES_TO_BUILD PROPERTY STRINGS "cstrike" "hl2" "hl1" "tf2" )
+set( GAMES_TO_BUILD "cstrike,hl2,hl1,tf2,bmod" CACHE STRING "Games which will be built" )
+set_property( CACHE GAMES_TO_BUILD PROPERTY STRINGS "cstrike" "hl2" "hl1" "tf2" "bmod" )
 message( STATUS "GAMES_TO_BUILD: ${GAMES_TO_BUILD}" )
 string( REPLACE "," ";" GAMES_TO_BUILD_LIST ${GAMES_TO_BUILD} )
 

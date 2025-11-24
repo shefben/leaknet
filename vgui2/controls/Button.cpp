@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // The copyright to the contents herein is the property of Valve, L.L.C.
 // The contents may be used and/or copied only with the written permission of
@@ -68,6 +68,7 @@ void Button::Init()
 	_keyFocusBorder = NULL;
 	_defaultButton = false;
 	m_sArmedSoundName = UTL_INVAL_SYMBOL;
+	_tooltipText = NULL;
 	m_sDepressedSoundName = UTL_INVAL_SYMBOL;
 	m_sReleasedSoundName = UTL_INVAL_SYMBOL;
 	SetTextInset(6, 0);
@@ -84,6 +85,13 @@ Button::~Button()
 	if (_actionMessage)
 	{
 		_actionMessage->deleteThis();
+	}
+
+	// Clean up tooltip text
+	if (_tooltipText)
+	{
+		delete[] _tooltipText;
+		_tooltipText = NULL;
 	}
 }
 
@@ -860,6 +868,35 @@ void Button::SizeToContents()
 	int wide, tall;
 	GetContentSize(wide, tall);
 	SetSize(wide + Label::Content, tall + Label::Content);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Set tooltip text for this button - 2003 engine compatibility
+//-----------------------------------------------------------------------------
+void Button::SetTooltip( const char *text )
+{
+	// Clean up existing tooltip text
+	if (_tooltipText)
+	{
+		delete[] _tooltipText;
+		_tooltipText = NULL;
+	}
+
+	// Store new tooltip text
+	if (text && text[0])
+	{
+		int len = strlen(text) + 1;
+		_tooltipText = new char[len];
+		strcpy(_tooltipText, text);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Get tooltip text for this button
+//-----------------------------------------------------------------------------
+const char *Button::GetTooltip()
+{
+	return _tooltipText ? _tooltipText : "";
 }
 
 //-----------------------------------------------------------------------------

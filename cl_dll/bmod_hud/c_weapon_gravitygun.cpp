@@ -14,12 +14,14 @@
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imaterialvar.h"
 #include "materialsystem/imaterial.h"
-#include "materialsystem/imaterialrendercontext.h"
+#include "bmod_material_extensions.h"
+#include "vmatrix.h"
+// Note: IMaterialRenderContext didn't exist in 2003, using direct IMaterialSystem calls
 #include "model_types.h"
 #include "tier0/vprof.h"
 #include "c_te_effect_dispatch.h"
 #include "studio.h"
-#include "ivmodelrender.h"
+#include "engine/ivmodelrender.h"
 
 // External interfaces
 extern IVModelRender *modelrender;
@@ -405,13 +407,16 @@ void C_BeamQuadratic::UpdateHeldObjectGlow( void )
 	switch ( m_effectState )
 	{
 		case EFFECT_READY:
+		{
 			// Blue glow for targeting
 			glowColor[0] = 0.3f; glowColor[1] = 0.7f; glowColor[2] = 1.0f; glowColor[3] = 0.6f;
 			glowScale = 1.015f; // Subtle glow
 			glowMaterialName = "sprites/blueglow1";
 			break;
+		}
 
 		case EFFECT_HOLDING:
+		{
 			// Orange glow for holding objects
 			glowColor[0] = 1.0f; glowColor[1] = 0.6f; glowColor[2] = 0.2f; glowColor[3] = 0.9f;
 			glowScale = 1.03f; // More prominent glow
@@ -422,6 +427,7 @@ void C_BeamQuadratic::UpdateHeldObjectGlow( void )
 			glowIntensity = 0.7f + 0.3f * sin( pulseTime );
 			glowColor[3] *= glowIntensity;
 			break;
+		}
 
 		default:
 			return; // No glow for other states
@@ -435,20 +441,19 @@ void C_BeamQuadratic::UpdateHeldObjectGlow( void )
 	if ( !pGlowMaterial )
 		return;
 
-	// Set up rendering state for glow effect
-	CMatRenderContextPtr pRenderContext( materials );
-	pRenderContext->Bind( pGlowMaterial );
+	// Set up rendering state for glow effect (2003 Material System)
+	materials->Bind( pGlowMaterial );
 
-	// Enable stencil testing to create silhouette effect
-	pRenderContext->SetStencilEnable( true );
-	pRenderContext->SetStencilFunc( STENCILFUNC_ALWAYS );
-	pRenderContext->SetStencilPassOp( STENCILOP_REPLACE );
-	pRenderContext->SetStencilFailOp( STENCILOP_KEEP );
-	pRenderContext->SetStencilZFailOp( STENCILOP_KEEP );
-	pRenderContext->SetStencilRef( 1 );
+	// Enable stencil testing to create silhouette effect (2003 version using BMod extensions)
+	BMod::SetStencilEnable( materials, true );
+	BMod::SetStencilFunc( materials, BMod::STENCILFUNC_ALWAYS );
+	BMod::SetStencilPassOp( materials, BMod::STENCILOP_REPLACE );
+	BMod::SetStencilFailOp( materials, BMod::STENCILOP_KEEP );
+	BMod::SetStencilZFailOp( materials, BMod::STENCILOP_KEEP );
+	BMod::SetStencilRef( materials, 1 );
 
 	// First pass: Render object to stencil buffer (no color output)
-	pRenderContext->SetColorWritesEnabled( false );
+	BMod::SetColorWritesEnabled( materials, false );
 
 	// Get object's render origin and angles
 	Vector origin = pHeldEntity->GetRenderOrigin();
@@ -463,41 +468,53 @@ void C_BeamQuadratic::UpdateHeldObjectGlow( void )
 	matrix[1][1] *= glowScale;  // Y scale
 	matrix[2][2] *= glowScale;  // Z scale
 
-	pRenderContext->MatrixMode( MATERIAL_MODEL );
-	pRenderContext->LoadMatrix( matrix );
+	materials->MatrixMode( MATERIAL_MODEL );
+	// Convert matrix3x4_t to VMatrix using 2003 engine constructor
+	VMatrix vmatrix( matrix );
+	materials->LoadMatrix( vmatrix );
 
-	// Draw the model scaled up
+	// Draw the model scaled up - 2003 IVModelRender interface
 	modelrender->DrawModel(
-		0,
-		pHeldEntity,
-		pHeldEntity->index,
-		pModel,
-		origin,
-		angles,
-		STUDIO_RENDER
+		STUDIO_RENDER,          // flags
+		pHeldEntity,            // cliententity
+		MODEL_INSTANCE_INVALID, // instance handle
+		pHeldEntity->index,     // entity_index
+		pModel,                 // model
+		origin,                 // origin
+		angles,                 // angles
+		0,                      // sequence
+		0,                      // skin
+		0,                      // body
+		0                       // hitboxset
 	);
 
 	// Second pass: Render glow where stencil is 0 (outside the object)
-	pRenderContext->SetColorWritesEnabled( true );
-	pRenderContext->SetStencilFunc( STENCILFUNC_NOTEQUAL );
-	pRenderContext->SetStencilRef( 1 );
+	BMod::SetColorWritesEnabled( materials, true );
+	BMod::SetStencilFunc( materials, BMod::STENCILFUNC_NOTEQUAL );
+	BMod::SetStencilRef( materials, 1 );
 
-	// Set glow color
-	pRenderContext->Color4fv( glowColor );
+	// Set glow color - Color4fv not available in 2003 engine
+	// Color would be set via material properties or vertex colors in 2003
+	// For now, the glow effect will use the default material color
 
 	// Reset matrix for normal rendering
 	AngleMatrix( angles, origin, matrix );
-	pRenderContext->LoadMatrix( matrix );
+	VMatrix normalMatrix( matrix );
+	materials->LoadMatrix( normalMatrix );
 
-	// Draw the model normally with glow material
+	// Draw the model normally with glow material - 2003 IVModelRender interface
 	modelrender->DrawModel(
-		0,
-		pHeldEntity,
-		pHeldEntity->index,
-		pModel,
-		origin,
-		angles,
-		STUDIO_RENDER
+		STUDIO_RENDER,          // flags
+		pHeldEntity,            // cliententity
+		MODEL_INSTANCE_INVALID, // instance handle
+		pHeldEntity->index,     // entity_index
+		pModel,                 // model
+		origin,                 // origin
+		angles,                 // angles
+		0,                      // sequence
+		0,                      // skin
+		0,                      // body
+		0                       // hitboxset
 	);
 
 	// Third pass: Add rotating indicator if in rotation mode
@@ -507,30 +524,37 @@ void C_BeamQuadratic::UpdateHeldObjectGlow( void )
 		float rotationTime = gpGlobals->curtime * 4.0f;
 		float rotationAlpha = 0.3f + 0.2f * sin( rotationTime );
 
-		float rotationColor[4] = { 1.0f, 1.0f, 0.5f, rotationAlpha }; // Yellow tint
-		pRenderContext->Color4fv( rotationColor );
+		// Yellow tint for rotation indicator - Color4fv not available in 2003 engine
+		// Color would be set via material properties or vertex colors in 2003
+		// For now, the rotation indicator will use the default material color
 
 		// Slightly larger scale for rotation indicator
 		matrix[0][0] *= 1.01f;
 		matrix[1][1] *= 1.01f;
 		matrix[2][2] *= 1.01f;
-		pRenderContext->LoadMatrix( matrix );
+		VMatrix rotationMatrix( matrix );
+		materials->LoadMatrix( rotationMatrix );
 
+		// Draw rotation indicator - 2003 IVModelRender interface
 		modelrender->DrawModel(
-			0,
-			pHeldEntity,
-			pHeldEntity->index,
-			pModel,
-			origin,
-			angles,
-			STUDIO_RENDER
+			STUDIO_RENDER,          // flags
+			pHeldEntity,            // cliententity
+			MODEL_INSTANCE_INVALID, // instance handle
+			pHeldEntity->index,     // entity_index
+			pModel,                 // model
+			origin,                 // origin
+			angles,                 // angles
+			0,                      // sequence
+			0,                      // skin
+			0,                      // body
+			0                       // hitboxset
 		);
 	}
 
-	// Cleanup: Disable stencil testing
-	pRenderContext->SetStencilEnable( false );
-	pRenderContext->MatrixMode( MATERIAL_MODEL );
-	pRenderContext->LoadIdentity();
+	// Cleanup: Disable stencil testing (2003 version using BMod extensions)
+	BMod::SetStencilEnable( materials, false );
+	materials->MatrixMode( MATERIAL_MODEL );
+	materials->LoadIdentity();
 }
 
 /*

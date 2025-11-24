@@ -50,7 +50,7 @@ struct UndoActionData_t
     Vector position;
     QAngle angles;
     Vector velocity;
-    Vector angularVelocity;
+    AngularImpulse angularVelocity;
     Color color;
     int renderMode;
     int renderFX;

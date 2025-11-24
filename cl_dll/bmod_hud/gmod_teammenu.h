@@ -20,7 +20,7 @@
 #include "vgui/IScheme.h"
 #include "vgui/ISurface.h"
 #include "vgui/ILocalize.h"
-#include "tier1/utlvector.h"
+#include "utlvector.h"
 #include "c_team.h"
 
 //-----------------------------------------------------------------------------
@@ -62,7 +62,7 @@ public:
     virtual void PerformLayout();
     virtual void OnCommand(const char* command);
     virtual void OnKeyCodePressed(vgui::KeyCode code);
-    virtual void OnMessage(const KeyValues *params, vgui::VPANEL fromPanel);
+    virtual void OnMessage(KeyValues *params, vgui::VPANEL fromPanel);
     virtual void OnTick();
 
     // Menu management
@@ -120,9 +120,9 @@ private:
     int GetPlayerCountForTeam(int teamNumber);
     bool CanJoinTeam(int teamNumber);
 
-    // Event handlers
-    MESSAGE_FUNC_PARAMS(OnItemSelected, "ItemSelected", data);
-    MESSAGE_FUNC_PARAMS(OnItemDoubleClicked, "ItemDoubleClicked", data);
+    // Event handlers - 2003 VGUI style
+    void OnItemSelected();
+    void OnItemDoubleClicked();
 
     // Utility functions
     Color GetTeamColor(int teamNumber);

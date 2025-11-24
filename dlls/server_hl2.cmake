@@ -235,39 +235,6 @@ BEGIN_SRC( SERVER_HL2_SOURCE_FILES "Source Files" )
 			"hl2_dll/weapon_tripwire.h" # !CSTRIKE && !TF2 && !HL1
 		#}
 	)
-	SRC_GRP(
-		SUBGROUP "BarrysMod DLL"
-		SOURCES
-		#{
-			"bmod_dll/gmod_system.cpp"
-			"bmod_dll/gmod_system.h"
-			"bmod_dll/gmod_weld.cpp"
-			"bmod_dll/gmod_weld.h"
-			"bmod_dll/gmod_undo.cpp"
-			"bmod_dll/gmod_undo.h"
-			"bmod_dll/gmod_lua.cpp"
-			"bmod_dll/gmod_lua.h"
-			"bmod_dll/gmod_tools.cpp"
-			"bmod_dll/gmod_tools.h"
-			"bmod_dll/gmod_swep.cpp"
-			"bmod_dll/gmod_swep.h"
-			"bmod_dll/gmod_gamemode.cpp"
-			"bmod_dll/gmod_gamemode.h"
-			"bmod_dll/gmod_mod.cpp"
-			"bmod_dll/gmod_mod.h"
-			"bmod_dll/gmod_overlay.cpp"
-			"bmod_dll/gmod_overlay.h"
-			"bmod_dll/gmod_expressions.cpp"
-			"bmod_dll/gmod_expressions.h"
-			"bmod_dll/gmod_death.cpp"
-			"bmod_dll/gmod_death.h"
-			"bmod_dll/gmod_scheme.cpp"
-			"bmod_dll/gmod_scheme.h"
-			"bmod_dll/gmod_compatibility_test.cpp"
-			"bmod_dll/lua_integration.cpp"
-			"bmod_dll/lua_integration.h"
-		#}
-	)
 END_SRC( SERVER_HL2_SOURCE_FILES "Source Files" )
 
 set(

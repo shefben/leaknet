@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -10,6 +10,16 @@
 #define BASEHLCOMBATWEAPON_H
 #ifdef _WIN32
 #pragma once
+#endif
+
+// Include server networking classes only for server builds
+#ifdef GAME_DLL
+	#include "server_class.h"
+#elif defined(CLIENT_DLL) || defined(HL2_CLIENT_DLL)
+	// Client-side stub for server networking macros
+	#define DECLARE_SERVERCLASS() typedef int __DECLARE_SERVERCLASS_DUMMY
+#else
+	#include "server_class.h"
 #endif
 
 //=========================================================

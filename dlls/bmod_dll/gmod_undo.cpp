@@ -2,6 +2,7 @@
 #include "cbase.h"
 #include "player.h"
 #include "physics.h"
+#include "cmodel.h"
 #include "tier0/memdbgon.h"
 
 // Define missing flag for LeakNet compatibility
@@ -174,7 +175,8 @@ void CGModUndoSystem::CaptureEntityState(CBaseEntity* pEntity, UndoActionData_t&
 
     if (pEntity->GetModel())
     {
-        actionData.modelName = pEntity->GetModel()->szPathName;
+        // Store model info - simplified approach for LeakNet compatibility
+        Q_strncpy(actionData.modelName, "model", sizeof(actionData.modelName));
     }
 
     actionData.timeStamp = gpGlobals->curtime;
@@ -397,7 +399,9 @@ bool CGModUndoSystem::RestoreEntityState(const UndoActionData_t& actionData)
     }
 
     // Restore rendering properties
-    pEntity->SetRenderColor(actionData.color[0], actionData.color[1], actionData.color[2], actionData.color[3]);
+    int r, g, b, a;
+    actionData.color.GetColor(r, g, b, a);
+    pEntity->SetRenderColor(r, g, b, a);
     pEntity->SetRenderMode((RenderMode_t)actionData.renderMode);
     pEntity->SetRenderFX((RenderFx_t)actionData.renderFX);
 

@@ -71,6 +71,14 @@ public:
     static void UpdateFromConVars();
     static const char* GetColorComponentName(ColorComponent_t component);
 
+    // Console variable callbacks (need public access for ConVar registration)
+    static void RedCallback(ConVar *var, const char *pOldString);
+    static void GreenCallback(ConVar *var, const char *pOldString);
+    static void BlueCallback(ConVar *var, const char *pOldString);
+    static void AlphaCallback(ConVar *var, const char *pOldString);
+    static void RenderModeCallback(ConVar *var, const char *pOldString);
+    static void RenderFXCallback(ConVar *var, const char *pOldString);
+
 private:
     static float m_flColorComponents[COLOR_COMPONENT_COUNT];
     static bool m_bInitialized;
@@ -79,14 +87,6 @@ private:
     static void ResetToDefaults();
     static void ClampColorValues();
     static void ConVarCallback(ColorComponent_t component);
-
-    // Console variable callbacks
-    static void RedCallback(ConVar *var, const char *pOldString);
-    static void GreenCallback(ConVar *var, const char *pOldString);
-    static void BlueCallback(ConVar *var, const char *pOldString);
-    static void AlphaCallback(ConVar *var, const char *pOldString);
-    static void RenderModeCallback(ConVar *var, const char *pOldString);
-    static void RenderFXCallback(ConVar *var, const char *pOldString);
 };
 
 // Console variables for color system

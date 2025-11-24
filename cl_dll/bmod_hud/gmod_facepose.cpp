@@ -9,8 +9,8 @@
 #include "gmod_facepose.h"
 #include "c_basehlplayer.h"
 #include "engine/IEngineSound.h"
-#include "tier1/convar.h"
-#include "tier1/strtools.h"
+#include "convar.h"
+#include "vstdlib/strtools.h"
 
 // Initialize static members
 float CGModFacePose::m_flFlexValues[MAX_FACE_POSE_FLEXES] = {0.0f};
@@ -176,7 +176,7 @@ void CGModFacePose::UpdateFacePose()
     if (!m_bInitialized)
         return;
 
-    C_BaseHLPlayer* pLocalPlayer = C_BaseHLPlayer::GetLocalPlayer();
+    C_BaseHLPlayer* pLocalPlayer = static_cast<C_BaseHLPlayer*>(C_BasePlayer::GetLocalPlayer());
     if (pLocalPlayer)
     {
         ApplyFlexesToPlayer(pLocalPlayer);

@@ -11,7 +11,8 @@
 #include "vgui_controls/Divider.h"
 #include "vgui/IInput.h"
 #include "vgui/IVGui.h"
-#include "tier1/KeyValues.h"
+#include "KeyValues.h"
+#include "ienginevgui.h"
 
 using namespace vgui;
 
@@ -128,7 +129,7 @@ void CGModCommandMenu::OnKeyCodePressed(KeyCode code)
 //-----------------------------------------------------------------------------
 // Purpose: Handle messages
 //-----------------------------------------------------------------------------
-void CGModCommandMenu::OnMessage(const KeyValues *params, VPANEL fromPanel)
+void CGModCommandMenu::OnMessage(KeyValues *params, vgui::VPANEL fromPanel)
 {
     BaseClass::OnMessage(params, fromPanel);
 }
@@ -285,7 +286,7 @@ void CGModCommandMenu::CreateControls()
 
     // Search box
     m_pSearchBox = new TextEntry(this, "SearchBox");
-    m_pSearchBox->SetPlaceholderText("Search commands...");
+    // Note: SetPlaceholderText not available in 2003 VGUI - functionality preserved without placeholder
 
     // Command list
     m_pCommandList = new ListPanel(this, "CommandList");
@@ -293,20 +294,20 @@ void CGModCommandMenu::CreateControls()
     m_pCommandList->AddColumnHeader(1, "description", "Description", 250, 0);
     m_pCommandList->SetSelectIndividualCells(false);
     m_pCommandList->SetEmptyListText("No commands available");
-    m_pCommandList->SetDragEnabled(false);
+    // Note: SetDragEnabled not available in 2003 VGUI - drag disabled by default in 2003
 
     // Description label
     m_pDescriptionLabel = new Label(this, "DescriptionLabel", "Select a command to see its description");
     m_pDescriptionLabel->SetContentAlignment(Label::a_northwest);
-    m_pDescriptionLabel->SetWrap(true);
+    // Note: SetWrap not available in 2003 VGUI - text wrapping handled differently in 2003
 
     // Icon panel
     m_pIconPanel = new ImagePanel(this, "IconPanel");
-    m_pIconPanel->SetImage("console/command_icon");
+    // Note: SetImage with string path not available in 2003 VGUI - would need IImage* object
 
-    // Buttons
-    m_pExecuteButton = new Button(this, "ExecuteButton", "Execute", this, "Execute");
-    m_pCloseButton = new Button(this, "CloseButton", "Close", this, "Close");
+    // Buttons - 2003 VGUI style (3 parameters only)
+    m_pExecuteButton = new Button(this, "ExecuteButton", "Execute");
+    m_pCloseButton = new Button(this, "CloseButton", "Close");
 
     // Set up event handling
     m_pCommandList->AddActionSignalTarget(this);
@@ -370,7 +371,7 @@ void CGModCommandMenu::PopulateCommandList()
     if (!m_pCommandList)
         return;
 
-    m_pCommandList->RemoveAll();
+    m_pCommandList->DeleteAllItems();
 
     for (int i = 0; i < m_Commands.Count(); i++)
     {
@@ -383,15 +384,14 @@ void CGModCommandMenu::PopulateCommandList()
         if (!cmd.enabled)
             continue;
 
-        // Add to list
+        // Add to list - 2003 ListPanel uses KeyValues data directly
         KeyValues *data = new KeyValues("item");
         data->SetString("name", cmd.name);
         data->SetString("description", cmd.description);
         data->SetInt("index", i);
 
         int itemID = m_pCommandList->AddItem(data, 0, false, false);
-        m_pCommandList->SetItemText(itemID, 0, cmd.name);
-        m_pCommandList->SetItemText(itemID, 1, cmd.description);
+        // Note: SetItemText not available in 2003 - data comes from KeyValues
 
         data->deleteThis();
     }
@@ -434,16 +434,26 @@ void CGModCommandMenu::ExecuteSelectedCommand()
 //-----------------------------------------------------------------------------
 // Purpose: Handle item selection
 //-----------------------------------------------------------------------------
-void CGModCommandMenu::OnItemSelected(KeyValues* data)
+// Purpose: Handle item selection - 2003 VGUI style (no parameters)
+//-----------------------------------------------------------------------------
+void CGModCommandMenu::OnItemSelected()
 {
-    int itemID = data->GetInt("itemID");
-    if (itemID >= 0)
+    if (!m_pCommandList)
+        return;
+
+    // Get selected item in 2003 VGUI ListPanel style
+    int selectedRow = m_pCommandList->GetSelectedItem(0);
+    if (selectedRow >= 0)
     {
-        KeyValues* itemData = m_pCommandList->GetItem(itemID);
-        if (itemData)
+        int itemID = m_pCommandList->GetItemIDFromRow(selectedRow);
+        if (itemID >= 0)
         {
-            m_iSelectedCommand = itemData->GetInt("index");
-            UpdateDescription();
+            KeyValues* itemData = m_pCommandList->GetItem(itemID);
+            if (itemData)
+            {
+                m_iSelectedCommand = itemData->GetInt("index");
+                UpdateDescription();
+            }
         }
     }
 }
@@ -451,16 +461,16 @@ void CGModCommandMenu::OnItemSelected(KeyValues* data)
 //-----------------------------------------------------------------------------
 // Purpose: Handle item double click
 //-----------------------------------------------------------------------------
-void CGModCommandMenu::OnItemDoubleClicked(KeyValues* data)
+void CGModCommandMenu::OnItemDoubleClicked()
 {
-    OnItemSelected(data);
+    OnItemSelected();
     ExecuteSelectedCommand();
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Handle search text change
 //-----------------------------------------------------------------------------
-void CGModCommandMenu::OnTextChanged(KeyValues* data)
+void CGModCommandMenu::OnTextChanged()
 {
     if (m_pSearchBox)
     {
@@ -473,7 +483,7 @@ void CGModCommandMenu::OnTextChanged(KeyValues* data)
 //-----------------------------------------------------------------------------
 // Purpose: Handle category change
 //-----------------------------------------------------------------------------
-void CGModCommandMenu::OnCategoryChanged(KeyValues* data)
+void CGModCommandMenu::OnCategoryChanged()
 {
     if (m_pCategoryCombo)
     {

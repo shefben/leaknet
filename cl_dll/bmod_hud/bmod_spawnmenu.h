@@ -20,6 +20,11 @@
 #include "utlvector.h"
 
 //-----------------------------------------------------------------------------
+// Panel name definition
+//-----------------------------------------------------------------------------
+#define PANEL_SPAWNMENU "SpawnMenuPanel"
+
+//-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
 class CToolButtonsPanel;
@@ -64,6 +69,9 @@ public:
 	CToolButtonsPanel *GetToolButtonsPanel() { return m_pToolButtonsPanel; }
 	CContextPanel *GetContextPanel() { return m_pContextPanel; }
 
+	// External access methods
+	void ScanPropsRecursive( const char *path );
+
 protected:
 	// UI Panel management
 	void CreateMainPanel();
@@ -74,7 +82,6 @@ protected:
 	// Configuration
 	void LoadGModMenuConfiguration();
 	void LoadFromKeyValueInternal( KeyValues *pKeyValues );
-	void ScanPropsRecursive( const char *path );
 
 private:
 	ISimpleViewPort	*m_pViewPort;

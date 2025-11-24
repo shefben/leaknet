@@ -452,7 +452,7 @@ void CContextPanel::LoadFromFile(const char *filename)
 	Q_strncpy(m_szCurrentFile, filename, sizeof(m_szCurrentFile));
 
 	KeyValues *kv = new KeyValues("ContextPanel");
-	if (kv->LoadFromFile(filesystem, filename, "GAME"))
+	if (kv->LoadFromFile(::filesystem, filename, "GAME"))
 	{
 		// Load controls from keyvalues
 		for (KeyValues *controlKV = kv->GetFirstSubKey(); controlKV; controlKV = controlKV->GetNextKey())
@@ -485,7 +485,7 @@ void CContextPanel::SaveToFile(const char *filename)
 		}
 	}
 
-	kv->SaveToFile(filesystem, filename, "GAME");
+	kv->SaveToFile(::filesystem, filename, "GAME");
 	kv->deleteThis();
 }
 
@@ -995,14 +995,15 @@ void CContextPanelManager::ToggleBuildMode()
 //-----------------------------------------------------------------------------
 // Purpose: gm_context console command
 //-----------------------------------------------------------------------------
-void ContextMode_f(const CCommand &args)
+void ContextMode_f(void)
 {
 	if (!g_pContextPanelManager)
 		return;
 
-	if (args.ArgC() >= 2)
+	// In 2003 engine, use alternative method to get command arguments
+	if (engine->Cmd_Argc() >= 2)
 	{
-		g_pContextPanelManager->SetContextMode(args[1]);
+		g_pContextPanelManager->SetContextMode(engine->Cmd_Argv(1));
 	}
 	else
 	{

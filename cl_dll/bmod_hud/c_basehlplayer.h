@@ -41,6 +41,10 @@ public:
 	bool				IsSprinting( void ) { return false; }
 
 	virtual int			DrawModel( int flags );
+
+	// Garry's Mod face pose system - using native 2003 C_BaseFlex functionality
+	void				SetFlexWeight( int flexIndex, float value );
+	float				GetFlexWeight( int flexIndex );
 public:
 
 	C_HL2PlayerLocalData		m_HL2Local;

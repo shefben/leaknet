@@ -108,8 +108,10 @@ public:
     static const char* GetModStateName(ModState_t state);
     static const char* GetModsDirectory() { return "mods"; }
 
-private:
+    // Public registry access for console commands and external systems
     static CUtlVector<ModData_t> s_ModRegistry;
+
+private:
     static char s_ModCachePath[256]; // "mods/-modcache/modcache.txt"
     static bool s_bSystemInitialized;
     static bool s_bModCacheLoaded;
