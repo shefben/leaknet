@@ -13,11 +13,14 @@
 #include "cmd.h"
 #include "cvar.h"
 #include "mathlib.h"
+#include "vid.h"
 #include <vgui/ISurface.h>
 #include <vgui/IScheme.h>
+#include <vgui/ILocalize.h>
 #include <vgui_controls/Controls.h>
 #include "vstdlib/strtools.h"
 #include "host.h"
+#include <wchar.h>
 
 // External declarations
 extern double realtime;
@@ -27,6 +30,8 @@ extern double realtime;
 
 // Global instance
 CQuakeConsole *g_pQuakeConsole = NULL;
+
+const float CQuakeConsole::ANIMATION_TIME = 0.3f;
 
 //-----------------------------------------------------------------------------
 // Constructor
@@ -435,7 +440,9 @@ void CQuakeConsole::DrawText()
 		const ConsoleLine &line = m_ConsoleLines[i];
 		vgui::surface()->DrawSetTextColor(line.color);
 		vgui::surface()->DrawSetTextPos(10, textY);
-		vgui::surface()->DrawPrintText(line.text, Q_strlen(line.text));
+		wchar_t wideText[CONSOLE_LINE_LENGTH];
+		vgui::localize()->ConvertANSIToUnicode(line.text, wideText, sizeof(wideText));
+		vgui::surface()->DrawPrintText(wideText, Q_strlen(line.text));
 		textY += fontTall;
 	}
 }
@@ -457,13 +464,17 @@ void CQuakeConsole::DrawInputLine()
 	// Draw prompt
 	vgui::surface()->DrawSetTextColor(255, 255, 255, 255);
 	vgui::surface()->DrawSetTextPos(10, inputY);
-	vgui::surface()->DrawPrintText("]", 1);
+	wchar_t prompt[4];
+	vgui::localize()->ConvertANSIToUnicode("]", prompt, sizeof(prompt));
+	vgui::surface()->DrawPrintText(prompt, 1);
 
 	// Draw input text
 	if (m_nInputLength > 0)
 	{
 		vgui::surface()->DrawSetTextPos(20, inputY);
-		vgui::surface()->DrawPrintText(m_szInputLine, m_nInputLength);
+		wchar_t wideInput[INPUT_LINE_LENGTH];
+		vgui::localize()->ConvertANSIToUnicode(m_szInputLine, wideInput, sizeof(wideInput));
+		vgui::surface()->DrawPrintText(wideInput, m_nInputLength);
 	}
 
 	// Draw cursor
@@ -481,7 +492,17 @@ void CQuakeConsole::DrawInputLine()
 		int cursorX = 20;
 		if (m_nInputPos > 0)
 		{
-			cursorX += vgui::surface()->GetTextSize(m_hFont, m_szInputLine, m_nInputPos);
+			char savedChar = m_szInputLine[m_nInputPos];
+			m_szInputLine[m_nInputPos] = '\0';
+
+			wchar_t wideCursorText[INPUT_LINE_LENGTH];
+			vgui::localize()->ConvertANSIToUnicode(m_szInputLine, wideCursorText, sizeof(wideCursorText));
+			int wide = 0, tall = 0;
+			vgui::surface()->GetTextSize(m_hFont, wideCursorText, wide, tall);
+
+			m_szInputLine[m_nInputPos] = savedChar;
+
+			cursorX += wide;
 		}
 
 		vgui::surface()->DrawSetColor(255, 255, 255, 255);
@@ -528,7 +549,7 @@ void CQuakeConsole::ExecuteCommand()
 	AddLine(cmdColor, echo);
 
 	// Execute command through engine
-	Cmd_ExecuteString(m_szInputLine);
+	Cmd_ExecuteString(m_szInputLine, src_command);
 
 	// Clear input line
 	m_szInputLine[0] = '\0';

@@ -51,7 +51,8 @@ private:
 		INPUT_LINE_LENGTH = 256,
 	};
 
-	static const float ANIMATION_TIME = 0.3f;  // seconds for slide animation
+	// Seconds the slide animation takes to complete.
+	static const float ANIMATION_TIME;
 
 	struct ConsoleLine
 	{
