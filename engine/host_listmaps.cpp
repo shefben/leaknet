@@ -125,7 +125,8 @@ int CMapListItem::CheckFSHeaderVersion( char const *name )
 		g_pFileSystem->Close( fp );
 	}
 
-	return ( header.version == BSPVERSION ) ? VALID : INVALID;
+	// Support multiple BSP versions (v18-v21)
+	return BSP_VERSION_IS_VALID( header.version ) ? VALID : INVALID;
 }
 
 // How often to check the filesystem for updated map info

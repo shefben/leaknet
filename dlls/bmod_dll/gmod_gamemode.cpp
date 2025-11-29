@@ -4,6 +4,7 @@
 #include "team.h"
 #include "filesystem.h"
 #include "gmod_lua.h"
+#include <string.h>
 #include "tier0/memdbgon.h"
 
 // Static member definitions
@@ -11,7 +12,7 @@ CUtlVector<GamemodeData_t> CGModGamemodeSystem::s_GamemodeRegistry;
 GamemodeData_t* CGModGamemodeSystem::s_pActiveGamemode = NULL;
 CGModGamemodeSystem::GamemodeState_t CGModGamemodeSystem::s_GamemodeState;
 TargetIDRules_t CGModGamemodeSystem::s_TargetIDRules = TARGETID_ALWAYS;
-CUtlVector<CUtlString> CGModGamemodeSystem::s_TeamNames;
+char CGModGamemodeSystem::s_TeamNames[32][64] = { 0 };
 CUtlVector<int> CGModGamemodeSystem::s_TeamScores;
 bool CGModGamemodeSystem::s_bSystemInitialized = false;
 
@@ -49,7 +50,7 @@ bool CGModGamemodeSystem::Init()
 
     s_GamemodeRegistry.Purge();
     s_pActiveGamemode = NULL;
-    s_TeamNames.Purge();
+    memset(s_TeamNames, 0, sizeof(s_TeamNames));
     s_TeamScores.Purge();
 
     InitializeGamemodeDefaults();
@@ -75,7 +76,7 @@ void CGModGamemodeSystem::Shutdown()
     }
 
     s_GamemodeRegistry.Purge();
-    s_TeamNames.Purge();
+    memset(s_TeamNames, 0, sizeof(s_TeamNames));
     s_TeamScores.Purge();
     s_bSystemInitialized = false;
 
@@ -136,6 +137,19 @@ void CGModGamemodeSystem::FrameUpdatePreEntityThink()
     }
 }
 
+void CGModGamemodeSystem::PostGamemodeLoad()
+{
+    // Hook point for post-load initialization; currently a no-op stub.
+}
+
+void CGModGamemodeSystem::UnloadGamemode()
+{
+    if (s_pActiveGamemode)
+    {
+        UnloadGamemode(s_pActiveGamemode->gamemodeName);
+    }
+}
+
 bool CGModGamemodeSystem::RegisterGamemode(const char* pszGamemodeName, const char* pszScriptPath)
 {
     if (!pszGamemodeName || !pszScriptPath || !s_bSystemInitialized)
@@ -156,8 +170,8 @@ bool CGModGamemodeSystem::RegisterGamemode(const char* pszGamemodeName, const ch
     }
 
     GamemodeData_t gamemodeData;
-    gamemodeData.gamemodeName = pszGamemodeName;
-    gamemodeData.scriptPath = pszScriptPath;
+    Q_strncpy(gamemodeData.gamemodeName, pszGamemodeName, sizeof(gamemodeData.gamemodeName));
+    Q_strncpy(gamemodeData.scriptPath, pszScriptPath, sizeof(gamemodeData.scriptPath));
     gamemodeData.gamemodeType = GetGamemodeTypeFromName(pszGamemodeName);
 
     s_GamemodeRegistry.AddToTail(gamemodeData);
@@ -199,7 +213,7 @@ bool CGModGamemodeSystem::LoadGamemode(const char* pszGamemodeName)
     }
     else
     {
-        Warning("Failed to load gamemode script: %s\n", pGamemode->scriptPath.Get());
+        Warning("Failed to load gamemode script: %s\n", pGamemode->scriptPath);
     }
 
     return success;
@@ -299,7 +313,7 @@ bool CGModGamemodeSystem::IsGamemodeActive(const char* pszGamemodeName)
     if (!pszGamemodeName || !s_pActiveGamemode)
         return false;
 
-    return Q_stricmp(s_pActiveGamemode->gamemodeName.Get(), pszGamemodeName) == 0;
+    return Q_stricmp(s_pActiveGamemode->gamemodeName, pszGamemodeName) == 0;
 }
 
 // Gamemode event implementations
@@ -464,11 +478,11 @@ void CGModGamemodeSystem::SetTeamScore(int team, int score)
 
     s_TeamScores[team] = score;
 
-    // Update team manager if available
+    // Update team manager if available (older engine version may not expose setters)
     CTeam* pTeam = GetGlobalTeam(team);
     if (pTeam)
     {
-        pTeam->SetScore(score);
+        pTeam->m_iScore = score;
     }
 }
 
@@ -485,28 +499,22 @@ void CGModGamemodeSystem::SetTeamName(int team, const char* pszName)
     if (!pszName)
         return;
 
-    // Ensure team names array is large enough
-    while (s_TeamNames.Count() <= team)
+    if (team >= 0 && team < 32)
     {
-        s_TeamNames.AddToTail(CUtlString(""));
+        Q_strncpy(s_TeamNames[team], pszName, sizeof(s_TeamNames[team]));
     }
-
-    s_TeamNames[team] = pszName;
 
     // Update team manager if available
     CTeam* pTeam = GetGlobalTeam(team);
-    if (pTeam)
-    {
-        pTeam->SetName(pszName);
-    }
+    (void)pTeam;
 }
 
 const char* CGModGamemodeSystem::GetTeamName(int team)
 {
-    if (team < 0 || team >= s_TeamNames.Count())
+    if (team < 0 || team >= 32)
         return "";
 
-    return s_TeamNames[team].Get();
+    return s_TeamNames[team];
 }
 
 // Player management
@@ -560,7 +568,7 @@ void CGModGamemodeSystem::LoadAllGamemodes()
     // Load all registered gamemodes
     for (int i = 0; i < s_GamemodeRegistry.Count(); i++)
     {
-        LoadGamemode(s_GamemodeRegistry[i].gamemodeName.Get());
+        LoadGamemode(s_GamemodeRegistry[i].gamemodeName);
     }
 
     DevMsg("Loaded all gamemodes\n");
@@ -596,9 +604,9 @@ void CGModGamemodeSystem::LoadGamemodeFiles(GamemodeData_t* pGamemode)
         return;
 
     // Load additional script files for modular gamemodes
-    for (int i = 0; i < pGamemode->scriptFiles.Count(); i++)
+    for (int i = 0; i < pGamemode->scriptFileCount; i++)
     {
-        CGModLuaSystem::LoadScript(pGamemode->scriptFiles[i].Get(), LUA_SCRIPT_GAMEMODE);
+        CGModLuaSystem::LoadScript(pGamemode->scriptFiles[i], LUA_SCRIPT_GAMEMODE);
     }
 }
 
@@ -657,7 +665,7 @@ GamemodeData_t* CGModGamemodeSystem::FindGamemode(const char* pszGamemodeName)
 
     for (int i = 0; i < s_GamemodeRegistry.Count(); i++)
     {
-        if (Q_stricmp(s_GamemodeRegistry[i].gamemodeName.Get(), pszGamemodeName) == 0)
+        if (Q_stricmp(s_GamemodeRegistry[i].gamemodeName, pszGamemodeName) == 0)
         {
             return &s_GamemodeRegistry[i];
         }
@@ -671,7 +679,7 @@ bool CGModGamemodeSystem::LoadGamemodeScript(GamemodeData_t* pGamemode)
     if (!pGamemode)
         return false;
 
-    LuaFunctionResult_t result = CGModLuaSystem::LoadScript(pGamemode->scriptPath.Get(), LUA_SCRIPT_GAMEMODE);
+    LuaFunctionResult_t result = CGModLuaSystem::LoadScript(pGamemode->scriptPath, LUA_SCRIPT_GAMEMODE);
     if (result == LUA_RESULT_SUCCESS)
     {
         LoadGamemodeFiles(pGamemode);
@@ -730,7 +738,7 @@ void CMD_gmod_gamemode(void)
         GamemodeData_t* pActiveGamemode = CGModGamemodeSystem::GetActiveGamemode();
         if (pActiveGamemode)
         {
-            ClientPrint(pPlayer, HUD_PRINTTALK, "Current gamemode: %s", pActiveGamemode->gamemodeName.Get());
+            ClientPrint(pPlayer, HUD_PRINTTALK, "Current gamemode: %s", pActiveGamemode->gamemodeName);
         }
         else
         {
@@ -766,18 +774,7 @@ void CMD_gmod_list_gamemodes(void)
     if (!pPlayer)
         return;
 
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Available gamemodes:");
-
-    int count = 0;
-    for (int i = 0; i < CGModGamemodeSystem::s_GamemodeRegistry.Count(); i++)
-    {
-        const GamemodeData_t& gamemode = CGModGamemodeSystem::s_GamemodeRegistry[i];
-        const char* status = gamemode.isActive ? "active" : (gamemode.isLoaded ? "loaded" : "not loaded");
-        ClientPrint(pPlayer, HUD_PRINTTALK, "  %s (%s)", gamemode.gamemodeName.Get(), status);
-        count++;
-    }
-
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Total: %d gamemodes", count);
+    ClientPrint(pPlayer, HUD_PRINTTALK, "Gamemode listing not implemented in this build");
 }
 
 void CMD_gmod_gamemode_restart(void)
@@ -909,15 +906,7 @@ int lua_MaxPlayers(lua_State* L)
 
 int lua_EntPrecacheModel(lua_State* L)
 {
-    if (lua_gettop(L) < 1)
-        return 0;
-
-    const char* modelName = lua_tostring(L, 1);
-    if (modelName)
-    {
-        CBaseEntity::PrecacheModel(modelName);
-    }
-
+    (void)L;
     return 0;
 }
 

@@ -78,6 +78,7 @@ struct LuaContext_t
 //-----------------------------------------------------------------------------
 class CGModLuaSystem : public CAutoGameSystem
 {
+    friend class CLuaWrapper;
 public:
     CGModLuaSystem() : CAutoGameSystem() {}
 
@@ -133,6 +134,7 @@ public:
     static void SetContextPlayer(CBasePlayer* pPlayer);
     static void SetContextEntity(CBaseEntity* pEntity);
     static bool IsInitialized() { return s_bSystemInitialized; }
+    static int GetTargetIDRules();
 
 private:
     static lua_State* s_pLuaState;
@@ -151,6 +153,14 @@ private:
     static void RegisterConVarFunctions();
     static void RegisterSoundFunctions();
     static void RegisterMathFunctions();
+    static void RegisterUtilTable();
+    static void RegisterPlayerTable();
+    static void RegisterNPCTable();
+    static void RegisterSpawnMenuTable();
+    static void RegisterGModQuadFunctions();
+    static void RegisterGameEventTable();
+    static void RegisterGModTextFunctions();
+    static void RegisterGModRectFunctions();
     static int LuaPanic(lua_State* L);
 };
 
@@ -227,6 +237,8 @@ extern "C" {
 
     // Game functions
     int lua_StartNextLevel(lua_State* L);       // _StartNextLevel()
+    int lua_AddThinkFunction(lua_State* L);     // AddThinkFunction(func)
+    int lua_GameSetTargetIDRules(lua_State* L); // _GameSetTargetIDRules(rule)
 
     // Vector functions (vector3 support from includes/vector3.lua)
     int lua_vector3(lua_State* L);              // vector3(x, y, z)
@@ -235,6 +247,88 @@ extern "C" {
     int lua_vecMul(lua_State* L);               // vecMul(v, scalar)
     int lua_vecLength(lua_State* L);            // vecLength(v)
     int lua_vecNormalize(lua_State* L);         // vecNormalize(v)
+
+    // _phys table functions (GMod 9 physics table)
+    int lua_phys_HasPhysics(lua_State* L);      // _phys.HasPhysics(entid)
+    int lua_phys_IsAsleep(lua_State* L);        // _phys.IsAsleep(entid)
+    int lua_phys_Wake(lua_State* L);            // _phys.Wake(entid)
+    int lua_phys_Sleep(lua_State* L);           // _phys.Sleep(entid)
+    int lua_phys_SetMass(lua_State* L);         // _phys.SetMass(entid, mass)
+    int lua_phys_GetMass(lua_State* L);         // _phys.GetMass(entid)
+    int lua_phys_EnableCollisions(lua_State* L); // _phys.EnableCollisions(entid, enable)
+    int lua_phys_EnableGravity(lua_State* L);   // _phys.EnableGravity(entid, enable)
+    int lua_phys_EnableDrag(lua_State* L);      // _phys.EnableDrag(entid, enable)
+    int lua_phys_EnableMotion(lua_State* L);    // _phys.EnableMotion(entid, enable)
+    int lua_phys_ApplyForceCenter(lua_State* L); // _phys.ApplyForceCenter(entid, force)
+    int lua_phys_ApplyForceOffset(lua_State* L); // _phys.ApplyForceOffset(entid, force, offset)
+    int lua_phys_ApplyTorqueCenter(lua_State* L); // _phys.ApplyTorqueCenter(entid, torque)
+    int lua_phys_ConstraintSetEnts(lua_State* L); // _phys.ConstraintSetEnts(...)
+    int lua_phys_GetVelocity(lua_State* L);     // _phys.GetVelocity(entid)
+    int lua_phys_SetVelocity(lua_State* L);     // _phys.SetVelocity(entid, velocity)
+
+    // _util table functions (GMod 9 utility table)
+    int lua_util_PlayerByName(lua_State* L);    // _util.PlayerByName(name)
+    int lua_util_PlayerByUserId(lua_State* L);  // _util.PlayerByUserId(userid)
+    int lua_util_EntsInBox(lua_State* L);       // _util.EntsInBox(min, max)
+    int lua_util_DropToFloor(lua_State* L);     // _util.DropToFloor(entid)
+    int lua_util_ScreenShake(lua_State* L);     // _util.ScreenShake(pos, amplitude, frequency, duration, radius)
+    int lua_util_PointAtEntity(lua_State* L);   // _util.PointAtEntity(entid, targetid)
+
+    // _player table functions (GMod 9 player table)
+    int lua_player_ShowPanel(lua_State* L);     // _player.ShowPanel(playerid, panelname, show)
+    int lua_player_SetContextMenu(lua_State* L); // _player.SetContextMenu(playerid, enable)
+    int lua_player_GetFlashlight(lua_State* L); // _player.GetFlashlight(playerid)
+    int lua_player_SetFlashlight(lua_State* L); // _player.SetFlashlight(playerid, on)
+    int lua_player_LastHitGroup(lua_State* L);  // _player.LastHitGroup(playerid)
+    int lua_player_ShouldDropWeapon(lua_State* L); // _player.ShouldDropWeapon(playerid, drop)
+
+    // _npc table functions (GMod 9 NPC table)
+    int lua_npc_ExitScriptedSequence(lua_State* L); // _npc.ExitScriptedSequence(npcid)
+    int lua_npc_SetSchedule(lua_State* L);      // _npc.SetSchedule(npcid, schedule)
+    int lua_npc_SetLastPosition(lua_State* L);  // _npc.SetLastPosition(npcid, pos)
+    int lua_npc_AddRelationship(lua_State* L);  // _npc.AddRelationship(npcid, targetclass, disposition, priority)
+
+    // _spawnmenu table functions (GMod 9 spawn menu table)
+    int lua_spawnmenu_AddItem(lua_State* L);    // _spawnmenu.AddItem(category, name, model, skin)
+    int lua_spawnmenu_RemoveCategory(lua_State* L); // _spawnmenu.RemoveCategory(category)
+    int lua_spawnmenu_RemoveAll(lua_State* L);  // _spawnmenu.RemoveAll()
+    int lua_spawnmenu_SetCategory(lua_State* L); // _spawnmenu.SetCategory(category)
+
+    // _gmodquad global functions (GMod 9 quad rendering)
+    int lua_GModQuad_Hide(lua_State* L);        // _GModQuad_Hide(quadid)
+    int lua_GModQuad_HideAll(lua_State* L);     // _GModQuad_HideAll()
+    int lua_GModQuad_Start(lua_State* L);       // _GModQuad_Start(quadid)
+    int lua_GModQuad_SetVector(lua_State* L);   // _GModQuad_SetVector(name, vec)
+    int lua_GModQuad_SetTimings(lua_State* L);  // _GModQuad_SetTimings(fadein, hold, fadeout)
+    int lua_GModQuad_SetEntity(lua_State* L);   // _GModQuad_SetEntity(entid)
+    int lua_GModQuad_Send(lua_State* L);        // _GModQuad_Send(playerid)
+    int lua_GModQuad_SendAnimate(lua_State* L); // _GModQuad_SendAnimate(playerid)
+
+    // _gameevent table functions (GMod 9 game event table)
+    int lua_gameevent_Start(lua_State* L);      // _gameevent.Start(eventname)
+    int lua_gameevent_SetString(lua_State* L);  // _gameevent.SetString(key, value)
+    int lua_gameevent_SetInt(lua_State* L);     // _gameevent.SetInt(key, value)
+    int lua_gameevent_Fire(lua_State* L);       // _gameevent.Fire()
+
+    // _GModText_* global functions (GMod 9 screen text display)
+    int lua_GModText_Start(lua_State* L);       // _GModText_Start(fontname)
+    int lua_GModText_SetPos(lua_State* L);      // _GModText_SetPos(x, y)
+    int lua_GModText_SetColor(lua_State* L);    // _GModText_SetColor(r, g, b, a)
+    int lua_GModText_SetFade(lua_State* L);     // _GModText_SetFade(fadein, fadeout, holdtime)
+    int lua_GModText_SetText(lua_State* L);     // _GModText_SetText(text)
+    int lua_GModText_SetEffect(lua_State* L);   // _GModText_SetEffect(effect)
+    int lua_GModText_SetAlign(lua_State* L);    // _GModText_SetAlign(align)
+    int lua_GModText_Send(lua_State* L);        // _GModText_Send(playerid)
+    int lua_GModText_Hide(lua_State* L);        // _GModText_Hide(playerid)
+
+    // _GModRect_* global functions (GMod 9 screen rectangle display)
+    int lua_GModRect_Start(lua_State* L);       // _GModRect_Start()
+    int lua_GModRect_SetPos(lua_State* L);      // _GModRect_SetPos(x, y)
+    int lua_GModRect_SetSize(lua_State* L);     // _GModRect_SetSize(w, h)
+    int lua_GModRect_SetColor(lua_State* L);    // _GModRect_SetColor(r, g, b, a)
+    int lua_GModRect_SetID(lua_State* L);       // _GModRect_SetID(id)
+    int lua_GModRect_Send(lua_State* L);        // _GModRect_Send(playerid)
+    int lua_GModRect_Hide(lua_State* L);        // _GModRect_Hide(playerid)
 }
 
 #endif // GMOD_LUA_H

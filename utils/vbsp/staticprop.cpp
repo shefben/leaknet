@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: Places "detail" objects which are client-only renderable things
 //
@@ -193,7 +193,7 @@ bool LoadStudioModel( char const* pModelName, char const* pEntityType, CUtlBuffe
 
 	studiohdr_t* pHdr = (studiohdr_t*)buf.PeekGet();
 	Studio_ConvertStudioHdrToNewVersion( pHdr );
-	if (pHdr->version != STUDIO_VERSION)
+	if (pHdr->version < STUDIO_VERSION_MIN || pHdr->version > STUDIO_VERSION_MAX)
 	{
 		return false;
 	}

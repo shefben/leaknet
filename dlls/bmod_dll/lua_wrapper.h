@@ -13,6 +13,11 @@ extern "C" {
     #include "lauxlib.h"
 }
 
+#include "lua_compat.h"
+#include "cbase.h"
+#include "igameevents.h"
+#include "KeyValues.h"
+
 class CLuaWrapper
 {
 public:
@@ -42,10 +47,26 @@ public:
     // Error handling
     static const char* GetLastError() { return s_szLastError; }
 
+    // Helpers for Lua bindings
+    static CBaseEntity* GetLuaEntity(lua_State* L, int index);
+    static const char* GetString(lua_State* L, int index, const char* defaultValue = "");
+    static int GetInt(lua_State* L, int index, int defaultValue = 0);
+    static float GetFloat(lua_State* L, int index, float defaultValue = 0.0f);
+    static bool GetBool(lua_State* L, int index, bool defaultValue = false);
+    static bool GetVector(lua_State* L, int index, Vector& outVec);
+
+    // GameEvent helpers (parity with gmod server.dll)
+    static void StartGameEvent(CBasePlayer* pPlayer);
+	static void GameEventSetString(const char* pszName);
+	static void GameEventSetPlayerInt(CBasePlayer* pSource, CBasePlayer* pTarget, int key, int value);
+	static void GameEventSetPlayerVector(CBasePlayer* pSource, const Vector& vec);
+	static void CommitActiveGameEvent();
+
 private:
-    static lua_State* s_pLuaState;
-    static char s_szLastError[1024];
-    static bool s_bInitialized;
+	static lua_State* s_pLuaState;
+	static char s_szLastError[1024];
+	static bool s_bInitialized;
+	static KeyValues *s_pActiveEvent;
 };
 
 #endif // LUA_WRAPPER_H

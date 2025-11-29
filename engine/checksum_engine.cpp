@@ -165,10 +165,11 @@ bool CRC_MapFile(CRC32_t *crcvalue, const char *pszFileName)
 	}
 
 	i = LittleLong (header.version);
-	if ( i != BSPVERSION )
+	if ( !BSP_VERSION_IS_VALID( i ) )
 	{
 		g_pFileSystem->Close(fp);
-		Con_Printf("Map [%s] has incorrect BSP version (%i should be %i).\n", pszFileName, i, BSPVERSION);
+		Con_Printf("Map [%s] has unsupported BSP version (%i, supported range: %i-%i).\n",
+			pszFileName, i, BSPVERSION_MIN, BSPVERSION_MAX);
 		return false;
 	}
 

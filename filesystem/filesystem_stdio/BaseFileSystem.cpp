@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -537,7 +537,8 @@ void CBaseFileSystem::AddMapPackFile( const char *pPath, SearchPathAdd_t addType
 	m_Stats.nBytesRead += FS_fread( &header, 1, sizeof( header ), fp );
 	m_Stats.nReads++;
 
-	if ( header.ident != IDBSPHEADER || header.version != BSPVERSION )
+	// Accept all supported BSP versions (v18-v21)
+	if ( header.ident != IDBSPHEADER || !BSP_VERSION_IS_VALID( header.version ) )
 	{
 		Trace_FClose( fp );
 		return;

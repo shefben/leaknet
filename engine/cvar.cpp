@@ -316,6 +316,31 @@ static bool AreConCommandsLinkable( ConCommandBase const *child, ConCommandBase 
 		return false;
 	}
 
+	// Allow linking if both are from the same DLL (client or server)
+	// This allows GMod 9 client.dll ConVars to link with our client.dll ConVars
+	bool childFromClient = child->IsBitSet( FCVAR_CLIENTDLL );
+	bool parentFromClient = parent->IsBitSet( FCVAR_CLIENTDLL );
+	bool childFromServer = child->IsBitSet( FCVAR_EXTDLL );
+	bool parentFromServer = parent->IsBitSet( FCVAR_EXTDLL );
+
+	// If both are from client.dll, allow linkage
+	if ( childFromClient && parentFromClient )
+	{
+		return true;
+	}
+
+	// If both are from server.dll, allow linkage
+	if ( childFromServer && parentFromServer )
+	{
+		return true;
+	}
+
+	// If child has no DLL flag (engine-created), allow linking to any parent
+	if ( !childFromClient && !childFromServer )
+	{
+		return true;
+	}
+
 	if ( parent->IsBitSet( FCVAR_CLIENTDLL ) )
 	{
 		Q_snprintf( sz, sizeof( sz ), "Parent cvar in client.dll not allowed (%s)\n", child->GetName() );

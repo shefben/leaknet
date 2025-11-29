@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -17,6 +17,7 @@
 #include "decals.h"
 #include "soundent.h"
 #include "te_effect_dispatch.h"
+#include "physics_saverestore.h"
 
 #define	VEHICLE_HITBOX_DRIVER	1
 
@@ -320,13 +321,14 @@ void CPropJetski::OnTurn( CUserCmd *ucmd )
 bool CPropJetski::UpdateLean( CUserCmd *ucmd )
 {
 	// Are we leaning back?
+	// NOTE: SetLeanBack not implemented in this version of the physics interface
 	if ( ucmd->buttons & IN_JUMP )
 	{
-		m_pVehicle->SetLeanBack( true );
+		// m_pVehicle->SetLeanBack( true );
 		return true;
 	}
 
-	m_pVehicle->SetLeanBack( false );
+	// m_pVehicle->SetLeanBack( false );
 	return false;
 }
 

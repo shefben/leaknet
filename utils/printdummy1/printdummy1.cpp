@@ -38,9 +38,9 @@ int main( int argc, char **argv )
 
 	Studio_ConvertStudioHdrToNewVersion( pStudioHdr );
 
-	if( pStudioHdr->version != STUDIO_VERSION )
+	if( pStudioHdr->version < STUDIO_VERSION_MIN || pStudioHdr->version > STUDIO_VERSION_MAX )
 	{
-	//	fprintf( stderr, "Wrong version (%d != %d)\r\n", ( int )pStudioHdr->version, ( int )STUDIO_VERSION );
+	//	fprintf( stderr, "Wrong version (%d not in range %d-%d)\r\n", ( int )pStudioHdr->version, ( int )STUDIO_VERSION_MIN, ( int )STUDIO_VERSION_MAX );
 		fclose( fp );
 		return -1;
 	}

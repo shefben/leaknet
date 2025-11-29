@@ -22,7 +22,9 @@
 // NETWORKING INFO
 
 // This is the packet payload without any header bytes (which are attached for actual sending)
-#define	NET_MAX_PAYLOAD	80000
+// NOTE: Increased from 80000 to 524288 (512KB) to handle large string tables
+// GMod-compatible servers can have 5000+ sound precaches which overflow 80KB
+#define	NET_MAX_PAYLOAD	524288
 
 // This is the payload plus any header info (excluding UDP header)
 

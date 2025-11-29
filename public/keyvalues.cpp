@@ -914,6 +914,36 @@ int KeyValues::GetInt( const char *keyName, int defaultValue )
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Get a boolean interpretation of the value for keyName.
+//-----------------------------------------------------------------------------
+bool KeyValues::GetBool( const char *keyName, bool defaultValue )
+{
+	KeyValues *dat = FindKey( keyName, false );
+	if ( dat )
+	{
+		switch ( dat->m_iDataType )
+		{
+		case TYPE_STRING:
+			return ( dat->m_sValue && atoi( dat->m_sValue ) != 0 );
+		case TYPE_WSTRING:
+			return ( dat->m_wsValue && dat->m_wsValue[0] != L'\0' );
+		case TYPE_FLOAT:
+			return dat->m_flValue != 0.0f;
+		case TYPE_INT:
+			return dat->m_iValue != 0;
+		case TYPE_PTR:
+			return dat->m_pValue != NULL;
+		case TYPE_COLOR:
+			return (dat->m_Color[0] | dat->m_Color[1] | dat->m_Color[2] | dat->m_Color[3]) != 0;
+		case TYPE_NONE:
+		default:
+			break;
+		};
+	}
+	return defaultValue;
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Get the pointer value of a keyName. Default value is returned
 //			if the keyName can't be found.
 //-----------------------------------------------------------------------------

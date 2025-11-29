@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: Giant walking strider thing!
 //
@@ -38,7 +38,8 @@
 #include "physics_prop_ragdoll.h"
 #include "vehicle_base.h"
 
-ConVar sk_strider_health( "sk_strider_health", "0" );
+// Defined in skill_cvars.cpp
+extern ConVar sk_strider_health;
 ConVar npc_strider_height_adj("npc_strider_height_adj", "0" );
 
 ConVar npc_strider_shake_ropes_radius( "npc_strider_shake_ropes_radius", "1200" );

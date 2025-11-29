@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -131,13 +131,19 @@ int CGlobalEntityList::ResetDeleteList( void )
 	return result;
 }
 
+bool CGlobalEntityList::IsInCleanupDelete( void )
+{
+	return g_fInCleanupDelete;
+}
+
 
 	// add a class that gets notified of entity events
 void CGlobalEntityList::AddListenerEntity( IEntityListener *pListener )
 {
 	if ( m_entityListeners.Find( pListener ) >= 0 )
 	{
-		AssertMsg( 0, "Can't add listeners multiple times\n" );
+		// During level restart, listeners may try to re-register. Allow it silently.
+		DevMsg( "Entity listener already registered, ignoring duplicate registration\n" );
 		return;
 	}
 	m_entityListeners.AddToTail( pListener );

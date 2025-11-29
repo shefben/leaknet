@@ -8,7 +8,8 @@
 
 EXPOSE_SINGLE_INTERFACE( CSharedModelLoader, ISharedModelLoader, ISHAREDMODELLOADER_INTERFACE_VERSION );
 
-#if STUDIO_VERSION == 37
+// Always compile the shared model loader - studioanimgrouphdr_t is available for all STUDIO_VERSION values
+// This allows loading v37 animation groups regardless of compile-time STUDIO_VERSION
 CSharedModelLoader::CSharedModelLoader()
 {
 	cachedata.header = (studioanimgrouphdr_t *)malloc( TYPICAL_SHAREDANIMGROUP_FILESIZE );
@@ -80,17 +81,3 @@ studioanimgrouphdr_t *CSharedModelLoader::LoadSharedModel( const char *path )
 
 	return cachedata.header;
 }
-#else
-CSharedModelLoader::CSharedModelLoader()
-{
-}
-
-void CSharedModelLoader::InitFilesystem( IBaseFileSystem *filesystem )
-{
-}
-
-void *CSharedModelLoader::LoadSharedModel( const char *path )
-{
-	return NULL;
-}
-#endif

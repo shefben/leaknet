@@ -19,6 +19,7 @@ BEGIN_SRC( SERVER_BASE_SOURCE_FILES "Source Files" )
 			"${SRCDIR}/game_shared/baseviewmodel_shared.cpp"
 			"${SRCDIR}/game_shared/beam_shared.cpp"
 			"${SRCDIR}/game_shared/bone_setup.cpp" # Noprecomp?
+			"${SRCDIR}/game_shared/studio_virtualmodel.cpp" # v48 virtual model support
 			"${SRCDIR}/game_shared/choreoactor.cpp" # Noprecomp?
 			"${SRCDIR}/game_shared/choreochannel.cpp" # Noprecomp?
 			"${SRCDIR}/game_shared/choreoevent.cpp" # Noprecomp?

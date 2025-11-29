@@ -36,6 +36,12 @@ CGameEventManager::~CGameEventManager()
 bool CGameEventManager::Init()
 {
 	Reset();
+
+	// Load the game events file if it exists
+	// This registers events like server_spawn, player_connect, server_shutdown
+	// that the engine fires before game DLLs might load their own events
+	LoadEventsFromFile("resource/gameevents.res");
+
 	return true;
 }
 

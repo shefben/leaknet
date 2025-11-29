@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -74,9 +74,10 @@ int main( int argc, char **argv )
 	studiohdr_t *pStudioHdr = ( studiohdr_t * )malloc( len );
 	fread( pStudioHdr, 1, len, fp );
 	Studio_ConvertStudioHdrToNewVersion( pStudioHdr );
-	if( pStudioHdr->version != STUDIO_VERSION )
+	if( pStudioHdr->version < STUDIO_VERSION_MIN || pStudioHdr->version > STUDIO_VERSION_MAX )
 	{
-		fprintf( stderr, "Wrong version (%d != %d)\n", ( int )pStudioHdr->version, ( int )STUDIO_VERSION );
+		fprintf( stderr, "Wrong version (%d not in supported range %d-%d)\n",
+			( int )pStudioHdr->version, ( int )STUDIO_VERSION_MIN, ( int )STUDIO_VERSION_MAX );
 		Usage();
 	}
 

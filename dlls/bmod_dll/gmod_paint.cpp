@@ -97,45 +97,45 @@ bool CGModPaintSystem::ParsePaintConfig(const char* pszConfigPath)
 
     s_PaintConfigs.Purge();
 
-    // Default paint configurations based on IDA discovered types
-    PaintConfig_t blueConfig;
-    blueConfig.materialName = "sprites/paintsplat_blue";
-    blueConfig.soundName = "SprayCan.Paint";
-    blueConfig.paintColor = Color(0, 100, 255, 255);
-    s_PaintConfigs.AddToTail(blueConfig);
+	// Default paint configurations based on IDA discovered types
+	PaintConfig_t blueConfig;
+	Q_strncpy(blueConfig.materialName, "sprites/paintsplat_blue", sizeof(blueConfig.materialName));
+	Q_strncpy(blueConfig.soundName, "SprayCan.Paint", sizeof(blueConfig.soundName));
+	blueConfig.paintColor = Color(0, 100, 255, 255);
+	s_PaintConfigs.AddToTail(blueConfig);
 
-    PaintConfig_t greenConfig;
-    greenConfig.materialName = "sprites/paintsplat_green";
-    greenConfig.soundName = "SprayCan.Paint";
-    greenConfig.paintColor = Color(0, 255, 100, 255);
-    s_PaintConfigs.AddToTail(greenConfig);
+	PaintConfig_t greenConfig;
+	Q_strncpy(greenConfig.materialName, "sprites/paintsplat_green", sizeof(greenConfig.materialName));
+	Q_strncpy(greenConfig.soundName, "SprayCan.Paint", sizeof(greenConfig.soundName));
+	greenConfig.paintColor = Color(0, 255, 100, 255);
+	s_PaintConfigs.AddToTail(greenConfig);
 
-    PaintConfig_t pinkConfig;
-    pinkConfig.materialName = "sprites/paintsplat_pink";
-    pinkConfig.soundName = "SprayCan.Paint";
-    pinkConfig.paintColor = Color(255, 100, 200, 255);
-    s_PaintConfigs.AddToTail(pinkConfig);
+	PaintConfig_t pinkConfig;
+	Q_strncpy(pinkConfig.materialName, "sprites/paintsplat_pink", sizeof(pinkConfig.materialName));
+	Q_strncpy(pinkConfig.soundName, "SprayCan.Paint", sizeof(pinkConfig.soundName));
+	pinkConfig.paintColor = Color(255, 100, 200, 255);
+	s_PaintConfigs.AddToTail(pinkConfig);
 
-    // Parse additional configurations from file
-    FOR_EACH_SUBKEY(pKV, pSubKey)
-    {
-        PaintConfig_t config;
-        config.materialName = pSubKey->GetString("material", "sprites/paintsplat");
-        config.soundName = pSubKey->GetString("sound", "SprayCan.Paint");
-        config.flDecalSize = pSubKey->GetFloat("size", 64.0f);
-        config.flDecalDuration = pSubKey->GetFloat("duration", 60.0f);
-        config.bEnabled = pSubKey->GetBool("enabled", true);
+	// Parse additional configurations from file
+	for (KeyValues *pSubKey = pKV->GetFirstSubKey(); pSubKey; pSubKey = pSubKey->GetNextKey())
+	{
+		PaintConfig_t config;
+		Q_strncpy(config.materialName, pSubKey->GetString("material", "sprites/paintsplat"), sizeof(config.materialName));
+		Q_strncpy(config.soundName, pSubKey->GetString("sound", "SprayCan.Paint"), sizeof(config.soundName));
+		config.flDecalSize = pSubKey->GetFloat("size", 64.0f);
+		config.flDecalDuration = pSubKey->GetFloat("duration", 60.0f);
+		config.bEnabled = pSubKey->GetBool("enabled", true);
 
-        // Parse color
-        const char* pszColor = pSubKey->GetString("color", "255 255 255 255");
-        int r, g, b, a;
-        if (sscanf(pszColor, "%d %d %d %d", &r, &g, &b, &a) == 4)
-        {
-            config.paintColor = Color(r, g, b, a);
-        }
+		// Parse color
+		const char* pszColor = pSubKey->GetString("color", "255 255 255 255");
+		int r, g, b, a;
+		if (sscanf(pszColor, "%d %d %d %d", &r, &g, &b, &a) == 4)
+		{
+			config.paintColor = Color(r, g, b, a);
+		}
 
-        s_PaintConfigs.AddToTail(config);
-    }
+		s_PaintConfigs.AddToTail(config);
+	}
 
     pKV->deleteThis();
     s_bPaintConfigLoaded = true;
@@ -202,9 +202,11 @@ bool CGModPaintSystem::CreatePaintDecal(CBasePlayer* pPlayer, const Vector& orig
     if (!ValidatePaintLocation(origin, normal))
         return false;
 
-    // Create the decal
-    const char* pszDecalName = GetPaintSplatName(type);
-    UTIL_DecalTrace(origin, origin + normal * 64.0f, pszDecalName);
+	// Create the decal
+	const char* pszDecalName = GetPaintSplatName(type);
+	trace_t tr;
+	UTIL_TraceLine(origin, origin + normal * 64.0f, MASK_SHOT, pPlayer, COLLISION_GROUP_NONE, &tr);
+	UTIL_DecalTrace(&tr, pszDecalName);
 
     // Create splash effect
     CreatePaintSplash(origin, normal, type);
@@ -255,11 +257,14 @@ void CGModPaintSystem::SetPaintMode(CBasePlayer* pPlayer, bool bEnabled)
 //-----------------------------------------------------------------------------
 void CGModPaintSystem::CreatePaintSplash(const Vector& origin, const Vector& normal, PaintSplatType_t type)
 {
-    // Create particle effect based on paint type
-    CEffectData data;
-    data.m_vOrigin = origin;
-    data.m_vNormal = normal;
-    data.m_nColor = GetPaintSplatColor(type).GetRawColor();
+	// Create particle effect based on paint type
+	CEffectData data;
+	data.m_vOrigin = origin;
+	data.m_vNormal = normal;
+	int r, g, b, a;
+	Color splatColor = GetPaintSplatColor(type);
+	splatColor.GetColor(r, g, b, a);
+	data.m_nColor = (a << 24) | (r << 16) | (g << 8) | b;
 
     const char* pszEffectName = NULL;
     switch (type)

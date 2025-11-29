@@ -13,6 +13,7 @@
 //=============================================================================
 // r_studio.c: routines for setting up to draw 3DStudio models 
 #include "studio.h"
+#include "studio_v37_compat.h"
 #include "optimize.h"
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imaterialvar.h"
@@ -95,10 +96,10 @@ IMaterial* CStudioRender::R_StudioSetupSkin( int index, IMaterial **ppMaterials,
 
 //=============================================================================
 
-static const char *GetTextureName( studiohdr_t *phdr, OptimizedModel::FileHeader_t *pVtxHeader, 
+static const char *GetTextureName( studiohdr_t *phdr, OptimizedModel::FileHeader_t *pVtxHeader,
 								   int lodID, int inMaterialID )
 {
-	OptimizedModel::MaterialReplacementListHeader_t *materialReplacementList = 
+	OptimizedModel::MaterialReplacementListHeader_t *materialReplacementList =
 		pVtxHeader->pMaterialReplacementList( lodID );
 	int i;
 	for( i = 0; i < materialReplacementList->numReplacements; i++ )
@@ -110,6 +111,11 @@ static const char *GetTextureName( studiohdr_t *phdr, OptimizedModel::FileHeader
 			const char *str = materialReplacement->pMaterialReplacementName();
 			return str;
 		}
+	}
+	// v37 texture structures are 32 bytes, v48+ are 64 bytes
+	if ( phdr->IsV37() )
+	{
+		return phdr->pTexture_V37( inMaterialID )->pszName();
 	}
 	return phdr->pTexture( inMaterialID )->pszName();
 }
@@ -156,9 +162,9 @@ void CStudioRender::LoadMaterials( studiohdr_t *phdr, OptimizedModel::FileHeader
 			// search through all specified directories until a valid material is found
 			for( j = 0; j < phdr->numcdtextures && !found; j++ )
 			{
-				strcpy( szPath, phdr->pCdtexture( j ) );
+				Q_strncpy( szPath, phdr->pCdtexture( j ), sizeof(szPath) );
 				const char *textureName = GetTextureName( phdr, pVtxHeader, lodID, i );
-				strcat( szPath, textureName );
+				Q_strncat( szPath, textureName, sizeof(szPath) );
 
 				pMaterial = m_pMaterialSystem->FindMaterial( szPath, &found, false );
 			}
@@ -168,9 +174,9 @@ void CStudioRender::LoadMaterials( studiohdr_t *phdr, OptimizedModel::FileHeader
 				// so that the materialsystem will give an error.
 				for( j = 0; j < phdr->numcdtextures; j++ )
 				{
-					strcpy( szPath, phdr->pCdtexture( j ) );
+					Q_strncpy( szPath, phdr->pCdtexture( j ), sizeof(szPath) );
 					const char *textureName = GetTextureName( phdr, pVtxHeader, lodID, i );
-					strcat( szPath, textureName );
+					Q_strncat( szPath, textureName, sizeof(szPath) );
 					m_pMaterialSystem->FindMaterial( szPath, NULL, true );
 				}
 			}
@@ -215,26 +221,33 @@ void CStudioRender::LoadMaterials( studiohdr_t *phdr, OptimizedModel::FileHeader
 }
 
 //-----------------------------------------------------------------------------
-// Adds a vertex to the meshbuilder...
+// Adds a vertex to the meshbuilder for v37 models
+// v37 VTX files use Vertex_v37_t (15 bytes) with different layout:
+// - boneWeightIndex[4], boneID[4] as shorts, origMeshVertID as short
+// v37 MDL files use mstudiovertex_v37_t (64 bytes) with embedded vertex data
 //-----------------------------------------------------------------------------
-bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder, 
-	OptimizedModel::Vertex_t* pVertex, mstudiomesh_t* pMesh, bool hwSkin )
+bool CStudioRender::R_AddVertexToMesh_V37( CMeshBuilder& meshBuilder,
+	OptimizedModel::Vertex_v37_t* pVertex, mstudiomesh_t* pMesh, bool hwSkin,
+	studiohdr_t* pStudioHdr )
 {
 	bool ok = true;
 	int idx = pVertex->origMeshVertID;
 
-	mstudiovertex_t &vert = *pMesh->Vertex(idx);
+	// Get model for vertex offset calculation
+	mstudiomodel_t* pModel = pMesh->pModel();
+	int vertexOffset = pMesh->vertexoffset + idx;
 
-	meshBuilder.Position3fv( vert.m_vecPosition.Base() );
-	meshBuilder.Normal3fv( vert.m_vecNormal.Base() );
-	meshBuilder.TexCoord2fv( 0, vert.m_vecTexCoord.Base() );
+	// v37 models have embedded vertex data with 64-byte vertices
+	byte* pVertexBase = ((byte*)pModel) + pModel->vertexindex;
+	mstudiovertex_v37_t* pVert37 = (mstudiovertex_v37_t*)pVertexBase + vertexOffset;
 
-#ifdef _DEBUG
-//	float w = pMesh->TangentS( idx )->w;
-//	Assert( w == 1.0f || w == -1.0f );
-#endif
-	// send down tangent S as a 4D userdata vect.
-	meshBuilder.UserData( (*pMesh->TangentS(idx)).Base() );
+	meshBuilder.Position3fv( pVert37->m_vecPosition.Base() );
+	meshBuilder.Normal3fv( pVert37->m_vecNormal.Base() );
+	meshBuilder.TexCoord2fv( 0, pVert37->m_vecTexCoord.Base() );
+
+	// v37 models don't have tangent data, use a default
+	Vector4D defaultTangent( 1.0f, 0.0f, 0.0f, 1.0f );
+	meshBuilder.UserData( defaultTangent.Base() );
 
 	// Just in case we get hooked to a material that wants per-vertex color
 	meshBuilder.Color4ub( 255, 255, 255, 255 );
@@ -243,24 +256,25 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 	{
 		// sum up weights..
 		int i;
+		mstudioboneweight_v37_t* pBoneWeight37 = &pVert37->m_BoneWeights;
 
-		// We have to do this because since we're potentially dropping bones
-		// to get them to fit in hardware, we'll need to renormalize based on
-		// the actual total.
-		mstudioboneweight_t *pBoneWeight = pMesh->BoneWeights(idx);
-
-		// NOTE: We use pVertex->numbones because that's the number of bones actually influencing this
-		// vertex. Note that pVertex->numBones is not necessary the *desired* # of bones influencing this
-		// vertex; we could have collapsed some of those bones out. pBoneWeight->numbones stures the desired #
+		int numDesiredBones = pBoneWeight37->numbones;
 		float totalWeight = 0;
+		float boneWeights[4] = {0, 0, 0, 0};
+
 		for (i = 0; i < pVertex->numBones; ++i)
 		{
-			totalWeight += pBoneWeight->weight[pVertex->boneWeightIndex[i]];
+			int weightIdx = pVertex->boneWeightIndex[i];
+			if (weightIdx >= 0 && weightIdx < 4)
+			{
+				totalWeight += pBoneWeight37->weight[weightIdx];
+				boneWeights[i] = pBoneWeight37->weight[weightIdx];
+			}
 		}
 
-		// The only way we should not add up to 1 is if there's more than 3 *desired* bones
-		// and more than 1 *actual* bone (we can have 0	vertex bones in the case of static props
-		if ( (pVertex->numBones > 0) && (pBoneWeight->numbones <= 3) && fabs(totalWeight - 1.0f) > 1e-5 )
+		// The only way we should not add up to 1 is if there's more than 4 *desired* bones
+		// and more than 1 *actual* bone
+		if ( (pVertex->numBones > 0) && (numDesiredBones <= 4) && fabs(totalWeight - 1.0f) > 0.01f )
 		{
 			ok = false;
 			totalWeight = 1.0f;
@@ -274,9 +288,8 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 
 		float invTotalWeight = 1.0f / totalWeight;
 
-		// It is essential to iterate over all actual bones so that the bone indices
-		// are set correctly, even though the last bone weight is computed in a shader program
-		for (i = 0; i < pVertex->numBones; ++i)
+		int maxBones = (pVertex->numBones < MAX_NUM_BONE_INDICES) ? pVertex->numBones : MAX_NUM_BONE_INDICES;
+		for (i = 0; i < maxBones; ++i)
 		{
 			if (pVertex->boneID[i] == -1)
 			{
@@ -285,8 +298,7 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 			}
 			else
 			{
-				float weight = pBoneWeight->weight[pVertex->boneWeightIndex[i]];
-				meshBuilder.BoneWeight( i, weight * invTotalWeight );
+				meshBuilder.BoneWeight( i, boneWeights[i] * invTotalWeight );
 				meshBuilder.BoneMatrix( i, pVertex->boneID[i] );
 			}
 		}
@@ -298,7 +310,122 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 	}
 	else
 	{
-		for (int i = 0; i < MAX_NUM_BONE_INDICES/*meshBuilder.NumBoneWeights()*/; ++i)
+		for (int i = 0; i < MAX_NUM_BONE_INDICES; ++i)
+		{
+			meshBuilder.BoneWeight( i, (i == 0) ? 1.0f : 0.0f );
+			meshBuilder.BoneMatrix( i, BONE_MATRIX_INDEX_INVALID );
+		}
+	}
+
+	meshBuilder.AdvanceVertex();
+	return ok;
+}
+
+//-----------------------------------------------------------------------------
+// Adds a vertex to the meshbuilder for v48+ models
+// v48 VTX files use Vertex_t (9 bytes) with:
+// - boneWeightIndex[3], boneID[3] as chars, origMeshVertID as unsigned short
+// v48 MDL files use external VVD with mstudiovertex_t (48 bytes)
+//-----------------------------------------------------------------------------
+bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
+	OptimizedModel::Vertex_t* pVertex, mstudiomesh_t* pMesh, bool hwSkin,
+	studiohdr_t* pStudioHdr )
+{
+	bool ok = true;
+	int idx = pVertex->origMeshVertID;
+
+	// Get model for vertex offset calculation
+	mstudiomodel_t* pModel = pMesh->pModel();
+
+	// v44+ models use standard 48-byte vertices from external VVD
+	mstudiovertex_t &vert = *pMesh->Vertex(idx);
+
+	meshBuilder.Position3fv( vert.m_vecPosition.Base() );
+	meshBuilder.Normal3fv( vert.m_vecNormal.Base() );
+	meshBuilder.TexCoord2fv( 0, vert.m_vecTexCoord.Base() );
+
+#ifdef _DEBUG
+//	float w = pMesh->TangentS( idx )->w;
+//	Assert( w == 1.0f || w == -1.0f );
+#endif
+	// send down tangent S as a 4D userdata vect.
+	if ( pModel->tangentsindex > 0 )
+	{
+		meshBuilder.UserData( (*pMesh->TangentS(idx)).Base() );
+	}
+	else
+	{
+		// No tangent data available, use a default
+		Vector4D defaultTangent( 1.0f, 0.0f, 0.0f, 1.0f );
+		meshBuilder.UserData( defaultTangent.Base() );
+	}
+
+	// Just in case we get hooked to a material that wants per-vertex color
+	meshBuilder.Color4ub( 255, 255, 255, 255 );
+
+	if (hwSkin)
+	{
+		// sum up weights..
+		int i;
+		mstudioboneweight_t *pBoneWeight = pMesh->BoneWeights(idx);
+
+		int numDesiredBones = pBoneWeight->numbones;
+		float totalWeight = 0;
+		float boneWeights[4] = {0, 0, 0, 0};
+
+		for (i = 0; i < pVertex->numBones; ++i)
+		{
+			int weightIdx = pVertex->boneWeightIndex[i];
+			if (weightIdx >= 0 && weightIdx < MAX_NUM_BONES_PER_VERT)
+			{
+				totalWeight += pBoneWeight->weight[weightIdx];
+				boneWeights[i] = pBoneWeight->weight[weightIdx];
+			}
+		}
+
+		// NOTE: We use pVertex->numbones because that's the number of bones actually influencing this
+		// vertex. Note that pVertex->numBones is not necessary the *desired* # of bones influencing this
+		// vertex; we could have collapsed some of those bones out. numDesiredBones stores the desired #
+
+		// The only way we should not add up to 1 is if there's more than 3 *desired* bones
+		// and more than 1 *actual* bone (we can have 0 vertex bones in the case of static props)
+		if ( (pVertex->numBones > 0) && (numDesiredBones <= 3) && fabs(totalWeight - 1.0f) > 0.01f )
+		{
+			ok = false;
+			totalWeight = 1.0f;
+		}
+
+		// Fix up the static prop case
+		if ( totalWeight == 0.0f )
+		{
+			totalWeight = 1.0f;
+		}
+
+		float invTotalWeight = 1.0f / totalWeight;
+
+		int maxBones = (pVertex->numBones < MAX_NUM_BONE_INDICES) ? pVertex->numBones : MAX_NUM_BONE_INDICES;
+		for (i = 0; i < maxBones; ++i)
+		{
+			if (pVertex->boneID[i] == -1)
+			{
+				meshBuilder.BoneWeight( i, 0.0f );
+				meshBuilder.BoneMatrix( i, BONE_MATRIX_INDEX_INVALID );
+			}
+			else
+			{
+				meshBuilder.BoneWeight( i, boneWeights[i] * invTotalWeight );
+				meshBuilder.BoneMatrix( i, pVertex->boneID[i] );
+			}
+		}
+		for( ; i < MAX_NUM_BONE_INDICES; i++ )
+		{
+			meshBuilder.BoneWeight( i, 0.0f );
+			meshBuilder.BoneMatrix( i, BONE_MATRIX_INDEX_INVALID );
+		}
+	}
+	else
+	{
+		for (int i = 0; i < MAX_NUM_BONE_INDICES; ++i)
 		{
 			meshBuilder.BoneWeight( i, (i == 0) ? 1.0f : 0.0f );
 			meshBuilder.BoneMatrix( i, BONE_MATRIX_INDEX_INVALID );
@@ -336,10 +463,25 @@ void CStudioRender::R_StudioBuildMeshGroup( studiomeshgroup_t* pMeshGroup,
 	bool ok = true;
 	if (hwSkin)
 	{
-		for (i = 0; i < pStripGroup->numVerts; ++i)
+		// v37 VTX files use Vertex_v37_t (15 bytes) with different layout
+		// v48 VTX files use Vertex_t (9 bytes)
+		if ( pStudioHdr && pStudioHdr->IsV37() )
 		{
-			if (!R_AddVertexToMesh( meshBuilder, pStripGroup->pVertex(i), pMesh, hwSkin ))
-				ok = false;
+			for (i = 0; i < pStripGroup->numVerts; ++i)
+			{
+				// Cast to v37 vertex structure - the VTX file contains v37 layout vertices
+				OptimizedModel::Vertex_v37_t* pVertex37 = pStripGroup->pVertex_V37(i);
+				if (!R_AddVertexToMesh_V37( meshBuilder, pVertex37, pMesh, hwSkin, pStudioHdr ))
+					ok = false;
+			}
+		}
+		else
+		{
+			for (i = 0; i < pStripGroup->numVerts; ++i)
+			{
+				if (!R_AddVertexToMesh( meshBuilder, pStripGroup->pVertex(i), pMesh, hwSkin, pStudioHdr ))
+					ok = false;
+			}
 		}
 	}
 

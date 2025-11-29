@@ -6,6 +6,11 @@
 #include "gmod_undo.h"
 #include "gmod_make.h"
 #include "gmod_paint.h"
+#include "gmod_gamemode.h"
+#include "ai_basenpc.h"
+#include "shake.h"
+#include "igameevents.h"
+#include "usermessages.h"
 #include "tier0/memdbgon.h"
 
 namespace
@@ -122,6 +127,14 @@ void CGModLuaSystem::FrameUpdatePreEntityThink()
     if (!s_bSystemInitialized || !gmod_lua_enabled.GetBool())
         return;
 
+    // Call think functions every frame
+    // This matches GMod server.dll's DoLuaThinkFunctions behavior
+    if (s_pLuaState)
+    {
+        // Call DoLuaThinkFunctions - iterates ThinkFunctions table and calls each
+        CallGamemodeFunction("DoLuaThinkFunctions");
+    }
+
     // Call gamemode think function every frame
     static float nextThinkTime = 0.0f;
     if (gpGlobals->curtime > nextThinkTime)
@@ -179,6 +192,16 @@ void CGModLuaSystem::RegisterEngineBindings()
     RegisterSoundFunctions();
     RegisterMathFunctions();
 
+    // Register additional GMod 9 global tables
+    RegisterUtilTable();
+    RegisterPlayerTable();
+    RegisterNPCTable();
+    RegisterSpawnMenuTable();
+    RegisterGModQuadFunctions();
+    RegisterGameEventTable();
+    RegisterGModTextFunctions();
+    RegisterGModRectFunctions();
+
     DevMsg("Registered engine bindings for Lua\n");
 }
 
@@ -234,7 +257,62 @@ void CGModLuaSystem::RegisterPhysicsFunctions()
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
-    DevMsg("Lua: Registered %d physics functions\n", registered);
+
+    // Register the _phys global table (GMod 9 style)
+    // This creates _phys.HasPhysics, _phys.Wake, etc.
+    lua_newtable(s_pLuaState);
+
+    lua_pushcfunction(s_pLuaState, lua_phys_HasPhysics);
+    lua_setfield(s_pLuaState, -2, "HasPhysics");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_IsAsleep);
+    lua_setfield(s_pLuaState, -2, "IsAsleep");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_Wake);
+    lua_setfield(s_pLuaState, -2, "Wake");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_Sleep);
+    lua_setfield(s_pLuaState, -2, "Sleep");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_SetMass);
+    lua_setfield(s_pLuaState, -2, "SetMass");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_GetMass);
+    lua_setfield(s_pLuaState, -2, "GetMass");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_EnableCollisions);
+    lua_setfield(s_pLuaState, -2, "EnableCollisions");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_EnableGravity);
+    lua_setfield(s_pLuaState, -2, "EnableGravity");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_EnableDrag);
+    lua_setfield(s_pLuaState, -2, "EnableDrag");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_EnableMotion);
+    lua_setfield(s_pLuaState, -2, "EnableMotion");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_ApplyForceCenter);
+    lua_setfield(s_pLuaState, -2, "ApplyForceCenter");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_ApplyForceOffset);
+    lua_setfield(s_pLuaState, -2, "ApplyForceOffset");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_ApplyTorqueCenter);
+    lua_setfield(s_pLuaState, -2, "ApplyTorqueCenter");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_ConstraintSetEnts);
+    lua_setfield(s_pLuaState, -2, "ConstraintSetEnts");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_GetVelocity);
+    lua_setfield(s_pLuaState, -2, "GetVelocity");
+
+    lua_pushcfunction(s_pLuaState, lua_phys_SetVelocity);
+    lua_setfield(s_pLuaState, -2, "SetVelocity");
+
+    lua_setglobal(s_pLuaState, "_phys");
+
+    DevMsg("Lua: Registered %d physics functions + _phys table\n", registered);
 }
 
 void CGModLuaSystem::RegisterUtilityFunctions()
@@ -254,6 +332,15 @@ void CGModLuaSystem::RegisterGamemodeFunctions()
 {
     static const LuaBinding bindings[] = {
         {"_StartNextLevel", lua_StartNextLevel},
+        {"AddThinkFunction", lua_AddThinkFunction},
+        {"_GameSetTargetIDRules", lua_GameSetTargetIDRules},
+        // Team functions (from gmod_gamemode.cpp)
+        {"_TeamSetScore", lua_TeamSetScore},
+        {"_TeamScore", lua_TeamGetScore},
+        {"_TeamSetName", lua_TeamSetName},
+        {"_TeamGetName", lua_TeamGetName},
+        {"_PlayerChangeTeam", lua_PlayerChangeTeam},
+        {"_MaxPlayers", lua_MaxPlayers},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
@@ -298,13 +385,221 @@ void CGModLuaSystem::RegisterMathFunctions()
     DevMsg("Lua: Registered %d math/vector functions\n", registered);
 }
 
+void CGModLuaSystem::RegisterUtilTable()
+{
+    // Create _util global table
+    lua_newtable(s_pLuaState);
+
+    lua_pushcfunction(s_pLuaState, lua_util_PlayerByName);
+    lua_setfield(s_pLuaState, -2, "PlayerByName");
+
+    lua_pushcfunction(s_pLuaState, lua_util_PlayerByUserId);
+    lua_setfield(s_pLuaState, -2, "PlayerByUserId");
+
+    lua_pushcfunction(s_pLuaState, lua_util_EntsInBox);
+    lua_setfield(s_pLuaState, -2, "EntsInBox");
+
+    lua_pushcfunction(s_pLuaState, lua_util_DropToFloor);
+    lua_setfield(s_pLuaState, -2, "DropToFloor");
+
+    lua_pushcfunction(s_pLuaState, lua_util_ScreenShake);
+    lua_setfield(s_pLuaState, -2, "ScreenShake");
+
+    lua_pushcfunction(s_pLuaState, lua_util_PointAtEntity);
+    lua_setfield(s_pLuaState, -2, "PointAtEntity");
+
+    lua_setglobal(s_pLuaState, "_util");
+
+    DevMsg("Lua: Registered _util table\n");
+}
+
+void CGModLuaSystem::RegisterPlayerTable()
+{
+    // Create _player global table
+    lua_newtable(s_pLuaState);
+
+    lua_pushcfunction(s_pLuaState, lua_player_ShowPanel);
+    lua_setfield(s_pLuaState, -2, "ShowPanel");
+
+    lua_pushcfunction(s_pLuaState, lua_player_SetContextMenu);
+    lua_setfield(s_pLuaState, -2, "SetContextMenu");
+
+    lua_pushcfunction(s_pLuaState, lua_player_GetFlashlight);
+    lua_setfield(s_pLuaState, -2, "GetFlashlight");
+
+    lua_pushcfunction(s_pLuaState, lua_player_SetFlashlight);
+    lua_setfield(s_pLuaState, -2, "SetFlashlight");
+
+    lua_pushcfunction(s_pLuaState, lua_player_LastHitGroup);
+    lua_setfield(s_pLuaState, -2, "LastHitGroup");
+
+    lua_pushcfunction(s_pLuaState, lua_player_ShouldDropWeapon);
+    lua_setfield(s_pLuaState, -2, "ShouldDropWeapon");
+
+    lua_setglobal(s_pLuaState, "_player");
+
+    DevMsg("Lua: Registered _player table\n");
+}
+
+void CGModLuaSystem::RegisterNPCTable()
+{
+    // Create _npc global table
+    lua_newtable(s_pLuaState);
+
+    lua_pushcfunction(s_pLuaState, lua_npc_ExitScriptedSequence);
+    lua_setfield(s_pLuaState, -2, "ExitScriptedSequence");
+
+    lua_pushcfunction(s_pLuaState, lua_npc_SetSchedule);
+    lua_setfield(s_pLuaState, -2, "SetSchedule");
+
+    lua_pushcfunction(s_pLuaState, lua_npc_SetLastPosition);
+    lua_setfield(s_pLuaState, -2, "SetLastPosition");
+
+    lua_pushcfunction(s_pLuaState, lua_npc_AddRelationship);
+    lua_setfield(s_pLuaState, -2, "AddRelationship");
+
+    lua_setglobal(s_pLuaState, "_npc");
+
+    DevMsg("Lua: Registered _npc table\n");
+}
+
+void CGModLuaSystem::RegisterSpawnMenuTable()
+{
+    // Create _spawnmenu global table
+    lua_newtable(s_pLuaState);
+
+    lua_pushcfunction(s_pLuaState, lua_spawnmenu_AddItem);
+    lua_setfield(s_pLuaState, -2, "AddItem");
+
+    lua_pushcfunction(s_pLuaState, lua_spawnmenu_RemoveCategory);
+    lua_setfield(s_pLuaState, -2, "RemoveCategory");
+
+    lua_pushcfunction(s_pLuaState, lua_spawnmenu_RemoveAll);
+    lua_setfield(s_pLuaState, -2, "RemoveAll");
+
+    lua_pushcfunction(s_pLuaState, lua_spawnmenu_SetCategory);
+    lua_setfield(s_pLuaState, -2, "SetCategory");
+
+    lua_setglobal(s_pLuaState, "_spawnmenu");
+
+    DevMsg("Lua: Registered _spawnmenu table\n");
+}
+
+void CGModLuaSystem::RegisterGModQuadFunctions()
+{
+    // _gmodquad functions are registered as global functions (not as a table)
+    // This matches the original GMod 9 behavior
+    static const LuaBinding bindings[] = {
+        {"_GModQuad_Hide", lua_GModQuad_Hide},
+        {"_GModQuad_HideAll", lua_GModQuad_HideAll},
+        {"_GModQuad_Start", lua_GModQuad_Start},
+        {"_GModQuad_SetVector", lua_GModQuad_SetVector},
+        {"_GModQuad_SetTimings", lua_GModQuad_SetTimings},
+        {"_GModQuad_SetEntity", lua_GModQuad_SetEntity},
+        {"_GModQuad_Send", lua_GModQuad_Send},
+        {"_GModQuad_SendAnimate", lua_GModQuad_SendAnimate},
+    };
+
+    int registered = RegisterLuaBindings(s_pLuaState, bindings);
+    DevMsg("Lua: Registered %d _GModQuad functions\n", registered);
+}
+
+void CGModLuaSystem::RegisterGModTextFunctions()
+{
+    // _GModText_* functions for screen text display
+    // These match the original GMod 9.0.4b behavior exactly
+    static const LuaBinding bindings[] = {
+        {"_GModText_Start", lua_GModText_Start},
+        {"_GModText_SetPos", lua_GModText_SetPos},
+        {"_GModText_SetColor", lua_GModText_SetColor},
+        {"_GModText_SetFade", lua_GModText_SetFade},
+        {"_GModText_SetText", lua_GModText_SetText},
+        {"_GModText_SetEffect", lua_GModText_SetEffect},
+        {"_GModText_SetAlign", lua_GModText_SetAlign},
+        {"_GModText_Send", lua_GModText_Send},
+        {"_GModText_Hide", lua_GModText_Hide},
+        // Also register without underscore separator for alternate naming convention
+        {"_GModTextStart", lua_GModText_Start},
+        {"_GModTextSetPos", lua_GModText_SetPos},
+        {"_GModTextSetColor", lua_GModText_SetColor},
+        {"_GModTextSetFade", lua_GModText_SetFade},
+        {"_GModTextSetText", lua_GModText_SetText},
+        {"_GModTextSetEffect", lua_GModText_SetEffect},
+        {"_GModTextSetAlign", lua_GModText_SetAlign},
+        {"_GModTextSend", lua_GModText_Send},
+        {"_GModTextHideAll", lua_GModText_Hide},
+    };
+
+    int registered = RegisterLuaBindings(s_pLuaState, bindings);
+    DevMsg("Lua: Registered %d _GModText functions\n", registered);
+}
+
+void CGModLuaSystem::RegisterGModRectFunctions()
+{
+    // _GModRect_* functions for screen rectangle display
+    static const LuaBinding bindings[] = {
+        {"_GModRect_Start", lua_GModRect_Start},
+        {"_GModRect_SetPos", lua_GModRect_SetPos},
+        {"_GModRect_SetSize", lua_GModRect_SetSize},
+        {"_GModRect_SetColor", lua_GModRect_SetColor},
+        {"_GModRect_SetID", lua_GModRect_SetID},
+        {"_GModRect_Send", lua_GModRect_Send},
+        {"_GModRect_Hide", lua_GModRect_Hide},
+        // Also register without underscore separator
+        {"_GModRectSetPos", lua_GModRect_SetPos},
+        {"_GModRectSetSize", lua_GModRect_SetSize},
+        {"_GModRectSetColor", lua_GModRect_SetColor},
+        {"_GModRectSetID", lua_GModRect_SetID},
+        {"_GModRectSend", lua_GModRect_Send},
+        {"_GModRectHideAll", lua_GModRect_Hide},
+    };
+
+    int registered = RegisterLuaBindings(s_pLuaState, bindings);
+    DevMsg("Lua: Registered %d _GModRect functions\n", registered);
+}
+
+void CGModLuaSystem::RegisterGameEventTable()
+{
+    // Create _gameevent global table
+    lua_newtable(s_pLuaState);
+
+    lua_pushcfunction(s_pLuaState, lua_gameevent_Start);
+    lua_setfield(s_pLuaState, -2, "Start");
+
+    lua_pushcfunction(s_pLuaState, lua_gameevent_SetString);
+    lua_setfield(s_pLuaState, -2, "SetString");
+
+    lua_pushcfunction(s_pLuaState, lua_gameevent_SetInt);
+    lua_setfield(s_pLuaState, -2, "SetInt");
+
+    lua_pushcfunction(s_pLuaState, lua_gameevent_Fire);
+    lua_setfield(s_pLuaState, -2, "Fire");
+
+    lua_setglobal(s_pLuaState, "_gameevent");
+
+    DevMsg("Lua: Registered _gameevent table\n");
+}
+
 LuaFunctionResult_t CGModLuaSystem::LoadScript(const char* pszFileName, LuaScriptType_t type)
 {
     if (!s_pLuaState || !pszFileName)
         return LUA_RESULT_ERROR;
 
     char fullPath[MAX_PATH];
-    Q_snprintf(fullPath, sizeof(fullPath), "%s%s", gmod_lua_path.GetString(), pszFileName);
+
+    // Check if path already starts with the lua base path to avoid duplication
+    const char* luaPath = gmod_lua_path.GetString();
+    if (Q_strnicmp(pszFileName, luaPath, Q_strlen(luaPath)) == 0 ||
+        Q_strnicmp(pszFileName, "lua/", 4) == 0)
+    {
+        // Path already includes lua/ prefix, use as-is
+        Q_strncpy(fullPath, pszFileName, sizeof(fullPath));
+    }
+    else
+    {
+        // Add lua/ prefix
+        Q_snprintf(fullPath, sizeof(fullPath), "%s%s", luaPath, pszFileName);
+    }
 
     if (!filesystem->FileExists(fullPath, "GAME"))
     {
@@ -312,12 +607,43 @@ LuaFunctionResult_t CGModLuaSystem::LoadScript(const char* pszFileName, LuaScrip
         return LUA_RESULT_FILE_NOT_FOUND;
     }
 
-    // Use wrapper to run the Lua file
-    if (!CLuaWrapper::RunLuaFile(fullPath))
+    // Read file using Source Engine filesystem (GAME search path includes mod directory)
+    FileHandle_t hFile = filesystem->Open(fullPath, "rb", "GAME");
+    if (!hFile)
     {
-        Warning("Lua execution error in %s: %s\n", pszFileName, CLuaWrapper::GetLastError());
+        Warning("Lua script could not be opened: %s\n", fullPath);
+        return LUA_RESULT_FILE_NOT_FOUND;
+    }
+
+    unsigned int fileSize = filesystem->Size(hFile);
+    char* pBuffer = new char[fileSize + 1];
+    filesystem->Read(pBuffer, fileSize, hFile);
+    filesystem->Close(hFile);
+    pBuffer[fileSize] = '\0';
+
+    // Load and execute the Lua code from buffer
+    int status = luaL_loadbuffer(s_pLuaState, pBuffer, fileSize, fullPath);
+    if (status != 0)
+    {
+        const char* error = lua_tostring(s_pLuaState, -1);
+        Warning("Lua syntax error in %s: %s\n", pszFileName, error ? error : "unknown");
+        lua_pop(s_pLuaState, 1);
+        delete[] pBuffer;
+        return LUA_RESULT_SYNTAX_ERROR;
+    }
+
+    status = lua_pcall(s_pLuaState, 0, LUA_MULTRET, 0);
+    if (status != 0)
+    {
+        const char* error = lua_tostring(s_pLuaState, -1);
+        Warning("Lua execution error in %s: %s\n", pszFileName, error ? error : "unknown");
+        lua_pop(s_pLuaState, 1);
+        delete[] pBuffer;
         return LUA_RESULT_RUNTIME_ERROR;
     }
+
+    // Clean up buffer after successful load
+    delete[] pBuffer;
 
     // Track loaded script
     LuaContext_t context;
@@ -377,6 +703,7 @@ void CGModLuaSystem::LoadIncludeScripts()
     LoadScript("includes/defines.lua", LUA_SCRIPT_INCLUDE);
     LoadScript("includes/vector3.lua", LUA_SCRIPT_INCLUDE);
     LoadScript("includes/misc.lua", LUA_SCRIPT_INCLUDE);
+    LoadScript("includes/timers.lua", LUA_SCRIPT_INCLUDE);  // Defines DoLuaThinkFunctions
     LoadScript("includes/backcompat.lua", LUA_SCRIPT_INCLUDE);
 }
 
@@ -450,6 +777,21 @@ int CGModLuaSystem::LuaPanic(lua_State* L)
 lua_State* CGModLuaSystem::GetLuaState()
 {
     return s_pLuaState;
+}
+
+LuaContext_t* CGModLuaSystem::GetCurrentContext()
+{
+    return &s_CurrentContext;
+}
+
+void CGModLuaSystem::SetContextPlayer(CBasePlayer* pPlayer)
+{
+    s_CurrentContext.pContextPlayer = pPlayer;
+}
+
+void CGModLuaSystem::SetContextEntity(CBaseEntity* pEntity)
+{
+    s_CurrentContext.pContextEntity = pEntity;
 }
 
 //-----------------------------------------------------------------------------
@@ -532,9 +874,25 @@ bool CGModLuaSystem::Initialize()
     return (InitializeLua() == LUA_RESULT_SUCCESS);
 }
 
+// Forward declarations for gameevent Lua helpers
+extern "C" {
+int Lua_GameEvent_Start(lua_State* L);
+int Lua_GameEvent_SetString(lua_State* L);
+int Lua_GameEvent_SetPlayerInt(lua_State* L);
+int Lua_GameEvent_SetPlayerVector(lua_State* L);
+int Lua_GameEvent_Fire(lua_State* L);
+}
+
 void CGModLuaSystem::RegisterGlobalFunctions()
 {
     RegisterEngineBindings();
+
+    // Game event helpers (parity with gmod server.dll)
+    lua_register(s_pLuaState, "GameEvent_Start", Lua_GameEvent_Start);
+    lua_register(s_pLuaState, "GameEvent_SetString", Lua_GameEvent_SetString);
+    lua_register(s_pLuaState, "GameEvent_SetPlayerInt", Lua_GameEvent_SetPlayerInt);
+    lua_register(s_pLuaState, "GameEvent_SetPlayerVector", Lua_GameEvent_SetPlayerVector);
+    lua_register(s_pLuaState, "GameEvent_Fire", Lua_GameEvent_Fire);
 }
 
 //-----------------------------------------------------------------------------
@@ -607,6 +965,85 @@ int lua_PlayerGetShootPos(lua_State* L)
     lua_setfield(L, -2, "z");
 
     return 1;
+}
+
+//-----------------------------------------------------------------------------
+// Lua gameevent bindings (parity with gmod server.dll)
+//-----------------------------------------------------------------------------
+static void LuaWarnArgs(lua_State* L, int expected)
+{
+    int got = lua_gettop(L);
+    if (got != expected)
+    {
+        Msg("Lua warning: Wrong number of args (should have %i args)\n", expected);
+    }
+}
+
+int Lua_GameEvent_Start(lua_State* L)
+{
+    LuaWarnArgs(L, 1);
+    // Expects: (player)
+    CBaseEntity *pEnt = CLuaWrapper::GetLuaEntity(L, 1);
+    CBasePlayer *pPlayer = dynamic_cast<CBasePlayer*>(pEnt);
+    if (pPlayer)
+    {
+        // Start a new game event for this player (mirrors sub_22020F40 call)
+        CLuaWrapper::StartGameEvent(pPlayer);
+    }
+    return 0;
+}
+
+int Lua_GameEvent_SetString(lua_State* L)
+{
+    LuaWarnArgs(L, 2);
+    // Expects: (player, name)
+    CBaseEntity *pEnt = CLuaWrapper::GetLuaEntity(L, 1);
+    CBasePlayer *pPlayer = dynamic_cast<CBasePlayer*>(pEnt);
+    if (pPlayer && lua_isstring(L, 2))
+    {
+        const char *str = lua_tostring(L, 2);
+        CLuaWrapper::GameEventSetString(str);
+    }
+    return 0;
+}
+
+int Lua_GameEvent_SetPlayerInt(lua_State* L)
+{
+    LuaWarnArgs(L, 4);
+    // Expects: (player, targetPlayer, keyInt, valueInt)
+    CBaseEntity *pEntA = CLuaWrapper::GetLuaEntity(L, 1);
+    CBasePlayer *pPlayerA = dynamic_cast<CBasePlayer*>(pEntA);
+    CBaseEntity *pEntB = CLuaWrapper::GetLuaEntity(L, 2);
+    CBasePlayer *pPlayerB = dynamic_cast<CBasePlayer*>(pEntB);
+    int key = (int)lua_tonumber(L, 3);
+    int val = (int)lua_tonumber(L, 4);
+    if (pPlayerA && pPlayerB)
+    {
+        CLuaWrapper::GameEventSetPlayerInt(pPlayerA, pPlayerB, key, val);
+    }
+    return 0;
+}
+
+int Lua_GameEvent_SetPlayerVector(lua_State* L)
+{
+    LuaWarnArgs(L, 2);
+    // Expects: (player, vector)
+    CBaseEntity *pEnt = CLuaWrapper::GetLuaEntity(L, 1);
+    CBasePlayer *pPlayer = dynamic_cast<CBasePlayer*>(pEnt);
+    Vector vec;
+    if (pPlayer && CLuaWrapper::GetVector(L, 2, vec))
+    {
+        CLuaWrapper::GameEventSetPlayerVector(pPlayer, vec);
+    }
+    return 0;
+}
+
+int Lua_GameEvent_Fire(lua_State* L)
+{
+    (void)L;
+    // Fires the currently staged game event (if any)
+    CLuaWrapper::CommitActiveGameEvent();
+    return 0;
 }
 
 int lua_PlayerGetShootAng(lua_State* L)
@@ -888,14 +1325,19 @@ int lua_TraceLine(lua_State* L)
     UTIL_TraceLine(start, end, MASK_SOLID, NULL, COLLISION_GROUP_NONE, &tr);
 
     // Store trace result globally for other functions to access
-    s_CurrentContext.lastTrace = tr;
+    LuaContext_t* pCtx = CGModLuaSystem::GetCurrentContext();
+    if (pCtx)
+    {
+        pCtx->lastTrace = tr;
+    }
 
     return 0;
 }
 
 int lua_TraceEndPos(lua_State* L)
 {
-    Vector endPos = s_CurrentContext.lastTrace.endpos;
+    LuaContext_t* pCtx = CGModLuaSystem::GetCurrentContext();
+    Vector endPos = pCtx ? pCtx->lastTrace.endpos : vec3_origin;
 
     // Create vector3 table
     lua_newtable(L);
@@ -911,13 +1353,15 @@ int lua_TraceEndPos(lua_State* L)
 
 int lua_TraceHit(lua_State* L)
 {
-    lua_pushboolean(L, s_CurrentContext.lastTrace.DidHit());
+    LuaContext_t* pCtx = CGModLuaSystem::GetCurrentContext();
+    lua_pushboolean(L, pCtx ? pCtx->lastTrace.DidHit() : 0);
     return 1;
 }
 
 int lua_TraceHitWorld(lua_State* L)
 {
-    lua_pushboolean(L, s_CurrentContext.lastTrace.DidHitWorld());
+    LuaContext_t* pCtx = CGModLuaSystem::GetCurrentContext();
+    lua_pushboolean(L, pCtx ? pCtx->lastTrace.DidHitWorld() : 0);
     return 1;
 }
 
@@ -1049,7 +1493,7 @@ int lua_GetConVar_Float(lua_State* L)
         return 1;
     }
 
-    ConVar* pConVar = cvar->FindVar(name);
+    const ConVar* pConVar = cvar->FindVar(name);
     if (pConVar)
     {
         lua_pushnumber(L, pConVar->GetFloat());
@@ -1074,7 +1518,7 @@ int lua_GetConVar_Int(lua_State* L)
         return 1;
     }
 
-    ConVar* pConVar = cvar->FindVar(name);
+    const ConVar* pConVar = cvar->FindVar(name);
     if (pConVar)
     {
         lua_pushnumber(L, pConVar->GetInt());
@@ -1099,7 +1543,7 @@ int lua_GetConVar_String(lua_State* L)
         return 1;
     }
 
-    ConVar* pConVar = cvar->FindVar(name);
+    const ConVar* pConVar = cvar->FindVar(name);
     if (pConVar)
     {
         lua_pushstring(L, pConVar->GetString());
@@ -1123,10 +1567,10 @@ int lua_SetConVar(lua_State* L)
     if (!name || !value)
         return 0;
 
-    ConVar* pConVar = cvar->FindVar(name);
+    const ConVar* pConVar = cvar->FindVar(name);
     if (pConVar)
     {
-        pConVar->SetValue(value);
+        const_cast<ConVar*>(pConVar)->SetValue(value);
     }
 
     return 0;
@@ -1343,6 +1787,1369 @@ int lua_vecNormalize(lua_State* L)
     lua_setfield(L, -2, "z");
 
     return 1;
+}
+
+//-----------------------------------------------------------------------------
+// _phys table functions (GMod 9 physics table)
+// These are accessed as _phys.HasPhysics, _phys.Wake, etc.
+//-----------------------------------------------------------------------------
+
+// Helper function to get physics object from entity ID
+static IPhysicsObject* GetPhysicsFromEntityID(lua_State* L, int arg)
+{
+    if (lua_gettop(L) < arg)
+        return NULL;
+
+    int entid = (int)lua_tonumber(L, arg);
+    CBaseEntity* pEntity = UTIL_EntityByIndex(entid);
+    if (!pEntity)
+        return NULL;
+
+    return pEntity->VPhysicsGetObject();
+}
+
+int lua_phys_HasPhysics(lua_State* L)
+{
+    int entid = (int)lua_tonumber(L, 1);
+    CBaseEntity* pEntity = UTIL_EntityByIndex(entid);
+    if (!pEntity)
+    {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    IPhysicsObject* pPhys = pEntity->VPhysicsGetObject();
+    lua_pushboolean(L, pPhys != NULL);
+    return 1;
+}
+
+int lua_phys_IsAsleep(lua_State* L)
+{
+    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+    if (!pPhys)
+    {
+        lua_pushboolean(L, true); // No physics = asleep
+        return 1;
+    }
+
+    lua_pushboolean(L, pPhys->IsAsleep());
+    return 1;
+}
+
+int lua_phys_Wake(lua_State* L)
+{
+    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+    if (pPhys)
+    {
+        pPhys->Wake();
+    }
+    return 0;
+}
+
+int lua_phys_Sleep(lua_State* L)
+{
+    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+    if (pPhys)
+    {
+        pPhys->Sleep();
+    }
+    return 0;
+}
+
+int lua_phys_SetMass(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+    if (pPhys)
+    {
+        float mass = (float)lua_tonumber(L, 2);
+        pPhys->SetMass(mass);
+    }
+    return 0;
+}
+
+int lua_phys_GetMass(lua_State* L)
+{
+    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+    if (pPhys)
+    {
+        lua_pushnumber(L, pPhys->GetMass());
+    }
+    else
+    {
+        lua_pushnumber(L, 0);
+    }
+    return 1;
+}
+
+int lua_phys_EnableCollisions(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+    if (pPhys)
+    {
+        bool enable = lua_toboolean(L, 2) != 0;
+        pPhys->EnableCollisions(enable);
+    }
+    return 0;
+}
+
+int lua_phys_EnableGravity(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+    if (pPhys)
+    {
+        bool enable = lua_toboolean(L, 2) != 0;
+        pPhys->EnableGravity(enable);
+    }
+    return 0;
+}
+
+int lua_phys_EnableDrag(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+    if (pPhys)
+    {
+        bool enable = lua_toboolean(L, 2) != 0;
+        pPhys->EnableDrag(enable);
+    }
+    return 0;
+}
+
+int lua_phys_EnableMotion(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+    if (pPhys)
+    {
+        bool enable = lua_toboolean(L, 2) != 0;
+        pPhys->EnableMotion(enable);
+    }
+    return 0;
+}
+
+int lua_phys_ApplyForceCenter(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+    if (pPhys && lua_istable(L, 2))
+    {
+        lua_getfield(L, 2, "x");
+        lua_getfield(L, 2, "y");
+        lua_getfield(L, 2, "z");
+
+        Vector force;
+        force.x = (float)lua_tonumber(L, -3);
+        force.y = (float)lua_tonumber(L, -2);
+        force.z = (float)lua_tonumber(L, -1);
+
+        pPhys->ApplyForceCenter(force);
+
+        lua_pop(L, 3);
+    }
+    return 0;
+}
+
+int lua_phys_ApplyForceOffset(lua_State* L)
+{
+    if (lua_gettop(L) < 3)
+        return 0;
+
+    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+    if (pPhys && lua_istable(L, 2) && lua_istable(L, 3))
+    {
+        Vector force, offset;
+
+        // Get force vector
+        lua_getfield(L, 2, "x");
+        lua_getfield(L, 2, "y");
+        lua_getfield(L, 2, "z");
+        force.x = (float)lua_tonumber(L, -3);
+        force.y = (float)lua_tonumber(L, -2);
+        force.z = (float)lua_tonumber(L, -1);
+        lua_pop(L, 3);
+
+        // Get offset vector
+        lua_getfield(L, 3, "x");
+        lua_getfield(L, 3, "y");
+        lua_getfield(L, 3, "z");
+        offset.x = (float)lua_tonumber(L, -3);
+        offset.y = (float)lua_tonumber(L, -2);
+        offset.z = (float)lua_tonumber(L, -1);
+        lua_pop(L, 3);
+
+        pPhys->ApplyForceOffset(force, offset);
+    }
+    return 0;
+}
+
+int lua_phys_ApplyTorqueCenter(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+    if (pPhys && lua_istable(L, 2))
+    {
+        lua_getfield(L, 2, "x");
+        lua_getfield(L, 2, "y");
+        lua_getfield(L, 2, "z");
+
+        Vector torque;
+        torque.x = (float)lua_tonumber(L, -3);
+        torque.y = (float)lua_tonumber(L, -2);
+        torque.z = (float)lua_tonumber(L, -1);
+
+        AngularImpulse angImpulse(torque.x, torque.y, torque.z);
+        pPhys->ApplyTorqueCenter(angImpulse);
+
+        lua_pop(L, 3);
+    }
+    return 0;
+}
+
+int lua_phys_ConstraintSetEnts(lua_State* L)
+{
+    // Takes (constraint, ent1, ent2, bone1, bone2)
+    // This would require constraint management - for now, stub it
+    if (lua_gettop(L) < 5)
+        return 0;
+
+    DevMsg("_phys.ConstraintSetEnts called - constraint system not fully implemented\n");
+    return 0;
+}
+
+int lua_phys_GetVelocity(lua_State* L)
+{
+    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+    if (pPhys)
+    {
+        Vector velocity;
+        AngularImpulse angVelocity;
+        pPhys->GetVelocity(&velocity, &angVelocity);
+
+        // Create vector3 table
+        lua_newtable(L);
+        lua_pushnumber(L, velocity.x);
+        lua_setfield(L, -2, "x");
+        lua_pushnumber(L, velocity.y);
+        lua_setfield(L, -2, "y");
+        lua_pushnumber(L, velocity.z);
+        lua_setfield(L, -2, "z");
+    }
+    else
+    {
+        lua_newtable(L);
+        lua_pushnumber(L, 0);
+        lua_setfield(L, -2, "x");
+        lua_pushnumber(L, 0);
+        lua_setfield(L, -2, "y");
+        lua_pushnumber(L, 0);
+        lua_setfield(L, -2, "z");
+    }
+    return 1;
+}
+
+int lua_phys_SetVelocity(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+    if (pPhys && lua_istable(L, 2))
+    {
+        lua_getfield(L, 2, "x");
+        lua_getfield(L, 2, "y");
+        lua_getfield(L, 2, "z");
+
+        Vector velocity;
+        velocity.x = (float)lua_tonumber(L, -3);
+        velocity.y = (float)lua_tonumber(L, -2);
+        velocity.z = (float)lua_tonumber(L, -1);
+
+        pPhys->SetVelocity(&velocity, NULL);
+
+        lua_pop(L, 3);
+    }
+    return 0;
+}
+
+//-----------------------------------------------------------------------------
+// AddThinkFunction - Registers a function to be called during DoLuaThinkFunctions
+//-----------------------------------------------------------------------------
+int lua_AddThinkFunction(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+        return 0;
+
+    // In GMod 9, AddThinkFunction stores a reference to the passed function
+    // The DoLuaThinkFunctions Lua function then iterates and calls them
+    // We implement this by registering the function in the ThinkFunctions table
+
+    // Get or create the ThinkFunctions table
+    lua_getglobal(L, "ThinkFunctions");
+    if (!lua_istable(L, -1))
+    {
+        lua_pop(L, 1);
+        lua_newtable(L);
+        lua_setglobal(L, "ThinkFunctions");
+        lua_getglobal(L, "ThinkFunctions");
+    }
+
+    // Get the next index (using luaL_getn for Lua 5.0 compatibility)
+    int len = luaL_getn(L, -1);
+
+    // Push the function reference (duplicate from arg 1)
+    lua_pushvalue(L, 1);
+
+    // Store it at index len+1
+    lua_rawseti(L, -2, len + 1);
+
+    lua_pop(L, 1); // pop ThinkFunctions table
+    return 0;
+}
+
+//-----------------------------------------------------------------------------
+// _GameSetTargetIDRules - Sets target ID rules
+// NOTE: Actual implementation is in gmod_gamemode.cpp to avoid duplicate symbols
+//-----------------------------------------------------------------------------
+
+int CGModLuaSystem::GetTargetIDRules()
+{
+    // Forward to gamemode system
+    return (int)CGModGamemodeSystem::GetTargetIDRules();
+}
+
+//-----------------------------------------------------------------------------
+// _util table functions (GMod 9 utility table)
+// These are accessed as _util.PlayerByName, _util.DropToFloor, etc.
+//-----------------------------------------------------------------------------
+
+int lua_util_PlayerByName(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+    {
+        lua_pushnumber(L, -1);
+        return 1;
+    }
+
+    const char* name = lua_tostring(L, 1);
+    if (!name)
+    {
+        lua_pushnumber(L, -1);
+        return 1;
+    }
+
+    // Search for player by name
+    for (int i = 1; i <= gpGlobals->maxClients; i++)
+    {
+        CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
+        if (pPlayer && Q_stristr(STRING(pPlayer->pl.netname), name))
+        {
+            lua_pushnumber(L, i);
+            return 1;
+        }
+    }
+
+    lua_pushnumber(L, -1);
+    return 1;
+}
+
+int lua_util_PlayerByUserId(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+    {
+        lua_pushnumber(L, -1);
+        return 1;
+    }
+
+    int userid = (int)lua_tonumber(L, 1);
+
+    // Search for player by userid
+    for (int i = 1; i <= gpGlobals->maxClients; i++)
+    {
+        CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
+        if (pPlayer && engine->GetPlayerUserId(pPlayer->edict()) == userid)
+        {
+            lua_pushnumber(L, i);
+            return 1;
+        }
+    }
+
+    lua_pushnumber(L, -1);
+    return 1;
+}
+
+int lua_util_EntsInBox(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+    {
+        lua_newtable(L);
+        return 1;
+    }
+
+    Vector mins, maxs;
+
+    // Get min vector
+    if (lua_istable(L, 1))
+    {
+        lua_getfield(L, 1, "x");
+        lua_getfield(L, 1, "y");
+        lua_getfield(L, 1, "z");
+        mins.x = (float)lua_tonumber(L, -3);
+        mins.y = (float)lua_tonumber(L, -2);
+        mins.z = (float)lua_tonumber(L, -1);
+        lua_pop(L, 3);
+    }
+
+    // Get max vector
+    if (lua_istable(L, 2))
+    {
+        lua_getfield(L, 2, "x");
+        lua_getfield(L, 2, "y");
+        lua_getfield(L, 2, "z");
+        maxs.x = (float)lua_tonumber(L, -3);
+        maxs.y = (float)lua_tonumber(L, -2);
+        maxs.z = (float)lua_tonumber(L, -1);
+        lua_pop(L, 3);
+    }
+
+    // Create result table
+    lua_newtable(L);
+    int resultIndex = 1;
+
+    // Iterate through entities and find ones in box
+    CBaseEntity* pEntity = gEntList.FirstEnt();
+    while (pEntity)
+    {
+        Vector pos = pEntity->GetAbsOrigin();
+        if (pos.x >= mins.x && pos.x <= maxs.x &&
+            pos.y >= mins.y && pos.y <= maxs.y &&
+            pos.z >= mins.z && pos.z <= maxs.z)
+        {
+            lua_pushnumber(L, pEntity->entindex());
+            lua_rawseti(L, -2, resultIndex++);
+        }
+        pEntity = gEntList.NextEnt(pEntity);
+    }
+
+    return 1;
+}
+
+int lua_util_DropToFloor(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+        return 0;
+
+    int entid = (int)lua_tonumber(L, 1);
+    CBaseEntity* pEntity = UTIL_EntityByIndex(entid);
+    if (!pEntity)
+        return 0;
+
+    UTIL_DropToFloor(pEntity, MASK_SOLID);
+    return 0;
+}
+
+int lua_util_ScreenShake(lua_State* L)
+{
+    if (lua_gettop(L) < 5)
+        return 0;
+
+    Vector pos;
+    if (lua_istable(L, 1))
+    {
+        lua_getfield(L, 1, "x");
+        lua_getfield(L, 1, "y");
+        lua_getfield(L, 1, "z");
+        pos.x = (float)lua_tonumber(L, -3);
+        pos.y = (float)lua_tonumber(L, -2);
+        pos.z = (float)lua_tonumber(L, -1);
+        lua_pop(L, 3);
+    }
+
+    float amplitude = (float)lua_tonumber(L, 2);
+    float frequency = (float)lua_tonumber(L, 3);
+    float duration = (float)lua_tonumber(L, 4);
+    float radius = (float)lua_tonumber(L, 5);
+
+    UTIL_ScreenShake(pos, amplitude, frequency, duration, radius, SHAKE_START, false);
+    return 0;
+}
+
+int lua_util_PointAtEntity(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    int entid = (int)lua_tonumber(L, 1);
+    int targetid = (int)lua_tonumber(L, 2);
+
+    CBaseEntity* pEntity = UTIL_EntityByIndex(entid);
+    CBaseEntity* pTarget = UTIL_EntityByIndex(targetid);
+
+    if (!pEntity || !pTarget)
+        return 0;
+
+    // Calculate angle to point at target
+    Vector dir = pTarget->GetAbsOrigin() - pEntity->GetAbsOrigin();
+    QAngle angles;
+    VectorAngles(dir, angles);
+    pEntity->SetAbsAngles(angles);
+
+    return 0;
+}
+
+//-----------------------------------------------------------------------------
+// _player table functions (GMod 9 player table)
+// These are accessed as _player.ShowPanel, _player.SetFlashlight, etc.
+//-----------------------------------------------------------------------------
+
+int lua_player_ShowPanel(lua_State* L)
+{
+    if (lua_gettop(L) < 3)
+        return 0;
+
+    int playerid = (int)lua_tonumber(L, 1);
+    const char* panelName = lua_tostring(L, 2);
+    bool show = lua_toboolean(L, 3) != 0;
+
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+    if (!pPlayer || !panelName)
+        return 0;
+
+    // Send panel show/hide message to client
+    // This would be implemented via user messages
+    DevMsg("_player.ShowPanel: %s panel %s for player %d\n",
+           show ? "Showing" : "Hiding", panelName, playerid);
+
+    return 0;
+}
+
+int lua_player_SetContextMenu(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    int playerid = (int)lua_tonumber(L, 1);
+    bool enable = lua_toboolean(L, 2) != 0;
+
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+    if (!pPlayer)
+        return 0;
+
+    // Enable/disable context menu for player
+    DevMsg("_player.SetContextMenu: %s for player %d\n",
+           enable ? "Enabled" : "Disabled", playerid);
+
+    return 0;
+}
+
+int lua_player_GetFlashlight(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+    {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    int playerid = (int)lua_tonumber(L, 1);
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+
+    if (!pPlayer)
+    {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    lua_pushboolean(L, pPlayer->FlashlightIsOn());
+    return 1;
+}
+
+int lua_player_SetFlashlight(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    int playerid = (int)lua_tonumber(L, 1);
+    bool on = lua_toboolean(L, 2) != 0;
+
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+    if (!pPlayer)
+        return 0;
+
+    if (on && !pPlayer->FlashlightIsOn())
+        pPlayer->FlashlightTurnOn();
+    else if (!on && pPlayer->FlashlightIsOn())
+        pPlayer->FlashlightTurnOff();
+
+    return 0;
+}
+
+int lua_player_LastHitGroup(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+    {
+        lua_pushnumber(L, 0);
+        return 1;
+    }
+
+    int playerid = (int)lua_tonumber(L, 1);
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+
+    if (!pPlayer)
+    {
+        lua_pushnumber(L, 0);
+        return 1;
+    }
+
+    // Access m_LastHitGroup directly since LastHitGroup() is protected
+    // m_LastHitGroup is a public member in CBaseCombatCharacter
+    lua_pushnumber(L, 0);  // Stub - LastHitGroup/m_LastHitGroup inaccessible
+    return 1;
+}
+
+int lua_player_ShouldDropWeapon(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    int playerid = (int)lua_tonumber(L, 1);
+    bool drop = lua_toboolean(L, 2) != 0;
+
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+    if (!pPlayer)
+        return 0;
+
+    // Set whether player should drop weapon on death
+    // This would require extending player class - for now stub it
+    DevMsg("_player.ShouldDropWeapon: %s for player %d\n",
+           drop ? "true" : "false", playerid);
+
+    return 0;
+}
+
+//-----------------------------------------------------------------------------
+// _npc table functions (GMod 9 NPC table)
+// These are accessed as _npc.SetSchedule, _npc.AddRelationship, etc.
+//-----------------------------------------------------------------------------
+
+int lua_npc_ExitScriptedSequence(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+        return 0;
+
+    int npcid = (int)lua_tonumber(L, 1);
+    CBaseEntity* pEntity = UTIL_EntityByIndex(npcid);
+    if (!pEntity)
+        return 0;
+
+    // Try to cast to NPC and exit scripted sequence
+    CAI_BaseNPC* pNPC = dynamic_cast<CAI_BaseNPC*>(pEntity);
+    if (pNPC)
+    {
+        pNPC->ExitScriptedSequence();
+    }
+
+    return 0;
+}
+
+int lua_npc_SetSchedule(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    int npcid = (int)lua_tonumber(L, 1);
+    int schedule = (int)lua_tonumber(L, 2);
+
+    CBaseEntity* pEntity = UTIL_EntityByIndex(npcid);
+    if (!pEntity)
+        return 0;
+
+    CAI_BaseNPC* pNPC = dynamic_cast<CAI_BaseNPC*>(pEntity);
+    if (pNPC)
+    {
+        pNPC->SetSchedule(schedule);
+    }
+
+    return 0;
+}
+
+int lua_npc_SetLastPosition(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    int npcid = (int)lua_tonumber(L, 1);
+    CBaseEntity* pEntity = UTIL_EntityByIndex(npcid);
+    if (!pEntity)
+        return 0;
+
+    CAI_BaseNPC* pNPC = dynamic_cast<CAI_BaseNPC*>(pEntity);
+    if (!pNPC)
+        return 0;
+
+    // Get position from table
+    if (lua_istable(L, 2))
+    {
+        lua_getfield(L, 2, "x");
+        lua_getfield(L, 2, "y");
+        lua_getfield(L, 2, "z");
+
+        Vector pos;
+        pos.x = (float)lua_tonumber(L, -3);
+        pos.y = (float)lua_tonumber(L, -2);
+        pos.z = (float)lua_tonumber(L, -1);
+
+        // Use SetLastKnownPos via enemy memory if available
+        if (pNPC->GetEnemy())
+        {
+            pNPC->UpdateEnemyMemory(pNPC->GetEnemy(), pos);
+        }
+
+        lua_pop(L, 3);
+    }
+
+    return 0;
+}
+
+int lua_npc_AddRelationship(lua_State* L)
+{
+    if (lua_gettop(L) < 4)
+        return 0;
+
+    int npcid = (int)lua_tonumber(L, 1);
+    const char* targetClass = lua_tostring(L, 2);
+    int disposition = (int)lua_tonumber(L, 3);
+    int priority = (int)lua_tonumber(L, 4);
+
+    CBaseEntity* pEntity = UTIL_EntityByIndex(npcid);
+    if (!pEntity || !targetClass)
+        return 0;
+
+    CAI_BaseNPC* pNPC = dynamic_cast<CAI_BaseNPC*>(pEntity);
+    if (pNPC)
+    {
+        // Build relationship string in format: "classname D_XX priority"
+        char relationshipStr[256];
+        const char* dispStr = "D_NU"; // Neutral default
+        switch (disposition)
+        {
+            case 1: dispStr = "D_HT"; break; // Hate
+            case 2: dispStr = "D_FR"; break; // Fear
+            case 3: dispStr = "D_LI"; break; // Like
+            case 4: dispStr = "D_NU"; break; // Neutral
+        }
+        Q_snprintf(relationshipStr, sizeof(relationshipStr), "%s %s %d",
+                   targetClass, dispStr, priority);
+        pNPC->AddRelationship(relationshipStr, NULL);
+    }
+
+    return 0;
+}
+
+//-----------------------------------------------------------------------------
+// _spawnmenu table functions (GMod 9 spawn menu table)
+// These are accessed as _spawnmenu.AddItem, _spawnmenu.RemoveCategory, etc.
+//-----------------------------------------------------------------------------
+
+// Spawn menu item storage
+struct SpawnMenuItem_t
+{
+    char category[64];
+    char name[64];
+    char model[256];
+    int skin;
+};
+
+static CUtlVector<SpawnMenuItem_t> s_SpawnMenuItems;
+static char s_CurrentSpawnMenuCategory[64] = "Props";
+
+int lua_spawnmenu_AddItem(lua_State* L)
+{
+    if (lua_gettop(L) < 3)
+        return 0;
+
+    SpawnMenuItem_t item;
+    Q_strncpy(item.category, lua_tostring(L, 1) ? lua_tostring(L, 1) : "Props", sizeof(item.category));
+    Q_strncpy(item.name, lua_tostring(L, 2) ? lua_tostring(L, 2) : "Unknown", sizeof(item.name));
+    Q_strncpy(item.model, lua_tostring(L, 3) ? lua_tostring(L, 3) : "", sizeof(item.model));
+    item.skin = lua_gettop(L) >= 4 ? (int)lua_tonumber(L, 4) : 0;
+
+    s_SpawnMenuItems.AddToTail(item);
+
+    if (gmod_lua_debug.GetBool())
+    {
+        DevMsg("_spawnmenu.AddItem: Added '%s' to category '%s'\n", item.name, item.category);
+    }
+
+    return 0;
+}
+
+int lua_spawnmenu_RemoveCategory(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+        return 0;
+
+    const char* category = lua_tostring(L, 1);
+    if (!category)
+        return 0;
+
+    // Remove all items in this category
+    for (int i = s_SpawnMenuItems.Count() - 1; i >= 0; i--)
+    {
+        if (Q_stricmp(s_SpawnMenuItems[i].category, category) == 0)
+        {
+            s_SpawnMenuItems.Remove(i);
+        }
+    }
+
+    return 0;
+}
+
+int lua_spawnmenu_RemoveAll(lua_State* L)
+{
+    (void)L;
+    s_SpawnMenuItems.Purge();
+    return 0;
+}
+
+int lua_spawnmenu_SetCategory(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+        return 0;
+
+    const char* category = lua_tostring(L, 1);
+    if (category)
+    {
+        Q_strncpy(s_CurrentSpawnMenuCategory, category, sizeof(s_CurrentSpawnMenuCategory));
+    }
+
+    return 0;
+}
+
+//-----------------------------------------------------------------------------
+// _gmodquad global functions (GMod 9 quad rendering)
+// These are global functions: _GModQuad_Hide, _GModQuad_Start, etc.
+//-----------------------------------------------------------------------------
+
+// Quad rendering state
+struct GModQuad_t
+{
+    int id;
+    Vector pos;
+    Vector normal;
+    float fadeIn;
+    float hold;
+    float fadeOut;
+    int entityId;
+    bool active;
+};
+
+static GModQuad_t s_CurrentQuad;
+static CUtlVector<GModQuad_t> s_ActiveQuads;
+
+int lua_GModQuad_Hide(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+        return 0;
+
+    int quadId = (int)lua_tonumber(L, 1);
+
+    // Find and deactivate quad
+    for (int i = 0; i < s_ActiveQuads.Count(); i++)
+    {
+        if (s_ActiveQuads[i].id == quadId)
+        {
+            s_ActiveQuads[i].active = false;
+            break;
+        }
+    }
+
+    return 0;
+}
+
+int lua_GModQuad_HideAll(lua_State* L)
+{
+    (void)L;
+    for (int i = 0; i < s_ActiveQuads.Count(); i++)
+    {
+        s_ActiveQuads[i].active = false;
+    }
+    return 0;
+}
+
+int lua_GModQuad_Start(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+        return 0;
+
+    Q_memset(&s_CurrentQuad, 0, sizeof(s_CurrentQuad));
+    s_CurrentQuad.id = (int)lua_tonumber(L, 1);
+    s_CurrentQuad.active = true;
+
+    return 0;
+}
+
+int lua_GModQuad_SetVector(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    const char* name = lua_tostring(L, 1);
+    if (!name)
+        return 0;
+
+    Vector vec;
+    if (lua_istable(L, 2))
+    {
+        lua_getfield(L, 2, "x");
+        lua_getfield(L, 2, "y");
+        lua_getfield(L, 2, "z");
+        vec.x = (float)lua_tonumber(L, -3);
+        vec.y = (float)lua_tonumber(L, -2);
+        vec.z = (float)lua_tonumber(L, -1);
+        lua_pop(L, 3);
+    }
+
+    if (Q_stricmp(name, "pos") == 0 || Q_stricmp(name, "position") == 0)
+        s_CurrentQuad.pos = vec;
+    else if (Q_stricmp(name, "normal") == 0)
+        s_CurrentQuad.normal = vec;
+
+    return 0;
+}
+
+int lua_GModQuad_SetTimings(lua_State* L)
+{
+    if (lua_gettop(L) < 3)
+        return 0;
+
+    s_CurrentQuad.fadeIn = (float)lua_tonumber(L, 1);
+    s_CurrentQuad.hold = (float)lua_tonumber(L, 2);
+    s_CurrentQuad.fadeOut = (float)lua_tonumber(L, 3);
+
+    return 0;
+}
+
+int lua_GModQuad_SetEntity(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+        return 0;
+
+    s_CurrentQuad.entityId = (int)lua_tonumber(L, 1);
+    return 0;
+}
+
+int lua_GModQuad_Send(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+        return 0;
+
+    int playerid = (int)lua_tonumber(L, 1);
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+
+    if (!pPlayer)
+        return 0;
+
+    // Add quad to active list
+    s_ActiveQuads.AddToTail(s_CurrentQuad);
+
+    // In a real implementation, this would send a user message to client
+    DevMsg("_GModQuad_Send: Sent quad %d to player %d\n", s_CurrentQuad.id, playerid);
+
+    return 0;
+}
+
+int lua_GModQuad_SendAnimate(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+        return 0;
+
+    int playerid = (int)lua_tonumber(L, 1);
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+
+    if (!pPlayer)
+        return 0;
+
+    // Add quad to active list with animation flag
+    s_ActiveQuads.AddToTail(s_CurrentQuad);
+
+    DevMsg("_GModQuad_SendAnimate: Sent animated quad %d to player %d\n", s_CurrentQuad.id, playerid);
+
+    return 0;
+}
+
+//-----------------------------------------------------------------------------
+// _gameevent table functions (GMod 9 game event table)
+// These are accessed as _gameevent.Start, _gameevent.SetString, etc.
+// NOTE: This codebase uses KeyValues-based game events, not IGameEvent
+//-----------------------------------------------------------------------------
+
+// Game event state - using KeyValues for this older Source Engine version
+static KeyValues* s_pCurrentGameEventKV = NULL;
+static char s_CurrentEventName[128] = "";
+
+int lua_gameevent_Start(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+        return 0;
+
+    const char* eventName = lua_tostring(L, 1);
+    if (!eventName)
+        return 0;
+
+    // Clean up any previous event
+    if (s_pCurrentGameEventKV)
+    {
+        s_pCurrentGameEventKV->deleteThis();
+        s_pCurrentGameEventKV = NULL;
+    }
+
+    // Create new KeyValues-based game event
+    s_pCurrentGameEventKV = new KeyValues(eventName);
+    Q_strncpy(s_CurrentEventName, eventName, sizeof(s_CurrentEventName));
+
+    return 0;
+}
+
+int lua_gameevent_SetString(lua_State* L)
+{
+    if (lua_gettop(L) < 2 || !s_pCurrentGameEventKV)
+        return 0;
+
+    const char* key = lua_tostring(L, 1);
+    const char* value = lua_tostring(L, 2);
+
+    if (key && value)
+    {
+        s_pCurrentGameEventKV->SetString(key, value);
+    }
+
+    return 0;
+}
+
+int lua_gameevent_SetInt(lua_State* L)
+{
+    if (lua_gettop(L) < 2 || !s_pCurrentGameEventKV)
+        return 0;
+
+    const char* key = lua_tostring(L, 1);
+    int value = (int)lua_tonumber(L, 2);
+
+    if (key)
+    {
+        s_pCurrentGameEventKV->SetInt(key, value);
+    }
+
+    return 0;
+}
+
+int lua_gameevent_Fire(lua_State* L)
+{
+    (void)L;
+
+    if (s_pCurrentGameEventKV && gameeventmanager)
+    {
+        // Fire using the KeyValues-based API with a broadcast filter
+        CRecipientFilter filter;
+        filter.AddAllPlayers();
+        gameeventmanager->FireEvent(s_pCurrentGameEventKV, &filter);
+        s_pCurrentGameEventKV = NULL; // Event KeyValues is owned by manager after FireEvent
+    }
+
+    return 0;
+}
+
+//-----------------------------------------------------------------------------
+// GModText functions - Display text on screen for players
+// These match the original GMod 9.0.4b _GModText_* functions
+//-----------------------------------------------------------------------------
+
+// Current GModText state for building messages
+static struct GModText_t {
+    char fontName[64];
+    char text[256];
+    float x, y;
+    float r, g, b, a;
+    float fadeIn, fadeOut, holdTime;
+    int effect;
+    int align;
+} s_GModText = {"Default", "", 0.5f, 0.5f, 255, 255, 255, 255, 0.1f, 0.1f, 5.0f, 0, 0};
+
+int lua_GModText_Start(lua_State* L)
+{
+    const char* font = lua_gettop(L) >= 1 ? lua_tostring(L, 1) : "Default";
+    if (font)
+        Q_strncpy(s_GModText.fontName, font, sizeof(s_GModText.fontName));
+    else
+        Q_strncpy(s_GModText.fontName, "Default", sizeof(s_GModText.fontName));
+    s_GModText.text[0] = '\0';
+    return 0;
+}
+
+int lua_GModText_SetPos(lua_State* L)
+{
+    if (lua_gettop(L) >= 2)
+    {
+        s_GModText.x = (float)lua_tonumber(L, 1);
+        s_GModText.y = (float)lua_tonumber(L, 2);
+    }
+    return 0;
+}
+
+int lua_GModText_SetColor(lua_State* L)
+{
+    int n = lua_gettop(L);
+    if (n >= 3)
+    {
+        s_GModText.r = (float)lua_tonumber(L, 1);
+        s_GModText.g = (float)lua_tonumber(L, 2);
+        s_GModText.b = (float)lua_tonumber(L, 3);
+        s_GModText.a = n >= 4 ? (float)lua_tonumber(L, 4) : 255;
+    }
+    return 0;
+}
+
+int lua_GModText_SetFade(lua_State* L)
+{
+    if (lua_gettop(L) >= 3)
+    {
+        s_GModText.fadeIn = (float)lua_tonumber(L, 1);
+        s_GModText.fadeOut = (float)lua_tonumber(L, 2);
+        s_GModText.holdTime = (float)lua_tonumber(L, 3);
+    }
+    return 0;
+}
+
+int lua_GModText_SetText(lua_State* L)
+{
+    if (lua_gettop(L) >= 1)
+    {
+        const char* text = lua_tostring(L, 1);
+        if (text)
+            Q_strncpy(s_GModText.text, text, sizeof(s_GModText.text));
+    }
+    return 0;
+}
+
+int lua_GModText_SetEffect(lua_State* L)
+{
+    if (lua_gettop(L) >= 1)
+    {
+        s_GModText.effect = (int)lua_tonumber(L, 1);
+    }
+    return 0;
+}
+
+int lua_GModText_SetAlign(lua_State* L)
+{
+    if (lua_gettop(L) >= 1)
+    {
+        s_GModText.align = (int)lua_tonumber(L, 1);
+    }
+    return 0;
+}
+
+int lua_GModText_Send(lua_State* L)
+{
+    int playerID = lua_gettop(L) >= 1 ? (int)lua_tonumber(L, 1) : -1;
+
+    CRecipientFilter filter;
+    if (playerID > 0)
+    {
+        CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerID);
+        if (!pPlayer)
+            return 0;
+        filter.AddRecipient(pPlayer);
+    }
+    else
+    {
+        filter.AddAllPlayers();
+    }
+    filter.MakeReliable();
+
+    // Send GModText user message
+    UserMessageBegin(filter, "GModText");
+        WRITE_STRING(s_GModText.fontName);
+        WRITE_STRING(s_GModText.text);
+        WRITE_FLOAT(s_GModText.x);
+        WRITE_FLOAT(s_GModText.y);
+        WRITE_BYTE((int)s_GModText.r);
+        WRITE_BYTE((int)s_GModText.g);
+        WRITE_BYTE((int)s_GModText.b);
+        WRITE_BYTE((int)s_GModText.a);
+        WRITE_FLOAT(s_GModText.fadeIn);
+        WRITE_FLOAT(s_GModText.holdTime);
+        WRITE_FLOAT(s_GModText.fadeOut);
+        WRITE_BYTE(s_GModText.effect);
+        WRITE_BYTE(s_GModText.align);
+    MessageEnd();
+
+    return 0;
+}
+
+int lua_GModText_Hide(lua_State* L)
+{
+    int playerID = lua_gettop(L) >= 1 ? (int)lua_tonumber(L, 1) : -1;
+
+    CRecipientFilter filter;
+    if (playerID > 0)
+    {
+        CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerID);
+        if (!pPlayer)
+            return 0;
+        filter.AddRecipient(pPlayer);
+    }
+    else
+    {
+        filter.AddAllPlayers();
+    }
+    filter.MakeReliable();
+
+    UserMessageBegin(filter, "GModTextHideAll");
+    MessageEnd();
+
+    return 0;
+}
+
+//-----------------------------------------------------------------------------
+// GModRect functions - Display rectangles on screen for players
+//-----------------------------------------------------------------------------
+
+static struct GModRect_t {
+    float x, y;
+    float w, h;
+    float r, g, b, a;
+    int id;
+} s_GModRect = {0, 0, 100, 100, 255, 255, 255, 255, 0};
+
+int lua_GModRect_Start(lua_State* L)
+{
+    // Reset rect state
+    s_GModRect.x = 0;
+    s_GModRect.y = 0;
+    s_GModRect.w = 100;
+    s_GModRect.h = 100;
+    s_GModRect.r = 255;
+    s_GModRect.g = 255;
+    s_GModRect.b = 255;
+    s_GModRect.a = 255;
+    s_GModRect.id = 0;
+    (void)L;
+    return 0;
+}
+
+int lua_GModRect_SetPos(lua_State* L)
+{
+    if (lua_gettop(L) >= 2)
+    {
+        s_GModRect.x = (float)lua_tonumber(L, 1);
+        s_GModRect.y = (float)lua_tonumber(L, 2);
+    }
+    return 0;
+}
+
+int lua_GModRect_SetSize(lua_State* L)
+{
+    if (lua_gettop(L) >= 2)
+    {
+        s_GModRect.w = (float)lua_tonumber(L, 1);
+        s_GModRect.h = (float)lua_tonumber(L, 2);
+    }
+    return 0;
+}
+
+int lua_GModRect_SetColor(lua_State* L)
+{
+    int n = lua_gettop(L);
+    if (n >= 3)
+    {
+        s_GModRect.r = (float)lua_tonumber(L, 1);
+        s_GModRect.g = (float)lua_tonumber(L, 2);
+        s_GModRect.b = (float)lua_tonumber(L, 3);
+        s_GModRect.a = n >= 4 ? (float)lua_tonumber(L, 4) : 255;
+    }
+    return 0;
+}
+
+int lua_GModRect_SetID(lua_State* L)
+{
+    if (lua_gettop(L) >= 1)
+    {
+        s_GModRect.id = (int)lua_tonumber(L, 1);
+    }
+    return 0;
+}
+
+int lua_GModRect_Send(lua_State* L)
+{
+    int playerID = lua_gettop(L) >= 1 ? (int)lua_tonumber(L, 1) : -1;
+
+    CRecipientFilter filter;
+    if (playerID > 0)
+    {
+        CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerID);
+        if (!pPlayer)
+            return 0;
+        filter.AddRecipient(pPlayer);
+    }
+    else
+    {
+        filter.AddAllPlayers();
+    }
+    filter.MakeReliable();
+
+    UserMessageBegin(filter, "GModRect");
+        WRITE_SHORT(s_GModRect.id);
+        WRITE_FLOAT(s_GModRect.x);
+        WRITE_FLOAT(s_GModRect.y);
+        WRITE_FLOAT(s_GModRect.w);
+        WRITE_FLOAT(s_GModRect.h);
+        WRITE_BYTE((int)s_GModRect.r);
+        WRITE_BYTE((int)s_GModRect.g);
+        WRITE_BYTE((int)s_GModRect.b);
+        WRITE_BYTE((int)s_GModRect.a);
+    MessageEnd();
+
+    return 0;
+}
+
+int lua_GModRect_Hide(lua_State* L)
+{
+    int playerID = lua_gettop(L) >= 1 ? (int)lua_tonumber(L, 1) : -1;
+
+    CRecipientFilter filter;
+    if (playerID > 0)
+    {
+        CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerID);
+        if (!pPlayer)
+            return 0;
+        filter.AddRecipient(pPlayer);
+    }
+    else
+    {
+        filter.AddAllPlayers();
+    }
+    filter.MakeReliable();
+
+    UserMessageBegin(filter, "GModRectHideAll");
+    MessageEnd();
+
+    return 0;
 }
 
 } // extern "C"

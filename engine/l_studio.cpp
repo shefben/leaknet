@@ -2199,8 +2199,15 @@ void CModelRender::UpdateStaticPropColorData( IHandleEntity *pProp, ModelInstanc
 						{
 							OptimizedModel::Vertex_t *pVtxVertex = pStripGroup->pVertex(i);
 							int nVertIndex = pMesh->vertexoffset + pVtxVertex->origMeshVertID;
-							Assert( nVertIndex < pModel->numvertices );
-							meshBuilder.Specular3ub( tmpLightingMem[nVertIndex].r, tmpLightingMem[nVertIndex].g, tmpLightingMem[nVertIndex].b );
+							// Add bounds checking to prevent crash
+							if (nVertIndex >= pModel->numvertices)
+							{
+								Warning("Invalid vertex index %d for model %s (max: %d). Skipping vertex.\n",
+										nVertIndex, pStudioHdr->name, pModel->numvertices - 1);
+								meshBuilder.AdvanceVertex();
+								continue;
+							}
+							Assert( nVertIndex < pModel->numvertices );							meshBuilder.Specular3ub( tmpLightingMem[nVertIndex].r, tmpLightingMem[nVertIndex].g, tmpLightingMem[nVertIndex].b );
 							meshBuilder.AdvanceVertex();
 						}
 						meshBuilder.End();

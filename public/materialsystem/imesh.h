@@ -994,9 +994,11 @@ inline void	CMeshBuilder::Normal3f( float nx, float ny, float nz )
 {
 	Assert( m_pNormal );
 	Assert( IsFinite(nx) && IsFinite(ny) && IsFinite(nz) );
-	Assert( nx >= -1.05f && nx <= 1.05f );
-	Assert( ny >= -1.05f && ny <= 1.05f );
-	Assert( nz >= -1.05f && nz <= 1.05f );
+	// NOTE: Relaxed tolerance from 1.05 to 1.10 (10%) to accommodate precision
+	// differences in model compilers from Source 2007+ and other toolchains.
+	Assert( nx >= -1.10f && nx <= 1.10f );
+	Assert( ny >= -1.10f && ny <= 1.10f );
+	Assert( nz >= -1.10f && nz <= 1.10f );
 
 	float *pDst = m_pCurrNormal;
 	*pDst++ = nx;
@@ -1009,9 +1011,11 @@ inline void	CMeshBuilder::Normal3fv( float const *n )
 	Assert(n);
 	Assert( m_pNormal && m_pCurrNormal );
 	Assert( IsFinite(n[0]) && IsFinite(n[1]) && IsFinite(n[2]) );
-	Assert( n[0] >= -1.05f && n[0] <= 1.05f );
-	Assert( n[1] >= -1.05f && n[1] <= 1.05f );
-	Assert( n[2] >= -1.05f && n[2] <= 1.05f );
+	// NOTE: Relaxed tolerance from 1.05 to 1.10 (10%) to accommodate precision
+	// differences in model compilers from Source 2007+ and other toolchains.
+	Assert( n[0] >= -1.10f && n[0] <= 1.10f );
+	Assert( n[1] >= -1.10f && n[1] <= 1.10f );
+	Assert( n[2] >= -1.10f && n[2] <= 1.10f );
 
 	float *pDst = m_pCurrNormal;
 	*pDst++ = *n++;
@@ -1300,6 +1304,7 @@ inline void CMeshBuilder::BoneMatrix( int idx, int matrixIdx )
 {
 	Assert( m_pBoneMatrixIndex );
 	Assert( idx >= 0 );
+	// DirectX hardware skinning supports max 4 bone influences per vertex
 	Assert( idx < 4 );
 	// garymcthack
 	if( matrixIdx == BONE_MATRIX_INDEX_INVALID )

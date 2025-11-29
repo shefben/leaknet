@@ -33,7 +33,9 @@ set_property( CACHE BUILD_GROUP PROPERTY STRINGS "game" "dedicated" "everything"
 
 
 set( SRCDIR "${CMAKE_CURRENT_LIST_DIR}" )
-set( GAMEDIR "${CMAKE_CURRENT_LIST_DIR}/leaknet-install" CACHE STRING "Build output folder" )
+# Unified beta build drop location (matches 2003 engine layout)
+get_filename_component( BETA_BUILD_DIR "${CMAKE_CURRENT_LIST_DIR}/../beta_build" ABSOLUTE )
+set( GAMEDIR "${BETA_BUILD_DIR}" CACHE STRING "Build output folder" FORCE )
 
 set( LIBPUBLIC "${SRCDIR}/lib/public" )
 set( LIBCOMMON "${SRCDIR}/lib/common" )
@@ -86,3 +88,7 @@ foreach( target ${ALL_TARGETS} )
 	get_target_property( target_type ${target} TYPE )
 	message( "---- ${target} (${target_type})" )
 endforeach()
+
+# Copy game resource files to output directory
+file( MAKE_DIRECTORY "${GAMEDIR}/resource" )
+file( COPY "${SRCDIR}/resource/gameevents.res" DESTINATION "${GAMEDIR}/resource" )

@@ -5,9 +5,15 @@
 #include "KeyValues.h"
 #include "convar.h"
 #include "baseanimating.h"
+#include "baseflex.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+static CBasePlayer* UTIL_GetLocalPlayer()
+{
+    return UTIL_PlayerByIndex(1);
+}
 
 // Console variables - based on IDA strings
 ConVar gm_facescale("gm_facescale", "1.0", FCVAR_NONE, "The scale of the ragdoll's expression");
@@ -357,7 +363,8 @@ PlayerExpressionState_t* CGModExpressionsSystem::GetPlayerExpressionState(CBaseP
 
     if (index == m_PlayerExpressionStates.InvalidIndex())
     {
-        index = m_PlayerExpressionStates.Insert(playerIndex);
+        PlayerExpressionState_t defaultState;
+        index = m_PlayerExpressionStates.Insert(playerIndex, defaultState);
     }
 
     return &m_PlayerExpressionStates[index];
@@ -377,16 +384,15 @@ void CGModExpressionsSystem::ApplyExpressionToPlayer(CBasePlayer* pPlayer, const
     if (!pPlayer || !pExpression)
         return;
 
-    CBaseAnimating* pAnimating = GetPlayerAnimating(pPlayer);
-    if (!pAnimating)
+    CBaseFlex* pFlex = dynamic_cast<CBaseFlex*>(pPlayer);
+    if (!pFlex)
         return;
 
-    // Apply all flex values from expression
     for (int i = 0; i < MAX_FLEX_CONTROLLERS; i++)
     {
         if (pExpression->flFlexValues[i] != 0.0f)
         {
-            SetFlexController(pAnimating, i, pExpression->flFlexValues[i] * flScale);
+            pFlex->SetFlexWeight(i, pExpression->flFlexValues[i] * flScale);
         }
     }
 }
@@ -401,8 +407,11 @@ void CGModExpressionsSystem::SetFlexController(CBaseAnimating* pAnimating, int i
     if (!pAnimating || iFlexIndex < 0)
         return;
 
-    // Set flex controller on the animating entity
-    pAnimating->SetFlexWeight(iFlexIndex, flValue);
+    CBaseFlex* pFlex = dynamic_cast<CBaseFlex*>(pAnimating);
+    if (pFlex)
+    {
+        pFlex->SetFlexWeight(iFlexIndex, flValue);
+    }
 }
 
 // Implementation based on VFE file support (IDA string: "expressions/%s.vfe")

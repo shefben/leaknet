@@ -24,6 +24,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+extern ConVar gm_toolweapon;
+
 //-----------------------------------------------------------------------------
 // Console variables matching Garry's Mod
 //-----------------------------------------------------------------------------
@@ -570,6 +572,10 @@ void CToolButtonsPanel::OnCommand( const char *command )
 	{
 		int toolID = atoi( command + 5 );
 		SetToolMode( toolID );
+
+		// Ensure tool weapon is selected before switching modes (matches gmod behavior)
+		engine->ClientCmd( "gm_toolweapon 1" );
+		gm_toolweapon.SetValue( 1 );
 
 		// Send tool mode command to server
 		char toolCommand[64];

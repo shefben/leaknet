@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -747,7 +747,7 @@ bool StudioModel::LoadModel(const char *modelname)
 	}
 
 	Studio_ConvertStudioHdrToNewVersion( phdr );
-	if (phdr->version != STUDIO_VERSION)
+	if (phdr->version < STUDIO_VERSION_MIN || phdr->version > STUDIO_VERSION_MAX)
 	{
 		delete [] buffer;
 		return false;

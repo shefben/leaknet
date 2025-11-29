@@ -21,6 +21,37 @@ int CGModSpawnList::m_iFilesProcessed = 0;
 int CGModSpawnList::m_iFilesTotal = 0;
 
 //-----------------------------------------------------------------------------
+// Purpose: Basic accessors used by spawnmenu networking
+//-----------------------------------------------------------------------------
+int CGModSpawnList::GetEntryCount()
+{
+    return m_SpawnEntries.Count();
+}
+
+SpawnListEntry_t* CGModSpawnList::GetEntry(int index)
+{
+    if (index < 0 || index >= m_SpawnEntries.Count())
+        return NULL;
+
+    return &m_SpawnEntries[index];
+}
+
+void CGModSpawnList::AddEntry(const char* modelPath, const char* category /*= ""*/)
+{
+    if (!modelPath || !modelPath[0])
+        return;
+
+    SpawnListEntry_t entry;
+    Q_strncpy(entry.modelPath, modelPath, sizeof(entry.modelPath));
+    Q_strncpy(entry.displayName, ExtractModelName(modelPath), sizeof(entry.displayName));
+    Q_strncpy(entry.category, category ? category : "", sizeof(entry.category));
+    entry.isRagdoll = IsRagdollModel(modelPath);
+    entry.isValid = IsModelValid(modelPath);
+
+    m_SpawnEntries.AddToTail(entry);
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Initialize the spawn list system
 //-----------------------------------------------------------------------------
 void CGModSpawnList::Initialize()

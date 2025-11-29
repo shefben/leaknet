@@ -15,6 +15,9 @@
 #include "particlemgr.h"
 #include "viewrender.h"
 #include "iclientmode.h"
+#ifdef BMOD_CLIENT_DLL
+#include "bmod_hud/gmod_postprocess.h"
+#endif
 #if defined( TF2_CLIENT_DLL )
 	#include "ground_line.h"
 #endif
@@ -1777,6 +1780,9 @@ void CViewRender::RenderView( const CViewSetup &view, bool drawViewModel )
 	// Overlay screen fade on entire screen
 	IMaterial* pMaterial = blend ? m_ModulateSingleColor : m_TranslucentSingleColor;
 	render->ViewDrawFade( color, pMaterial );
+#ifdef BMOD_CLIENT_DLL
+	GModPostProcess_Update(*this);
+#endif
 	PerformScreenOverlay();
 
 	// Prevent sound stutter if going slow

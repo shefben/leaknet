@@ -52,6 +52,9 @@ public:
 
 	// Returns true while in the Clear() call.
 	bool	IsClearingEntities()	{return m_bClearingEntities;}
+
+	// Returns true while cleaning up the delete list.
+	bool	IsInCleanupDelete();
 	
 	// add a class that gets notified of entity events
 	void AddListenerEntity( IEntityListener *pListener );

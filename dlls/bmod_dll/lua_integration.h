@@ -16,6 +16,7 @@ extern "C" {
 #include "lauxlib.h"
 #include "lualib.h"
 }
+#include "lua_compat.h"
 
 #include "baseentity.h"
 #include "convar.h"
@@ -78,11 +79,6 @@ private:
 	// Internal helpers
 	static int			LuaErrorHandler(lua_State *L);
 	static void			RegisterCoreFunctions();
-	static void			RegisterPlayerFunctions();
-	static void			RegisterEntityFunctions();
-	static void			RegisterWeaponFunctions();
-	static void			RegisterEffectFunctions();
-	static void			RegisterUIFunctions();
 };
 
 //-----------------------------------------------------------------------------
@@ -123,32 +119,19 @@ public:
 	static int			LuaError(lua_State *L, const char *pszFormat, ...);
 };
 
-//-----------------------------------------------------------------------------
-// CGmodRunFunction Entity - executes Lua functions as entity think
-//-----------------------------------------------------------------------------
-class CGmodRunFunction : public CBaseEntity
-{
-	DECLARE_CLASS(CGmodRunFunction, CBaseEntity);
-	DECLARE_DATADESC();
-
-public:
-	void			Spawn();
-	void			Think();
-
-	// Inputs/Outputs
-	void			InputRunFunction(inputdata_t &inputdata);
-
-	// Function execution
-	void			SetFunction(const char *pszFunction);
-	void			SetDelay(float flDelay);
-
-private:
-	string_t		m_iszFunction;		// Lua function to call
-	float			m_flDelay;			// Delay before execution
-
-	COutputEvent	m_OnFinished;		// Fired when function completes
-};
-
 extern CLuaIntegration g_LuaIntegration;
+
+// Forward declaration - full class definition in gmod_runfunction.h
+class CGmodRunFunction;
+
+//-----------------------------------------------------------------------------
+// External Lua function registration (from separate files)
+//-----------------------------------------------------------------------------
+void RegisterLuaEntityFunctions();
+void RegisterLuaPlayerFunctions();
+void RegisterLuaPhysicsFunctions();
+void RegisterLuaFileFunctions();
+void RegisterLuaEffectFunctions();
+void RegisterLuaGameEventFunctions();
 
 #endif // LUA_INTEGRATION_H

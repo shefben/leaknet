@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: BSP collision!
 //
@@ -222,7 +222,17 @@ int	CM_LeafArea( int leafnum )
 	Assert( leafnum >= 0 );
 	Assert( leafnum < pBSPData->numleafs );
 
-	return pBSPData->map_leafs[leafnum].area;
+	// Defensive bounds check for BSP compatibility
+	if ( leafnum < 0 || leafnum >= pBSPData->numleafs )
+		return 0;
+
+	int area = pBSPData->map_leafs[leafnum].area;
+
+	// Validate area index - newer BSPs may have area values beyond what's loaded
+	if ( area < 0 || area >= pBSPData->numareas )
+		return 0;
+
+	return area;
 }
 
 
@@ -1684,7 +1694,11 @@ void FloodArea_r (CCollisionBSPData *pBSPData, carea_t *area, int floodnum)
 	{
 		if (pBSPData->portalopen[p->m_PortalKey])
 		{
-			FloodArea_r (pBSPData, &pBSPData->map_areas[p->otherarea], floodnum);
+			// Defensive check for BSP compatibility
+			if ( p->otherarea >= 0 && p->otherarea < pBSPData->numareas )
+			{
+				FloodArea_r (pBSPData, &pBSPData->map_areas[p->otherarea], floodnum);
+			}
 		}
 	}
 }
@@ -1741,9 +1755,19 @@ qboolean	CM_AreasConnected (int area1, int area2)
 	if (map_noareas.GetInt())
 		return true;
 
-	if (area1 >= pBSPData->numareas || area2 >= pBSPData->numareas)
+	// Defensive check for BSP version compatibility - newer maps may have
+	// leaf area indices beyond what's in the areas lump
+	if (area1 < 0 || area1 >= pBSPData->numareas || area2 < 0 || area2 >= pBSPData->numareas)
 	{
-		Sys_Error( "area >= numareas");
+		// Warn once instead of crashing - assume areas are connected if invalid
+		static bool s_bWarnedAreaBounds = false;
+		if ( !s_bWarnedAreaBounds )
+		{
+			Warning( "CM_AreasConnected: area index out of bounds (area1=%d, area2=%d, numareas=%d) - BSP compatibility issue\n",
+				area1, area2, pBSPData->numareas );
+			s_bWarnedAreaBounds = true;
+		}
+		return true;
 	}
 
 	return (pBSPData->map_areas[area1].floodnum == pBSPData->map_areas[area2].floodnum);
@@ -1778,6 +1802,14 @@ int CM_WriteAreaBits (byte *buffer, int area)
 	else
 	{
 		memset (buffer, 0, 32);
+
+		// Defensive check for BSP compatibility - area index may be out of bounds
+		if ( area < 0 || area >= pBSPData->numareas )
+		{
+			// Invalid area - return all areas visible
+			memset (buffer, 255, bytes);
+			return bytes;
+		}
 
 		floodnum = pBSPData->map_areas[area].floodnum;
 		for (i=0 ; i<pBSPData->numareas ; i++)

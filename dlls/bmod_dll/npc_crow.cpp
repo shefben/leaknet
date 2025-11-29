@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: Crows. Simple ambient birds that fly away when they hear gunfire or
 //			when anything gets too close to them.
@@ -106,11 +106,9 @@ enum
 static int ACT_CROW_TAKEOFF;
 
 
-//
-// Skill settings.
-//
-ConVar sk_crow_health( "sk_crow_health","5");
-ConVar sk_crow_melee_dmg( "sk_crow_melee_dmg","0");
+// Skill settings - defined in skill_cvars.cpp
+extern ConVar sk_crow_health;
+extern ConVar sk_crow_melee_dmg;
 
 
 enum FlyState_t

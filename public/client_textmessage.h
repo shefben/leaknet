@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2003, Valve Corporation, All rights reserved. =======
+//====== Copyright ï¿½ 1996-2003, Valve Corporation, All rights reserved. =======
 //
 // Purpose: 
 //
@@ -24,6 +24,10 @@ struct client_textmessage_t
 	const char *pVGuiSchemeFontName; // If null, use default font for messages
 	const char *pName;
 	const char *pMessage;
+	bool    bRoundedRectBackdropBox;	// Source 2007+ - rounded rect backdrop
+	float	flBoxSize;					// as a function of font height
+	byte	boxcolor[4];				// RGBA color for backdrop box
+	char const *pClearMessage;			// message to clear when this one appears
 };
 
 #endif // CLIENT_TEXTMESSAGE_H

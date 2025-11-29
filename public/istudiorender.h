@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -14,6 +14,7 @@
 #include "interface.h"
 #include "vector.h"
 #include "utlbuffer.h"
+#include "studio.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -139,9 +140,69 @@ struct DrawModelInfo_t
 	void *m_pClientEntity;
 	int m_Lod;
 	IMesh **m_ppColorMeshes;
-	int m_ActualTriCount; 
+	int m_ActualTriCount;
 	int m_TextureMemoryBytes;
 	CFastTimer m_RenderTime;
+};
+
+//-----------------------------------------------------------------------------
+// GetTriangles support structures
+//-----------------------------------------------------------------------------
+struct GetTriangles_Vertex_t
+{
+	Vector m_Position;
+	Vector m_Normal;
+	Vector4D m_TangentS;
+	Vector2D m_TexCoord;
+	Vector4D m_BoneWeight;
+	int m_BoneIndex[4];
+	int m_NumBones;
+
+	// Constructors and assignment operators to handle Vector4D members
+	GetTriangles_Vertex_t()
+	{
+		m_NumBones = 0;
+		memset( m_BoneIndex, 0, sizeof(m_BoneIndex) );
+	}
+
+	GetTriangles_Vertex_t( const GetTriangles_Vertex_t& src )
+	{
+		VectorCopy( src.m_Position, m_Position );
+		VectorCopy( src.m_Normal, m_Normal );
+		Vector4DCopy( src.m_TangentS, m_TangentS );
+		Vector2DCopy( src.m_TexCoord, m_TexCoord );
+		Vector4DCopy( src.m_BoneWeight, m_BoneWeight );
+		memcpy( m_BoneIndex, src.m_BoneIndex, sizeof(m_BoneIndex) );
+		m_NumBones = src.m_NumBones;
+	}
+
+	GetTriangles_Vertex_t& operator=( const GetTriangles_Vertex_t& src )
+	{
+		if ( this != &src )
+		{
+			VectorCopy( src.m_Position, m_Position );
+			VectorCopy( src.m_Normal, m_Normal );
+			Vector4DCopy( src.m_TangentS, m_TangentS );
+			Vector2DCopy( src.m_TexCoord, m_TexCoord );
+			Vector4DCopy( src.m_BoneWeight, m_BoneWeight );
+			memcpy( m_BoneIndex, src.m_BoneIndex, sizeof(m_BoneIndex) );
+			m_NumBones = src.m_NumBones;
+		}
+		return *this;
+	}
+};
+
+struct GetTriangles_MaterialBatch_t
+{
+	IMaterial *m_pMaterial;
+	CUtlVector<GetTriangles_Vertex_t> m_Verts;
+	CUtlVector<int> m_TriListIndices;
+};
+
+struct GetTriangles_Output_t
+{
+	CUtlVector<GetTriangles_MaterialBatch_t> m_MaterialBatches;
+	matrix3x4_t m_PoseToWorld[MAXSTUDIOBONES];
 };
 
 
@@ -162,12 +223,30 @@ public:
 	virtual void UpdateConfig( const StudioRenderConfig_t& config ) = 0;
 
 	// HACK HACK - don't allocate memory in here.
-	virtual bool LoadModel( 
+	// Legacy LoadModel for v37 models with embedded vertex data
+	virtual bool LoadModel(
 		studiohdr_t		*pStudioHdr, 	// read from the mdl file.
 		void			*pVtxHdr, 		// read from the vtx file.(format OptimizedModel::FileHeader_t)
 		studiohwdata_t	*pHardwareData
 		) = 0;
-	
+
+	//-----------------------------------------------------------------------------
+	// v48 LoadModel with external VVD vertex data
+	// For v44+ models, vertex data is stored in external .vvd files
+	// pVvdHdr: Pointer to vertexFileHeader_t from VVD file (NULL for v37 models)
+	//-----------------------------------------------------------------------------
+	virtual bool LoadModelWithVertexData(
+		studiohdr_t		*pStudioHdr,	// read from the mdl file
+		void			*pVtxHdr,		// read from the vtx file (OptimizedModel::FileHeader_t)
+		void			*pVvdHdr,		// read from the vvd file (vertexFileHeader_t), NULL for v37
+		studiohwdata_t	*pHardwareData
+		)
+	{
+		// Default implementation: fall back to legacy LoadModel (for v37 compatibility)
+		// Derived implementations should override this for v48 support
+		return LoadModel( pStudioHdr, pVtxHdr, pHardwareData );
+	}
+
 	// since studiomeshes are allocated inside of the lib, they need to be freed there as well.
 	virtual void UnloadModel( studiohwdata_t *pHardwareData ) = 0;
 
@@ -190,7 +269,7 @@ public:
 		const Vector& viewPlaneNormal ) = 0;
 	
 	virtual void SetFlexWeights( int numWeights, const float *pWeights ) = 0;
-	
+
 	// fixme: these interfaces sucks. . use 'em to get this stuff working with the client dll
 	// and then interate
 	virtual matrix3x4_t* GetPoseToWorld(int i) = 0; // this will be hidden enntually (computed internally)
@@ -250,6 +329,7 @@ public:
 	// 1) effective triangle count (factors in batch sizes, state changes, etc)
 	// 2) texture memory usage
 	virtual void GetPerfStats( DrawModelInfo_t &info, CUtlBuffer *pSpewBuf = NULL ) const = 0;
+	virtual void GetTriangles( const DrawModelInfo_t& info, matrix3x4_t *pBoneToWorld, GetTriangles_Output_t &out ) = 0;
 };
 
 extern IStudioRender *g_pStudioRender;

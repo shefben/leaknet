@@ -299,8 +299,8 @@ bool StudioModel::LoadModel( const char *modelname )
 	}
 
 	Studio_ConvertStudioHdrToNewVersion( phdr );
-	
-	if( phdr->version != STUDIO_VERSION )
+
+	if( phdr->version < STUDIO_VERSION_MIN || phdr->version > STUDIO_VERSION_MAX )
 	{
 		free( buffer );
 		return 0;

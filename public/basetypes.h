@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -197,6 +197,15 @@ struct colorRGBExp32
 struct colorVec
 {
 	unsigned r, g, b, a;
+};
+
+//-----------------------------------------------------------------------------
+// Compressed light cube for ambient lighting (6 directions)
+// Used in BSP v19+ for per-leaf ambient lighting
+//-----------------------------------------------------------------------------
+struct CompressedLightCube
+{
+	colorRGBExp32 m_Color[6];	// One color per cube face (6 directions)
 };
 
 

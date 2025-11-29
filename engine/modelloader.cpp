@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: Model loading / unloading interface
 //
@@ -7,6 +7,7 @@
 #include "glquake.h"
 #include "gl_model_private.h"
 #include "modelgen.h"
+#include "studio.h"  // For vertexFileHeader_t and version constants
 #include "gl_matsysiface.h"
 #include "gl_lightmap.h"
 #include "gl_texture.h"
@@ -27,6 +28,7 @@
 #include "materialsystem/itexture.h"
 #include "Overlay.h"
 #include "utldict.h"
+#include "lzma_support.h"  // LZMA decompression for v48 compatibility
 #include "mempool.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -96,6 +98,17 @@ public:
 	bool		Map_IsValid( char const *mapname );
 
 	void		Print( void );
+
+	// 2007 Source Engine compatibility methods
+	int			GetCount( void );
+	model_t*	GetModelForIndex( int index );
+	void		PurgeUnusedModels( void );
+	void		RecomputeSurfaceFlags( void );
+	void		Studio_ReloadModels( void );
+	bool		IsLoaded( const char *name );
+	bool		LastLoadedMapHasHDRLighting( void );
+	void		ReloadFilesInList( IFileList *pFilesToReload );
+	const char*	GetActiveMapName( void );
 // Internal types
 private:
 	// TODO, flag these and allow for UnloadUnreferencedModels to check for allocation type
@@ -172,6 +185,17 @@ IModelLoader *modelloader = ( IModelLoader * )&g_ModelLoader;
 static dheader_t	s_MapHeader;
 static FileHandle_t	s_MapFile = (FileHandle_t)0;
 static char			s_szLoadName[ 64 ];
+
+// Current map's BSP version (for multi-version support)
+static int			s_nBSPVersion = BSPVERSION;
+
+//-----------------------------------------------------------------------------
+// Returns the BSP version of the currently loaded map
+//-----------------------------------------------------------------------------
+int GetCurrentBSPVersion( void )
+{
+	return s_nBSPVersion;
+}
 static char			s_MapName[ 64 ];
 static model_t		*s_pMap = NULL;
 static int			s_nMapLoadRecursion = 0;
@@ -217,14 +241,19 @@ void CMapLoadHelper::Init( model_t *map, const char *loadname )
 		return;
 	}
 
-	if ( s_MapHeader.version != BSPVERSION )
+	// Multi-version BSP support: accept v18-v21
+	if ( !BSP_VERSION_IS_VALID( s_MapHeader.version ) )
 	{
 		g_pFileSystem->Close( s_MapFile );
 		s_MapFile = (FileHandle_t)0;
-		Host_Error( "CMapLoadHelper::Init, map %s has wrong version (%i when expecting %i)\n", s_MapName,
-			s_MapHeader.version, BSPVERSION );
+		Host_Error( "CMapLoadHelper::Init, map %s has unsupported version (%i, supported range: %i-%i)\n",
+			s_MapName, s_MapHeader.version, BSPVERSION_MIN, BSPVERSION_MAX );
 		return;
 	}
+
+	// Store the BSP version for version-specific loading
+	s_nBSPVersion = s_MapHeader.version;
+	Con_DPrintf( "Loading BSP version %i map: %s\n", s_nBSPVersion, s_MapName );
 
 	Assert( strlen(loadname) < 64 );
 	strcpy( s_szLoadName, loadname );
@@ -301,10 +330,10 @@ void CMapLoadHelper::LoadLumpData( int nLumpId, int offset, int size, void *pDat
 //-----------------------------------------------------------------------------
 CMapLoadHelper::CMapLoadHelper( int lumpToLoad )
 {
-	if ( s_MapHeader.version != BSPVERSION )
+	if ( !BSP_VERSION_IS_VALID( s_MapHeader.version ) )
 	{
-		Sys_Error( "Map version is %i, expecting %i!!!",
-			s_MapHeader.version, BSPVERSION );
+		Sys_Error( "Map version is %i, supported range: %i-%i!!!",
+			s_MapHeader.version, BSPVERSION_MIN, BSPVERSION_MAX );
 	}
 
 	m_nLumpSize = 0;
@@ -337,6 +366,21 @@ CMapLoadHelper::CMapLoadHelper( int lumpToLoad )
 
 	g_pFileSystem->Seek( s_MapFile, lump->fileofs, FILESYSTEM_SEEK_HEAD );
 	g_pFileSystem->Read( m_pData, lump->filelen, s_MapFile );
+
+	// Check for LZMA compression and decompress if needed
+	uint32 uncompressedSize = 0;
+	byte *pDecompressed = DecompressBSPLumpIfNeeded( m_pData, m_nLumpSize, &uncompressedSize );
+
+	if ( pDecompressed != m_pData )
+	{
+		// Data was compressed and decompressed - replace our data
+		delete[] m_pData;
+		m_pData = pDecompressed;
+		m_nLumpSize = uncompressedSize;
+
+		Con_DPrintf( "Lump %i: Decompressed from %i to %i bytes\n",
+					 lumpToLoad, lump->filelen, uncompressedSize );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -466,9 +510,32 @@ void Mod_LoadLighting()
 	{
 		// Need to interleave average light colors + light data...
 		int nFaceCount;
+		int nBSPVersion = GetCurrentBSPVersion();
 
-		CMapLoadHelper lhf( LUMP_FACES );
-		nFaceCount = lhf.LumpSize() / sizeof(dface_t);
+		// HDR-aware face loading for lighting: Try LUMP_FACES_HDR first for v20+ maps
+		int faceLumpToLoad = LUMP_FACES;
+		if ( BSP_VERSION_HAS_HDR( nBSPVersion ) )
+		{
+			CMapLoadHelper lhHdr( LUMP_FACES_HDR );
+			if ( lhHdr.LumpSize() > 0 )
+			{
+				faceLumpToLoad = LUMP_FACES_HDR;
+			}
+		}
+
+		CMapLoadHelper lhf( faceLumpToLoad );
+
+		// Use correct face size based on BSP version
+		if ( BSP_VERSION_HAS_AVGCOLOR( nBSPVersion ) )
+		{
+			// v18: 72-byte faces
+			nFaceCount = lhf.LumpSize() / sizeof(dface_t);
+		}
+		else
+		{
+			// v19+: 56-byte faces
+			nFaceCount = lhf.LumpSize() / sizeof(dface_v19_t);
+		}
 
 		int nLightingDataSize = lh.LumpSize() + nFaceCount * MAXLIGHTMAPS * sizeof(colorRGBExp32);
 
@@ -477,21 +544,53 @@ void Mod_LoadLighting()
 		// Leave room for the avg colors...
 		int nLastLightOfs = -1;
 		int nLightFaceCount = 0;
-		dface_t *in = (dface_t*)lhf.LumpBase();
+		byte *pFaceData = (byte*)lhf.LumpBase();
 		unsigned char *out = (unsigned char*)lh.GetMap()->brush.lightdata;
-		for ( int i = 0; i < nFaceCount; ++i, ++in )
+
+		// Calculate face stride based on BSP version
+		int nFaceStride = BSP_VERSION_HAS_AVGCOLOR( nBSPVersion ) ? sizeof(dface_t) : sizeof(dface_v19_t);
+
+		for ( int i = 0; i < nFaceCount; ++i )
 		{
-			int ofs = LittleLong( in->lightofs );
-			if ( ofs == -1 )
-				continue;
+			int lightofs;
+			int nLightmapSize;
 
-			++nLightFaceCount;
+			if ( BSP_VERSION_HAS_AVGCOLOR( nBSPVersion ) )
+			{
+				// v18: Use dface_t directly
+				dface_t *in = (dface_t*)(pFaceData + i * nFaceStride);
+				lightofs = LittleLong( in->lightofs );
+				if ( lightofs == -1 )
+					continue;
+				++nLightFaceCount;
+				nLastLightOfs = lightofs;
+				nLightmapSize = ComputeLightmapSize( in, lh.GetMap()->brush.texinfo );
+				memcpy( out + lightofs + MAXLIGHTMAPS * nLightFaceCount * sizeof(colorRGBExp32), lh.LumpBase() + lightofs, nLightmapSize );
+			}
+			else
+			{
+				// v19+: Use dface_v19_t and convert to temporary dface_t for ComputeLightmapSize
+				dface_v19_t *in19 = (dface_v19_t*)(pFaceData + i * nFaceStride);
+				lightofs = LittleLong( in19->lightofs );
+				if ( lightofs == -1 )
+					continue;
+				++nLightFaceCount;
+				nLastLightOfs = lightofs;
 
-			Assert( in->lightofs >= ofs );
-			nLastLightOfs = ofs;
-			
-			int nLightmapSize = ComputeLightmapSize( in, lh.GetMap()->brush.texinfo );
-			memcpy( out + in->lightofs + MAXLIGHTMAPS * nLightFaceCount * sizeof(colorRGBExp32), lh.LumpBase() + in->lightofs, nLightmapSize );
+				// Create temporary v18 face for ComputeLightmapSize
+				dface_t tempFace;
+				memset( &tempFace, 0, sizeof(tempFace) );
+				tempFace.texinfo = in19->texinfo;
+				tempFace.lightofs = in19->lightofs;
+				tempFace.m_LightmapTextureMinsInLuxels[0] = in19->m_LightmapTextureMinsInLuxels[0];
+				tempFace.m_LightmapTextureMinsInLuxels[1] = in19->m_LightmapTextureMinsInLuxels[1];
+				tempFace.m_LightmapTextureSizeInLuxels[0] = in19->m_LightmapTextureSizeInLuxels[0];
+				tempFace.m_LightmapTextureSizeInLuxels[1] = in19->m_LightmapTextureSizeInLuxels[1];
+				memcpy( tempFace.styles, in19->styles, sizeof(tempFace.styles) );
+
+				nLightmapSize = ComputeLightmapSize( &tempFace, lh.GetMap()->brush.texinfo );
+				memcpy( out + lightofs + MAXLIGHTMAPS * nLightFaceCount * sizeof(colorRGBExp32), lh.LumpBase() + lightofs, nLightmapSize );
+			}
 		}
 	}
 	else
@@ -672,7 +771,11 @@ medge_t *Mod_LoadEdges ( void )
 
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: Load occlusion data from BSP
+// Supports:
+//   - Version 0: No occlusion data
+//   - Version 1: v18 BSP format (doccluderdataV1_t, no area field)
+//   - Version 2: v19+ BSP format (doccluderdata_t, with area field)
 //-----------------------------------------------------------------------------
 void Mod_LoadOcclusion( void )
 {
@@ -691,12 +794,13 @@ void Mod_LoadOcclusion( void )
 		return;
 	}
 
-	CUtlBuffer buf( lh.LumpBase(), lh.LumpSize() );
+	CUtlBuffer buf( lh.LumpBase(), lh.LumpSize(), false );
 
 	switch( lh.LumpVersion() )
 	{
-	case LUMP_OCCLUSION_VERSION:
+	case LUMP_OCCLUSION_VERSION_V2:
 		{
+			// v19+ format: doccluderdata_t with area field
 			b->numoccluders = buf.GetInt();
 			if (b->numoccluders)
 			{
@@ -723,11 +827,56 @@ void Mod_LoadOcclusion( void )
 		}
 		break;
 
+	case LUMP_OCCLUSION_VERSION_V1:
+		{
+			// v18 format: doccluderdataV1_t without area field
+			// Convert to v2 format (doccluderdata_t) on load
+			b->numoccluders = buf.GetInt();
+			if (b->numoccluders)
+			{
+				int nSize = b->numoccluders * sizeof(doccluderdata_t);
+				b->occluders = (doccluderdata_t*)Hunk_AllocName( nSize, "occluder data" );
+
+				// Read v1 data and convert to v2 format
+				for (int i = 0; i < b->numoccluders; i++)
+				{
+					doccluderdataV1_t v1Data;
+					buf.Get( &v1Data, sizeof(v1Data) );
+
+					// Copy fields
+					b->occluders[i].flags = v1Data.flags;
+					b->occluders[i].firstpoly = v1Data.firstpoly;
+					b->occluders[i].polycount = v1Data.polycount;
+					b->occluders[i].mins = v1Data.mins;
+					b->occluders[i].maxs = v1Data.maxs;
+					b->occluders[i].area = 0; // Default area for v1 data
+				}
+			}
+
+			b->numoccluderpolys = buf.GetInt();
+			if (b->numoccluderpolys)
+			{
+				int nSize = b->numoccluderpolys * sizeof(doccluderpolydata_t);
+				b->occluderpolys = (doccluderpolydata_t*)Hunk_AllocName( nSize, "occluder poly data" );
+				buf.Get( b->occluderpolys, nSize );
+			}
+
+			b->numoccludervertindices = buf.GetInt();
+			if (b->numoccludervertindices)
+			{
+				int nSize = b->numoccludervertindices * sizeof(int);
+				b->occludervertindices = (int*)Hunk_AllocName( nSize, "occluder vertices" );
+				buf.Get( b->occludervertindices, nSize );
+			}
+		}
+		break;
+
 	case 0:
+		// No occlusion data
 		break;
 
 	default:
-		Host_Error("Invalid occlusion lump version!\n");
+		Warning("Unknown occlusion lump version %d, skipping occlusion data\n", lh.LumpVersion());
 		break;
 	}
 }
@@ -1254,9 +1403,40 @@ bool Mod_LoadSurfaceLightingV1( msurfacelighting_t *pLighting, dface_t *in, colo
 //			*l - 
 //			*loadname - 
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Helper to copy face data from v19+ format to internal format
+//-----------------------------------------------------------------------------
+static void CopyFaceFromV19( dface_t *pDest, const dface_v19_t *pSrc )
+{
+	// Clear the v18-only m_AvgLightColor field (will be computed if needed)
+	memset( pDest->m_AvgLightColor, 0, sizeof( pDest->m_AvgLightColor ) );
+
+	// Copy all common fields
+	pDest->planenum = pSrc->planenum;
+	pDest->side = pSrc->side;
+	pDest->onNode = pSrc->onNode;
+	pDest->firstedge = pSrc->firstedge;
+	pDest->numedges = pSrc->numedges;
+	pDest->texinfo = pSrc->texinfo;
+	pDest->dispinfo = pSrc->dispinfo;
+	pDest->surfaceFogVolumeID = pSrc->surfaceFogVolumeID;
+	memcpy( pDest->styles, pSrc->styles, sizeof( pDest->styles ) );
+	pDest->lightofs = pSrc->lightofs;
+	pDest->area = pSrc->area;
+	pDest->m_LightmapTextureMinsInLuxels[0] = pSrc->m_LightmapTextureMinsInLuxels[0];
+	pDest->m_LightmapTextureMinsInLuxels[1] = pSrc->m_LightmapTextureMinsInLuxels[1];
+	pDest->m_LightmapTextureSizeInLuxels[0] = pSrc->m_LightmapTextureSizeInLuxels[0];
+	pDest->m_LightmapTextureSizeInLuxels[1] = pSrc->m_LightmapTextureSizeInLuxels[1];
+	pDest->origFace = pSrc->origFace;
+	pDest->numPrims = pSrc->numPrims;
+	pDest->firstPrimID = pSrc->firstPrimID;
+	pDest->smoothingGroups = pSrc->smoothingGroups;
+}
+
 void Mod_LoadFaces( void )
 {
 	dface_t		*in;
+	dface_t		*pFaceBuffer = NULL;	// Temp buffer for v19+ conversion
 	msurface1_t 	*out1;
 	msurface2_t 	*out2;
 	int			count, surfnum;
@@ -1264,16 +1444,61 @@ void Mod_LoadFaces( void )
 	int			ti, di;
 	msurfacelighting_t *pLighting;
 
-	CMapLoadHelper lh( LUMP_FACES );
+	// HDR-aware face loading: Try LUMP_FACES_HDR first for v20+ maps, fall back to LUMP_FACES
+	int nBSPVersion = GetCurrentBSPVersion();
+	int faceLumpToLoad = LUMP_FACES;
+
+	// For HDR-capable maps (v20+), try HDR faces first
+	if ( BSP_VERSION_HAS_HDR( nBSPVersion ) )
+	{
+		CMapLoadHelper lhHdr( LUMP_FACES_HDR );
+		if ( lhHdr.LumpSize() > 0 )
+		{
+			// HDR faces available, use them
+			faceLumpToLoad = LUMP_FACES_HDR;
+			Con_DPrintf( "Loading HDR faces from LUMP_FACES_HDR\n" );
+		}
+		else
+		{
+			// No HDR faces, fall back to standard faces
+			Con_DPrintf( "No HDR faces found, loading standard faces from LUMP_FACES\n" );
+		}
+	}
+
+	CMapLoadHelper lh( faceLumpToLoad );
 
 	// hack - this should cause material loads, and I shouldn't have to do UpdateConfig here.
 	UpdateMaterialSystemConfig();
 	Con_DPrintf( "Begin loading faces (loads materials)\n" );
-	
-	in = (dface_t *)lh.LumpBase();
-	if (lh.LumpSize() % sizeof(*in))
-		Host_Error ("Mod_LoadFaces: funny lump size in %s",lh.GetMapName());
-	count = lh.LumpSize() / sizeof(*in);
+
+	// Multi-version face loading (nBSPVersion already set above for HDR detection)
+
+	if ( BSP_VERSION_HAS_AVGCOLOR( nBSPVersion ) )
+	{
+		// v18: Native format with m_AvgLightColor
+		in = (dface_t *)lh.LumpBase();
+		if (lh.LumpSize() % sizeof(dface_t))
+			Host_Error ("Mod_LoadFaces: funny lump size in %s (v18)",lh.GetMapName());
+		count = lh.LumpSize() / sizeof(dface_t);
+	}
+	else
+	{
+		// v19+: Smaller format without m_AvgLightColor
+		dface_v19_t *pV19Faces = (dface_v19_t *)lh.LumpBase();
+		if (lh.LumpSize() % sizeof(dface_v19_t))
+			Host_Error ("Mod_LoadFaces: funny lump size in %s (v19+)",lh.GetMapName());
+		count = lh.LumpSize() / sizeof(dface_v19_t);
+
+		// Allocate temporary buffer and convert
+		pFaceBuffer = new dface_t[count];
+		for ( int i = 0; i < count; i++ )
+		{
+			CopyFaceFromV19( &pFaceBuffer[i], &pV19Faces[i] );
+		}
+		in = pFaceBuffer;
+
+		Con_DPrintf( "Converting %d faces from v19+ format\n", count );
+	}
 
 	// align to the nearest 32
 	out1 = (msurface1_t *)Hunk_AllocName( 32 + count*sizeof(*out1), lh.GetLoadName() );
@@ -1411,6 +1636,14 @@ void Mod_LoadFaces( void )
 
 		CalcSurfaceExtents ( lh, surfnum );
 	}
+
+	// Cleanup temporary buffer if we used v19+ conversion
+	if ( pFaceBuffer != NULL )
+	{
+		delete[] pFaceBuffer;
+		pFaceBuffer = NULL;
+	}
+
 	Con_DPrintf( "End loading faces (loads materials)\n" );
 }
 
@@ -1544,28 +1777,25 @@ void Mod_LoadNodes( void )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *loadmodel - 
-//			*l - 
-//			*loadname - 
+// Purpose: Load leafs - version 0 (v19 BSP with embedded ambient lighting)
 //-----------------------------------------------------------------------------
-void Mod_LoadLeafs( void )
+static void Mod_LoadLeafs_Version_0( CMapLoadHelper &lh )
 {
 	Vector mins( 0, 0, 0 ), maxs( 0, 0, 0 );
-	dleaf_t 	*in;
+	dleaf_v0_t 	*in;
 	mleaf_t 	*out;
 	int			i, j, count, p;
 
-	CMapLoadHelper lh( LUMP_LEAFS );
-
-	in = (dleaf_t *)lh.LumpBase();
+	in = (dleaf_v0_t *)lh.LumpBase();
 	if (lh.LumpSize() % sizeof(*in))
-		Host_Error ("Mod_LoadLeafs: funny lump size in %s",lh.GetMapName());
+		Host_Error ("Mod_LoadLeafs: funny lump size in %s (v0/v19)",lh.GetMapName());
 	count = lh.LumpSize() / sizeof(*in);
 	out = (mleaf_t *)Hunk_AllocName( count*sizeof(*out), lh.GetLoadName() );
 
 	lh.GetMap()->brush.leafs = out;
 	lh.GetMap()->brush.numleafs = count;
+
+	Con_DPrintf( "Loading %d leafs (v0/v19 format, %d bytes each)\n", count, (int)sizeof(dleaf_v0_t) );
 
 	for ( i=0 ; i<count ; i++, in++, out++)
 	{
@@ -1585,18 +1815,110 @@ void Mod_LoadLeafs( void )
 		out->cluster = LittleShort(in->cluster);
 		out->area = LittleShort(in->area);
 
-/*
-		out->firstmarksurface = lh.GetMap()->brush.marksurfaces +
-			(unsigned short)LittleShort(in->firstleafface);
-*/
 		out->firstmarksurface = (int)LittleShort(in->firstleafface);
 		out->nummarksurfaces = (unsigned short)LittleShort(in->numleaffaces);
 		out->parent = NULL;
-		
+
 		out->m_pDisplacements = NULL;
 
 		out->leafWaterDataID = in->leafWaterDataID;
-	}	
+
+		// Note: v0 has embedded m_AmbientLighting which we ignore for now
+		// as the engine's internal mleaf_t doesn't store it
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Load leafs - native v18 format (32 bytes, no ambient)
+//-----------------------------------------------------------------------------
+static void Mod_LoadLeafs_Native( CMapLoadHelper &lh )
+{
+	Vector mins( 0, 0, 0 ), maxs( 0, 0, 0 );
+	dleaf_t 	*in;
+	mleaf_t 	*out;
+	int			i, j, count, p;
+
+	in = (dleaf_t *)lh.LumpBase();
+	if (lh.LumpSize() % sizeof(*in))
+		Host_Error ("Mod_LoadLeafs: funny lump size in %s (v18 native)",lh.GetMapName());
+	count = lh.LumpSize() / sizeof(*in);
+	out = (mleaf_t *)Hunk_AllocName( count*sizeof(*out), lh.GetLoadName() );
+
+	lh.GetMap()->brush.leafs = out;
+	lh.GetMap()->brush.numleafs = count;
+
+	Con_DPrintf( "Loading %d leafs (v18 native format, %d bytes each)\n", count, (int)sizeof(dleaf_t) );
+
+	for ( i=0 ; i<count ; i++, in++, out++)
+	{
+		for (j=0 ; j<3 ; j++)
+		{
+			mins[j] = LittleShort (in->mins[j]);
+			maxs[j] = LittleShort (in->maxs[j]);
+		}
+
+		VectorAdd( mins, maxs, out->m_vecCenter );
+		out->m_vecCenter *= 0.5f;
+		VectorSubtract( maxs, out->m_vecCenter, out->m_vecHalfDiagonal );
+
+		p = LittleLong(in->contents);
+		out->contents = p;
+
+		out->cluster = LittleShort(in->cluster);
+		out->area = LittleShort(in->area);
+
+		out->firstmarksurface = (int)LittleShort(in->firstleafface);
+		out->nummarksurfaces = (unsigned short)LittleShort(in->numleaffaces);
+		out->parent = NULL;
+
+		out->m_pDisplacements = NULL;
+
+		out->leafWaterDataID = in->leafWaterDataID;
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Load leafs with multi-version support
+// Input  : *loadmodel -
+//			*l -
+//			*loadname -
+//-----------------------------------------------------------------------------
+void Mod_LoadLeafs( void )
+{
+	CMapLoadHelper lh( LUMP_LEAFS );
+	int nBSPVersion = GetCurrentBSPVersion();
+
+	// Determine which leaf format to use based on lump version and BSP version
+	// v18 BSP: Native 32-byte format (no lump versioning)
+	// v19 BSP: Lump version 0, 56-byte format with embedded ambient
+	// v20+ BSP: Lump version 1, 32-byte format with ambient in separate lump
+
+	if ( BSP_VERSION_HAS_AVGCOLOR( nBSPVersion ) )
+	{
+		// v18: Native LeakNet format
+		Mod_LoadLeafs_Native( lh );
+	}
+	else
+	{
+		// v19+: Check lump version
+		int nLumpVersion = lh.LumpVersion();
+
+		if ( nLumpVersion == 0 )
+		{
+			// v19: Embedded ambient lighting (56 bytes)
+			Mod_LoadLeafs_Version_0( lh );
+		}
+		else
+		{
+			// v20+: Ambient in separate lump - structure is same size as v18
+			// but we should use the proper v1 loader if ambient lumps exist
+			// For now, use native loader as structures are compatible
+			Mod_LoadLeafs_Native( lh );
+
+			// TODO: Load ambient lighting from LUMP_LEAF_AMBIENT_LIGHTING
+			// if BSP_VERSION_HAS_AMBIENT_LUMP( nBSPVersion )
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -2227,6 +2549,8 @@ model_t	*CModelLoader::LoadModel( model_t *mod, REFERENCETYPE *referencetype )
 			{
 				Sys_Error ("Mod_NumForName: %s not found and %s couldn't be loaded", mod->name, "models/error.mdl" );
 			}
+			// Update model name to fallback model to ensure VTX files are looked up correctly
+			Q_strncpy( mod->name, "models/error.mdl", sizeof(mod->name) );
 		}
 
 		if ( LittleLong(*(unsigned *)buf) == IDSTUDIOHEADER )
@@ -3040,13 +3364,13 @@ void CModelLoader::Sprite_UnloadModel( model_t *mod )
 
 bool Mod_LoadStudioModelVtxFileIntoTempBuffer( model_t *mod, CUtlMemory<unsigned char>& tmpVtxMem )
 {
-	char tempFileName[128];
+	char tempFileName[256];
 	FileHandle_t fileHandle;
 	int fileLength;
 	bool readOK;
 
 	int nPrefix = 7;
-	strcpy( tempFileName, "models/" );
+	Q_strncpy( tempFileName, "models/", sizeof(tempFileName) );
 
 	studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( mod );
 	COM_StripExtension( pStudioHdr->name, &tempFileName[nPrefix], sizeof( tempFileName ) - nPrefix );
@@ -3061,19 +3385,19 @@ bool Mod_LoadStudioModelVtxFileIntoTempBuffer( model_t *mod, CUtlMemory<unsigned
 		g_pMaterialSystemHardwareConfig->GetDXSupportLevel() < 70)
 	{
 		// Check for the default version...
-		strcpy( tempFileName + namelen, ".dx80.vtx" );
+		Q_strncpy( tempFileName + namelen, ".dx80.vtx", sizeof(tempFileName) - namelen );
 	}
 	else
 	{
 		if( g_pMaterialSystemHardwareConfig->MaxBlendMatrices() > 2 )
 		{
 			// Check for the default version...
-			strcpy( tempFileName + namelen, ".dx7_3bone.vtx" );
+			Q_strncpy( tempFileName + namelen, ".dx7_3bone.vtx", sizeof(tempFileName) - namelen );
 		}
 		else
 		{
 			// Check for the default version...
-			strcpy( tempFileName + namelen, ".dx7_2bone.vtx" );
+			Q_strncpy( tempFileName + namelen, ".dx7_2bone.vtx", sizeof(tempFileName) - namelen );
 		}
 	}
 
@@ -3081,7 +3405,7 @@ bool Mod_LoadStudioModelVtxFileIntoTempBuffer( model_t *mod, CUtlMemory<unsigned
 	if( !fileHandle )
 	{
 		// Fall back....
-		strcpy( tempFileName + namelen, ".dx7_2bone.vtx" );
+		Q_strncpy( tempFileName + namelen, ".dx7_2bone.vtx", sizeof(tempFileName) - namelen );
 		fileHandle = g_pFileSystem->Open( tempFileName, "rb" );
 		if( !fileHandle )
 			return false;
@@ -3092,7 +3416,138 @@ bool Mod_LoadStudioModelVtxFileIntoTempBuffer( model_t *mod, CUtlMemory<unsigned
 
 	readOK = ( fileLength == g_pFileSystem->Read( tmpVtxMem.Base(), fileLength, fileHandle ) );
 	g_pFileSystem->Close( fileHandle );
+
+	if ( readOK )
+	{
+		// Check for LZMA compression and decompress if needed
+		// v48+ VTX files may be LZMA compressed
+		uint32 decompressedSize = 0;
+		byte *pDecompressed = DecompressModelDataIfNeeded( tmpVtxMem.Base(), fileLength, &decompressedSize );
+
+		if ( pDecompressed != tmpVtxMem.Base() )
+		{
+			// Data was compressed and decompressed - replace buffer contents
+			tmpVtxMem.EnsureCapacity( decompressedSize );
+			memcpy( tmpVtxMem.Base(), pDecompressed, decompressedSize );
+			delete[] pDecompressed; // Free the decompressed buffer
+
+			Con_DPrintf( "VTX file %s: Decompressed from %i to %i bytes\n",
+						 tempFileName, fileLength, decompressedSize );
+		}
+	}
+
 	return readOK;
+}
+
+//-----------------------------------------------------------------------------
+// Loads VVD (vertex data) file into a temp buffer.
+// VVD files contain external vertex data for v44+ (2004+) models.
+// Returns false if the VVD file doesn't exist or can't be read.
+// For v37 models, returns false (they use embedded vertex data).
+//-----------------------------------------------------------------------------
+bool Mod_LoadStudioModelVvdFileIntoTempBuffer( model_t *mod, CUtlMemory<unsigned char>& tmpVvdMem )
+{
+	studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( mod );
+	if (!pStudioHdr)
+		return false;
+
+	// v37 models don't have external VVD files
+	if (pStudioHdr->version <= STUDIO_VERSION_37)
+	{
+		return false;
+	}
+
+	char tempFileName[256];
+	int nPrefix = 7;
+	Q_strncpy( tempFileName, "models/", sizeof(tempFileName) );
+
+	COM_StripExtension( pStudioHdr->name, &tempFileName[nPrefix], sizeof( tempFileName ) - nPrefix );
+	int namelen = strlen( tempFileName );
+
+	// VVD files have the .vvd extension
+	Q_strncpy( tempFileName + namelen, ".vvd", sizeof(tempFileName) - namelen );
+
+	FileHandle_t fileHandle = g_pFileSystem->Open( tempFileName, "rb" );
+	if (!fileHandle)
+	{
+		DevWarning("VVD file not found: %s\n", tempFileName);
+		return false;
+	}
+
+	int fileLength = g_pFileSystem->Size( fileHandle );
+	if (fileLength < sizeof(vertexFileHeader_t))
+	{
+		g_pFileSystem->Close( fileHandle );
+		DevWarning("VVD file too small: %s\n", tempFileName);
+		return false;
+	}
+
+	tmpVvdMem.EnsureCapacity( fileLength );
+
+	bool readOK = ( fileLength == g_pFileSystem->Read( tmpVvdMem.Base(), fileLength, fileHandle ) );
+	g_pFileSystem->Close( fileHandle );
+
+	if (!readOK)
+	{
+		DevWarning("VVD file read error: %s\n", tempFileName);
+		return false;
+	}
+
+	// Check for LZMA compression and decompress if needed
+	// v48+ VVD files may be LZMA compressed
+	uint32 decompressedSize = 0;
+	byte *pDecompressed = DecompressModelDataIfNeeded( tmpVvdMem.Base(), fileLength, &decompressedSize );
+
+	if ( pDecompressed != tmpVvdMem.Base() )
+	{
+		// Data was compressed and decompressed - replace buffer contents
+		tmpVvdMem.EnsureCapacity( decompressedSize );
+		memcpy( tmpVvdMem.Base(), pDecompressed, decompressedSize );
+		delete[] pDecompressed; // Free the decompressed buffer
+
+		Con_DPrintf( "VVD file %s: Decompressed from %i to %i bytes\n",
+					 tempFileName, fileLength, decompressedSize );
+	}
+
+	// Validate VVD header
+	vertexFileHeader_t *pVvdHdr = (vertexFileHeader_t *)tmpVvdMem.Base();
+	if (pVvdHdr->id != MODEL_VERTEX_FILE_ID)
+	{
+		DevWarning("VVD file has invalid ID: %s\n", tempFileName);
+		return false;
+	}
+
+	if (pVvdHdr->version != MODEL_VERTEX_FILE_VERSION)
+	{
+		DevWarning("VVD file has wrong version (%d, expected %d): %s\n",
+			pVvdHdr->version, MODEL_VERTEX_FILE_VERSION, tempFileName);
+		return false;
+	}
+
+	// Verify checksum matches the MDL
+	if (pVvdHdr->checksum != pStudioHdr->checksum)
+	{
+		DevWarning("VVD checksum mismatch (VVD: %ld, MDL: %ld): %s\n",
+			pVvdHdr->checksum, pStudioHdr->checksum, tempFileName);
+		return false;
+	}
+
+	DevMsg("Loaded VVD: %s (version %d, %d LODs)\n",
+		tempFileName, pVvdHdr->version, pVvdHdr->numLODs);
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Check if a model requires external VVD vertex data
+//-----------------------------------------------------------------------------
+bool Mod_ModelRequiresVvdFile( model_t *mod )
+{
+	studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( mod );
+	if (!pStudioHdr)
+		return false;
+
+	return STUDIO_VERSION_HAS_EXTERNAL_VERTICES(pStudioHdr->version);
 }
 
 
@@ -3133,6 +3588,7 @@ static void ComputeFlags( model_t* mod )
 
 //-----------------------------------------------------------------------------
 // Loads the static meshes
+// Supports both v37 (embedded vertices) and v44+ (external VVD vertices) models
 //-----------------------------------------------------------------------------
 void CModelLoader::Studio_LoadStaticMeshes( model_t* mod )
 {
@@ -3142,6 +3598,7 @@ void CModelLoader::Studio_LoadStaticMeshes( model_t* mod )
 	{
 		mod->studio.studiomeshLoaded = true;
 		CUtlMemory<unsigned char> tmpVtxMem; // This goes away when we leave this scope.
+		CUtlMemory<unsigned char> tmpVvdMem; // VVD data for v48 models
 		bool retVal;
 
 		// Load the vtx file into a temp buffer that'll go away after we leave this scope.
@@ -3163,11 +3620,49 @@ void CModelLoader::Studio_LoadStaticMeshes( model_t* mod )
 			mod->studio.studiomeshLoaded = false;
 			return;
 		}
-		if( !g_pStudioRender->LoadModel( pStudioHdr, tmpVtxMem.Base(), 
-			&mod->studio.hardwareData ) )
+
+		//-----------------------------------------------------------------------------
+		// v44+ models: Load external VVD vertex data
+		//-----------------------------------------------------------------------------
+		void *pVvdData = NULL;
+		if (Mod_ModelRequiresVvdFile( mod ))
 		{
-			mod->studio.studiomeshLoaded = false;
-			return;
+			retVal = Mod_LoadStudioModelVvdFileIntoTempBuffer( mod, tmpVvdMem );
+			if (!retVal)
+			{
+				if ( cls.state != ca_dedicated )
+				{
+					Con_DPrintf( "--ERROR-- : Can't load vvd file for %s (v%d model requires external vertex data)\n",
+						pStudioHdr->name, pStudioHdr->version );
+				}
+				mod->studio.studiomeshLoaded = false;
+				return;
+			}
+			pVvdData = tmpVvdMem.Base();
+		}
+
+		//-----------------------------------------------------------------------------
+		// Load the model with appropriate vertex data source
+		//-----------------------------------------------------------------------------
+		if (pVvdData != NULL)
+		{
+			// v44+ path: Use external VVD data
+			if( !g_pStudioRender->LoadModelWithVertexData( pStudioHdr, tmpVtxMem.Base(),
+				pVvdData, &mod->studio.hardwareData ) )
+			{
+				mod->studio.studiomeshLoaded = false;
+				return;
+			}
+		}
+		else
+		{
+			// v37 path: Use embedded vertex data (legacy path)
+			if( !g_pStudioRender->LoadModel( pStudioHdr, tmpVtxMem.Base(),
+				&mod->studio.hardwareData ) )
+			{
+				mod->studio.studiomeshLoaded = false;
+				return;
+			}
 		}
 
 		// Set flag...
@@ -3460,14 +3955,16 @@ bool CModelLoader::Map_IsValid( char const *mapname )
 
 		if ( header.ident == IDBSPHEADER )
 		{
-			if ( header.version == BSPVERSION )
+			// Support multiple BSP versions (v18-v21)
+			if ( BSP_VERSION_IS_VALID( header.version ) )
 			{
 				// Map appears valid!!
 				return true;
 			}
 			else
 			{
-				Warning( "CModelLoader::Map_IsValid:  Map '%s' bsp version %i, expecting %i\n", mapname, header.version, BSPVERSION );
+				Warning( "CModelLoader::Map_IsValid:  Map '%s' bsp version %i, supported range: %i-%i\n",
+					mapname, header.version, BSPVERSION_MIN, BSPVERSION_MAX );
 			}
 		}
 		else
@@ -3481,4 +3978,200 @@ bool CModelLoader::Map_IsValid( char const *mapname )
 	}
 
 	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Get the count of loaded models
+//-----------------------------------------------------------------------------
+int CModelLoader::GetCount( void )
+{
+	return m_Models.Count();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Get model by index
+//-----------------------------------------------------------------------------
+model_t* CModelLoader::GetModelForIndex( int index )
+{
+	if ( index < 0 || index >= m_Models.Count() )
+		return NULL;
+
+	// Iterate through the dictionary to find the nth element
+	int currentIndex = 0;
+	for ( int nIndex = m_Models.First(); nIndex != m_Models.InvalidIndex(); nIndex = m_Models.Next( nIndex ) )
+	{
+		if ( currentIndex == index )
+		{
+			return m_Models[nIndex].modelpointer;
+		}
+		currentIndex++;
+	}
+
+	return NULL;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Purge unused models from memory
+//-----------------------------------------------------------------------------
+void CModelLoader::PurgeUnusedModels( void )
+{
+	// This is essentially the same as UnloadUnreferencedModels but more aggressive
+	UnloadUnreferencedModels();
+
+	// Could add additional cleanup here for cached data that isn't referenced
+	Con_DPrintf( "PurgeUnusedModels: Purged unused model data\n" );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Recompute surface flags for all loaded models
+//-----------------------------------------------------------------------------
+void CModelLoader::RecomputeSurfaceFlags( void )
+{
+	// Iterate through all models in the dictionary
+	for ( int nIndex = m_Models.First(); nIndex != m_Models.InvalidIndex(); nIndex = m_Models.Next( nIndex ) )
+	{
+		model_t *pModel = m_Models[nIndex].modelpointer;
+		if ( pModel && pModel->type == mod_studio )
+		{
+			// Recompute translucency/surface properties
+			Mod_RecomputeTranslucency( pModel );
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Hot reload all studio models
+//-----------------------------------------------------------------------------
+void CModelLoader::Studio_ReloadModels( void )
+{
+	Con_DPrintf( "Studio_ReloadModels: Reloading all studio models\n" );
+
+	// Iterate through all models in the dictionary
+	for ( int nIndex = m_Models.First(); nIndex != m_Models.InvalidIndex(); nIndex = m_Models.Next( nIndex ) )
+	{
+		model_t *pModel = m_Models[nIndex].modelpointer;
+		if ( pModel && pModel->type == mod_studio )
+		{
+			// Unload and reload the studio model
+			Studio_UnloadModel( pModel );
+
+			// Reload the model data
+			void *buffer = COM_LoadFileForMe( pModel->name, NULL );
+			if ( buffer )
+			{
+				Studio_LoadModel( pModel, buffer );
+				COM_FreeFile( (byte*)buffer );
+			}
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Check if a model is currently loaded
+//-----------------------------------------------------------------------------
+bool CModelLoader::IsLoaded( const char *name )
+{
+	if ( !name || !*name )
+		return false;
+
+	// Check if the model exists in our dictionary
+	int nIndex = m_Models.Find( name );
+	if ( !m_Models.IsValidIndex( nIndex ) )
+		return false;
+
+	model_t *pModel = m_Models[nIndex].modelpointer;
+	return ( pModel && pModel->flags & FMODELLOADER_LOADED );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Check if the last loaded map has HDR lighting support
+//-----------------------------------------------------------------------------
+bool CModelLoader::LastLoadedMapHasHDRLighting( void )
+{
+	if ( !m_pWorldModel )
+		return false;
+
+	// Check BSP version - HDR is supported in v20+
+	int nBSPVersion = GetCurrentBSPVersion();
+	if ( !BSP_VERSION_HAS_HDR( nBSPVersion ) )
+		return false;
+
+	// Check if map has HDR lighting data
+	CMapLoadHelper lh( LUMP_LIGHTING_HDR );
+	return ( lh.LumpSize() > 0 );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Reload models from a file list
+//-----------------------------------------------------------------------------
+void CModelLoader::ReloadFilesInList( IFileList *pFilesToReload )
+{
+	if ( !pFilesToReload )
+		return;
+
+	Con_DPrintf( "ReloadFilesInList: Reloading models from file list\n" );
+
+	int nFileCount = pFilesToReload->GetFileCount();
+	for ( int i = 0; i < nFileCount; ++i )
+	{
+		const char *pFileName = pFilesToReload->GetFile( i );
+		if ( !pFileName )
+			continue;
+
+		// Check if this file is a model we have loaded
+		int nIndex = m_Models.Find( pFileName );
+		if ( !m_Models.IsValidIndex( nIndex ) )
+			continue;
+
+		model_t *pModel = m_Models[nIndex].modelpointer;
+		if ( !pModel )
+			continue;
+
+		// Reload based on model type
+		switch ( pModel->type )
+		{
+		case mod_studio:
+			{
+				Studio_UnloadModel( pModel );
+				void *buffer = COM_LoadFileForMe( pModel->name, NULL );
+				if ( buffer )
+				{
+					Studio_LoadModel( pModel, buffer );
+					COM_FreeFile( (byte*)buffer );
+				}
+			}
+			break;
+		case mod_sprite:
+			{
+				Sprite_UnloadModel( pModel );
+				Sprite_LoadModel( pModel );
+			}
+			break;
+		case mod_brush:
+			{
+				if ( pModel == m_pWorldModel )
+				{
+					// Cannot reload world model on the fly
+					Con_DPrintf( "ReloadFilesInList: Cannot reload world model '%s'\n", pFileName );
+				}
+				else
+				{
+					Map_UnloadModel( pModel );
+					Map_LoadModel( pModel );
+				}
+			}
+			break;
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Get the name of the currently active map
+//-----------------------------------------------------------------------------
+const char* CModelLoader::GetActiveMapName( void )
+{
+	if ( !m_pWorldModel || !m_pWorldModel->name )
+		return "";
+
+	return m_pWorldModel->name;
 }

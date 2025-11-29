@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -7,13 +7,31 @@
 
 #ifndef OPTIMIZE_H
 #define OPTIMIZE_H
+
+#ifdef _WIN32
 #pragma once
+#endif
 
-#define MAX_NUM_BONES_PER_VERT 4
+#include "studio.h"
+
+// NOTE: MAX_NUM_BONES_PER_VERT is now defined in studio.h as 3 (v48 format)
+// You can change this without affecting the vtx file format.
 #define MAX_NUM_BONES_PER_TRI ( MAX_NUM_BONES_PER_VERT * 3 )
-#define MAX_NUM_BONES_PER_STRIP 16
+#define MAX_NUM_BONES_PER_STRIP 512
 
-#define OPTIMIZED_MODEL_FILE_VERSION 6
+//-----------------------------------------------------------------------------
+// VTX File Version Support
+//-----------------------------------------------------------------------------
+// v6: Original HL2 2003/2004 format
+// v7: Source 2007+ format with topology data for hardware morphing
+//-----------------------------------------------------------------------------
+#define OPTIMIZED_MODEL_FILE_VERSION_V6  6
+#define OPTIMIZED_MODEL_FILE_VERSION_V7  7
+#define OPTIMIZED_MODEL_FILE_VERSION_MIN OPTIMIZED_MODEL_FILE_VERSION_V6
+#define OPTIMIZED_MODEL_FILE_VERSION_MAX OPTIMIZED_MODEL_FILE_VERSION_V7
+
+// Current target version (v7 for new files, but we read both)
+#define OPTIMIZED_MODEL_FILE_VERSION     OPTIMIZED_MODEL_FILE_VERSION_V7
 
 extern bool g_bDumpGLViewFiles;
 
@@ -30,16 +48,37 @@ struct BoneStateChangeHeader_t
 	int newBoneID;
 };
 
+//-----------------------------------------------------------------------------
+// v37: Vertex structure for HL2 Beta 2003 VTX files
+// MAX_NUM_BONES_PER_VERT was 4 in v37, and boneID was shorts
+//-----------------------------------------------------------------------------
+struct Vertex_v37_t
+{
+	// These index into the mesh's vert[origMeshVertID]'s bones
+	unsigned char boneWeightIndex[4];	// 4 bytes (v37 had 4 bone weights)
+
+	// For sw skinned verts, these are indices into the global list of bones
+	// For hw skinned verts, these are hardware bone indices
+	short boneID[4];					// 8 bytes (v37 used shorts, not chars)
+
+	short origMeshVertID;				// 2 bytes (v37 used short, not unsigned short)
+	unsigned char numBones;				// 1 byte
+};	// = 15 bytes total
+
+//-----------------------------------------------------------------------------
+// v48: Vertex structure for Source 2007+ VTX files
+//-----------------------------------------------------------------------------
 struct Vertex_t
 {
-	// these index into the mesh's vert[origMeshVertID]'s bones
+	// These index into the mesh's vert[origMeshVertID]'s bones
 	unsigned char boneWeightIndex[MAX_NUM_BONES_PER_VERT];
-//	unsigned char boneWeights[MAX_NUM_BONES_PER_VERT];
-	// for sw skinned verts, these are indices into the global list of bones
-	// for hw skinned verts, these are hardware bone indices
-	short boneID[MAX_NUM_BONES_PER_VERT];
-	short origMeshVertID;
 	unsigned char numBones;
+
+	unsigned short origMeshVertID;
+
+	// For sw skinned verts, these are indices into the global list of bones
+	// For hw skinned verts, these are hardware bone indices
+	char boneID[MAX_NUM_BONES_PER_VERT];
 };
 	
 enum StripHeaderFlags_t {
@@ -74,9 +113,12 @@ struct StripHeader_t
 	};
 };
 
-enum StripGroupFlags_t {
-	STRIPGROUP_IS_FLEXED	= 0x01,
-	STRIPGROUP_IS_HWSKINNED	= 0x02
+enum StripGroupFlags_t
+{
+	STRIPGROUP_IS_FLEXED		 = 0x01,
+	STRIPGROUP_IS_HWSKINNED		 = 0x02,
+	STRIPGROUP_IS_DELTA_FLEXED	 = 0x04,
+	STRIPGROUP_SUPPRESS_HW_MORPH = 0x08,	// NOTE: This is a temporary flag used at run time.
 };
 
 // a locking group
@@ -87,9 +129,18 @@ struct StripGroupHeader_t
 	// These are the arrays of all verts and indices for this mesh.  strips index into this.
 	int numVerts;
 	int vertOffset;
-	inline Vertex_t *pVertex( int i ) const 
-	{ 
-		return (Vertex_t *)(((byte *)this) + vertOffset) + i; 
+
+	// v48 vertex accessor (9-byte Vertex_t)
+	inline Vertex_t *pVertex( int i ) const
+	{
+		return (Vertex_t *)(((byte *)this) + vertOffset) + i;
+	};
+
+	// v37 vertex accessor (15-byte Vertex_v37_t)
+	// Use this when loading v37 VTX files which have different vertex structure
+	inline Vertex_v37_t *pVertex_V37( int i ) const
+	{
+		return (Vertex_v37_t *)(((byte *)this) + vertOffset) + i;
 	};
 
 	int numIndices;
@@ -220,14 +271,75 @@ struct FileHeader_t
 
 	int numBodyParts;
 	int bodyPartOffset;
-	inline BodyPartHeader_t *pBodyPart( int i ) const 
+	inline BodyPartHeader_t *pBodyPart( int i ) const
 	{
 		BodyPartHeader_t *pDebug = (BodyPartHeader_t *)(((byte *)this) + bodyPartOffset) + i;
 		return pDebug;
-	};	
+	};
+
+	//-----------------------------------------------------------------------------
+	// v7-specific helper functions
+	//-----------------------------------------------------------------------------
+	inline bool IsV7() const { return version >= OPTIMIZED_MODEL_FILE_VERSION_V7; }
+	inline bool IsV6() const { return version == OPTIMIZED_MODEL_FILE_VERSION_V6; }
+};
+
+//-----------------------------------------------------------------------------
+// v7: Topology data structures for hardware morphing
+// These structures are appended after the standard VTX data in v7 files
+//-----------------------------------------------------------------------------
+
+// v7: Topology data header (appended after standard VTX data)
+struct TopologyDataHeader_t
+{
+	int numStrips;
+	int stripOffset;
+
+	inline StripHeader_t *pStrip( int i ) const
+	{
+		return (StripHeader_t *)(((byte *)this) + stripOffset) + i;
+	}
+};
+
+// v7: Strip topology data
+struct StripTopology_t
+{
+	int numIndices;
+	int indexOffset;
+
+	inline unsigned short *pIndex( int i ) const
+	{
+		return (unsigned short *)(((byte *)this) + indexOffset) + i;
+	}
+};
+
+// v7: Extended vertex data with morph target indices
+struct Vertex_V7_t
+{
+	// Same base fields as Vertex_t
+	unsigned char boneWeightIndex[MAX_NUM_BONES_PER_VERT];
+	unsigned char numBones;
+
+	unsigned short origMeshVertID;
+
+	// For sw skinned verts, these are indices into the global list of bones
+	// For hw skinned verts, these are hardware bone indices
+	char boneID[MAX_NUM_BONES_PER_VERT];
+
+	// v7: Additional morph target index
+	short morphTargetIndex;
 };
 
 #pragma pack()
+
+//-----------------------------------------------------------------------------
+// Version checking helpers
+//-----------------------------------------------------------------------------
+inline bool IsValidVTXVersion( int version )
+{
+	return version >= OPTIMIZED_MODEL_FILE_VERSION_MIN &&
+	       version <= OPTIMIZED_MODEL_FILE_VERSION_MAX;
+}
 
 void WriteOptimizedFiles( studiohdr_t *phdr, s_bodypart_t *pSrcBodyParts );
 

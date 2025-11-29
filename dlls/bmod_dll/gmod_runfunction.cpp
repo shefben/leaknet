@@ -6,6 +6,7 @@
 //=============================================================================//
 
 #include "cbase.h"
+#include "gmod_runfunction.h"
 #include "lua_integration.h"
 #include "entityoutput.h"
 
@@ -22,17 +23,17 @@ LINK_ENTITY_TO_CLASS(gmod_runfunction, CGmodRunFunction);
 //-----------------------------------------------------------------------------
 BEGIN_DATADESC(CGmodRunFunction)
 	// Key Values
-	DEFINE_KEYFIELD(m_iszFunction, FIELD_STRING, "function"),
-	DEFINE_KEYFIELD(m_flDelay, FIELD_FLOAT, "delay"),
+	DEFINE_KEYFIELD(CGmodRunFunction, m_iszFunction, FIELD_STRING, "function"),
+	DEFINE_KEYFIELD(CGmodRunFunction, m_flDelay, FIELD_FLOAT, "delay"),
 
 	// Inputs
-	DEFINE_INPUTFUNC(FIELD_STRING, "RunFunction", InputRunFunction),
+	DEFINE_INPUTFUNC(CGmodRunFunction, FIELD_STRING, "RunFunction", InputRunFunction),
 
 	// Outputs
-	DEFINE_OUTPUT(m_OnFinished, "OnFinished"),
+	DEFINE_OUTPUT(CGmodRunFunction, m_OnFinished, "OnFinished"),
 
 	// Functions
-	DEFINE_THINKFUNC(Think),
+	DEFINE_THINKFUNC(CGmodRunFunction, Think),
 
 END_DATADESC()
 
@@ -43,11 +44,10 @@ void CGmodRunFunction::Spawn()
 {
 	BaseClass::Spawn();
 
-	// Set model (invisible)
-	SetModel("models/editor/axis_helper.mdl");
+	// Set invisible point entity
 	SetSolid(SOLID_NONE);
 	SetMoveType(MOVETYPE_NONE);
-	AddEffects(EF_NODRAW);
+	m_fEffects |= EF_NODRAW;
 
 	// Set default values
 	if (m_flDelay <= 0.0f)

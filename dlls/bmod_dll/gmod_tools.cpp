@@ -90,6 +90,23 @@ void CGModToolsSystem::LevelInitPostEntity()
     DevMsg("GMod Tools System: Level initialized, player data reset\n");
 }
 
+void CGModToolsSystem::InitializePlayer(CBasePlayer* pPlayer)
+{
+    GetPlayerToolData(pPlayer);
+}
+
+void CGModToolsSystem::CleanupPlayer(CBasePlayer* pPlayer)
+{
+    if (!pPlayer)
+        return;
+
+    PlayerToolData_t* pData = GetPlayerToolData(pPlayer);
+    if (pData)
+    {
+        *pData = PlayerToolData_t();
+    }
+}
+
 CGModToolsSystem::PlayerToolData_t* CGModToolsSystem::GetPlayerToolData(CBasePlayer* pPlayer)
 {
     if (!pPlayer)

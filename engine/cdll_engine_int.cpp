@@ -375,6 +375,16 @@ class CEngineClient : public IVEngineClient
 		return hudClientCmd( (char *)szCmdString );
 	}
 
+	int ClientCmd_Unrestricted( const char *szCmdString )
+	{
+		if ( !szCmdString || !szCmdString[0] )
+			return 0;
+
+		Cbuf_AddText( szCmdString );
+		Cbuf_AddText( "\n" );
+		return 1;
+	}
+
 	void GetPlayerInfo( int ent_num, hud_player_info_t *pinfo )
 	{
 		hudGetPlayerInfo( ent_num, pinfo );
@@ -892,9 +902,16 @@ class CEngineClient : public IVEngineClient
 			return -1;
 
 		int iArea = host_state.worldmodel->brush.leafs[pLeaves[0]].area;
+
+		// Defensive bounds check for BSP compatibility
+		if ( iArea < 0 || iArea >= MAX_MAP_AREAS )
+			return -1;
+
 		for ( int i=1; i < nLeaves; i++ )
 		{
 			int iTestArea = host_state.worldmodel->brush.leafs[pLeaves[i]].area;
+			if ( iTestArea < 0 || iTestArea >= MAX_MAP_AREAS )
+				return -1;
 			if ( iTestArea != iArea )
 				return -1;
 		}
@@ -1259,5 +1276,4 @@ void ClientDLL_VoiceStatus( int entindex, bool bTalking )
 	if( g_ClientDLL )
 		g_ClientDLL->VoiceStatus( entindex, bTalking );
 }
-
 

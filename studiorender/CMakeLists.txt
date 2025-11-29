@@ -18,6 +18,7 @@ BEGIN_SRC( STUDIORENDER_SOURCE_FILES "Source Files" )
 			"r_studiodecal.cpp"
 			"r_studiodraw.cpp"
 			"r_studioflex.cpp"
+			"r_studiogettriangles.cpp"
 			"r_studiolight.cpp"
 			"studiostats.cpp"
 		#}

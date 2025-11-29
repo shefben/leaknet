@@ -1,208 +1,97 @@
-//========= Copyright Valve Corporation, All rights reserved. ============//
-//
-// Purpose: Lua utility functions for parameter conversion and entity management
-// Based on reverse engineering of Garry's Mod server.dll
-//
-//=============================================================================//
-
 #include "cbase.h"
 #include "lua_integration.h"
 #include "player.h"
-#include "baseentity.h"
-#include "entitylist.h"
+#include "util.h"
+#include <stdarg.h>
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-//=============================================================================
-// PARAMETER HELPER FUNCTIONS
-//=============================================================================
-
-//-----------------------------------------------------------------------------
-// Purpose: Get entity from Lua stack by index
-//-----------------------------------------------------------------------------
-CBaseEntity* CLuaUtility::GetEntityFromIndex(lua_State *L, int index)
+CBaseEntity* CLuaUtility::GetEntityFromIndex(lua_State *L, int idx)
 {
-	if (!lua_isnumber(L, index))
+	int entIndex = GetInt(L, idx, -1);
+	if (entIndex <= 0)
 		return NULL;
 
-	int entIndex = (int)lua_tonumber(L, index);
+	return UTIL_EntityByIndex(entIndex);
+}
 
-	// Validate entity index range
-	if (entIndex < 0 || entIndex >= MAX_EDICTS)
+CBasePlayer* CLuaUtility::GetPlayerFromID(lua_State *L, int idx)
+{
+	int playerIndex = GetInt(L, idx, -1);
+	if (playerIndex < 1 || playerIndex > gpGlobals->maxClients)
 		return NULL;
 
-	return CBaseEntity::Instance(entIndex);
+	return UTIL_PlayerByIndex(playerIndex);
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Get player from Lua stack by player ID
-//-----------------------------------------------------------------------------
-CBasePlayer* CLuaUtility::GetPlayerFromID(lua_State *L, int index)
+bool CLuaUtility::GetBool(lua_State *L, int idx, bool defaultValue)
 {
-	if (!lua_isnumber(L, index))
-		return NULL;
-
-	int playerID = (int)lua_tonumber(L, index);
-
-	// Validate player ID range (1-based)
-	if (playerID < 1 || playerID > gpGlobals->maxClients)
-		return NULL;
-
-	CBaseEntity *pEntity = UTIL_PlayerByIndex(playerID);
-	return ToBasePlayer(pEntity);
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Get boolean from Lua stack
-//-----------------------------------------------------------------------------
-bool CLuaUtility::GetBool(lua_State *L, int index, bool defaultValue)
-{
-	if (lua_gettop(L) < index)
+	if (!L || idx == 0)
 		return defaultValue;
 
-	if (lua_isboolean(L, index))
-		return lua_toboolean(L, index) != 0;
-
-	if (lua_isnumber(L, index))
-		return lua_tonumber(L, index) != 0;
-
-	return defaultValue;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Get integer from Lua stack
-//-----------------------------------------------------------------------------
-int CLuaUtility::GetInt(lua_State *L, int index, int defaultValue)
-{
-	if (lua_gettop(L) < index)
-		return defaultValue;
-
-	if (lua_isnumber(L, index))
-		return (int)lua_tonumber(L, index);
-
-	return defaultValue;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Get float from Lua stack
-//-----------------------------------------------------------------------------
-float CLuaUtility::GetFloat(lua_State *L, int index, float defaultValue)
-{
-	if (lua_gettop(L) < index)
-		return defaultValue;
-
-	if (lua_isnumber(L, index))
-		return (float)lua_tonumber(L, index);
-
-	return defaultValue;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Get string from Lua stack
-//-----------------------------------------------------------------------------
-const char* CLuaUtility::GetString(lua_State *L, int index, const char *defaultValue)
-{
-	if (lua_gettop(L) < index)
-		return defaultValue;
-
-	if (lua_isstring(L, index))
-		return lua_tostring(L, index);
-
-	return defaultValue;
-}
-
-//=============================================================================
-// RETURN VALUE HELPER FUNCTIONS
-//=============================================================================
-
-//-----------------------------------------------------------------------------
-// Purpose: Push entity to Lua stack
-//-----------------------------------------------------------------------------
-void CLuaUtility::PushEntity(lua_State *L, CBaseEntity *pEntity)
-{
-	if (!pEntity)
+	if (lua_isboolean(L, idx))
+		return lua_toboolean(L, idx) != 0;
+	if (lua_isnumber(L, idx))
+		return lua_tonumber(L, idx) != 0.0;
+	if (lua_isstring(L, idx))
 	{
-		lua_pushnil(L);
-		return;
+		const char *str = lua_tostring(L, idx);
+		if (!str || !str[0])
+			return false;
+		if (!Q_stricmp(str, "false") || !Q_stricmp(str, "0"))
+			return false;
+		return true;
 	}
-
-	// Push entity index
-	lua_pushnumber(L, pEntity->entindex());
+	return defaultValue;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Push player to Lua stack
-//-----------------------------------------------------------------------------
-void CLuaUtility::PushPlayer(lua_State *L, CBasePlayer *pPlayer)
+int CLuaUtility::GetInt(lua_State *L, int idx, int defaultValue)
 {
-	if (!pPlayer)
-	{
-		lua_pushnil(L);
-		return;
-	}
+	if (!L || idx == 0)
+		return defaultValue;
 
-	// Push player ID (1-based)
-	lua_pushnumber(L, pPlayer->entindex());
+	if (lua_isnumber(L, idx))
+		return (int)lua_tonumber(L, idx);
+	if (lua_isboolean(L, idx))
+		return lua_toboolean(L, idx) ? 1 : 0;
+	return defaultValue;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Push boolean to Lua stack
-//-----------------------------------------------------------------------------
-void CLuaUtility::PushBool(lua_State *L, bool value)
+float CLuaUtility::GetFloat(lua_State *L, int idx, float defaultValue)
 {
-	lua_pushboolean(L, value ? 1 : 0);
+	if (!L || idx == 0)
+		return defaultValue;
+
+	if (lua_isnumber(L, idx))
+		return (float)lua_tonumber(L, idx);
+	return defaultValue;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Push integer to Lua stack
-//-----------------------------------------------------------------------------
+const char* CLuaUtility::GetString(lua_State *L, int idx, const char *defaultValue)
+{
+	if (!L || idx == 0)
+		return defaultValue;
+
+	if (lua_isstring(L, idx))
+		return lua_tostring(L, idx);
+	return defaultValue;
+}
+
 void CLuaUtility::PushInt(lua_State *L, int value)
 {
-	lua_pushnumber(L, value);
+	if (L)
+		lua_pushnumber(L, (lua_Number)value);
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Push float to Lua stack
-//-----------------------------------------------------------------------------
-void CLuaUtility::PushFloat(lua_State *L, float value)
+int CLuaUtility::LuaError(lua_State *L, const char *fmt, ...)
 {
-	lua_pushnumber(L, value);
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Push string to Lua stack
-//-----------------------------------------------------------------------------
-void CLuaUtility::PushString(lua_State *L, const char *value)
-{
-	if (!value)
-	{
-		lua_pushnil(L);
-		return;
-	}
-
-	lua_pushstring(L, value);
-}
-
-//=============================================================================
-// ERROR HANDLING
-//=============================================================================
-
-//-----------------------------------------------------------------------------
-// Purpose: Generate Lua error with formatted message
-//-----------------------------------------------------------------------------
-int CLuaUtility::LuaError(lua_State *L, const char *pszFormat, ...)
-{
-	char szBuffer[1024];
+	char buffer[1024];
 	va_list args;
-	va_start(args, pszFormat);
-	Q_vsnprintf(szBuffer, sizeof(szBuffer), pszFormat, args);
+	va_start(args, fmt);
+	Q_vsnprintf(buffer, sizeof(buffer), fmt, args);
 	va_end(args);
 
-	// Log the error
-	Warning("Lua Error: %s\n", szBuffer);
-
-	// Push error to Lua stack and generate error
-	lua_pushstring(L, szBuffer);
+	lua_pushstring(L, buffer);
 	return lua_error(L);
 }

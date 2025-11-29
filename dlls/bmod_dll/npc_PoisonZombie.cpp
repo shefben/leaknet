@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: A hideous, putrescent, pus-filled undead carcass atop which a vile
 //			nest of filthy poisonous headcrabs lurks.
@@ -138,11 +138,9 @@ static const char *pMoanSounds[] =
 	"npc/zombie_poison/pz_breathe_loop1.wav",
 };
 
-//-----------------------------------------------------------------------------
-// Skill settings.
-//-----------------------------------------------------------------------------
-ConVar sk_zombie_poison_health( "sk_zombie_poison_health", "0");
-ConVar sk_zombie_poison_dmg_spit( "sk_zombie_poison_dmg_spit","0");
+// Skill settings - defined in skill_cvars.cpp
+extern ConVar sk_zombie_poison_health;
+extern ConVar sk_zombie_poison_dmg_spit;
 
 
 class CNPC_PoisonZombie : public CNPC_BaseZombie

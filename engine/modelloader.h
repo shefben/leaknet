@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -12,6 +12,15 @@
 
 struct model_t;
 class IMaterial;
+
+// Simple IFileList interface for file reloading
+class IFileList
+{
+public:
+	virtual ~IFileList() {}
+	virtual int GetFileCount() = 0;
+	virtual const char *GetFile( int index ) = 0;
+};
 
 
 #include "utlmemory.h"
@@ -87,6 +96,17 @@ public:
 
 	// Validate version/header of a .bsp file
 	virtual bool		Map_IsValid( char const *mapname ) = 0;
+
+	// 2007 Source Engine compatibility methods
+	virtual int			GetCount( void ) = 0;
+	virtual model_t*	GetModelForIndex( int index ) = 0;
+	virtual void		PurgeUnusedModels( void ) = 0;
+	virtual void		RecomputeSurfaceFlags( void ) = 0;
+	virtual void		Studio_ReloadModels( void ) = 0;
+	virtual bool		IsLoaded( const char *name ) = 0;
+	virtual bool		LastLoadedMapHasHDRLighting( void ) = 0;
+	virtual void		ReloadFilesInList( IFileList *pFilesToReload ) = 0;
+	virtual const char*	GetActiveMapName( void ) = 0;
 };
 
 extern IModelLoader *modelloader;
@@ -150,5 +170,17 @@ int Mod_GetMaterialCount( model_t* mod );
 void Mod_GetModelMaterials( model_t* mod, int count, IMaterial** ppMaterial );
 
 bool Mod_LoadStudioModelVtxFileIntoTempBuffer( model_t *mod, CUtlMemory<unsigned char>& tmpVtxMem );
+
+// VVD file loading for v44+ models with external vertex data
+bool Mod_LoadStudioModelVvdFileIntoTempBuffer( model_t *mod, CUtlMemory<unsigned char>& tmpVvdMem );
+
+// Check if a model requires external VVD vertex data (v44+ models)
+bool Mod_ModelRequiresVvdFile( model_t *mod );
+
+//-----------------------------------------------------------------------------
+// BSP Version Support
+//-----------------------------------------------------------------------------
+// Returns the BSP version of the currently loaded map
+int GetCurrentBSPVersion( void );
 
 #endif // MOD_LOADER_H

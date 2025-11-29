@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -114,6 +114,7 @@ struct SoundLevelLookup
 static SoundLevelLookup g_pSoundLevels[] =
 {
 	{ SNDLVL_NONE, "SNDLVL_NONE" },
+	{ SNDLVL_20dB, "SNDLVL_20dB" },
 	{ SNDLVL_25dB, "SNDLVL_25dB" },
 	{ SNDLVL_30dB, "SNDLVL_30dB" },
 	{ SNDLVL_35dB, "SNDLVL_35dB" },
@@ -124,6 +125,7 @@ static SoundLevelLookup g_pSoundLevels[] =
 	{ SNDLVL_IDLE, "SNDLVL_IDLE" },
 	{ SNDLVL_TALKING, "SNDLVL_TALKING" },
 	{ SNDLVL_60dB, "SNDLVL_60dB" },
+	{ SNDLVL_62dB, "SNDLVL_62dB" },
 	{ SNDLVL_65dB, "SNDLVL_65dB" },
 	{ SNDLVL_STATIC, "SNDLVL_STATIC" },
 	{ SNDLVL_70dB, "SNDLVL_70dB" },
@@ -132,15 +134,23 @@ static SoundLevelLookup g_pSoundLevels[] =
 	{ SNDLVL_80dB, "SNDLVL_80dB" },
 	{ SNDLVL_85dB, "SNDLVL_85dB" },
 	{ SNDLVL_90dB, "SNDLVL_90dB" },
+	{ SNDLVL_91dB, "SNDLVL_91dB" },
+	{ SNDLVL_92dB, "SNDLVL_92dB" },
+	{ SNDLVL_93dB, "SNDLVL_93dB" },
+	{ SNDLVL_94dB, "SNDLVL_94dB" },
 	{ SNDLVL_95dB, "SNDLVL_95dB" },
+	{ SNDLVL_98dB, "SNDLVL_98dB" },
+	{ SNDLVL_98dB, "SNDLVL_98db" },	// Case variant in some config files
 	{ SNDLVL_100dB, "SNDLVL_100dB" },
 	{ SNDLVL_105dB, "SNDLVL_105dB" },
 	{ SNDLVL_110dB, "SNDLVL_110dB" },
+	{ SNDLVL_115dB, "SNDLVL_115dB" },
 	{ SNDLVL_120dB, "SNDLVL_120dB" },
 	{ SNDLVL_130dB, "SNDLVL_130dB" },
 	{ SNDLVL_GUNFIRE, "SNDLVL_GUNFIRE" },
 	{ SNDLVL_140dB, "SNDLVL_140dB" },
 	{ SNDLVL_150dB, "SNDLVL_150dB" },
+	{ SNDLVL_160dB, "SNDLVL_160dB" },
 };
 
 static const char *_SoundLevelToString( soundlevel_t level )

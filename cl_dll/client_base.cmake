@@ -17,6 +17,7 @@ BEGIN_SRC( CLIENT_BASE_SOURCE_FILES "Source Files" )
 			"${SRCDIR}/game_shared/baseviewmodel_shared.cpp"
 			"${SRCDIR}/game_shared/beam_shared.cpp"
 			"${SRCDIR}/game_shared/bone_setup.cpp" # Noprecomp?
+			"${SRCDIR}/game_shared/studio_virtualmodel.cpp" # v48 virtual model support
 			"${SRCDIR}/game_shared/collisionproperty.cpp"
 			"${SRCDIR}/game_shared/decals.cpp"
 			"${SRCDIR}/game_shared/effect_dispatch_data.cpp"

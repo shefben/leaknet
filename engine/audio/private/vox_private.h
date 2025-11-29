@@ -46,7 +46,7 @@ typedef struct voxword_s
 } voxword_t;
 
 #define CVOXWORDMAX		32
-#define CVOXSENTENCEMAX	24
+#define CVOXSENTENCEMAX	48		// Increased from 24 to support longer group names like METROPOLICE_KILL_CITIZENS
 
 #define CVOXZEROSCANMAX	255			// scan up to this many samples for next zero crossing
 

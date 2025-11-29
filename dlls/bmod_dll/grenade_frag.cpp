@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -9,9 +9,10 @@
 #include "basegrenade_shared.h"
 #include "grenade_frag.h"
 
-ConVar sk_plr_dmg_fraggrenade	( "sk_plr_dmg_fraggrenade","0");
-ConVar sk_npc_dmg_fraggrenade	( "sk_npc_dmg_fraggrenade","0");
-ConVar sk_fraggrenade_radius	( "sk_fraggrenade_radius", "0");
+// Defined in skill_cvars.cpp
+extern ConVar sk_plr_dmg_fraggrenade;
+extern ConVar sk_npc_dmg_fraggrenade;
+extern ConVar sk_fraggrenade_radius;
 
 #define GRENADE_MODEL "models/Weapons/w_grenade.mdl"
 

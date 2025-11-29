@@ -27,7 +27,8 @@
 #include "studio.h"
 #include "bone_setup.h"
 
-ConVar	sk_barnacle_health( "sk_barnacle_health","0");
+// Defined in skill_cvars.cpp
+extern ConVar sk_barnacle_health;
 
 //-----------------------------------------------------------------------------
 // Private activities.

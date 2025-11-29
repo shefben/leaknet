@@ -97,6 +97,8 @@ public:
     virtual bool Init();
     virtual void Shutdown();
     virtual void LevelInitPostEntity();
+    static void InitializePlayer(CBasePlayer* pPlayer);
+    static void CleanupPlayer(CBasePlayer* pPlayer);
 
     // Tool management functions
     static void SetPlayerTool(CBasePlayer* pPlayer, GMToolType_t toolType);

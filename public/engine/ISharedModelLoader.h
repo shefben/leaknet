@@ -15,11 +15,9 @@
 class ISharedModelLoader : public IBaseInterface
 {
 public:
-#if STUDIO_VERSION == 37
+	// Always use studioanimgrouphdr_t - it's available for all STUDIO_VERSION values
+	// This allows loading v37 animation groups regardless of compile-time STUDIO_VERSION
 	virtual studioanimgrouphdr_t	*LoadSharedModel( const char *path ) = 0;
-#else
-	virtual void					*LoadSharedModel( const char *path ) = 0;
-#endif
 	virtual void					InitFilesystem( IBaseFileSystem *filesystem ) = 0;
 };
 

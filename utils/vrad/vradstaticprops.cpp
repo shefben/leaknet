@@ -370,9 +370,10 @@ bool LoadStudioModel( char const* pModelName, CUtlBuffer& buf )
 
 	studiohdr_t* pHdr = (studiohdr_t*)buf.PeekGet();
 	Studio_ConvertStudioHdrToNewVersion( pHdr );
-	if (pHdr->version != STUDIO_VERSION)
+	if (pHdr->version < STUDIO_VERSION_MIN || pHdr->version > STUDIO_VERSION_MAX)
 	{
-		Warning("Error! Invalid model version \"%s\"\n", pFilenameFound );
+		Warning("Error! Invalid model version \"%s\" (version %d, supported range: %d-%d)\n",
+			pFilenameFound, pHdr->version, STUDIO_VERSION_MIN, STUDIO_VERSION_MAX);
 		return false;
 	}
 

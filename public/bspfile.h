@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: Defines and structures for the BSP file format.
 //
@@ -18,9 +18,32 @@
 #define IDBSPHEADER	(('P'<<24)+('S'<<16)+('B'<<8)+'V')
 		// little-endian "VBSP"
 
-// NOTE NOTE!!!! If you upgrade the BSP version to 19, look for the string
-// BSP_VERSION_CHANGE in this file + the engine. It will point out a bunch of code to remove.
-#define BSPVERSION 18
+//-----------------------------------------------------------------------------
+// BSP Version Support
+// This engine supports multiple BSP versions for compatibility:
+// - v18: Original HL2 Beta 2003 (LeakNet native)
+// - v19: HL2 Release 2004 (minor changes)
+// - v20: Source 2006/2007 with HDR support (Orange Box)
+// - v21: Left 4 Dead 2 / Portal 2 (extended format)
+//-----------------------------------------------------------------------------
+
+#define BSPVERSION_18	18	// HL2 Beta 2003 (LeakNet native)
+#define BSPVERSION_19	19	// HL2 Release 2004
+#define BSPVERSION_20	20	// Source 2006/2007 HDR (Orange Box)
+#define BSPVERSION_21	21	// L4D2/Portal 2
+
+// Default version for this engine (original LeakNet)
+#define BSPVERSION		BSPVERSION_18
+
+// Version range we support loading
+#define BSPVERSION_MIN	BSPVERSION_18
+#define BSPVERSION_MAX	BSPVERSION_21
+
+// Version detection macros
+#define BSP_VERSION_IS_VALID(v)		((v) >= BSPVERSION_MIN && (v) <= BSPVERSION_MAX)
+#define BSP_VERSION_HAS_HDR(v)		((v) >= BSPVERSION_20)
+#define BSP_VERSION_HAS_AVGCOLOR(v)	((v) <= BSPVERSION_18)	// dface_t has m_AvgLightColor only in v18
+#define BSP_VERSION_HAS_AMBIENT_LUMP(v)	((v) >= BSPVERSION_20)	// dleaf_t ambient in separate lump
 
 
 // This needs to match the value in gl_lightmap.h
@@ -245,8 +268,7 @@ enum
 	LUMP_LIGHTING		= 8,		// *
 	LUMP_OCCLUSION		= 9,
 	LUMP_LEAFS			= 10,		// *
-
-//#define	LUMP_			11		
+	LUMP_FACEIDS		= 11,		// v48: Hammer face ID tracking
 
 	LUMP_EDGES			= 12,		// *
 	LUMP_SURFEDGES		= 13,		// *
@@ -265,7 +287,7 @@ enum
 	LUMP_CLUSTERPORTALS = 25,
 	LUMP_DISPINFO		= 26,
 	LUMP_ORIGINALFACES	= 27,
-
+	LUMP_PHYSDISP		= 28,		// v48: Displacement physics collision
 	LUMP_PHYSCOLLIDE	= 29,
 	LUMP_VERTNORMALS	= 30,
 	LUMP_VERTNORMALINDICES		= 31,
@@ -303,7 +325,35 @@ enum
 	LUMP_OVERLAYS				= 45,
 	LUMP_LEAFMINDISTTOWATER		= 46,
 	LUMP_FACE_MACRO_TEXTURE_INFO = 47,
-	LUMP_DISP_TRIS = 48
+	LUMP_DISP_TRIS = 48,
+
+	//-----------------------------------------------------------------------------
+	// New lumps added in BSP v19/v20 (Source 2006/2007)
+	//-----------------------------------------------------------------------------
+	LUMP_PHYSCOLLIDESURFACE = 49,		// v48: Win32 Havok physics compat (deprecated)
+	LUMP_WATEROVERLAYS = 50,			// v20+
+	LUMP_LEAF_AMBIENT_INDEX_HDR = 51,	// v20+ HDR ambient lighting indices
+	LUMP_LEAF_AMBIENT_INDEX = 52,		// v20+ LDR ambient lighting indices
+
+	// Xbox-specific alternate lightmap format (v20+)
+	LUMP_LIGHTMAPPAGES = 53,			// v20+ alternate lightmap pages
+	LUMP_LIGHTMAPPAGEINFOS = 54,		// v20+ lightmap page info
+
+	// HDR lighting lumps (v20+)
+	LUMP_LIGHTING_HDR = 55,				// v20+ HDR lightmap samples
+	LUMP_WORLDLIGHTS_HDR = 56,			// v20+ HDR world lights
+	LUMP_LEAF_AMBIENT_LIGHTING_HDR = 57,	// v20+ per-leaf HDR ambient
+	LUMP_LEAF_AMBIENT_LIGHTING = 58,	// v20+ per-leaf LDR ambient (when HDR present)
+
+	// v21+ lumps
+	LUMP_XZIPPAKFILE = 59,				// v21+ Xbox compressed pakfile
+	LUMP_FACES_HDR = 60,				// v21+ HDR face data
+	LUMP_MAP_FLAGS = 61,				// v21+ Map compile flags
+
+	// Extended lumps (v20+)
+	LUMP_OVERLAY_FADES = 62,			// Overlay fade distances
+	LUMP_OVERLAY_SYSTEM_LEVELS = 63,	// Overlay system level info
+	LUMP_PHYSLEVEL = 64					// Physics level
 };
 
 
@@ -312,8 +362,17 @@ enum
 {
 	LUMP_LIGHTING_VERSION = 1,
 	LUMP_FACES_VERSION = 1,
-	LUMP_OCCLUSION_VERSION = 1,
 
+	// Occlusion lump versions
+	// v1: Original format (v18 BSP) - doccluderdataV1_t (no area field)
+	// v2: v19+ format - doccluderdata_t (with area field)
+	LUMP_OCCLUSION_VERSION_V1 = 1,	// v18 format
+	LUMP_OCCLUSION_VERSION_V2 = 2,	// v19+ format
+	LUMP_OCCLUSION_VERSION = 2,		// Current/default version for compatibility
+
+	// Leaf lump versions (for dleaf_t structure differences)
+	LUMP_LEAFS_VERSION_0 = 0,		// v19 and earlier: 56 bytes with ambient
+	LUMP_LEAFS_VERSION_1 = 1,		// v20+: 32 bytes, ambient in separate lump
 };
 
 
@@ -488,6 +547,19 @@ enum
 	OCCLUDER_FLAGS_INACTIVE = 0x1,
 };
 
+// v1 occluder structure (v18 BSP, LUMP_OCCLUSION_VERSION_V1)
+// Used in original HL2 beta and earlier Source builds
+struct doccluderdataV1_t
+{
+	int			flags;
+	int			firstpoly;				// index into doccluderpolys
+	int			polycount;
+	Vector		mins;
+	Vector		maxs;
+};
+
+// v2 occluder structure (v19+ BSP, LUMP_OCCLUSION_VERSION_V2)
+// Used in HL2 retail and later Source builds - adds area field
 struct doccluderdata_t
 {
 	int			flags;
@@ -495,6 +567,7 @@ struct doccluderdata_t
 	int			polycount;
 	Vector		mins;
 	Vector		maxs;
+	int			area;					// v19+: Area index (added in LUMP_OCCLUSION_VERSION_V2)
 };
 
 struct doccluderpolydata_t
@@ -572,6 +645,8 @@ public:
 #define DISPTRI_TAG_SURFACE			(1<<0)
 #define DISPTRI_TAG_WALKABLE		(1<<1)
 #define DISPTRI_TAG_BUILDABLE		(1<<2)
+#define DISPTRI_FLAG_SURFPROP1		(1<<3)	// v48: Surface property flag 1
+#define DISPTRI_FLAG_SURFPROP2		(1<<4)	// v48: Surface property flag 2
 
 class CDispTri
 {
@@ -641,19 +716,57 @@ struct dprimvert_t
 	Vector		pos;
 };
 
+//-----------------------------------------------------------------------------
+// dface_t structures - version specific
+// v18 (LeakNet native): 72 bytes - includes m_AvgLightColor
+// v19+ (Source 2004+): 56 bytes - no m_AvgLightColor
+//-----------------------------------------------------------------------------
+
+// v19+ face structure (Source 2004+, 56 bytes)
+// This is the standard face format for modern Source maps
+struct dface_v19_t
+{
+	unsigned short	planenum;
+	byte		side;	// faces opposite to the node's plane direction
+	byte		onNode; // 1 of on node, 0 if in leaf
+
+	int			firstedge;		// we must support > 64k edges
+	short		numedges;
+	short		texinfo;
+	short       dispinfo;
+	short		surfaceFogVolumeID;
+
+	// lighting info
+	byte		styles[MAXLIGHTMAPS];
+	int			lightofs;		// start of [numstyles*surfsize] samples
+    float       area;
+
+	int			m_LightmapTextureMinsInLuxels[2];
+	int			m_LightmapTextureSizeInLuxels[2];
+
+    int         origFace;       // reference the original face this face was derived from
+
+	// non-polygon primitives (strips and lists)
+	unsigned short	numPrims;
+	unsigned short	firstPrimID;
+
+	unsigned int	smoothingGroups;
+};
+
+// v18 face structure (HL2 Beta 2003, 72 bytes)
+// Includes m_AvgLightColor for faster lighting computation
 struct dface_t
 {
-	// BSP_VERSION_CHANGE: Start removing here if you up the BSP version to 19
-	// For computing lighting information (R_LightVec)
+	// v18 only: For computing lighting information (R_LightVec)
+	// This field was removed in v19+
 	colorRGBExp32	m_AvgLightColor[MAXLIGHTMAPS];
-	// BSP_VERSION_CHANGE: Stop removing here if you up the BSP version to 19
 
 	unsigned short	planenum;
 	byte		side;	// faces opposite to the node's plane direction
 	byte		onNode; // 1 of on node, 0 if in leaf
 
 	int			firstedge;		// we must support > 64k edges
-	short		numedges;	
+	short		numedges;
 	short		texinfo;
 	// This is a union under the assumption that a fog volume boundary (ie. water surface)
 	// isn't a displacement map.
@@ -682,11 +795,66 @@ struct dface_t
 
 	// non-polygon primitives (strips and lists)
 	unsigned short	numPrims;
-	unsigned short	firstPrimID; 
-	
+	unsigned short	firstPrimID;
+
 	unsigned int	smoothingGroups;
 };
 
+// Alias for v18 format (native LeakNet)
+typedef dface_t dface_v18_t;
+
+// Size constants for version detection
+#define DFACE_V18_SIZE	sizeof(dface_v18_t)	// 72 bytes
+#define DFACE_V19_SIZE	sizeof(dface_v19_t)	// 56 bytes
+
+//-----------------------------------------------------------------------------
+// dleaf_t structures - version specific
+// v18/v19 (Lump version 0): 56 bytes - includes ambient lighting
+// v20+ (Lump version 1): 32 bytes - ambient lighting in separate lump
+//-----------------------------------------------------------------------------
+
+// Ambient lighting sample for v20+ (stored in separate lump)
+struct dleafambientindex_t
+{
+	unsigned short	ambientSampleCount;
+	unsigned short	firstAmbientSample;
+};
+
+// Per-leaf ambient lighting data for v20+
+struct dleafambientlighting_t
+{
+	CompressedLightCube	cube;			// Ambient lighting at this sample point
+	byte				x;				// Position of sample inside leaf (0-255 fraction)
+	byte				y;
+	byte				z;
+	byte				pad;			// Alignment
+};
+
+// v20+ leaf structure (Lump version 1, 32 bytes)
+// Ambient lighting moved to separate lump for HDR support
+struct dleaf_v1_t
+{
+	int				contents;			// OR of all brushes
+
+	short			cluster;
+	short			area:9;				// Note: area uses 9 bits in v20+
+	short			flags:7;			// Flags use remaining 7 bits
+
+	short			mins[3];			// for frustum culling
+	short			maxs[3];
+
+	unsigned short	firstleafface;
+	unsigned short	numleaffaces;
+
+	unsigned short	firstleafbrush;
+	unsigned short	numleafbrushes;
+	short			leafWaterDataID;	// -1 for not in water
+
+	// Note: no ambient lighting here - it's in LUMP_LEAF_AMBIENT_LIGHTING
+};
+
+// v18/v19 leaf structure (Lump version 0, 56 bytes for v19, 32 bytes for v18)
+// v18 LeakNet uses a simpler 32-byte structure without ambient lighting fields
 struct dleaf_t
 {
 	int				contents;			// OR of all brushes (not needed?)
@@ -705,12 +873,61 @@ struct dleaf_t
 	short			leafWaterDataID; // -1 for not in water
 };
 
+// v19 leaf structure with embedded ambient lighting (56 bytes)
+// This was used before the ambient lump was introduced
+struct dleaf_v0_t
+{
+	int				contents;			// OR of all brushes
+
+	short			cluster;
+	short			area;
+
+	short			mins[3];			// for frustum culling
+	short			maxs[3];
+
+	unsigned short	firstleafface;
+	unsigned short	numleaffaces;
+
+	unsigned short	firstleafbrush;
+	unsigned short	numleafbrushes;
+	short			leafWaterDataID;	// -1 for not in water
+
+	// v19 only: Embedded ambient lighting (removed in v20+)
+	CompressedLightCube	m_AmbientLighting;
+};
+
+// Alias for v18 format (native LeakNet)
+typedef dleaf_t dleaf_v18_t;
+
+// Size constants for version detection
+#define DLEAF_V18_SIZE	sizeof(dleaf_v18_t)	// 32 bytes (LeakNet native)
+#define DLEAF_V0_SIZE	sizeof(dleaf_v0_t)	// 56 bytes (v19 with ambient)
+#define DLEAF_V1_SIZE	sizeof(dleaf_v1_t)	// 32 bytes (v20+, ambient in separate lump)
+
+//-----------------------------------------------------------------------------
+// dbrushside_t structures - version specific
+// v18-v20: Uses short for bevel field
+// v21+: Splits bevel into bevel (byte) and thin (byte)
+//-----------------------------------------------------------------------------
+
+// v18-v20 brush side structure
 struct dbrushside_t
 {
 	unsigned short	planenum;		// facing out of the leaf
 	short	texinfo;
 	short			dispinfo;		// displacement info (BSPVERSION 7)
 	short			bevel;			// is the side a bevel plane? (BSPVERSION 7)
+};
+
+// v21+ brush side structure
+// Split bevel into two bytes for 'thin' edge detection
+struct dbrushside_v21_t
+{
+	unsigned short	planenum;		// facing out of the leaf
+	short			texinfo;
+	short			dispinfo;		// displacement info
+	unsigned char	bevel;			// is the side a bevel plane?
+	unsigned char	thin;			// is the side thin? (edges < 16 units)
 };
 
 struct dbrush_t
@@ -799,6 +1016,8 @@ enum emittype_t
 	emit_skyambient,	// spherical light source with no falloff (surface must trace to SKY texture)
 };
 
+// Flags for dworldlight_t::flags
+#define DWL_FLAGS_INAMBIENTCUBE		0x0001	// v48: Light was put into the per-leaf ambient cubes.
 
 struct dworldlight_t
 {
@@ -831,17 +1050,120 @@ struct dcubemapsample_t
 };
 
 #define OVERLAY_BSP_FACE_COUNT	64
+
+// Overlay render order support (v19+ BSP)
+// In v19+ BSP files, the nFaceCount field encodes both face count and render order:
+// - Upper 2 bits: render order (0-3)
+// - Lower 14 bits: actual face count
+#define OVERLAY_RENDER_ORDER_NUM_BITS	2
+#define OVERLAY_NUM_RENDER_ORDERS		(1<<OVERLAY_RENDER_ORDER_NUM_BITS)
+#define OVERLAY_RENDER_ORDER_MASK		0xC000	// top 2 bits set
+
+// Original overlay format (v19+)
 struct doverlay_t
 {
 	int			nId;
 	short		nTexInfo;
-	short		nFaceCount;
+	short		nFaceCount;		// In v19+: upper 2 bits = render order, lower 14 bits = face count
 	int			aFaces[OVERLAY_BSP_FACE_COUNT];
 	float		flU[2];
 	float		flV[2];
 	Vector		vecUVPoints[4];
 	Vector		vecOrigin;
 	Vector		vecBasisNormal;
+
+	// Helper to get face count (works for all BSP versions)
+	inline int GetFaceCount() const { return nFaceCount & ~OVERLAY_RENDER_ORDER_MASK; }
+	// Helper to get render order (returns 0 for v18 BSP)
+	inline int GetRenderOrder() const { return (nFaceCount >> (16 - OVERLAY_RENDER_ORDER_NUM_BITS)) & 0x3; }
+};
+
+// v48: 2007 Source Engine compatible overlay format with proper encapsulation
+struct doverlay_v48_t
+{
+	int			nId;
+	short		nTexInfo;
+
+	// Accessor methods for proper encapsulation
+	inline void SetFaceCount( unsigned short count )
+	{
+		Assert( count >= 0 && (count & OVERLAY_RENDER_ORDER_MASK) == 0 );
+		m_nFaceCountAndRenderOrder &= OVERLAY_RENDER_ORDER_MASK;
+		m_nFaceCountAndRenderOrder |= (count & ~OVERLAY_RENDER_ORDER_MASK);
+	}
+	inline unsigned short GetFaceCount() const
+	{
+		return m_nFaceCountAndRenderOrder & ~OVERLAY_RENDER_ORDER_MASK;
+	}
+
+	inline void SetRenderOrder( unsigned short order )
+	{
+		Assert( order >= 0 && order < OVERLAY_NUM_RENDER_ORDERS );
+		m_nFaceCountAndRenderOrder &= ~OVERLAY_RENDER_ORDER_MASK;
+		m_nFaceCountAndRenderOrder |= (order << (16 - OVERLAY_RENDER_ORDER_NUM_BITS));
+	}
+	inline unsigned short GetRenderOrder() const
+	{
+		return (m_nFaceCountAndRenderOrder & OVERLAY_RENDER_ORDER_MASK) >> (16 - OVERLAY_RENDER_ORDER_NUM_BITS);
+	}
+
+private:
+	unsigned short	m_nFaceCountAndRenderOrder;
+
+public:
+	int			aFaces[OVERLAY_BSP_FACE_COUNT];
+	float		flU[2];
+	float		flV[2];
+	Vector		vecUVPoints[4];
+	Vector		vecOrigin;
+	Vector		vecBasisNormal;
+};
+
+// Overlay fade distances (v19+ LUMP_OVERLAY_FADES)
+struct doverlayfade_t
+{
+	float flFadeDistMinSq;
+	float flFadeDistMaxSq;
+};
+
+// Water overlay structure (v19+ LUMP_WATEROVERLAYS)
+#define WATEROVERLAY_BSP_FACE_COUNT				256
+#define WATEROVERLAY_RENDER_ORDER_NUM_BITS		2
+#define WATEROVERLAY_NUM_RENDER_ORDERS			(1<<WATEROVERLAY_RENDER_ORDER_NUM_BITS)
+#define WATEROVERLAY_RENDER_ORDER_MASK			0xC000	// top 2 bits set
+
+struct dwateroverlay_t
+{
+	int				nId;
+	short			nTexInfo;
+	short			nFaceCount;		// Upper 2 bits = render order, lower 14 bits = face count
+	int				aFaces[WATEROVERLAY_BSP_FACE_COUNT];
+	float			flU[2];
+	float			flV[2];
+	Vector			vecUVPoints[4];
+	Vector			vecOrigin;
+	Vector			vecBasisNormal;
+
+	inline int GetFaceCount() const { return nFaceCount & ~WATEROVERLAY_RENDER_ORDER_MASK; }
+	inline int GetRenderOrder() const { return (nFaceCount >> (16 - WATEROVERLAY_RENDER_ORDER_NUM_BITS)) & 0x3; }
+};
+
+// Finalized page of surface's lightmaps (Xbox format, v20+)
+#define MAX_LIGHTMAPPAGE_WIDTH	256
+#define MAX_LIGHTMAPPAGE_HEIGHT	128
+
+struct dlightmappage_t
+{
+	byte	data[MAX_LIGHTMAPPAGE_WIDTH*MAX_LIGHTMAPPAGE_HEIGHT];
+	byte	palette[256*4];
+};
+
+struct dlightmappageinfo_t
+{
+	byte			page;			// lightmap page [0..?]
+	byte			offset[2];		// offset into page (s,t)
+	byte			pad;			// unused
+	colorRGBExp32	avgColor;		// average used for runtime lighting calcs
 };
 
 #ifndef _DEF_BYTE_
@@ -856,6 +1178,18 @@ typedef unsigned short	word;
 
 
 //===============
+
+//-----------------------------------------------------------------------------
+// v48: Map compilation flags (LUMP_MAP_FLAGS)
+//-----------------------------------------------------------------------------
+// Level feature flags
+#define LVLFLAGS_BAKED_STATIC_PROP_LIGHTING_NONHDR 0x00000001	// v48: processed by vrad with -staticproplighting, no hdr data
+#define LVLFLAGS_BAKED_STATIC_PROP_LIGHTING_HDR    0x00000002  // v48: processed by vrad with -staticproplighting, in hdr
+
+struct dflagslump_t
+{
+	uint32 m_LevelFlags;						// LVLFLAGS_xxx
+};
 
 
 struct epair_t

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -197,6 +197,12 @@ inline bool GetRectIntersection( CPortalRect const *pRect1, CPortalRect const *p
 static void R_FlowThroughArea( int area, CPortalRect const *pClipRect )
 {
 #ifndef SWDS
+	// Defensive bounds check for BSP compatibility - newer maps may have invalid area indices
+	if ( area < 0 || area >= MAX_MAP_AREAS )
+	{
+		return;
+	}
+
 	// Update this area's frustum.
 	if( g_AreaCullInfo[area].m_GlobalCounter != g_GlobalCounter )
 	{
@@ -564,6 +570,12 @@ void R_SetupAreaBits( int iForceViewLeaf )
 
 const Frustum_t* GetAreaFrustum( int area )
 {
+	// Defensive bounds check for BSP compatibility
+	if ( area < 0 || area >= MAX_MAP_AREAS )
+	{
+		static Frustum_t s_EmptyFrustum;
+		return &s_EmptyFrustum;
+	}
 	return &g_AreaCullInfo[area].m_Frustum;
 }
 

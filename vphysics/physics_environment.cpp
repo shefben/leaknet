@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -1481,13 +1481,15 @@ bool CPhysicsEnvironment::IsCollisionModelUsed( CPhysCollide *pCollide )
 
 	for ( i = m_deadObjects.Count()-1; i >= 0; --i )
 	{
-		if ( m_deadObjects[i]->GetCollide() == pCollide )
+		IPhysicsObject *pObject = m_deadObjects[i];
+		if ( pObject && pObject->GetCollide() == pCollide )
 			return true;
 	}
-	
+
 	for ( i = m_objects.Count()-1; i >= 0; --i )
 	{
-		if ( m_objects[i]->GetCollide() == pCollide )
+		IPhysicsObject *pObject = m_objects[i];
+		if ( pObject && pObject->GetCollide() == pCollide )
 			return true;
 	}
 

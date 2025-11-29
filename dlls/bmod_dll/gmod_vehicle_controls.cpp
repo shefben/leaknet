@@ -8,7 +8,9 @@
 #include "cbase.h"
 #include "gmod_vehicle_controls.h"
 #include "player.h"
-#include "tier1/strtools.h"
+#include "vstdlib/strtools.h"
+#include "igamesystem.h"
+#include "variant_t.h"
 
 // Initialize static members
 bool CGModVehicleControls::m_bInitialized = false;
@@ -120,7 +122,7 @@ void CGModVehicleControls::UpdateThrusterControls(CBasePlayer* pPlayer)
         if (pEntity->GetOwnerEntity() == pPlayer)
         {
             // Activate thruster
-            pEntity->AcceptInput("Activate", pPlayer, pPlayer);
+            pEntity->AcceptInput("Activate", pPlayer, pPlayer, variant_t(), 0);
         }
     }
 }
@@ -144,13 +146,17 @@ void CGModVehicleControls::UpdateWheelControls(CBasePlayer* pPlayer)
         {
             if (forwardState)
             {
-                pEntity->AcceptInput("MotorOn", pPlayer, pPlayer);
-                pEntity->AcceptInput("SetTorque", pPlayer, pPlayer, "100");
+                variant_t torqueValue;
+                torqueValue.SetString(MAKE_STRING("100"));
+                pEntity->AcceptInput("MotorOn", pPlayer, pPlayer, variant_t(), 0);
+                pEntity->AcceptInput("SetTorque", pPlayer, pPlayer, torqueValue, 0);
             }
             else if (backwardState)
             {
-                pEntity->AcceptInput("MotorOn", pPlayer, pPlayer);
-                pEntity->AcceptInput("SetTorque", pPlayer, pPlayer, "-100");
+                variant_t torqueValue;
+                torqueValue.SetString(MAKE_STRING("-100"));
+                pEntity->AcceptInput("MotorOn", pPlayer, pPlayer, variant_t(), 0);
+                pEntity->AcceptInput("SetTorque", pPlayer, pPlayer, torqueValue, 0);
             }
         }
     }
@@ -180,11 +186,11 @@ void CGModVehicleControls::SetAllWheelsOn(CBasePlayer* pPlayer, bool state)
         {
             if (state)
             {
-                pEntity->AcceptInput("MotorOn", pPlayer, pPlayer);
+                pEntity->AcceptInput("MotorOn", pPlayer, pPlayer, variant_t(), 0);
             }
             else
             {
-                pEntity->AcceptInput("MotorOff", pPlayer, pPlayer);
+                pEntity->AcceptInput("MotorOff", pPlayer, pPlayer, variant_t(), 0);
             }
         }
     }
@@ -219,7 +225,7 @@ void CGModVehicleControls::CMD_gm_thrust_stop(void)
         {
             if (pEntity->GetOwnerEntity() == pPlayer)
             {
-                pEntity->AcceptInput("Deactivate", pPlayer, pPlayer);
+                pEntity->AcceptInput("Deactivate", pPlayer, pPlayer, variant_t(), 0);
             }
         }
     }
@@ -251,7 +257,7 @@ void CGModVehicleControls::CMD_gm_wheelf_stop(void)
         {
             if (pEntity->GetOwnerEntity() == pPlayer)
             {
-                pEntity->AcceptInput("MotorOff", pPlayer, pPlayer);
+                pEntity->AcceptInput("MotorOff", pPlayer, pPlayer, variant_t(), 0);
             }
         }
     }
@@ -283,7 +289,7 @@ void CGModVehicleControls::CMD_gm_wheelb_stop(void)
         {
             if (pEntity->GetOwnerEntity() == pPlayer)
             {
-                pEntity->AcceptInput("MotorOff", pPlayer, pPlayer);
+                pEntity->AcceptInput("MotorOff", pPlayer, pPlayer, variant_t(), 0);
             }
         }
     }
@@ -374,19 +380,18 @@ void CGModVehicleControls::CMD_gm_cam_view_stop(void)
 //-----------------------------------------------------------------------------
 void CGModVehicleControls::CMD_gm_makeentity(void)
 {
-    CCommand args;
     CBasePlayer* pPlayer = GetCommandPlayer();
 
     if (!pPlayer)
         return;
 
-    if (args.ArgC() < 2)
+    if (engine->Cmd_Argc() < 2)
     {
         ClientPrint(pPlayer, HUD_PRINTTALK, "Usage: gm_makeentity <classname>");
         return;
     }
 
-    const char* className = args.Arg(1);
+    const char* className = engine->Cmd_Argv(1);
 
     // Get player's eye position and direction
     Vector eyePos = pPlayer->EyePosition();

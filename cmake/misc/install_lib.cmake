@@ -250,6 +250,23 @@ function( add_object )
 	## Merged set_install_properties into add_object
 	# Don't install if DESTINATION is not set
 	if( NOT "${SHARED_ARGS_INSTALL_DEST}" STREQUAL "" )
+		# Mirror install layout directly after build to the beta tree
+		add_custom_command(
+			TARGET ${SHARED_ARGS_TARGET} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E make_directory "${SHARED_ARGS_INSTALL_DEST}"
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${SHARED_ARGS_TARGET}>" "${SHARED_ARGS_INSTALL_DEST}"
+			COMMENT "Copying $<TARGET_FILE:${SHARED_ARGS_TARGET}> to ${SHARED_ARGS_INSTALL_DEST}"
+		)
+
+		# Copy PDB files for MSVC Debug/RelWithDebInfo builds (only for non-static libraries)
+		if( MSVC AND NOT SHARED_ARGS_STATIC )
+			add_custom_command(
+				TARGET ${SHARED_ARGS_TARGET} POST_BUILD
+				COMMAND ${CMAKE_COMMAND} -E $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>,copy_if_different,true> $<TARGET_PDB_FILE:${SHARED_ARGS_TARGET}> "${SHARED_ARGS_INSTALL_DEST}"
+				COMMENT "Copying PDB for ${SHARED_ARGS_TARGET} to ${SHARED_ARGS_INSTALL_DEST}"
+			)
+		endif()
+
 		# use SHARED_ARGS_TARGET if OUTNAME is not set
 		if( NOT SHARED_ARGS_INSTALL_OUTNAME )
 			#message( "WARNING! ${SHARED_ARGS_TARGET} is missing OUTNAME!" )

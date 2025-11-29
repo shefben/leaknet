@@ -12,6 +12,7 @@
 #include "cstudiorender.h"
 
 #include "studio.h"
+#include "studio_v37_compat.h"
 #include "materialsystem/imesh.h"
 #include "materialsystem/imaterialsystemhardwareconfig.h"
 #include "materialsystem/imaterialvar.h"
@@ -1710,17 +1711,19 @@ int CStudioRender::R_StudioDrawEyeball( mstudiomesh_t* pmesh, studiomeshdata_t* 
 				R_StudioTransform( pFlexVert->m_Position, &vert.m_BoneWeights, pWorldVert->m_Position );
 				R_StudioRotate( pFlexVert->m_Normal, &vert.m_BoneWeights, pWorldVert->m_Normal );
 				VectorNormalize( pWorldVert->m_Normal.Base() );
-				Assert( pWorldVert->m_Normal.x >= -1.05f && pWorldVert->m_Normal.x <= 1.05f );
-				Assert( pWorldVert->m_Normal.y >= -1.05f && pWorldVert->m_Normal.y <= 1.05f );
-				Assert( pWorldVert->m_Normal.z >= -1.05f && pWorldVert->m_Normal.z <= 1.05f );
+				// NOTE: Relaxed tolerance from 1.05 to 1.10 for Source 2007+ model compatibility
+				Assert( pWorldVert->m_Normal.x >= -1.10f && pWorldVert->m_Normal.x <= 1.10f );
+				Assert( pWorldVert->m_Normal.y >= -1.10f && pWorldVert->m_Normal.y <= 1.10f );
+				Assert( pWorldVert->m_Normal.z >= -1.10f && pWorldVert->m_Normal.z <= 1.10f );
 			}
 			else
 			{
 				R_StudioTransform( vert.m_vecPosition, &vert.m_BoneWeights, pWorldVert->m_Position );
 				R_StudioRotate( vert.m_vecNormal, &vert.m_BoneWeights, pWorldVert->m_Normal );
-				Assert( pWorldVert->m_Normal.x >= -1.05f && pWorldVert->m_Normal.x <= 1.05f );
-				Assert( pWorldVert->m_Normal.y >= -1.05f && pWorldVert->m_Normal.y <= 1.05f );
-				Assert( pWorldVert->m_Normal.z >= -1.05f && pWorldVert->m_Normal.z <= 1.05f );
+				// NOTE: Relaxed tolerance from 1.05 to 1.10 for Source 2007+ model compatibility
+				Assert( pWorldVert->m_Normal.x >= -1.10f && pWorldVert->m_Normal.x <= 1.10f );
+				Assert( pWorldVert->m_Normal.y >= -1.10f && pWorldVert->m_Normal.y <= 1.10f );
+				Assert( pWorldVert->m_Normal.z >= -1.10f && pWorldVert->m_Normal.z <= 1.10f );
 			}
 
 			// Don't bother to light in software when we've got vertex + pixel shaders.

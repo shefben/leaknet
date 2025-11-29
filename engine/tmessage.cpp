@@ -16,6 +16,9 @@
 // Defined in other files.
 static characterset_t	g_WhiteSpace;
 
+// Buffer for clearmessage token (Source 2007+)
+static char g_pchSkipName[256];
+
 client_textmessage_t	gMessageParms;
 client_textmessage_t	*gMessageTable = NULL;
 int						gMessageTableCount = 0;
@@ -171,6 +174,32 @@ int ParseFloats( const char *pText, float *pFloat, int count )
 }
 
 
+// Parse a string token value (Source 2007+)
+int ParseString( const char *pText, char *pString, int maxLen )
+{
+	const char *pTemp = pText;
+
+	// Skip current token
+	pTemp = SkipText( pTemp );
+	// Skip any whitespace in between
+	pTemp = SkipSpace( pTemp );
+
+	if ( pTemp && *pTemp )
+	{
+		// Find end of string value
+		const char *pEnd = SkipText( pTemp );
+		int length = pEnd - pTemp;
+		if ( length >= maxLen )
+			length = maxLen - 1;
+
+		Q_strncpy( pString, pTemp, length + 1 );
+		return 1;
+	}
+
+	return 0;
+}
+
+
 // Trims all whitespace from the front and end of a string
 void TrimSpace( const char *source, char *dest )
 {
@@ -277,6 +306,39 @@ int ParseDirective( const char *pText )
 			if ( ParseFloats( pText, tempFloat, 3 ) )
 			{
 				gMessageParms.holdtime = tempFloat[0];
+			}
+		}
+		// Source 2007+ tokens for rounded rect backdrop box
+		else if ( IsToken( pText, "boxsize" ) )
+		{
+			if ( ParseFloats( pText, tempFloat, 1 ) )
+			{
+				gMessageParms.bRoundedRectBackdropBox = tempFloat[0] != 0.0f;
+				gMessageParms.flBoxSize = tempFloat[0];
+			}
+		}
+		else if ( IsToken( pText, "boxcolor" ) )
+		{
+			if ( ParseFloats( pText, tempFloat, 4 ) )
+			{
+				for ( int i = 0; i < 4; ++i )
+				{
+					gMessageParms.boxcolor[ i ] = (byte)(int)tempFloat[ i ];
+				}
+			}
+		}
+		else if ( IsToken( pText, "clearmessage" ) )
+		{
+			if ( ParseString( pText, g_pchSkipName, sizeof( g_pchSkipName ) ) )
+			{
+				if ( !g_pchSkipName[ 0 ] || !Q_stricmp( g_pchSkipName, "0" ) )
+				{
+					gMessageParms.pClearMessage = NULL;
+				}
+				else
+				{
+					gMessageParms.pClearMessage = g_pchSkipName;
+				}
 			}
 		}
 		else

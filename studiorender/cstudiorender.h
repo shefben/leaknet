@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -47,6 +47,7 @@ namespace OptimizedModel
 	struct MeshHeader_t;
 	struct StripGroupHeader_t;
 	struct Vertex_t;
+	struct Vertex_v37_t;
 }
 
 
@@ -156,7 +157,7 @@ public:
 		const Vector& viewPlaneNormal );
 	
 	virtual void SetFlexWeights( int numWeights, const float *pWeights );
-	
+
 	// fixme: these interfaces sucks. . use 'em to get this stuff working with the client dll
 	// and then interate
 	virtual matrix3x4_t* GetPoseToWorld(int i);
@@ -225,6 +226,7 @@ public:
 	void R_ComputeLightAtPoint3( const Vector &pos, const Vector &norm, Vector &color );
 
 	void GetPerfStats( DrawModelInfo_t &info, CUtlBuffer *pSpewBuf = NULL ) const;
+	void GetTriangles( const DrawModelInfo_t& info, matrix3x4_t *pBoneToWorld, GetTriangles_Output_t &out );
 private:
 	enum
 	{
@@ -339,8 +341,12 @@ private:
 			studiohdr_t *pStudioHdr );
 	void R_StudioBuildMeshStrips( studiomeshgroup_t* pMeshGroup,
 								OptimizedModel::StripGroupHeader_t *pStripGroup );
-	bool R_AddVertexToMesh( CMeshBuilder& meshBuilder, 
-		OptimizedModel::Vertex_t* pVertex, mstudiomesh_t* pMesh, bool hwSkin );
+	bool R_AddVertexToMesh( CMeshBuilder& meshBuilder,
+		OptimizedModel::Vertex_t* pVertex, mstudiomesh_t* pMesh, bool hwSkin,
+		studiohdr_t* pStudioHdr );
+	bool R_AddVertexToMesh_V37( CMeshBuilder& meshBuilder,
+		OptimizedModel::Vertex_v37_t* pVertex, mstudiomesh_t* pMesh, bool hwSkin,
+		studiohdr_t* pStudioHdr );
 	void R_StudioDestroyStaticMeshes( int numStudioMeshes, studiomeshdata_t **ppStudioMeshes );
 	int R_StudioSetupModel ( int bodypart, int entity_body, mstudiomodel_t **pSubModel, 
 		studiohdr_t *pStudioHdr ) const;

@@ -18,6 +18,8 @@
 #endif
 
 #include "shareddefs.h"
+#include "iviewrender.h"
+#include "view_shared.h"
 
 class ConVar;
 struct WorldListInfo_t;

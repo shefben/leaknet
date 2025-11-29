@@ -121,6 +121,9 @@ public:
     // Player-specific undo data
     static void OnPlayerDisconnect(CBasePlayer* pPlayer);
     static void OnPlayerConnect(CBasePlayer* pPlayer);
+    static void InitializePlayer(CBasePlayer* pPlayer);
+    static void CleanupPlayer(CBasePlayer* pPlayer);
+    static void ClearAllUndo();
 
 private:
     struct PlayerUndoData_t

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -182,6 +182,9 @@ private:
 			// By default visit all nodes before repeating
 			m_bDepleteBeforeRepeat = true;
 			m_nDepletionCount = 1;
+			m_bSequential = false;
+			m_bNoRepeat = false;
+			m_nCurrentIndex = 0;
 		}
 
 		ResponseGroup( const ResponseGroup& src )
@@ -195,6 +198,9 @@ private:
 			rp = src.rp;
 			m_bDepleteBeforeRepeat = src.m_bDepleteBeforeRepeat;
 			m_nDepletionCount = src.m_nDepletionCount;
+			m_bSequential = src.m_bSequential;
+			m_bNoRepeat = src.m_bNoRepeat;
+			m_nCurrentIndex = src.m_nCurrentIndex;
 		}
 
 		ResponseGroup& operator=( const ResponseGroup& src )
@@ -210,6 +216,9 @@ private:
 			rp = src.rp;
 			m_bDepleteBeforeRepeat = src.m_bDepleteBeforeRepeat;
 			m_nDepletionCount = src.m_nDepletionCount;
+			m_bSequential = src.m_bSequential;
+			m_bNoRepeat = src.m_bNoRepeat;
+			m_nCurrentIndex = src.m_nCurrentIndex;
 			return *this;
 		}
 
@@ -251,6 +260,10 @@ private:
 
 		bool	ShouldCheckRepeats() const { return m_bDepleteBeforeRepeat; }
 		int		GetDepletionCount() const { return m_nDepletionCount; }
+		bool	IsSequential() const { return m_bSequential; }
+		bool	IsNoRepeat() const { return m_bNoRepeat; }
+		int		GetCurrentIndex() const { return m_nCurrentIndex; }
+		void	SetCurrentIndex( int idx ) { m_nCurrentIndex = idx; }
 
 		CUtlVector< Response >	group;
 
@@ -260,6 +273,12 @@ private:
 		bool					m_bDepleteBeforeRepeat;
 		// Invalidation counter
 		int						m_nDepletionCount;
+		// Play responses in sequential order
+		bool					m_bSequential;
+		// Don't repeat responses (stop after all played once)
+		bool					m_bNoRepeat;
+		// Current index for sequential playback
+		int						m_nCurrentIndex;
 	};
 
 	struct Criteria
@@ -992,8 +1011,8 @@ void CResponseSystem::DebugPrint( int depth, const char *fmt, ... )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *g - 
+// Purpose:
+// Input  : *g -
 // Output : int
 //-----------------------------------------------------------------------------
 int CResponseSystem::SelectWeightedResponseFromResponseGroup( ResponseGroup *g )
@@ -1005,8 +1024,36 @@ int CResponseSystem::SelectWeightedResponseFromResponseGroup( ResponseGroup *g )
 		return -1;
 	}
 
+	// Handle sequential mode
+	if ( g->IsSequential() )
+	{
+		int currentIdx = g->GetCurrentIndex();
+
+		// If norepeat is set and we've gone through all responses, return -1
+		if ( g->IsNoRepeat() && currentIdx >= c )
+		{
+			return -1;
+		}
+
+		// Wrap around if we've reached the end (and norepeat is not set)
+		if ( currentIdx >= c )
+		{
+			currentIdx = 0;
+		}
+
+		int slot = currentIdx;
+		g->SetCurrentIndex( currentIdx + 1 );
+		g->MarkResponseUsed( slot );
+		return slot;
+	}
+
 	if ( !g->HasUndepletedChoices() )
 	{
+		// If norepeat is set and all choices are depleted, return -1
+		if ( g->IsNoRepeat() )
+		{
+			return -1;
+		}
 		g->ResetDepletionCount();
 	}
 
@@ -1019,7 +1066,7 @@ int CResponseSystem::SelectWeightedResponseFromResponseGroup( ResponseGroup *g )
 	for ( int i = 0; i < c; i++ )
 	{
 		Response *r = &g->group[ i ];
-		if ( checkrepeats && 
+		if ( checkrepeats &&
 			( r->depletioncount == depletioncount ) )
 		{
 			continue;
@@ -1064,6 +1111,10 @@ bool CResponseSystem::ResolveResponse( ResponseSearchResult& searchResult, int d
 		return false;
 
 	int idx = SelectWeightedResponseFromResponseGroup( g );
+
+	// Check for norepeat exhaustion
+	if ( idx < 0 )
+		return false;
 
 	if ( verbose )
 	{
@@ -1135,6 +1186,10 @@ bool CResponseSystem::GetBestResponse( ResponseSearchResult& searchResult, Rule 
 		return false;
 
 	int responseIndex = SelectWeightedResponseFromResponseGroup( g );
+
+	// Check for norepeat exhaustion
+	if ( responseIndex < 0 )
+		return false;
 
 	Response *r = &g->group[ responseIndex ];
 
@@ -1535,6 +1590,18 @@ void CResponseSystem::ParseResponse( void )
 					continue;
 				}
 
+				if ( !Q_stricmp( token, "sequential" ) )
+				{
+					newGroup.m_bSequential = true;
+					continue;
+				}
+
+				if ( !Q_stricmp( token, "norepeat" ) )
+				{
+					newGroup.m_bNoRepeat = true;
+					continue;
+				}
+
 				ParseOneResponse( responseGroupName, newGroup );
 			}
 			break;
@@ -1592,6 +1659,18 @@ void CResponseSystem::ParseResponse( void )
 			ParseToken();
 			rp->flags |= AI_ResponseParams::RG_SOUNDLEVEL;
 			rp->soundlevel = (soundlevel_t)TextToSoundLevel( token );
+			continue;
+		}
+
+		if ( !Q_stricmp( token, "sequential" ) )
+		{
+			newGroup.m_bSequential = true;
+			continue;
+		}
+
+		if ( !Q_stricmp( token, "norepeat" ) )
+		{
+			newGroup.m_bNoRepeat = true;
 			continue;
 		}
 

@@ -124,6 +124,8 @@ public:
     virtual void LevelInitPostEntity();
     virtual void LevelShutdownPostEntity();
     virtual void FrameUpdatePreEntityThink();
+    void PostGamemodeLoad();
+    void UnloadGamemode();
 
     // Gamemode management functions
     static bool RegisterGamemode(const char* pszGamemodeName, const char* pszScriptPath);

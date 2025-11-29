@@ -1179,9 +1179,10 @@ void CBaseMeshDX8::ValidateData( int numVerts, int numIndices, MeshDesc_t const&
 		if( fmt & VERTEX_NORMAL )
 		{
 			D3DXVECTOR3& normal = Normal( desc, i );
-			Assert( normal[0] >= -1.05f && normal[0] <= 1.05f );
-			Assert( normal[1] >= -1.05f && normal[1] <= 1.05f );
-			Assert( normal[2] >= -1.05f && normal[2] <= 1.05f );
+			// NOTE: Relaxed tolerance from 1.05 to 1.10 for Source 2007+ model compatibility
+			Assert( normal[0] >= -1.10f && normal[0] <= 1.10f );
+			Assert( normal[1] >= -1.10f && normal[1] <= 1.10f );
+			Assert( normal[2] >= -1.10f && normal[2] <= 1.10f );
 		}
 		
 	}

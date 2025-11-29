@@ -986,16 +986,127 @@ void CStaticPropMgr::UnserializeLeafList( CUtlBuffer& buf )
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Helper to convert v5/v6/v7 static props to v4 format for internal use
+//-----------------------------------------------------------------------------
+static void ConvertStaticPropV5ToV4( StaticPropLump_t *pDest, const StaticPropLump_v5_t *pSrc )
+{
+	pDest->m_Origin = pSrc->m_Origin;
+	pDest->m_Angles = pSrc->m_Angles;
+	pDest->m_PropType = pSrc->m_PropType;
+	pDest->m_FirstLeaf = pSrc->m_FirstLeaf;
+	pDest->m_LeafCount = pSrc->m_LeafCount;
+	pDest->m_Solid = pSrc->m_Solid;
+	pDest->m_Flags = pSrc->m_Flags;
+	pDest->m_Skin = pSrc->m_Skin;
+	pDest->m_FadeMinDist = pSrc->m_FadeMinDist;
+	pDest->m_FadeMaxDist = pSrc->m_FadeMaxDist;
+	pDest->m_LightingOrigin = pSrc->m_LightingOrigin;
+	// Note: m_flForcedFadeScale is v5+ only, we ignore it for v4 internal format
+}
+
+static void ConvertStaticPropV6ToV4( StaticPropLump_t *pDest, const StaticPropLump_v6_t *pSrc )
+{
+	pDest->m_Origin = pSrc->m_Origin;
+	pDest->m_Angles = pSrc->m_Angles;
+	pDest->m_PropType = pSrc->m_PropType;
+	pDest->m_FirstLeaf = pSrc->m_FirstLeaf;
+	pDest->m_LeafCount = pSrc->m_LeafCount;
+	pDest->m_Solid = pSrc->m_Solid;
+	pDest->m_Flags = pSrc->m_Flags;
+	pDest->m_Skin = pSrc->m_Skin;
+	pDest->m_FadeMinDist = pSrc->m_FadeMinDist;
+	pDest->m_FadeMaxDist = pSrc->m_FadeMaxDist;
+	pDest->m_LightingOrigin = pSrc->m_LightingOrigin;
+	// Note: m_flForcedFadeScale, m_nMinDXLevel, m_nMaxDXLevel are v5/v6+ only
+}
+
+static void ConvertStaticPropV7ToV4( StaticPropLump_t *pDest, const StaticPropLump_v7_t *pSrc )
+{
+	pDest->m_Origin = pSrc->m_Origin;
+	pDest->m_Angles = pSrc->m_Angles;
+	pDest->m_PropType = pSrc->m_PropType;
+	pDest->m_FirstLeaf = pSrc->m_FirstLeaf;
+	pDest->m_LeafCount = pSrc->m_LeafCount;
+	pDest->m_Solid = pSrc->m_Solid;
+	pDest->m_Flags = pSrc->m_Flags;
+	pDest->m_Skin = pSrc->m_Skin;
+	pDest->m_FadeMinDist = pSrc->m_FadeMinDist;
+	pDest->m_FadeMaxDist = pSrc->m_FadeMaxDist;
+	pDest->m_LightingOrigin = pSrc->m_LightingOrigin;
+	// Note: m_DiffuseModulation is v7+ only, we ignore it for v4 internal format
+}
+
+// v9 is same as v7 but with DisableX360 flag (L4D1)
+static void ConvertStaticPropV9ToV4( StaticPropLump_t *pDest, const StaticPropLump_v9_t *pSrc )
+{
+	pDest->m_Origin = pSrc->m_Origin;
+	pDest->m_Angles = pSrc->m_Angles;
+	pDest->m_PropType = pSrc->m_PropType;
+	pDest->m_FirstLeaf = pSrc->m_FirstLeaf;
+	pDest->m_LeafCount = pSrc->m_LeafCount;
+	pDest->m_Solid = pSrc->m_Solid;
+	pDest->m_Flags = pSrc->m_Flags;
+	pDest->m_Skin = pSrc->m_Skin;
+	pDest->m_FadeMinDist = pSrc->m_FadeMinDist;
+	pDest->m_FadeMaxDist = pSrc->m_FadeMaxDist;
+	pDest->m_LightingOrigin = pSrc->m_LightingOrigin;
+	// Note: m_bDisableX360 is v9+ only, we ignore it
+}
+
+// v10 has extended flags (L4D2/Portal 2)
+static void ConvertStaticPropV10ToV4( StaticPropLump_t *pDest, const StaticPropLump_v10_t *pSrc )
+{
+	pDest->m_Origin = pSrc->m_Origin;
+	pDest->m_Angles = pSrc->m_Angles;
+	pDest->m_PropType = pSrc->m_PropType;
+	pDest->m_FirstLeaf = pSrc->m_FirstLeaf;
+	pDest->m_LeafCount = pSrc->m_LeafCount;
+	pDest->m_Solid = pSrc->m_Solid;
+	pDest->m_Flags = pSrc->m_Flags;
+	pDest->m_Skin = pSrc->m_Skin;
+	pDest->m_FadeMinDist = pSrc->m_FadeMinDist;
+	pDest->m_FadeMaxDist = pSrc->m_FadeMaxDist;
+	pDest->m_LightingOrigin = pSrc->m_LightingOrigin;
+	// Note: m_nFlagsEx is v10+ only, we ignore it
+}
+
+// v11 has uniform scale (CS:GO)
+static void ConvertStaticPropV11ToV4( StaticPropLump_t *pDest, const StaticPropLump_v11_t *pSrc )
+{
+	pDest->m_Origin = pSrc->m_Origin;
+	pDest->m_Angles = pSrc->m_Angles;
+	pDest->m_PropType = pSrc->m_PropType;
+	pDest->m_FirstLeaf = pSrc->m_FirstLeaf;
+	pDest->m_LeafCount = pSrc->m_LeafCount;
+	pDest->m_Solid = pSrc->m_Solid;
+	pDest->m_Flags = pSrc->m_Flags;
+	pDest->m_Skin = pSrc->m_Skin;
+	pDest->m_FadeMinDist = pSrc->m_FadeMinDist;
+	pDest->m_FadeMaxDist = pSrc->m_FadeMaxDist;
+	pDest->m_LightingOrigin = pSrc->m_LightingOrigin;
+	// Note: m_nFlagsEx and m_flUniformScale are v11+ only, we ignore them
+}
+
 void CStaticPropMgr::UnserializeModels( CUtlBuffer& buf )
 {
-	// Version check
-	if ( Mod_GameLumpVersion( GAMELUMP_STATIC_PROPS ) < 4 )
+	// Version check - support v4-v11
+	int nVersion = Mod_GameLumpVersion( GAMELUMP_STATIC_PROPS );
+	if ( nVersion < GAMELUMP_STATIC_PROPS_VERSION_4 )
 	{
 		Warning("Really old map format! Static props can't be loaded...\n");
 		return;
 	}
 
+	if ( nVersion > GAMELUMP_STATIC_PROPS_VERSION_11 )
+	{
+		Warning("Map uses static props version %d, max supported is %d\n", nVersion, GAMELUMP_STATIC_PROPS_VERSION_11);
+		return;
+	}
+
 	int count = buf.GetInt();
+
+	Con_DPrintf( "Loading %d static props (version %d)\n", count, nVersion );
 
 	// Gotta preallocate the static props here so no rellocations take place
 	// the leaf list stores pointers to these tricky little guys.
@@ -1003,7 +1114,66 @@ void CStaticPropMgr::UnserializeModels( CUtlBuffer& buf )
 	for ( int i = 0; i < count; ++i )
 	{
 		StaticPropLump_t lump;
-		buf.Get( &lump, sizeof(StaticPropLump_t) );
+
+		// Read static prop based on version
+		switch ( nVersion )
+		{
+		case GAMELUMP_STATIC_PROPS_VERSION_4:
+			buf.Get( &lump, sizeof(StaticPropLump_t) );
+			break;
+
+		case GAMELUMP_STATIC_PROPS_VERSION_5:
+			{
+				StaticPropLump_v5_t lumpV5;
+				buf.Get( &lumpV5, sizeof(StaticPropLump_v5_t) );
+				ConvertStaticPropV5ToV4( &lump, &lumpV5 );
+			}
+			break;
+
+		case GAMELUMP_STATIC_PROPS_VERSION_6:
+			{
+				StaticPropLump_v6_t lumpV6;
+				buf.Get( &lumpV6, sizeof(StaticPropLump_v6_t) );
+				ConvertStaticPropV6ToV4( &lump, &lumpV6 );
+			}
+			break;
+
+		case GAMELUMP_STATIC_PROPS_VERSION_7:
+		case GAMELUMP_STATIC_PROPS_VERSION_8:
+			{
+				// v8 is same as v7
+				StaticPropLump_v7_t lumpV7;
+				buf.Get( &lumpV7, sizeof(StaticPropLump_v7_t) );
+				ConvertStaticPropV7ToV4( &lump, &lumpV7 );
+			}
+			break;
+
+		case GAMELUMP_STATIC_PROPS_VERSION_9:
+			{
+				StaticPropLump_v9_t lumpV9;
+				buf.Get( &lumpV9, sizeof(StaticPropLump_v9_t) );
+				ConvertStaticPropV9ToV4( &lump, &lumpV9 );
+			}
+			break;
+
+		case GAMELUMP_STATIC_PROPS_VERSION_10:
+			{
+				StaticPropLump_v10_t lumpV10;
+				buf.Get( &lumpV10, sizeof(StaticPropLump_v10_t) );
+				ConvertStaticPropV10ToV4( &lump, &lumpV10 );
+			}
+			break;
+
+		case GAMELUMP_STATIC_PROPS_VERSION_11:
+		default:
+			{
+				StaticPropLump_v11_t lumpV11;
+				buf.Get( &lumpV11, sizeof(StaticPropLump_v11_t) );
+				ConvertStaticPropV11ToV4( &lump, &lumpV11 );
+			}
+			break;
+		}
+
  		m_StaticProps[i].Init( i, lump, m_StaticPropDict[lump.m_PropType].m_pModel );
 
 		// For distance-based fading, keep a list of the things that need

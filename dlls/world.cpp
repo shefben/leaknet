@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: Precaches and defs for entities and other data that must always be available.
 //
@@ -314,6 +314,8 @@ CWorld::~CWorld( )
 	if ( g_pGameRules )
 	{
 		g_pGameRules->LevelShutdown();
+		delete g_pGameRules;
+		g_pGameRules = NULL;
 	}
 }
 
@@ -411,7 +413,7 @@ void CWorld::Precache( void )
 		delete g_pGameRules;
 	}
 
-	g_pGameRules = InstallGameRules( );
+	InstallGameRules();
 	Assert( g_pGameRules );
 	g_pGameRules->LevelInit();
 

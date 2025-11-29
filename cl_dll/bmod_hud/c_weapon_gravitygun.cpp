@@ -22,9 +22,13 @@
 #include "c_te_effect_dispatch.h"
 #include "studio.h"
 #include "engine/ivmodelrender.h"
+#include "convar.h"
 
 // External interfaces
 extern IVModelRender *modelrender;
+extern ConVar physgun_r;
+extern ConVar physgun_g;
+extern ConVar physgun_b;
 
 //-----------------------------------------------------------------------------
 // Physics Gun Effect States (matching Garry's Mod)
@@ -242,21 +246,25 @@ void C_BeamQuadratic::RenderPrimaryBeam( void )
 
 	// Select material and color based on effect state
 	const char *materialName = "sprites/physbeam";
-	Vector beamColor = Vector(1,1,1);
+	// ConVar-driven beam color (GMod-style physgun color)
+	float c_r = clamp( physgun_r.GetFloat() / 255.0f, 0.0f, 1.0f );
+	float c_g = clamp( physgun_g.GetFloat() / 255.0f, 0.0f, 1.0f );
+	float c_b = clamp( physgun_b.GetFloat() / 255.0f, 0.0f, 1.0f );
+	Vector beamColor( c_r, c_g, c_b );
 	float beamWidth = 13.0f;
 
 	switch ( m_effectState )
 	{
 		case EFFECT_READY:
-			beamColor = Vector(0.3f, 0.7f, 1.0f);  // Blue for ready state
+			beamColor = Vector( c_r, max( c_g, 0.3f ), max( c_b, 0.7f ) );  // Tint with physgun color
 			beamWidth = 11.0f;
 			break;
 		case EFFECT_HOLDING:
-			beamColor = Vector(1.0f, 0.6f, 0.2f);  // Orange for holding
+			beamColor = Vector( max( c_r, 1.0f ), max( c_g, 0.6f ), max( c_b, 0.2f ) );  // Brighten when holding
 			beamWidth = 15.0f;
 			break;
 		case EFFECT_LAUNCH:
-			beamColor = Vector(1.0f, 1.0f, 0.5f);  // Yellow for launch
+			beamColor = Vector( max( c_r, 1.0f ), max( c_g, 1.0f ), max( c_b, 0.5f ) );  // Yellowish launch flash
 			beamWidth = 18.0f;
 			break;
 		default:
@@ -329,17 +337,22 @@ void C_BeamQuadratic::RenderOverlayBeam( void )
 	float pulseTime = gpGlobals->curtime * 3.0f;
 	float pulseAlpha = 0.3f + 0.4f * sin( pulseTime );
 
+	// ConVar-driven base color
+	float c_r = clamp( physgun_r.GetFloat() / 255.0f, 0.0f, 1.0f );
+	float c_g = clamp( physgun_g.GetFloat() / 255.0f, 0.0f, 1.0f );
+	float c_b = clamp( physgun_b.GetFloat() / 255.0f, 0.0f, 1.0f );
+
 	Vector overlayColor;
 	float overlayWidth;
 
 	if ( m_effectState == EFFECT_HOLDING )
 	{
-		overlayColor = Vector(1.0f, 0.8f, 0.4f);  // Bright orange overlay
+		overlayColor = Vector( max( c_r, 1.0f ), max( c_g, 0.8f ), max( c_b, 0.4f ) );  // Bright overlay driven by physgun color
 		overlayWidth = 8.0f;
 	}
 	else // EFFECT_READY
 	{
-		overlayColor = Vector(0.5f, 0.9f, 1.0f);  // Bright blue overlay
+		overlayColor = Vector( max( c_r, 0.5f ), max( c_g, 0.9f ), max( c_b, 1.0f ) );  // Bright overlay driven by physgun color
 		overlayWidth = 6.0f;
 	}
 

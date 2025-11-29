@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: Model loading / unloading interface
 //
@@ -86,6 +86,7 @@ struct moverlay_t
 {
 	int				m_nId;
 	short			m_nTexInfo;
+	short			m_nRenderOrder;		// v19+: Render order (0-3)
 	OverlayFragmentList_t m_hFirstFragment;
 	CUtlVector<int>	m_aFaces;
 	float			m_flU[2];
@@ -93,6 +94,11 @@ struct moverlay_t
 	Vector			m_vecUVPoints[4];
 	Vector			m_vecOrigin;
 	Vector			m_vecBasis[3];		// 0 = u, 1 = v, 2 = normal
+
+	// v19+: Fade distance support (from LUMP_OVERLAY_FADES)
+	float			m_flFadeDistMinSq;
+	float			m_flFadeDistMaxSq;
+	float			m_flInvFadeRangeSq;
 };
 
 
@@ -700,34 +706,70 @@ void COverlayMgr::CreateFragments( void )
 
 
 //-----------------------------------------------------------------------------
-// Loads overlays from the lump
+// Loads overlays from the lump (supports v18 and v19+ with water overlays)
 //-----------------------------------------------------------------------------
 bool COverlayMgr::LoadOverlays( )
 {
 	CMapLoadHelper lh( LUMP_OVERLAYS );
+	CMapLoadHelper lhWater( LUMP_WATEROVERLAYS );
+	CMapLoadHelper lhFades( LUMP_OVERLAY_FADES );
 
 	doverlay_t	*pOverlayIn;
+	dwateroverlay_t	*pWaterOverlayIn;
 
 	pOverlayIn = ( doverlay_t* )lh.LumpBase();
 	if ( lh.LumpSize() % sizeof( doverlay_t ) )
 		return false;
 
+	pWaterOverlayIn = ( dwateroverlay_t* )lhWater.LumpBase();
+	if ( lhWater.LumpSize() % sizeof( dwateroverlay_t ) )
+		return false;
+
+	// Overlay fades are optional (v19+)
+	doverlayfade_t *pOverlayFadesIn = NULL;
+	if ( lhFades.LumpSize() > 0 )
+	{
+		if ( lhFades.LumpSize() % sizeof( doverlayfade_t ) )
+			return false;
+		pOverlayFadesIn = ( doverlayfade_t* )lhFades.LumpBase();
+	}
+
 	int nOverlayCount = lh.LumpSize() / sizeof( doverlay_t );
+	int nWaterOverlayCount = lhWater.LumpSize() / sizeof( dwateroverlay_t );
 
-	// Memory allocation!
-	m_aOverlays.SetSize( nOverlayCount );
+	// Memory allocation for both regular and water overlays
+	m_aOverlays.SetSize( nOverlayCount + nWaterOverlayCount );
 
+	// Load regular overlays
 	for( int iOverlay = 0; iOverlay < nOverlayCount; ++iOverlay, ++pOverlayIn )
 	{
 		moverlay_t *pOverlayOut = &m_aOverlays.Element( iOverlay );
 
 		pOverlayOut->m_nId = iOverlay;
 		pOverlayOut->m_nTexInfo = pOverlayIn->nTexInfo;
+		pOverlayOut->m_nRenderOrder = pOverlayIn->GetRenderOrder();
 
 		pOverlayOut->m_flU[0] = pOverlayIn->flU[0];
 		pOverlayOut->m_flU[1] = pOverlayIn->flU[1];
 		pOverlayOut->m_flV[0] = pOverlayIn->flV[0];
 		pOverlayOut->m_flV[1] = pOverlayIn->flV[1];
+
+		// Handle overlay fades (v19+ feature)
+		if ( pOverlayFadesIn )
+		{
+			pOverlayOut->m_flFadeDistMinSq = pOverlayFadesIn->flFadeDistMinSq;
+			pOverlayOut->m_flFadeDistMaxSq = pOverlayFadesIn->flFadeDistMaxSq;
+			float range = pOverlayFadesIn->flFadeDistMaxSq - pOverlayFadesIn->flFadeDistMinSq;
+			pOverlayOut->m_flInvFadeRangeSq = (range > 0.0f) ? 1.0f / range : 1.0f;
+			pOverlayFadesIn++;
+		}
+		else
+		{
+			// No fade data - disable fading
+			pOverlayOut->m_flFadeDistMinSq = -1.0f;
+			pOverlayOut->m_flFadeDistMaxSq = 0.0f;
+			pOverlayOut->m_flInvFadeRangeSq = 1.0f;
+		}
 
 		VectorCopy( pOverlayIn->vecOrigin, pOverlayOut->m_vecOrigin );
 
@@ -738,13 +780,59 @@ bool COverlayMgr::LoadOverlays( )
 
 		VectorCopy( pOverlayIn->vecBasisNormal, pOverlayOut->m_vecBasis[2] );
 
-		pOverlayOut->m_aFaces.SetSize( pOverlayIn->nFaceCount );
-		for( int iFace = 0; iFace < pOverlayIn->nFaceCount; ++iFace )
+		// Use GetFaceCount() to handle both v18 (plain count) and v19+ (render order in upper bits)
+		int nFaceCount = pOverlayIn->GetFaceCount();
+		pOverlayOut->m_aFaces.SetSize( nFaceCount );
+		for( int iFace = 0; iFace < nFaceCount; ++iFace )
 		{
 			pOverlayOut->m_aFaces[iFace] = pOverlayIn->aFaces[iFace];
 		}
 
 		pOverlayOut->m_hFirstFragment = OVERLAY_FRAGMENT_LIST_INVALID;
+	}
+
+	// Load water overlays (v19+ feature)
+	for( int iWaterOverlay = 0; iWaterOverlay < nWaterOverlayCount; ++iWaterOverlay, ++pWaterOverlayIn )
+	{
+		moverlay_t *pOverlayOut = &m_aOverlays.Element( nOverlayCount + iWaterOverlay );
+
+		pOverlayOut->m_nId = nOverlayCount + iWaterOverlay;
+		pOverlayOut->m_nTexInfo = pWaterOverlayIn->nTexInfo;
+		pOverlayOut->m_nRenderOrder = pWaterOverlayIn->GetRenderOrder();
+
+		pOverlayOut->m_flU[0] = pWaterOverlayIn->flU[0];
+		pOverlayOut->m_flU[1] = pWaterOverlayIn->flU[1];
+		pOverlayOut->m_flV[0] = pWaterOverlayIn->flV[0];
+		pOverlayOut->m_flV[1] = pWaterOverlayIn->flV[1];
+
+		// Water overlays don't have fade data
+		pOverlayOut->m_flFadeDistMinSq = -1.0f;
+		pOverlayOut->m_flFadeDistMaxSq = 0.0f;
+		pOverlayOut->m_flInvFadeRangeSq = 1.0f;
+
+		VectorCopy( pWaterOverlayIn->vecOrigin, pOverlayOut->m_vecOrigin );
+
+		VectorCopy( pWaterOverlayIn->vecUVPoints[0], pOverlayOut->m_vecUVPoints[0] );
+		VectorCopy( pWaterOverlayIn->vecUVPoints[1], pOverlayOut->m_vecUVPoints[1] );
+		VectorCopy( pWaterOverlayIn->vecUVPoints[2], pOverlayOut->m_vecUVPoints[2] );
+		VectorCopy( pWaterOverlayIn->vecUVPoints[3], pOverlayOut->m_vecUVPoints[3] );
+
+		VectorCopy( pWaterOverlayIn->vecBasisNormal, pOverlayOut->m_vecBasis[2] );
+
+		// Use GetFaceCount() to mask out render order bits
+		int nFaceCount = pWaterOverlayIn->GetFaceCount();
+		pOverlayOut->m_aFaces.SetSize( nFaceCount );
+		for( int iFace = 0; iFace < nFaceCount; ++iFace )
+		{
+			pOverlayOut->m_aFaces[iFace] = pWaterOverlayIn->aFaces[iFace];
+		}
+
+		pOverlayOut->m_hFirstFragment = OVERLAY_FRAGMENT_LIST_INVALID;
+	}
+
+	if ( nWaterOverlayCount > 0 )
+	{
+		Con_DPrintf( "Loaded %d water overlays\n", nWaterOverlayCount );
 	}
 
 	return true;

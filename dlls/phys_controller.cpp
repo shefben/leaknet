@@ -11,6 +11,7 @@
 #include "vphysics/constraints.h"
 #include "physics_saverestore.h"
 #include "phys_controller.h"
+#include "dt_send.h"
 
 #define SF_THRUST_STARTACTIVE		0x0001
 #define SF_THRUST_FORCE				0x0002
@@ -316,6 +317,7 @@ class CPhysThruster : public CPhysForce
 	DECLARE_CLASS( CPhysThruster, CPhysForce );
 public:
 	DECLARE_DATADESC();
+	DECLARE_SERVERCLASS();
 
 	virtual void OnActivate( void );
 	virtual void SetupForces( IPhysicsObject *pPhys, Vector &linear, AngularImpulse &angular );
@@ -325,12 +327,18 @@ private:
 };
 
 LINK_ENTITY_TO_CLASS( phys_thruster, CPhysThruster );
+LINK_ENTITY_TO_CLASS( gmod_thruster, CPhysThruster );
+LINK_ENTITY_TO_CLASS( physics_thruster, CPhysThruster );
 
 BEGIN_DATADESC( CPhysThruster )
 
 	DEFINE_FIELD( CPhysThruster, m_localOrigin, FIELD_VECTOR ),
 
 END_DATADESC()
+
+IMPLEMENT_SERVERCLASS_ST( CPhysThruster, DT_PhysicsThruster )
+	SendPropVector( SENDINFO_NOCHECK(m_localOrigin), -1, SPROP_NOSCALE | SPROP_COORD ),
+END_SEND_TABLE()
 
 
 
@@ -935,4 +943,3 @@ IMotionEvent::simresult_e CKeepUpright::Simulate( IPhysicsMotionController *pCon
 
 	return SIM_LOCAL_ACCELERATION;
 }
-

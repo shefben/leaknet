@@ -7,6 +7,9 @@
 #include "materialsystem/imaterialsystem.h"
 #include "convar.h"
 
+// Server-side material system access; filled if the engine exposes it.
+IMaterialSystem* materials = NULL;
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -18,6 +21,10 @@ ConCommand gmod_list_overlays("gmod_list_overlays", CC_GMod_ListOverlays, "List 
 ConCommand gmod_show_overlay("gmod_show_overlay", CC_GMod_ShowOverlay, "Show an overlay by name");
 ConCommand gmod_hide_overlay("gmod_hide_overlay", CC_GMod_HideOverlay, "Hide current overlay");
 ConCommand gmod_reload_overlays("gmod_reload_overlays", CC_GMod_ReloadOverlays, "Reload overlay settings");
+
+#ifndef TEXTURE_GROUP_OTHER
+#define TEXTURE_GROUP_OTHER "Other textures"
+#endif
 
 // Global instance
 CGModOverlaySystem g_GMod_OverlaySystem;
@@ -296,7 +303,14 @@ IMaterial* CGModOverlaySystem::LoadOverlayMaterial(const char* pszMaterialPath)
     if (!pszMaterialPath || !pszMaterialPath[0])
         return NULL;
 
-    IMaterial* pMaterial = materials->FindMaterial(pszMaterialPath, TEXTURE_GROUP_OTHER);
+    if (!materials)
+    {
+        DevWarning("Material system not available; cannot load overlay '%s'\n", pszMaterialPath);
+        return NULL;
+    }
+
+    bool found = false;
+    IMaterial* pMaterial = materials->FindMaterial(pszMaterialPath, &found, true);
     if (pMaterial)
     {
         pMaterial->IncrementReferenceCount();

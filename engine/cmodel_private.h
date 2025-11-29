@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -207,6 +207,10 @@ public:
 	int									floodvalid;
 	int									numportalopen;
 	CRangeValidatedArray<qboolean>		portalopen;
+
+	// Map flags data (v21+ BSP format)
+	dflagslump_t						map_flags;
+	bool								map_flags_loaded;
 };
 
 
@@ -316,5 +320,51 @@ void CM_TestBoxInBrush ( CCollisionBSPData *pBSPData, const Vector& mins, const 
 					  trace_t *trace, cbrush_t *brush, BOOL bDispSurf );
 void FASTCALL CM_RecursiveHullCheck ( CCollisionBSPData *pBSPData, int num, float p1f, float p2f, const Vector& p1, const Vector& p2);
 
+//=============================================================================
+//
+// Displacement Collision Bounds System (2007 Source Engine compatibility)
+//
+//=============================================================================
+
+// Aligned bounding box structure for displacement collision optimization
+// UNDONE: Find a way to overlap the counter/contents bits with mins.w/maxs.w without hosing performance
+struct alignedbbox_t
+{
+	VectorAligned	mins;
+	VectorAligned	maxs;
+	int				dispCounter;
+	int				dispContents;
+
+	inline void Init( const Vector &minsIn, const Vector &maxsIn, int counterIn, int contentsIn )
+	{
+		mins.Init( minsIn.x, minsIn.y, minsIn.z );
+		maxs.Init( maxsIn.x, maxsIn.y, maxsIn.z );
+		SetCounter(counterIn);
+		SetContents(contentsIn);
+	}
+
+	inline void SetCounter( int counter )
+	{
+		dispCounter = counter;
+	}
+
+	inline int GetCounter( void )
+	{
+		return dispCounter;
+	}
+
+	inline void SetContents( int contents )
+	{
+		dispContents = contents;
+	}
+
+	inline int GetContents( void )
+	{
+		return dispContents;
+	}
+};
+
+// Global displacement bounds data (allocated per displacement)
+extern alignedbbox_t *g_pDispBounds;
 
 #endif // CMODEL_PRIVATE_H

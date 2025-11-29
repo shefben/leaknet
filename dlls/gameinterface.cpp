@@ -57,7 +57,9 @@
 #include "igameevents.h"
 #include "eventlog.h"
 #include "engine/ISharedModelLoader.h"
+#ifdef BMOD_DLL
 #include "bmod_dll/lua_integration.h"
+#endif
 
 // Engine interfaces.
 IVEngineServer	*engine = NULL;
@@ -374,8 +376,10 @@ bool CServerGameDLL::GameInit( void )
 	// clear out any old game's temporary save data
 //	engine->ClearSaveDir();
 
-	// Initialize Lua integration system
-	// TODO: CLuaIntegration::Initialize(); // Disabled until lua_integration.cpp is added to build
+	// Initialize Lua integration system (bmod only)
+#ifdef BMOD_DLL
+	CLuaIntegration::Initialize();
+#endif
 
 	return true;
 }
@@ -384,8 +388,10 @@ bool CServerGameDLL::GameInit( void )
 // NOT on level transitions within a game
 void CServerGameDLL::GameShutdown( void )
 {
-	// Shutdown Lua integration system
-	// TODO: CLuaIntegration::Shutdown(); // Disabled until lua_integration.cpp is added to build
+	// Shutdown Lua integration system (bmod only)
+#ifdef BMOD_DLL
+	CLuaIntegration::Shutdown();
+#endif
 
 	ResetGlobalState();
 }

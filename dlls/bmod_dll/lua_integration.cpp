@@ -13,6 +13,37 @@
 #include "fmtstr.h"
 #include "ammodef.h"
 
+extern "C" {
+	int luaopen_base(lua_State *L);
+	int luaopen_table(lua_State *L);
+	int luaopen_io(lua_State *L);
+	int luaopen_string(lua_State *L);
+	int luaopen_math(lua_State *L);
+	int luaopen_debug(lua_State *L);
+	int luaopen_loadlib(lua_State *L);
+}
+
+static void LuaOpenAllLibs(lua_State *L)
+{
+	static const luaL_reg libs[] = {
+		{"", luaopen_base},
+		{LUA_TABLIBNAME, luaopen_table},
+		{LUA_IOLIBNAME, luaopen_io},
+		{LUA_STRLIBNAME, luaopen_string},
+		{LUA_MATHLIBNAME, luaopen_math},
+		{LUA_DBLIBNAME, luaopen_debug},
+		{LUA_LOADLIBNAME, luaopen_loadlib},
+		{NULL, NULL}
+	};
+
+	for (const luaL_reg* lib = libs; lib->func; ++lib)
+	{
+		lua_pushcfunction(L, lib->func);
+		lua_pushstring(L, lib->name);
+		lua_call(L, 1, 0);
+	}
+}
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -56,7 +87,7 @@ void CLuaIntegration::Initialize()
 	}
 
 	// Open standard Lua libraries
-	luaL_openlibs(m_pLuaState);
+	LuaOpenAllLibs(m_pLuaState);
 
 	// Set error handler
 	lua_atpanic(m_pLuaState, LuaErrorHandler);
@@ -232,205 +263,32 @@ int CLuaIntegration::LuaErrorHandler(lua_State *L)
 //-----------------------------------------------------------------------------
 void CLuaIntegration::RegisterAllFunctions()
 {
+	// Core functions (defined in this file)
 	RegisterCoreFunctions();
-	RegisterPlayerFunctions();
-	RegisterEntityFunctions();
-	RegisterWeaponFunctions();
-	RegisterEffectFunctions();
-	RegisterUIFunctions();
+
+	// External function registrations (from separate files)
+	RegisterLuaEntityFunctions();
+	RegisterLuaPlayerFunctions();
+	RegisterLuaPhysicsFunctions();
+	RegisterLuaFileFunctions();
+	RegisterLuaEffectFunctions();
+	RegisterLuaGameEventFunctions();
 }
 
 //-----------------------------------------------------------------------------
-// Forward declarations for Lua functions
-//-----------------------------------------------------------------------------
-DECLARE_LUA_FUNCTION(PlayerGiveAmmo);
-DECLARE_LUA_FUNCTION(PlayerSetSprint);
-DECLARE_LUA_FUNCTION(PlayerShowScoreboard);
-DECLARE_LUA_FUNCTION(EntRemove);
-DECLARE_LUA_FUNCTION(EffectSetRadius);
-DECLARE_LUA_FUNCTION(GModTextStart);
-
-//-----------------------------------------------------------------------------
-// Purpose: Register core Lua functions
+// Purpose: Register core Lua functions (system, math, etc.)
 //-----------------------------------------------------------------------------
 void CLuaIntegration::RegisterCoreFunctions()
 {
-	// Core system functions would go here
-}
+	// Register some core utility functions that don't fit in other categories
 
-//-----------------------------------------------------------------------------
-// Purpose: Register player-related Lua functions
-//-----------------------------------------------------------------------------
-void CLuaIntegration::RegisterPlayerFunctions()
-{
-	REGISTER_LUA_FUNCTION(PlayerGiveAmmo, "Give specified player ammo. Syntax: <playerid> <num amount> <string ammotype> <bool playsounds>");
-	REGISTER_LUA_FUNCTION(PlayerSetSprint, "Enable/Disable sprint for player. Syntax: <playerid> <freeze bool>");
-	REGISTER_LUA_FUNCTION(PlayerShowScoreboard, "Shows the scoreboard on the specified players screen. Syntax: <playerid>");
-}
+	// Math constants
+	lua_pushnumber(m_pLuaState, 3.14159265358979323846);
+	lua_setglobal(m_pLuaState, "PI");
 
-//-----------------------------------------------------------------------------
-// Purpose: Register entity-related Lua functions
-//-----------------------------------------------------------------------------
-void CLuaIntegration::RegisterEntityFunctions()
-{
-	REGISTER_LUA_FUNCTION(EntRemove, "Removes entity. Syntax <entindex>");
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Register weapon-related Lua functions
-//-----------------------------------------------------------------------------
-void CLuaIntegration::RegisterWeaponFunctions()
-{
-	// Weapon functions would go here
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Register effect-related Lua functions
-//-----------------------------------------------------------------------------
-void CLuaIntegration::RegisterEffectFunctions()
-{
-	REGISTER_LUA_FUNCTION(EffectSetRadius, "Syntax: <float>");
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Register UI-related Lua functions
-//-----------------------------------------------------------------------------
-void CLuaIntegration::RegisterUIFunctions()
-{
-	REGISTER_LUA_FUNCTION(GModTextStart, "Initialize the text. Syntax: <fontname>");
-}
-
-//=============================================================================
-// LUA FUNCTION IMPLEMENTATIONS
-//=============================================================================
-
-//-----------------------------------------------------------------------------
-// Purpose: _PlayerGiveAmmo - Give ammo to a player
-//-----------------------------------------------------------------------------
-int Lua_PlayerGiveAmmo(lua_State *L)
-{
-	int argc = lua_gettop(L);
-	if (argc < 3)
-		return CLuaUtility::LuaError(L, "_PlayerGiveAmmo: Not enough arguments");
-
-	int playerID = CLuaUtility::GetInt(L, 1);
-	int amount = CLuaUtility::GetInt(L, 2);
-	const char *ammoType = CLuaUtility::GetString(L, 3);
-	bool playSounds = CLuaUtility::GetBool(L, 4, true);
-
-	CBasePlayer *pPlayer = CLuaUtility::GetPlayerFromID(L, playerID);
-	if (!pPlayer)
-		return CLuaUtility::LuaError(L, "_PlayerGiveAmmo: Invalid player ID");
-
-	// Give the ammo
-	int ammoIndex = GetAmmoDef()->Index(ammoType);
-	if (ammoIndex == -1)
-		return CLuaUtility::LuaError(L, "_PlayerGiveAmmo: Invalid ammo type");
-
-	int given = pPlayer->GiveAmmo(amount, ammoIndex, true);
-	CLuaUtility::PushInt(L, given);
-
-	return 1;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: _PlayerSetSprint - Enable/disable sprint for player
-//-----------------------------------------------------------------------------
-int Lua_PlayerSetSprint(lua_State *L)
-{
-	int argc = lua_gettop(L);
-	if (argc < 2)
-		return CLuaUtility::LuaError(L, "_PlayerSetSprint: Not enough arguments");
-
-	int playerID = CLuaUtility::GetInt(L, 1);
-	bool canSprint = CLuaUtility::GetBool(L, 2);
-
-	CBasePlayer *pPlayer = CLuaUtility::GetPlayerFromID(L, playerID);
-	if (!pPlayer)
-		return CLuaUtility::LuaError(L, "_PlayerSetSprint: Invalid player ID");
-
-	// Enable/disable sprint
-	pPlayer->SetMaxSpeed(canSprint ? 320.0f : 200.0f);
-
-	return 0;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: _PlayerShowScoreboard - Show scoreboard to player
-//-----------------------------------------------------------------------------
-int Lua_PlayerShowScoreboard(lua_State *L)
-{
-	int argc = lua_gettop(L);
-	if (argc < 1)
-		return CLuaUtility::LuaError(L, "_PlayerShowScoreboard: Not enough arguments");
-
-	int playerID = CLuaUtility::GetInt(L, 1);
-
-	CBasePlayer *pPlayer = CLuaUtility::GetPlayerFromID(L, playerID);
-	if (!pPlayer)
-		return CLuaUtility::LuaError(L, "_PlayerShowScoreboard: Invalid player ID");
-
-	// Show scoreboard - this would need specific implementation
-	// For now, just print a message
-	ClientPrint(pPlayer, HUD_PRINTTALK, "Scoreboard shown via Lua");
-
-	return 0;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: _EntRemove - Remove an entity
-//-----------------------------------------------------------------------------
-int Lua_EntRemove(lua_State *L)
-{
-	int argc = lua_gettop(L);
-	if (argc < 1)
-		return CLuaUtility::LuaError(L, "_EntRemove: Not enough arguments");
-
-	int entIndex = CLuaUtility::GetInt(L, 1);
-
-	CBaseEntity *pEntity = CLuaUtility::GetEntityFromIndex(L, entIndex);
-	if (!pEntity)
-		return CLuaUtility::LuaError(L, "_EntRemove: Invalid entity index");
-
-	// Remove the entity
-	UTIL_Remove(pEntity);
-
-	return 0;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: _EffectSetRadius - Set effect radius
-//-----------------------------------------------------------------------------
-int Lua_EffectSetRadius(lua_State *L)
-{
-	int argc = lua_gettop(L);
-	if (argc < 1)
-		return CLuaUtility::LuaError(L, "_EffectSetRadius: Not enough arguments");
-
-	float radius = CLuaUtility::GetFloat(L, 1);
-
-	// This would set some global effect radius
-	// Implementation depends on the specific effect system
-	Msg("Effect radius set to: %.2f\n", radius);
-
-	return 0;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: _GModTextStart - Initialize text display
-//-----------------------------------------------------------------------------
-int Lua_GModTextStart(lua_State *L)
-{
-	int argc = lua_gettop(L);
-	if (argc < 1)
-		return CLuaUtility::LuaError(L, "_GModTextStart: Not enough arguments");
-
-	const char *fontName = CLuaUtility::GetString(L, 1);
-
-	// Initialize text system with font
-	Msg("GModText initialized with font: %s\n", fontName);
-
-	return 0;
+	// Engine tick rate (HL2 beta uses 66 tick rate ~= 0.015 per tick)
+	lua_pushnumber(m_pLuaState, 0.015);
+	lua_setglobal(m_pLuaState, "TICK_INTERVAL");
 }
 
 //=============================================================================

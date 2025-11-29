@@ -14,6 +14,7 @@
 #include "cvar.h"
 #include "mathlib.h"
 #include "vid.h"
+#include "common.h"
 #include <vgui/ISurface.h>
 #include <vgui/IScheme.h>
 #include <vgui/ILocalize.h>
@@ -48,6 +49,8 @@ CQuakeConsole::CQuakeConsole()
 	m_nInputLength = 0;
 	m_nHistoryPos = -1;
 	m_nTextureId = -1;
+	m_nTextureWidth = 0;
+	m_nTextureHeight = 0;
 	m_hFont = 0;
 	m_nConsoleHeight = 0;
 	m_nConsoleWidth = 0;
@@ -71,14 +74,15 @@ void CQuakeConsole::Initialize()
 	if (m_bInitialized)
 		return;
 
-	// Get screen dimensions
-	m_nConsoleWidth = vid.width;
-	m_nConsoleHeight = vid.height / 2;
+	// Get screen dimensions - use defaults if vid not ready
+	m_nConsoleWidth = (vid.width > 0) ? vid.width : 640;
+	m_nConsoleHeight = (vid.height > 0) ? (vid.height / 2) : 240;
 
-	// Load background texture
+	// Load background texture (has its own safety checks)
 	LoadBackgroundTexture();
 
-	// Get font
+	// Get font - with safety checks
+	m_hFont = 0;
 	if (vgui::scheme())
 	{
 		vgui::IScheme *pScheme = vgui::scheme()->GetIScheme(vgui::scheme()->GetDefaultScheme());
@@ -358,6 +362,13 @@ void CQuakeConsole::Paint()
 	if (!IsVisible())
 		return;
 
+	// Update screen dimensions in case resolution changed
+	if (vid.width > 0 && vid.height > 0)
+	{
+		m_nConsoleWidth = vid.width;
+		m_nConsoleHeight = vid.height / 2;
+	}
+
 	UpdateAnimation();
 
 	// Draw background
@@ -375,9 +386,60 @@ void CQuakeConsole::Paint()
 //-----------------------------------------------------------------------------
 void CQuakeConsole::LoadBackgroundTexture()
 {
-	// For now, we'll use a simple colored background
-	// TODO: Load splash.bmp texture when material system is fully integrated
+	// Default to no texture
 	m_nTextureId = -1;
+	m_nTextureWidth = 0;
+	m_nTextureHeight = 0;
+
+	// Safety checks - VGUI surface and filesystem must be available
+	if (!vgui::surface())
+		return;
+
+	if (!g_pFileSystem)
+		return;
+
+	char texturePath[MAX_PATH];
+	bool bTextureFound = false;
+
+	// First try mod-specific splash: <mod>/gfx/shell/splash.bmp
+	// Note: DrawSetTextureFile expects path without extension and relative to game root
+	if (com_gamedir[0])
+	{
+		Q_snprintf(texturePath, sizeof(texturePath), "%s/gfx/shell/splash", com_gamedir);
+
+		// Check if the .bmp file exists
+		char fullPath[MAX_PATH];
+		Q_snprintf(fullPath, sizeof(fullPath), "%s.bmp", texturePath);
+		if (g_pFileSystem->FileExists(fullPath))
+		{
+			bTextureFound = true;
+		}
+	}
+
+	if (!bTextureFound)
+	{
+		// Fallback to hl2/gfx/shell/splash.bmp
+		Q_strncpy(texturePath, "hl2/gfx/shell/splash", sizeof(texturePath));
+		char fullPath[MAX_PATH];
+		Q_snprintf(fullPath, sizeof(fullPath), "%s.bmp", texturePath);
+		if (g_pFileSystem->FileExists(fullPath))
+		{
+			bTextureFound = true;
+		}
+	}
+
+	if (bTextureFound)
+	{
+		// Create texture ID and load the texture
+		m_nTextureId = vgui::surface()->CreateNewTextureID();
+		vgui::surface()->DrawSetTextureFile(m_nTextureId, texturePath, true, false);
+
+		// Get texture dimensions
+		int texWide, texTall;
+		vgui::surface()->DrawGetTextureSize(m_nTextureId, texWide, texTall);
+		m_nTextureWidth = texWide;
+		m_nTextureHeight = texTall;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -406,11 +468,29 @@ void CQuakeConsole::AddLine(Color& clr, const char *text)
 //-----------------------------------------------------------------------------
 void CQuakeConsole::DrawBackground()
 {
+	if (!vgui::surface())
+		return;
+
 	int y = GetConsoleY();
 
-	// Draw semi-transparent background
-	vgui::surface()->DrawSetColor(0, 0, 0, 180);
-	vgui::surface()->DrawFilledRect(0, y, m_nConsoleWidth, y + m_nConsoleHeight);
+	// Draw textured background if available
+	if (m_nTextureId != -1 && m_nTextureWidth > 0 && m_nTextureHeight > 0)
+	{
+		// Draw the splash texture, tiled or stretched to fit
+		vgui::surface()->DrawSetTexture(m_nTextureId);
+		vgui::surface()->DrawSetColor(255, 255, 255, 255);
+		vgui::surface()->DrawTexturedRect(0, y, m_nConsoleWidth, y + m_nConsoleHeight);
+
+		// Overlay a semi-transparent dark layer for text readability
+		vgui::surface()->DrawSetColor(0, 0, 0, 140);
+		vgui::surface()->DrawFilledRect(0, y, m_nConsoleWidth, y + m_nConsoleHeight);
+	}
+	else
+	{
+		// Fallback: solid semi-transparent background
+		vgui::surface()->DrawSetColor(0, 0, 0, 200);
+		vgui::surface()->DrawFilledRect(0, y, m_nConsoleWidth, y + m_nConsoleHeight);
+	}
 
 	// Draw border
 	vgui::surface()->DrawSetColor(100, 100, 100, 255);
@@ -422,11 +502,14 @@ void CQuakeConsole::DrawBackground()
 //-----------------------------------------------------------------------------
 void CQuakeConsole::DrawText()
 {
-	if (!m_hFont)
+	if (!m_hFont || !vgui::surface() || !vgui::localize())
 		return;
 
 	int y = GetConsoleY();
 	int fontTall = vgui::surface()->GetFontTall(m_hFont);
+	if (fontTall <= 0)
+		return;
+
 	int textY = y + 10;
 	int maxLines = (m_nConsoleHeight - 40) / fontTall;  // Leave space for input line
 
@@ -452,11 +535,13 @@ void CQuakeConsole::DrawText()
 //-----------------------------------------------------------------------------
 void CQuakeConsole::DrawInputLine()
 {
-	if (!m_hFont)
+	if (!m_hFont || !vgui::surface() || !vgui::localize())
 		return;
 
 	int y = GetConsoleY();
 	int fontTall = vgui::surface()->GetFontTall(m_hFont);
+	if (fontTall <= 0)
+		return;
 	int inputY = y + m_nConsoleHeight - fontTall - 10;
 
 	vgui::surface()->DrawSetTextFont(m_hFont);

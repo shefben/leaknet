@@ -9,6 +9,8 @@ BEGIN_SRC( ENGINE_SOURCE_FILES "Source Files" )
 			"${SRCDIR}/common/dispcoll_common.cpp"
 			"${SRCDIR}/common/disp_common.cpp"
 			"${SRCDIR}/common/disp_powerinfo.cpp"
+			"${SRCDIR}/common/lzma_support.cpp"
+			"${SRCDIR}/common/lzmalib.cpp"
 			"${SRCDIR}/common/vstring.cpp"
 			"${SRCDIR}/public/bitbuf.cpp"
 			"${SRCDIR}/public/bsptreedata.cpp"

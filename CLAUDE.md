@@ -8,6 +8,8 @@ LeakNet is a refactored and enhanced version of the leaked Half-Life 2 beta sour
 
 ## Build System & Commands
 
+**IMPORTANT: Always use CMake for building. Never use MSBuild directly or pass MSBuild flags.**
+
 ### Windows Development
 
 **Quick Setup:**
@@ -21,15 +23,25 @@ LeakNet is a refactored and enhanced version of the leaked Half-Life 2 beta sour
 # Open LeakNet.sln in build/ folder, compile INSTALL target
 ```
 
-**Command Line Building:**
+**Command Line Building (ALWAYS use cmake):**
 ```bash
 # Generate projects
 ./creategameprojects.bat  # or ./createeverything.bat
 
-# Build and install
+# Build all targets
 cmake --build build --config Release
+
+# Build specific targets
+cmake --build build --config Release --target server_bmod
+cmake --build build --config Release --target client_bmod
+cmake --build build --config Release --target engine
+cmake --build build --config Release --target studiorender
+
+# Install
 cmake --install build --config Release
 ```
+
+**Never rebuild shaders unless necessary - they take a long time to compile.**
 
 ### Linux Development
 
@@ -202,3 +214,4 @@ The project includes a complete master server implementation:
 - Database backends (partially implemented)
 
 Master server functionality is included in "everything" builds but commented out portions suggest incomplete database integration.
+- the 2007 engine source code directory for reference: F:\back-ups\betahl2_codebases\SourceEngine2007-master\SourceEngine2007-master\src_main

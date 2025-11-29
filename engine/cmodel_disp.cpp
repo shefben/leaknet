@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -18,6 +18,9 @@ int trace_bDispHit;			// hit displacement surface last
 
 int g_DispCollTreeCount = 0;
 CDispCollTree *g_pDispCollTrees = NULL;
+
+// Displacement bounds for collision optimization (2007 Source Engine compatibility)
+alignedbbox_t *g_pDispBounds = NULL;
 
 //csurface_t dispSurf = { "terrain", 0, 0 };
 

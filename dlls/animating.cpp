@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: Base class for all animating characters and objects.
 //
@@ -703,7 +703,10 @@ bool CBaseAnimating::HasPoseParameter( int iSequence, int iParameter )
 
 	mstudioseqdesc_t *pSeqDesc = pstudiohdr->pSeqdesc( iSequence );
 
-	if (pSeqDesc->paramindex[0] == iParameter || pSeqDesc->paramindex[1] == iParameter)
+	// Use version-aware accessor for paramindex (v37 vs v48 binary layout)
+	int paramIdx0 = pSeqDesc->GetParamIndex( 0, pstudiohdr->version );
+	int paramIdx1 = pSeqDesc->GetParamIndex( 1, pstudiohdr->version );
+	if (paramIdx0 == iParameter || paramIdx1 == iParameter)
 	{
 		return true;
 	}

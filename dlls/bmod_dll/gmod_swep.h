@@ -175,6 +175,7 @@ public:
     static void OnSWEPPickup(CBaseCombatWeapon* pWeapon, CBasePlayer* pPlayer);
     static void OnSWEPDrop(CBaseCombatWeapon* pWeapon, CBasePlayer* pPlayer);
     static void OnSWEPRemove(CBaseCombatWeapon* pWeapon);
+    static void OnPlayerSpawn(CBasePlayer* pPlayer);
 
     // SWEP property queries
     static int GetSWEPIntProperty(CBaseCombatWeapon* pWeapon, const char* pszProperty);

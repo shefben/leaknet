@@ -3,6 +3,7 @@
 
 #include "cbase.h"
 #include "vphysics_interface.h"
+#include "vphysics/constraints.h"
 #include "filesystem.h"
 #include "vgui/IScheme.h"
 #include "convar.h"

@@ -27,7 +27,8 @@
 #include "studio.h"
 #include "bone_setup.h"
 
-ConVar	sk_barnacle_health( "sk_barnacle_health","0");
+// Barnacle health ConVar
+ConVar sk_barnacle_health( "sk_barnacle_health", "35" );
 
 //-----------------------------------------------------------------------------
 // Private activities.

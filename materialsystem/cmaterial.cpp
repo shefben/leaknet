@@ -894,11 +894,18 @@ KeyValues* CMaterial::InitializeShader( KeyValues& keyValues )
 	KeyValues* pCurrentFallback = &keyValues;
 	KeyValues* pFallbackSection = 0;
 
-	// I'm not quite sure how this can happen, but we'll see... 
+	// I'm not quite sure how this can happen, but we'll see...
 	char const* pShaderName = pCurrentFallback->GetName();
 	if (!pShaderName)
 	{
 		Warning("Shader not specified in material %s\nUsing wireframe instead...\n", GetName());
+		pShaderName = "Wireframe";
+	}
+	// Check for unexpanded patch materials - "patch" is not a real shader,
+	// it should have been expanded by ExpandPatchFile() before we get here
+	else if (_stricmp(pShaderName, "patch") == 0)
+	{
+		Warning("Material \"%s\" is a patch file that failed to expand (missing $include?)\nUsing wireframe instead...\n", GetName());
 		pShaderName = "Wireframe";
 	}
 
@@ -2143,27 +2150,46 @@ int CMaterial::ShaderParamCount() const
 //-----------------------------------------------------------------------------
 // VMT parser
 //-----------------------------------------------------------------------------
-static void InsertKeyValues( KeyValues& dst, KeyValues& src )
+static void InsertKeyValues( KeyValues& dst, KeyValues& src, bool bCheckForExistence = false )
 {
 	KeyValues *pSrcVar = src.GetFirstSubKey();
 	while( pSrcVar )
 	{
-		switch( pSrcVar->GetDataType() )
+		// If bCheckForExistence is true, only update keys that already exist (replace mode)
+		if ( !bCheckForExistence || dst.FindKey( pSrcVar->GetName() ) )
 		{
-		case KeyValues::TYPE_STRING:
-			dst.SetString( pSrcVar->GetName(), pSrcVar->GetString() );
-			break;
-		case KeyValues::TYPE_INT:
-			dst.SetInt( pSrcVar->GetName(), pSrcVar->GetInt() );
-			break;
-		case KeyValues::TYPE_FLOAT:
-			dst.SetFloat( pSrcVar->GetName(), pSrcVar->GetFloat() );
-			break;
-		case KeyValues::TYPE_PTR:
-			dst.SetPtr( pSrcVar->GetName(), pSrcVar->GetPtr() );
-			break;
+			switch( pSrcVar->GetDataType() )
+			{
+			case KeyValues::TYPE_STRING:
+				dst.SetString( pSrcVar->GetName(), pSrcVar->GetString() );
+				break;
+			case KeyValues::TYPE_INT:
+				dst.SetInt( pSrcVar->GetName(), pSrcVar->GetInt() );
+				break;
+			case KeyValues::TYPE_FLOAT:
+				dst.SetFloat( pSrcVar->GetName(), pSrcVar->GetFloat() );
+				break;
+			case KeyValues::TYPE_PTR:
+				dst.SetPtr( pSrcVar->GetName(), pSrcVar->GetPtr() );
+				break;
+			}
 		}
 		pSrcVar = pSrcVar->GetNextKey();
+	}
+
+	// Handle nested subkeys for replace mode
+	if( bCheckForExistence )
+	{
+		for( KeyValues *pScan = dst.GetFirstTrueSubKey(); pScan; pScan = pScan->GetNextTrueSubKey() )
+		{
+			KeyValues *pTmp = src.FindKey( pScan->GetName() );
+			if( !pTmp )
+				continue;
+			// Make sure this is a subkey
+			if( pTmp->GetDataType() != KeyValues::TYPE_NONE )
+				continue;
+			InsertKeyValues( *pScan, *pTmp, bCheckForExistence );
+		}
 	}
 }
 
@@ -2172,51 +2198,108 @@ static void WriteKeyValuesToFile( const char *pFileName, KeyValues& keyValues )
 	keyValues.SaveToFile( g_pFileSystem, pFileName );
 }
 
+//-----------------------------------------------------------------------------
+// Apply patch key values (handles both "insert" and "replace" sections)
+//-----------------------------------------------------------------------------
+static void ApplyPatchKeyValues( KeyValues &keyValues, KeyValues &patchKeyValues )
+{
+	KeyValues *pInsertSection = patchKeyValues.FindKey( "insert" );
+	KeyValues *pReplaceSection = patchKeyValues.FindKey( "replace" );
+
+	if ( pInsertSection )
+	{
+		// Insert mode: add/overwrite keys unconditionally
+		InsertKeyValues( keyValues, *pInsertSection, false );
+	}
+
+	if ( pReplaceSection )
+	{
+		// Replace mode: only update keys that already exist
+		InsertKeyValues( keyValues, *pReplaceSection, true );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Expands patch materials to their base material with modifications applied
+//-----------------------------------------------------------------------------
 static void ExpandPatchFile( KeyValues& keyValues )
 {
+	// Temporary storage for accumulated patch keys (heap-allocated since KeyValues has private dtor)
+	KeyValues *pPatchKeyValues = new KeyValues( "vmt_patches" );
+
+	// Recurse down through all patch files
 	int count = 0;
 	while( count < 10 && _stricmp( keyValues.GetName(), "patch" ) == 0 )
 	{
-//		WriteKeyValuesToFile( "patch.txt", keyValues );
+		// Accumulate the new patch keys from this file
+		ApplyPatchKeyValues( *pPatchKeyValues, keyValues );
+
+		// Load the included file
 		const char *pIncludeFileName = keyValues.GetString( "include" );
 		if( pIncludeFileName )
 		{
-			KeyValues * includeKeyValues = new KeyValues( "vmt" );
-			char *pFileName = ( char * )_alloca( strlen( pIncludeFileName ) + 
-												 strlen( "materials/.vmt" ) + 1 );
-			sprintf( pFileName, "%s", pIncludeFileName );
-			bool success = includeKeyValues->LoadFromFile( g_pFileSystem, pFileName );
+			KeyValues *includeKeyValues = new KeyValues( "vmt" );
+
+			// The include path may or may not have "materials/" prefix
+			// Try loading as-is first (for embedded materials that use full paths)
+			bool success = includeKeyValues->LoadFromFile( g_pFileSystem, pIncludeFileName );
+
+			if( !success )
+			{
+				// Try prepending "materials/" if the path doesn't start with it
+				char pFileName[512];
+				if ( _strnicmp( pIncludeFileName, "materials/", 10 ) != 0 &&
+				     _strnicmp( pIncludeFileName, "materials\\", 10 ) != 0 )
+				{
+					Q_snprintf( pFileName, sizeof(pFileName), "materials/%s", pIncludeFileName );
+					// Add .vmt extension if not present
+					if ( !strstr( pFileName, ".vmt" ) )
+					{
+						Q_strncat( pFileName, ".vmt", sizeof(pFileName), -1 );
+					}
+				}
+				else
+				{
+					Q_strncpy( pFileName, pIncludeFileName, sizeof(pFileName) );
+					if ( !strstr( pFileName, ".vmt" ) )
+					{
+						Q_strncat( pFileName, ".vmt", sizeof(pFileName), -1 );
+					}
+				}
+				success = includeKeyValues->LoadFromFile( g_pFileSystem, pFileName );
+			}
+
 			if( success )
 			{
-//				WriteKeyValuesToFile( "include.txt", includeKeyValues );
-				KeyValues *pInsertSection = keyValues.FindKey( "insert" );
-//				WriteKeyValuesToFile( "insertsection.txt", *pInsertSection );
-				if( pInsertSection )
-				{
-//					WriteKeyValuesToFile( "before.txt", includeKeyValues );
-					InsertKeyValues( *includeKeyValues, *pInsertSection );
-//					WriteKeyValuesToFile( "after.txt", includeKeyValues );
-					keyValues = *includeKeyValues;
-				}
-				includeKeyValues->deleteThis();
-				// Could add other commands here, like "delete", "rename", etc.
+				// Replace keyValues with the included file's contents
+				keyValues = *includeKeyValues;
 			}
 			else
 			{
+				Warning( "Failed to load $include VMT file (%s)\n", pIncludeFileName );
 				includeKeyValues->deleteThis();
+				pPatchKeyValues->deleteThis();
 				return;
 			}
+			includeKeyValues->deleteThis();
 		}
 		else
 		{
-			return;
+			// A patch file without an $include key is invalid
+			Warning( "VMT patch file has no $include key - invalid!\n" );
+			break;
 		}
 		count++;
 	}
+
 	if( count >= 10 )
 	{
 		Warning( "Infinite recursion in patch file?\n" );
 	}
+
+	// KeyValues is now a real (non-patch) VMT, so apply the accumulated patches
+	ApplyPatchKeyValues( keyValues, *pPatchKeyValues );
+	pPatchKeyValues->deleteThis();
 }
 
 bool CMaterial::LoadVMTFile( KeyValues& vmtKeyValues )

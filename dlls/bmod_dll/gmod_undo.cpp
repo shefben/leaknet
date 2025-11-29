@@ -570,6 +570,34 @@ void CGModUndoSystem::OnPlayerDisconnect(CBasePlayer* pPlayer)
     DevMsg("Undo system cleaned up for player %s\n", STRING(pPlayer->pl.netname));
 }
 
+void CGModUndoSystem::InitializePlayer(CBasePlayer* pPlayer)
+{
+    // Ensure undo tracking is ready for this player.
+    GetPlayerUndoData(pPlayer);
+}
+
+void CGModUndoSystem::CleanupPlayer(CBasePlayer* pPlayer)
+{
+    if (!pPlayer)
+        return;
+
+    PlayerUndoData_t* pData = GetPlayerUndoData(pPlayer);
+    if (pData)
+    {
+        pData->undoStack.Purge();
+        pData->redoStack.Purge();
+    }
+}
+
+void CGModUndoSystem::ClearAllUndo()
+{
+    for (int i = 0; i < s_PlayerUndoData.Count(); ++i)
+    {
+        s_PlayerUndoData[i].undoStack.Purge();
+        s_PlayerUndoData[i].redoStack.Purge();
+    }
+}
+
 //-----------------------------------------------------------------------------
 // Console command implementations
 //-----------------------------------------------------------------------------

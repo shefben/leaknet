@@ -3300,7 +3300,8 @@ void SV_SendRestoreMsg( bf_write *dest )
 	CSaveRestoreData currentLevelData;
 	char			name[256];
 
-	byte			buf[NET_MAX_PAYLOAD];
+	// Use static buffer to avoid 512KB stack allocation causing stack overflow
+	static byte		buf[NET_MAX_PAYLOAD];
 
 	if ( !sv.loadgame )
 		return;
@@ -3447,7 +3448,8 @@ void SV_HandleClientDatagramOverflow( client_t *pClient )
 
 static void SV_SendClientDatagrams ( int clientCount, client_t** clients, CFrameSnapshot* pSnapshot )
 {
-	byte		buf[NET_MAX_PAYLOAD];
+	// Use static buffer to avoid 512KB stack allocation causing stack overflow
+	static byte		buf[NET_MAX_PAYLOAD];
 	bool		wrotedatagram;
 	int i;
 	client_frame_t *pPack[MAX_CLIENTS];

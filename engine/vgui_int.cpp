@@ -323,6 +323,22 @@ void VGui_SetMouseCallbacks(void (* pfnGetMouse)(int &x, int &y), void (*pfnSetM
 
 void VGui_HandleWindowMessage( void *hwnd, unsigned int uMsg, unsigned int wParam, long lParam )
 {
+	// Route character input to Quake console if active
+	if ( Con_IsUsingWonConsole() && g_pQuakeConsole && g_pQuakeConsole->IsVisible() )
+	{
+		// Handle character input for Quake console
+		if ( uMsg == WM_CHAR || uMsg == WM_SYSCHAR )
+		{
+			int unichar = wParam;
+			// Don't process backtick/tilde - it's the toggle key
+			if ( unichar != '`' && unichar != '~' )
+			{
+				g_pQuakeConsole->HandleCharInput( unichar );
+			}
+			return; // Don't pass to VGUI
+		}
+	}
+
 	if ( g_pMatSystemSurface )
 		g_pMatSystemSurface->HandleWindowMessage( hwnd, uMsg, wParam, lParam );
 }

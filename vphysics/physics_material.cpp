@@ -566,6 +566,38 @@ int CPhysicsSurfaceProps::ParseSurfaceData( const char *pFileName, const char *p
 				{
 					prop.data.dampening = atof(value);
 				}
+				// Newer Source engine surfaceprop keys - silently ignore for compatibility
+				// These are used in later versions of Source but not supported in this codebase
+				else if ( !Q_stricmp( key, "scraperough" ) ||
+				          !Q_stricmp( key, "scrapesmooth" ) ||
+				          !Q_stricmp( key, "impacthard" ) ||
+				          !Q_stricmp( key, "impactsoft" ) ||
+				          !Q_stricmp( key, "audioreflectivity" ) ||
+				          !Q_stricmp( key, "audiohardnessfactor" ) ||
+				          !Q_stricmp( key, "audioroughnessfactor" ) ||
+				          !Q_stricmp( key, "audiohardminvelocity" ) ||
+				          !Q_stricmp( key, "audiosoftminvelocity" ) ||
+				          !Q_stricmp( key, "scraperoughthreshold" ) ||
+				          !Q_stricmp( key, "impacthardthreshold" ) ||
+				          !Q_stricmp( key, "rollingdrag" ) ||
+				          !Q_stricmp( key, "breakmodel" ) ||
+				          !Q_stricmp( key, "breakmodelforce" ) ||
+				          !Q_stricmp( key, "breakmodelvol" ) ||
+				          !Q_stricmp( key, "break" ) ||
+				          !Q_stricmp( key, "strain" ) ||
+				          !Q_stricmp( key, "rolling" ) ||
+				          !Q_stricmp( key, "roll" ) ||
+				          !Q_stricmp( key, "physicsmaterial" ) ||
+				          !Q_stricmp( key, "jalopymud" ) ||
+				          !Q_stricmp( key, "jalopywater" ) ||
+				          !Q_stricmp( key, "impactdecal" ) ||
+				          !Q_stricmp( key, "footstepleft" ) ||
+				          !Q_stricmp( key, "footstepright" ) ||
+				          !Q_stricmp( key, "footlaunch" ) ||
+				          !Q_stricmp( key, "footland" ) )
+				{
+					// Silently ignore these newer properties for forward compatibility
+				}
 				else
 				{
 					// force a breakpoint

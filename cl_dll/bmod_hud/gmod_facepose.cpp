@@ -72,6 +72,7 @@ void CGModFacePose::CreateFlexConVars()
         Q_snprintf(varDesc, sizeof(varDesc), "Facial flex control %d (0.0-1.0)", i);
 
         // Create ConVar with callback
+        // Use FCVAR_CLIENTDLL so it can properly link with GMod 9's client.dll ConVars
         g_pFlexConVars[i] = new ConVar(varName, "0.0", FCVAR_CLIENTDLL, varDesc, FlexConVarCallback);
     }
 }

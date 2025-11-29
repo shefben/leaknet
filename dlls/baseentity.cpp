@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2003, Valve Corporation, All rights reserved. =======
+//====== Copyright ï¿½ 1996-2003, Valve Corporation, All rights reserved. =======
 //
 // Purpose: The base class from which all game entities are derived.
 //
@@ -323,7 +323,11 @@ CBaseEntity::~CBaseEntity( )
 	//  another entity.
 	// That kind of operation should only occur in UpdateOnRemove calls
 	// Deletion should only occur via UTIL_Remove(Immediate) calls, not via naked delete calls
-	Assert( g_bDisableEhandleAccess );
+	// Only assert during normal gameplay, not during shutdown or entity list clearing
+	if ( !gEntList.IsClearingEntities() && !gEntList.IsInCleanupDelete() )
+	{
+		Assert( g_bDisableEhandleAccess );
+	}
 
 	VPhysicsDestroyObject();
 

@@ -53,6 +53,7 @@ enum soundlevel_t
 {
 	SNDLVL_NONE			= 0,
 
+	SNDLVL_20dB			= 20,	// rustling leaves
 	SNDLVL_25dB			= 25,
 	SNDLVL_30dB			= 30,
 	SNDLVL_35dB			= 35,
@@ -65,6 +66,7 @@ enum soundlevel_t
 	SNDLVL_IDLE			= 60,	// 2.0
 	SNDLVL_60dB			= 60,	// 2.0
 
+	SNDLVL_62dB			= 62,	// GMod 9 compatibility
 	SNDLVL_65dB			= 65,	// 1.5
 	SNDLVL_STATIC		= 66,	// 1.25
 
@@ -77,10 +79,16 @@ enum soundlevel_t
 	SNDLVL_TALKING		= 80,	// 0.7
 	SNDLVL_85dB			= 85,	// 0.6
 	SNDLVL_90dB			= 90,	// 0.5
+	SNDLVL_91dB			= 91,	// GMod compatibility
+	SNDLVL_92dB			= 92,	// GMod compatibility
+	SNDLVL_93dB			= 93,	// GMod compatibility
+	SNDLVL_94dB			= 94,	// GMod 9 compatibility
 	SNDLVL_95dB			= 95,
+	SNDLVL_98dB			= 98,	// GMod 9 compatibility
 	SNDLVL_100dB		= 100,	// 0.4
 	SNDLVL_105dB		= 105,
 	SNDLVL_110dB		= 110,
+	SNDLVL_115dB		= 115,	// GMod 9 compatibility
 	SNDLVL_120dB		= 120,
 	SNDLVL_130dB		= 130,
 
@@ -88,6 +96,7 @@ enum soundlevel_t
 	SNDLVL_140dB		= 140,	// 0.2
 
 	SNDLVL_150dB		= 150,	// 0.2
+	SNDLVL_160dB		= 160,	// GMod 9 compatibility - rocket launching
 };
 
 #define ATTN_TO_SNDLVL( a ) (soundlevel_t)(int)((a) ? (50 + 20 / ((float)a)) : 0 )

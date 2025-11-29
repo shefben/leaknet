@@ -46,7 +46,7 @@
 
 qboolean	con_debuglog;
 qboolean	con_initialized;
-qboolean	con_usewonconsole = false;  // Use Quake-style console when -wonconsole is specified
+qboolean	con_usewonconsole = true;  // Always use Quake-style console (HL1/Quake style)
 
 #ifndef SWDS
 extern  bool		scr_drawloading;
@@ -207,11 +207,12 @@ void Con_Init (void)
 		g_pFileSystem->RemoveFile( "console.log", "GAME" );
 	}
 
-	// Check for Quake-style console parameter
-	con_usewonconsole = CommandLine()->FindParm( "-wonconsole" ) != 0;
+	// Quake-style console is always enabled (HL1/Quake style)
+	// Use -vguiconsole to use the VGUI GameUI console instead
+	con_usewonconsole = CommandLine()->FindParm( "-vguiconsole" ) == 0;
 
 #ifndef SWDS
-	// Initialize Quake console if requested
+	// Initialize Quake console (always, unless -vguiconsole is specified)
 	if ( con_usewonconsole )
 	{
 		if ( !g_pQuakeConsole )

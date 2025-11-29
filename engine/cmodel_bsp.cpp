@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -7,6 +7,7 @@
 
 #include "sysexternal.h"
 #include "cmodel_engine.h"
+#include "modelloader.h"		// For GetCurrentBSPVersion()
 
 // UNDONE: Abstract the texture/material lookup stuff and all of this goes away
 #include "materialsystem/imaterialsystem.h"
@@ -41,6 +42,7 @@ void CollisionBSPData_LoadVisibility( CCollisionBSPData *pBSPData );
 void CollisionBSPData_LoadEntityString( CCollisionBSPData *pBSPData );
 void CollisionBSPData_LoadPhysics( CCollisionBSPData *pBSPData );
 void CollisionBSPData_LoadDispInfo( CCollisionBSPData *pBSPData );
+void CollisionBSPData_LoadMapFlags( CCollisionBSPData *pBSPData );
 
 
 //=============================================================================
@@ -60,6 +62,10 @@ bool CollisionBSPData_Init( CCollisionBSPData *pBSPData )
 	pBSPData->map_nullname = "**empty**";
 	pBSPData->numtextures = 0;
 
+	// Initialize map flags
+	pBSPData->map_flags_loaded = false;
+	memset( &pBSPData->map_flags, 0, sizeof( dflagslump_t ) );
+
 	return true;
 }
 
@@ -77,6 +83,14 @@ void CollisionBSPData_Destroy( CCollisionBSPData *pBSPData )
 	DispCollTrees_FreeLeafList( pBSPData );
 	DispCollTrees_Free( g_pDispCollTrees );
 	g_pDispCollTrees = NULL;
+
+	// Free displacement bounds array
+	if ( g_pDispBounds )
+	{
+		free( g_pDispBounds );
+		g_pDispBounds = NULL;
+	}
+
 	g_DispCollTreeCount = 0;
 
 	if ( pBSPData->map_planes.Base() )
@@ -260,6 +274,7 @@ bool CollisionBSPData_Load( const char *pName, CCollisionBSPData *pBSPData )
 	CollisionBSPData_LoadEntityString( pBSPData );
 	CollisionBSPData_LoadPhysics( pBSPData );
     CollisionBSPData_LoadDispInfo( pBSPData );
+	CollisionBSPData_LoadMapFlags( pBSPData );
 
 	return true;
 }
@@ -372,22 +387,48 @@ void CollisionBSPData_LoadTexinfo( CCollisionBSPData *pBSPData,
 
 
 //-----------------------------------------------------------------------------
+// Multi-version leaf loading helper
+// v18/v20+: 32-byte leaf structure
+// v19 with ambient: 56-byte leaf structure with embedded lighting
+//-----------------------------------------------------------------------------
+static int GetLeafStructureSize( int nBSPVersion, int nLumpVersion )
+{
+	// v20+ uses 32-byte leaves with ambient in separate lump
+	if ( BSP_VERSION_HAS_AMBIENT_LUMP( nBSPVersion ) )
+	{
+		return sizeof(dleaf_v1_t);
+	}
+
+	// v19 with lump version 0 may have 56-byte leaves with ambient
+	if ( nBSPVersion == BSPVERSION_19 && nLumpVersion == LUMP_LEAFS_VERSION_0 )
+	{
+		return sizeof(dleaf_v0_t);
+	}
+
+	// v18 (LeakNet native) uses 32-byte leaves
+	return sizeof(dleaf_t);
+}
+
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void CollisionBSPData_LoadLeafs( CCollisionBSPData *pBSPData )
 {
 	CMapLoadHelper lh( LUMP_LEAFS );
 
 	int			i;
-	dleaf_t 	*in;
 	int			count;
-	
-	in = (dleaf_t *)lh.LumpBase();
-	if (lh.LumpSize() % sizeof(*in))
+
+	// Determine leaf structure size based on BSP version
+	int nBSPVersion = GetCurrentBSPVersion();
+	int nLeafSize = GetLeafStructureSize( nBSPVersion, lh.LumpVersion() );
+
+	byte *pLeafData = (byte *)lh.LumpBase();
+	if (lh.LumpSize() % nLeafSize)
 	{
-		Sys_Error( "CollisionBSPData_LoadLeafs: funny lump size");
+		Sys_Error( "CollisionBSPData_LoadLeafs: funny lump size (size=%d, elem=%d)", lh.LumpSize(), nLeafSize);
 	}
 
-	count = lh.LumpSize() / sizeof(*in);
+	count = lh.LumpSize() / nLeafSize;
 
 	if (count < 1)
 	{
@@ -409,15 +450,51 @@ void CollisionBSPData_LoadLeafs( CCollisionBSPData *pBSPData )
 	pBSPData->numleafs = count;
 	pBSPData->numclusters = 0;
 
-	for ( i=0 ; i<count ; i++, in++ )
-	{
-		cleaf_t	*out = &pBSPData->map_leafs[i];	
-		out->contents = LittleLong (in->contents);
-		out->cluster = LittleShort (in->cluster);
-		out->area = LittleShort (in->area);
-		out->firstleafbrush = (unsigned short)LittleShort (in->firstleafbrush);
-		out->numleafbrushes = (unsigned short)LittleShort (in->numleafbrushes);
+	Con_DPrintf( "Loading %d leaves (BSP v%d, %d bytes each)\n", count, nBSPVersion, nLeafSize );
 
+	for ( i=0 ; i<count ; i++ )
+	{
+		cleaf_t	*out = &pBSPData->map_leafs[i];
+		int contents, cluster, area, firstleafbrush, numleafbrushes;
+
+		// Read leaf data based on version
+		if ( nLeafSize == sizeof(dleaf_v0_t) )
+		{
+			// v19 with embedded ambient (56 bytes)
+			dleaf_v0_t *in = (dleaf_v0_t *)(pLeafData + i * nLeafSize);
+			contents = LittleLong(in->contents);
+			cluster = LittleShort(in->cluster);
+			area = LittleShort(in->area);
+			firstleafbrush = (unsigned short)LittleShort(in->firstleafbrush);
+			numleafbrushes = (unsigned short)LittleShort(in->numleafbrushes);
+		}
+		else if ( BSP_VERSION_HAS_AMBIENT_LUMP( nBSPVersion ) )
+		{
+			// v20+ with area bitfield (32 bytes)
+			dleaf_v1_t *in = (dleaf_v1_t *)(pLeafData + i * nLeafSize);
+			contents = LittleLong(in->contents);
+			cluster = LittleShort(in->cluster);
+			// v20+ uses bitfield for area (9 bits) - bitfield handles extraction
+			area = in->area;
+			firstleafbrush = (unsigned short)LittleShort(in->firstleafbrush);
+			numleafbrushes = (unsigned short)LittleShort(in->numleafbrushes);
+		}
+		else
+		{
+			// v18 LeakNet native (32 bytes)
+			dleaf_t *in = (dleaf_t *)(pLeafData + i * nLeafSize);
+			contents = LittleLong(in->contents);
+			cluster = LittleShort(in->cluster);
+			area = LittleShort(in->area);
+			firstleafbrush = (unsigned short)LittleShort(in->firstleafbrush);
+			numleafbrushes = (unsigned short)LittleShort(in->numleafbrushes);
+		}
+
+		out->contents = contents;
+		out->cluster = cluster;
+		out->area = area;
+		out->firstleafbrush = firstleafbrush;
+		out->numleafbrushes = numleafbrushes;
 		out->m_pDisplacements = NULL;
 
 		if (out->cluster >= pBSPData->numclusters)
@@ -910,17 +987,69 @@ void CollisionBSPData_LoadDispInfo( CCollisionBSPData *pBSPData )
         Sys_Error( "CMod_LoadDispInfo: bad surf edge lump size!" );
 
     //
-    // get face data
+    // get face data - handle multi-version BSP formats
     //
  	CMapLoadHelper lhf( LUMP_FACES );
-    dface_t *pFaces = ( dface_t* )lhf.LumpBase();
-    if( lhf.LumpSize() % sizeof( dface_t ) )
-        Sys_Error( "CMod_LoadDispInfo: bad face lump size!" );
-    int faceCount = lhf.LumpSize() / sizeof( dface_t );
+	int nBSPVersion = GetCurrentBSPVersion();
+
+	dface_t *pFaces = NULL;
+	dface_t *pFaceBuffer = NULL;  // For v19+ conversion
+	int faceCount = 0;
+
+	if ( BSP_VERSION_HAS_AVGCOLOR( nBSPVersion ) )
+	{
+		// v18: Native format with m_AvgLightColor (72 bytes)
+		pFaces = ( dface_t* )lhf.LumpBase();
+		if( lhf.LumpSize() % sizeof( dface_t ) )
+			Sys_Error( "CMod_LoadDispInfo: bad face lump size (v18)!" );
+		faceCount = lhf.LumpSize() / sizeof( dface_t );
+	}
+	else
+	{
+		// v19+: Smaller format without m_AvgLightColor (56 bytes)
+		dface_v19_t *pV19Faces = ( dface_v19_t* )lhf.LumpBase();
+		if( lhf.LumpSize() % sizeof( dface_v19_t ) )
+			Sys_Error( "CMod_LoadDispInfo: bad face lump size (v19+)!" );
+		faceCount = lhf.LumpSize() / sizeof( dface_v19_t );
+
+		// Allocate temporary buffer and convert to internal v18 format
+		// We only need the dispinfo field, but convert fully for consistency
+		pFaceBuffer = new dface_t[faceCount];
+		for ( int i = 0; i < faceCount; i++ )
+		{
+			// Clear the v18-only m_AvgLightColor field
+			memset( pFaceBuffer[i].m_AvgLightColor, 0, sizeof( pFaceBuffer[i].m_AvgLightColor ) );
+
+			// Copy all common fields from v19 to v18 structure
+			pFaceBuffer[i].planenum = pV19Faces[i].planenum;
+			pFaceBuffer[i].side = pV19Faces[i].side;
+			pFaceBuffer[i].onNode = pV19Faces[i].onNode;
+			pFaceBuffer[i].firstedge = pV19Faces[i].firstedge;
+			pFaceBuffer[i].numedges = pV19Faces[i].numedges;
+			pFaceBuffer[i].texinfo = pV19Faces[i].texinfo;
+			pFaceBuffer[i].dispinfo = pV19Faces[i].dispinfo;
+			pFaceBuffer[i].surfaceFogVolumeID = pV19Faces[i].surfaceFogVolumeID;
+			memcpy( pFaceBuffer[i].styles, pV19Faces[i].styles, sizeof( pFaceBuffer[i].styles ) );
+			pFaceBuffer[i].lightofs = pV19Faces[i].lightofs;
+			pFaceBuffer[i].area = pV19Faces[i].area;
+			pFaceBuffer[i].m_LightmapTextureMinsInLuxels[0] = pV19Faces[i].m_LightmapTextureMinsInLuxels[0];
+			pFaceBuffer[i].m_LightmapTextureMinsInLuxels[1] = pV19Faces[i].m_LightmapTextureMinsInLuxels[1];
+			pFaceBuffer[i].m_LightmapTextureSizeInLuxels[0] = pV19Faces[i].m_LightmapTextureSizeInLuxels[0];
+			pFaceBuffer[i].m_LightmapTextureSizeInLuxels[1] = pV19Faces[i].m_LightmapTextureSizeInLuxels[1];
+			pFaceBuffer[i].origFace = pV19Faces[i].origFace;
+			pFaceBuffer[i].numPrims = pV19Faces[i].numPrims;
+			pFaceBuffer[i].firstPrimID = pV19Faces[i].firstPrimID;
+			pFaceBuffer[i].smoothingGroups = pV19Faces[i].smoothingGroups;
+		}
+		pFaces = pFaceBuffer;
+	}
 
 	dface_t *pFaceList = pFaces;
 	if (!pFaceList)
+	{
+		delete[] pFaceBuffer;
 		return;
+	}
 
     //
     // get texinfo data
@@ -933,6 +1062,7 @@ void CollisionBSPData_LoadDispInfo( CCollisionBSPData *pBSPData )
 	// allocate displacement collision trees
 	g_DispCollTreeCount = coreDispCount;
 	g_pDispCollTrees = DispCollTrees_Alloc( g_DispCollTreeCount );
+	g_pDispBounds = (alignedbbox_t *)malloc( g_DispCollTreeCount * sizeof(alignedbbox_t) );
 
 	// Build the inverse mapping from disp index to face
 	int nMemSize = coreDispCount * sizeof(unsigned short);
@@ -1035,7 +1165,12 @@ void CollisionBSPData_LoadDispInfo( CCollisionBSPData *pBSPData )
 		coreDisp.Create();
 
 		// new collision
-		pDispTree->Create( &coreDisp );	
+		pDispTree->Create( &coreDisp );
+
+		// Initialize displacement bounds for collision optimization
+		Vector mins, maxs;
+		pDispTree->GetBounds( mins, maxs );
+		g_pDispBounds[i].Init( mins, maxs, i, pDispTree->GetContents() );
 
 		// Surface props.
 		texinfo_t *pTex = &pTexinfoList[pFaces->texinfo];
@@ -1062,6 +1197,62 @@ void CollisionBSPData_LoadDispInfo( CCollisionBSPData *pBSPData )
 				}
 			}
 		}
+	}
+
+	// Clean up temporary face buffer if we allocated one for v19+ conversion
+	delete[] pFaceBuffer;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Load map flags (v21+ BSP format)
+//          Provides information about map compilation features like HDR lighting
+//-----------------------------------------------------------------------------
+void CollisionBSPData_LoadMapFlags( CCollisionBSPData *pBSPData )
+{
+	// Initialize flags to default values
+	pBSPData->map_flags_loaded = false;
+	memset( &pBSPData->map_flags, 0, sizeof( dflagslump_t ) );
+
+	// Check BSP version - map flags are only available in v21+
+	int nBSPVersion = GetCurrentBSPVersion();
+	if ( nBSPVersion < 21 )
+	{
+		Con_DPrintf( "Map flags not available in BSP v%d (requires v21+)\n", nBSPVersion );
+		return;
+	}
+
+	CMapLoadHelper lh( LUMP_MAP_FLAGS );
+
+	// Check if the lump exists and has data
+	if ( lh.LumpSize() == 0 )
+	{
+		Con_DPrintf( "Map flags lump is empty (BSP v%d)\n", nBSPVersion );
+		return;
+	}
+
+	// Validate lump size
+	if ( lh.LumpSize() != sizeof( dflagslump_t ) )
+	{
+		Warning( "CollisionBSPData_LoadMapFlags: Invalid map flags lump size. Expected %d, got %d\n",
+				 sizeof( dflagslump_t ), lh.LumpSize() );
+		return;
+	}
+
+	// Load map flags data
+	dflagslump_t *pMapFlags = (dflagslump_t *)lh.LumpBase();
+	pBSPData->map_flags = *pMapFlags;
+	pBSPData->map_flags_loaded = true;
+
+	Con_DPrintf( "Loaded map flags: 0x%08X\n", pBSPData->map_flags.m_LevelFlags );
+
+	// Log specific flag information
+	if ( pBSPData->map_flags.m_LevelFlags & LVLFLAGS_BAKED_STATIC_PROP_LIGHTING_HDR )
+	{
+		Con_DPrintf( "  - HDR static prop lighting enabled\n" );
+	}
+	if ( pBSPData->map_flags.m_LevelFlags & LVLFLAGS_BAKED_STATIC_PROP_LIGHTING_NONHDR )
+	{
+		Con_DPrintf( "  - Non-HDR static prop lighting enabled\n" );
 	}
 }
 

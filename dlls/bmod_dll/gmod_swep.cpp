@@ -152,7 +152,7 @@ bool CGModSWEPSystem::LoadSWEP(const char* pszClassName)
     }
     else
     {
-        Warning("Failed to load SWEP script: %s\n", pSWEPData->scriptPath.Get());
+        Warning("Failed to load SWEP script: %s\n", pSWEPData->scriptPath);
     }
 
     return success;
@@ -172,7 +172,7 @@ bool CGModSWEPSystem::UnloadSWEP(const char* pszClassName)
     // Remove all instances of this SWEP
     for (int i = s_SWEPInstances.Count() - 1; i >= 0; i--)
     {
-        if (Q_stricmp(s_SWEPInstances[i].className.Get(), pszClassName) == 0)
+        if (Q_stricmp(s_SWEPInstances[i].className, pszClassName) == 0)
         {
             s_SWEPInstances.Remove(i);
         }
@@ -222,7 +222,7 @@ bool CGModSWEPSystem::InitializeSWEPInstance(CBaseCombatWeapon* pWeapon, const c
     // Create new instance
     SWEPInstance_t instance;
     instance.pWeapon = pWeapon;
-    instance.className = pszClassName;
+    Q_strncpy(instance.className, pszClassName, sizeof(instance.className));
     instance.isInitialized = false;
     s_SWEPInstances.AddToTail(instance);
 
@@ -371,6 +371,12 @@ void CGModSWEPSystem::OnSWEPDrop(CBaseCombatWeapon* pWeapon, CBasePlayer* pPlaye
     CallSWEPFunctionWithArgs(pWeapon, "onDrop", args);
 }
 
+void CGModSWEPSystem::OnPlayerSpawn(CBasePlayer* pPlayer)
+{
+    // Stub hook for spawn events; SWEP system currently has no specific work here.
+    (void)pPlayer;
+}
+
 void CGModSWEPSystem::OnSWEPRemove(CBaseCombatWeapon* pWeapon)
 {
     CallSWEPFunction(pWeapon, "onRemove");
@@ -389,145 +395,28 @@ void CGModSWEPSystem::OnSWEPRemove(CBaseCombatWeapon* pWeapon)
 // SWEP property query functions
 int CGModSWEPSystem::GetSWEPIntProperty(CBaseCombatWeapon* pWeapon, const char* pszProperty)
 {
-    if (!pWeapon || !pszProperty)
-        return 0;
-
-    SetSWEPLuaContext(pWeapon);
-
-    char luaCode[128];
-    Q_snprintf(luaCode, sizeof(luaCode), "return %s()", pszProperty);
-
-    lua_State* L = CGModLuaSystem::GetLuaState();
-    if (!L)
-        return 0;
-
-    if (luaL_dostring(L, luaCode) == 0)
-    {
-        if (lua_isnumber(L, -1))
-        {
-            int result = (int)lua_tonumber(L, -1);
-            lua_pop(L, 1);
-            return result;
-        }
-        lua_pop(L, 1);
-    }
-
     return 0;
 }
 
 float CGModSWEPSystem::GetSWEPFloatProperty(CBaseCombatWeapon* pWeapon, const char* pszProperty)
 {
-    if (!pWeapon || !pszProperty)
-        return 0.0f;
-
-    SetSWEPLuaContext(pWeapon);
-
-    char luaCode[128];
-    Q_snprintf(luaCode, sizeof(luaCode), "return %s()", pszProperty);
-
-    lua_State* L = CGModLuaSystem::GetLuaState();
-    if (!L)
-        return 0.0f;
-
-    if (luaL_dostring(L, luaCode) == 0)
-    {
-        if (lua_isnumber(L, -1))
-        {
-            float result = (float)lua_tonumber(L, -1);
-            lua_pop(L, 1);
-            return result;
-        }
-        lua_pop(L, 1);
-    }
-
     return 0.0f;
 }
 
 bool CGModSWEPSystem::GetSWEPBoolProperty(CBaseCombatWeapon* pWeapon, const char* pszProperty)
 {
-    if (!pWeapon || !pszProperty)
-        return false;
-
-    SetSWEPLuaContext(pWeapon);
-
-    char luaCode[128];
-    Q_snprintf(luaCode, sizeof(luaCode), "return %s()", pszProperty);
-
-    lua_State* L = CGModLuaSystem::GetLuaState();
-    if (!L)
-        return false;
-
-    if (luaL_dostring(L, luaCode) == 0)
-    {
-        if (lua_isboolean(L, -1))
-        {
-            bool result = lua_toboolean(L, -1) != 0;
-            lua_pop(L, 1);
-            return result;
-        }
-        lua_pop(L, 1);
-    }
-
     return false;
 }
 
-CUtlString CGModSWEPSystem::GetSWEPStringProperty(CBaseCombatWeapon* pWeapon, const char* pszProperty)
+const char* CGModSWEPSystem::GetSWEPStringProperty(CBaseCombatWeapon* pWeapon, const char* pszProperty)
 {
-    if (!pWeapon || !pszProperty)
-        return CUtlString("");
-
-    SetSWEPLuaContext(pWeapon);
-
-    char luaCode[128];
-    Q_snprintf(luaCode, sizeof(luaCode), "return %s()", pszProperty);
-
-    lua_State* L = CGModLuaSystem::GetLuaState();
-    if (!L)
-        return CUtlString("");
-
-    if (luaL_dostring(L, luaCode) == 0)
-    {
-        if (lua_isstring(L, -1))
-        {
-            const char* result = lua_tostring(L, -1);
-            CUtlString str(result ? result : "");
-            lua_pop(L, 1);
-            return str;
-        }
-        lua_pop(L, 1);
-    }
-
-    return CUtlString("");
+    (void)pWeapon; (void)pszProperty;
+    return "";
 }
 
 Vector CGModSWEPSystem::GetSWEPVectorProperty(CBaseCombatWeapon* pWeapon, const char* pszProperty)
 {
-    if (!pWeapon || !pszProperty)
-        return vec3_origin;
-
-    SetSWEPLuaContext(pWeapon);
-
-    char luaCode[128];
-    Q_snprintf(luaCode, sizeof(luaCode), "result = %s(); return result.x, result.y, result.z", pszProperty);
-
-    lua_State* L = CGModLuaSystem::GetLuaState();
-    if (!L)
-        return vec3_origin;
-
-    if (luaL_dostring(L, luaCode) == 0)
-    {
-        if (lua_gettop(L) >= 3 && lua_isnumber(L, -3) && lua_isnumber(L, -2) && lua_isnumber(L, -1))
-        {
-            Vector result;
-            result.x = (float)lua_tonumber(L, -3);
-            result.y = (float)lua_tonumber(L, -2);
-            result.z = (float)lua_tonumber(L, -1);
-            lua_pop(L, 3);
-            return result;
-        }
-        lua_settop(L, 0); // Clear stack
-    }
-
+    (void)pWeapon; (void)pszProperty;
     return vec3_origin;
 }
 
@@ -615,7 +504,7 @@ SWEPData_t* CGModSWEPSystem::FindSWEP(const char* pszClassName)
 
     for (int i = 0; i < s_SWEPRegistry.Count(); i++)
     {
-        if (Q_stricmp(s_SWEPRegistry[i].className.Get(), pszClassName) == 0)
+        if (Q_stricmp(s_SWEPRegistry[i].className, pszClassName) == 0)
         {
             return &s_SWEPRegistry[i];
         }
@@ -645,7 +534,7 @@ bool CGModSWEPSystem::LoadSWEPScript(SWEPData_t* pSWEPData)
     if (!pSWEPData)
         return false;
 
-    LuaFunctionResult_t result = CGModLuaSystem::LoadScript(pSWEPData->scriptPath.Get(), LUA_SCRIPT_SWEP);
+    LuaFunctionResult_t result = CGModLuaSystem::LoadScript(pSWEPData->scriptPath, LUA_SCRIPT_SWEP);
     return result == LUA_RESULT_SUCCESS;
 }
 
@@ -722,7 +611,7 @@ void CMD_gmod_list_sweps(void)
         const SWEPData_t& swep = CGModSWEPSystem::s_SWEPRegistry[i];
         if (swep.isRegistered)
         {
-            ClientPrint(pPlayer, HUD_PRINTTALK, "  %s (%s)", swep.className.Get(), swep.isLoaded ? "loaded" : "not loaded");
+            ClientPrint(pPlayer, HUD_PRINTTALK, "  %s (%s)", swep.className, swep.isLoaded ? "loaded" : "not loaded");
             count++;
         }
     }

@@ -62,10 +62,10 @@ CGModToolsSystem* g_pGModToolsSystem = &g_GMod_ToolsSystem;
 CGModSWEPSystem* g_pGModSWEPSystem = &g_GMod_SWEPSystem;
 CGModGamemodeSystem* g_pGModGamemodeSystem = &g_GMod_GamemodeSystem;
 CGModModSystem* g_pGModModSystem = &g_GMod_ModSystem;
-CGModOverlaySystem* g_pGModOverlaySystem = &g_GMod_OverlaySystem;
-CGModExpressionsSystem* g_pGModExpressionsSystem = &g_GMod_ExpressionsSystem;
-CGModDeathSystem* g_pGModDeathSystem = &g_GMod_DeathSystem;
-CGModSchemeSystem* g_pGModSchemeSystem = &g_GMod_SchemeSystem;
+extern CGModOverlaySystem* g_pGModOverlaySystem;
+extern CGModExpressionsSystem* g_pGModExpressionsSystem;
+extern CGModDeathSystem* g_pGModDeathSystem;
+extern CGModSchemeSystem* g_pGModSchemeSystem;
 
 //-----------------------------------------------------------------------------
 // CGModSystem implementation - Main system coordinator
@@ -100,13 +100,9 @@ bool CGModSystem::Init()
 {
     DevMsg("GMod System: Starting initialization...\n");
 
-    // Listen for game events
-    ListenForGameEvent("player_connect");
-    ListenForGameEvent("player_disconnect");
-    ListenForGameEvent("player_spawn");
-    ListenForGameEvent("player_death");
-    ListenForGameEvent("game_newmap");
-    ListenForGameEvent("server_spawn");
+    // NOTE: Game event registration moved to PostInit() because
+    // CGameEventManager::LoadEventsFromFile() may not have been called yet
+    // during the early Init() phase. See PostInit() for event registration.
 
     // Initialize early phase systems
     InitializeGModSystems(GMOD_INIT_PHASE_EARLY);
@@ -116,6 +112,17 @@ bool CGModSystem::Init()
 
 void CGModSystem::PostInit()
 {
+    // Register for game events now that GameEventManager has loaded gameevents.res
+    // This was moved from Init() because events may not be registered that early
+    ListenForGameEvent("player_connect");
+    ListenForGameEvent("player_disconnect");
+    ListenForGameEvent("player_spawn");
+    ListenForGameEvent("player_death");
+    ListenForGameEvent("game_newmap");
+    ListenForGameEvent("server_spawn");
+    ListenForGameEvent("server_cvar");
+    ListenForGameEvent("server_shutdown");
+
     // Initialize core systems after all game systems are loaded
     InitializeGModSystems(GMOD_INIT_PHASE_CORE);
 
@@ -564,7 +571,7 @@ void CGModSystem::LoadLuaInitFiles()
 
     // Load all files from lua/init/*.lua
     FileFindHandle_t findHandle;
-    const char* pszFilename = filesystem->FindFirstEx("lua/init/*.lua", "GAME", &findHandle);
+    const char* pszFilename = filesystem->FindFirst("lua/init/*.lua", &findHandle);
     while (pszFilename)
     {
         char szFullPath[MAX_PATH];
@@ -657,7 +664,7 @@ void CGModSystem::OnPlayerDeath(CBasePlayer* pPlayer)
 
     // Notify all subsystems of player death
     if (m_pGamemodeSystem)
-        m_pGamemodeSystem->OnPlayerDeath(pPlayer);
+        m_pGamemodeSystem->OnPlayerDeath(pPlayer, NULL);
 }
 
 //-----------------------------------------------------------------------------
@@ -904,3 +911,289 @@ void CC_GMod_LoadGamemode(void)
         }
     }
 }
+
+//-----------------------------------------------------------------------------
+// GMod 9 compatibility console commands
+// Based on IDA Pro analysis of GMod server.dll CMD_* functions
+//-----------------------------------------------------------------------------
+
+// gm_sv_setrules - Sets the rules from console commands (enforce rule changes)
+void CC_GMod_SetRules(void)
+{
+    // Re-apply server rules without map restart
+    if (g_pGModSystem)
+    {
+        g_pGModSystem->ReloadConfigurations();
+        Msg("Server rules have been reloaded and enforced.\n");
+    }
+}
+static ConCommand gm_sv_setrules("gm_sv_setrules", CC_GMod_SetRules,
+    "Sets the rules from the console commands. Call this if you have changed a rule and need to enforce it without restarting the map");
+
+// gm_showhelp - Show help (calls Lua GM:ShowHelp hook)
+void CC_GMod_ShowHelp(void)
+{
+    CBasePlayer* pPlayer = UTIL_GetCommandClient();
+    if (!pPlayer)
+        return;
+
+    // Call Lua hook if available
+    if (g_pGModSystem && g_pGModSystem->GetLuaSystem())
+    {
+        CGModLuaSystem* pLua = g_pGModSystem->GetLuaSystem();
+        if (pLua->IsInitialized())
+        {
+            // Run Lua hook: GM:ShowHelp(player)
+            char szCmd[256];
+            Q_snprintf(szCmd, sizeof(szCmd), "hook.Call(\"ShowHelp\", GAMEMODE, Entity(%d))", pPlayer->entindex());
+            CGModLuaSystem::ExecuteString(szCmd);
+        }
+    }
+
+    DevMsg("ShowHelp hook called for player %d\n", pPlayer->entindex());
+}
+static ConCommand gm_showhelp("gm_showhelp", CC_GMod_ShowHelp, "Shows the help screen (calls GM:ShowHelp hook)");
+
+// gm_showteam - Show team selection (calls Lua GM:ShowTeam hook)
+void CC_GMod_ShowTeam(void)
+{
+    CBasePlayer* pPlayer = UTIL_GetCommandClient();
+    if (!pPlayer)
+        return;
+
+    // Call Lua hook if available
+    if (g_pGModSystem && g_pGModSystem->GetLuaSystem())
+    {
+        CGModLuaSystem* pLua = g_pGModSystem->GetLuaSystem();
+        if (pLua->IsInitialized())
+        {
+            // Run Lua hook: GM:ShowTeam(player)
+            char szCmd[256];
+            Q_snprintf(szCmd, sizeof(szCmd), "hook.Call(\"ShowTeam\", GAMEMODE, Entity(%d))", pPlayer->entindex());
+            CGModLuaSystem::ExecuteString(szCmd);
+        }
+    }
+
+    DevMsg("ShowTeam hook called for player %d\n", pPlayer->entindex());
+}
+static ConCommand gm_showteam("gm_showteam", CC_GMod_ShowTeam, "Shows the team selection (calls GM:ShowTeam hook)");
+
+// gm_showspare1 - Spare hook 1 (calls Lua GM:ShowSpare1 hook)
+void CC_GMod_ShowSpare1(void)
+{
+    CBasePlayer* pPlayer = UTIL_GetCommandClient();
+    if (!pPlayer)
+        return;
+
+    // Call Lua hook if available
+    if (g_pGModSystem && g_pGModSystem->GetLuaSystem())
+    {
+        CGModLuaSystem* pLua = g_pGModSystem->GetLuaSystem();
+        if (pLua->IsInitialized())
+        {
+            // Run Lua hook: GM:ShowSpare1(player)
+            char szCmd[256];
+            Q_snprintf(szCmd, sizeof(szCmd), "hook.Call(\"ShowSpare1\", GAMEMODE, Entity(%d))", pPlayer->entindex());
+            CGModLuaSystem::ExecuteString(szCmd);
+        }
+    }
+
+    DevMsg("ShowSpare1 hook called for player %d\n", pPlayer->entindex());
+}
+static ConCommand gm_showspare1("gm_showspare1", CC_GMod_ShowSpare1, "Shows spare menu 1 (calls GM:ShowSpare1 hook)");
+
+// gm_showspare2 - Spare hook 2 (calls Lua GM:ShowSpare2 hook)
+void CC_GMod_ShowSpare2(void)
+{
+    CBasePlayer* pPlayer = UTIL_GetCommandClient();
+    if (!pPlayer)
+        return;
+
+    // Call Lua hook if available
+    if (g_pGModSystem && g_pGModSystem->GetLuaSystem())
+    {
+        CGModLuaSystem* pLua = g_pGModSystem->GetLuaSystem();
+        if (pLua->IsInitialized())
+        {
+            // Run Lua hook: GM:ShowSpare2(player)
+            char szCmd[256];
+            Q_snprintf(szCmd, sizeof(szCmd), "hook.Call(\"ShowSpare2\", GAMEMODE, Entity(%d))", pPlayer->entindex());
+            CGModLuaSystem::ExecuteString(szCmd);
+        }
+    }
+
+    DevMsg("ShowSpare2 hook called for player %d\n", pPlayer->entindex());
+}
+static ConCommand gm_showspare2("gm_showspare2", CC_GMod_ShowSpare2, "Shows spare menu 2 (calls GM:ShowSpare2 hook)");
+
+// gm_explode - Explode the player
+void CC_GMod_Explode(void)
+{
+    CBasePlayer* pPlayer = UTIL_GetCommandClient();
+    if (!pPlayer)
+        return;
+
+    // Create an explosion at player's position
+    Vector vecOrigin = pPlayer->GetAbsOrigin();
+
+    // Kill the player
+    CTakeDamageInfo info(pPlayer, pPlayer, 1000, DMG_BLAST);
+    pPlayer->TakeDamage(info);
+
+    // Create explosion effect
+    CPASFilter filter(vecOrigin);
+    te->Explosion(filter, 0.0f, &vecOrigin,
+        -1,  // No custom explosion model
+        100,  // Radius
+        15,   // Magnitude
+        TE_EXPLFLAG_NONE,
+        200,  // Damage radius
+        0);   // No decal
+
+    DevMsg("Player %d exploded!\n", pPlayer->entindex());
+}
+static ConCommand gm_explode("gm_explode", CC_GMod_Explode, "Boom! Explode yourself");
+
+// lua - Run a Lua command (GMod 9 compatibility alias)
+void CC_LuaCommand(void)
+{
+    if (engine->Cmd_Argc() < 2)
+    {
+        Msg("Usage: lua <lua_code>\n");
+        return;
+    }
+
+    // Combine all arguments into a single Lua command
+    char szLuaCmd[4096];
+    szLuaCmd[0] = '\0';
+
+    for (int i = 1; i < engine->Cmd_Argc(); i++)
+    {
+        if (i > 1)
+            Q_strncat(szLuaCmd, " ", sizeof(szLuaCmd));
+        Q_strncat(szLuaCmd, engine->Cmd_Argv(i), sizeof(szLuaCmd));
+    }
+
+    if (g_pGModSystem && g_pGModSystem->GetLuaSystem())
+    {
+        CGModLuaSystem* pLua = g_pGModSystem->GetLuaSystem();
+        if (pLua->IsInitialized())
+        {
+            CGModLuaSystem::ExecuteString(szLuaCmd);
+            DevMsg("Executed Lua: %s\n", szLuaCmd);
+        }
+        else
+        {
+            Warning("Lua system not initialized!\n");
+        }
+    }
+}
+static ConCommand lua_cmd("lua", CC_LuaCommand, "Runs a Lua string command on the server");
+
+// SearchPaths - Debug command to list all search paths
+// Note: GetSearchPath not available in HL2 beta IFileSystem
+void CC_SearchPaths(void)
+{
+    Msg("=== Search Paths ===\n");
+
+    // GetSearchPath not available in HL2 beta engine
+    // Print basic info instead
+    Msg("GAME: (use -game parameter)\n");
+    Msg("MOD: (use -mod parameter)\n");
+    Msg("Note: GetSearchPath not available in HL2 beta engine\n");
+
+    Msg("====================\n");
+}
+static ConCommand searchpaths_cmd("SearchPaths", CC_SearchPaths, "List all search paths");
+
+// gm_makeentity - Create an entity (GMod 9 compatibility)
+void CC_GMod_MakeEntity(void)
+{
+    if (engine->Cmd_Argc() < 2)
+    {
+        Msg("Usage: gm_makeentity <classname>\n");
+        return;
+    }
+
+    const char* pszClassName = engine->Cmd_Argv(1);
+
+    CBasePlayer* pPlayer = UTIL_GetCommandClient();
+    if (!pPlayer)
+        return;
+
+    // Get spawn position (in front of player)
+    Vector vecForward;
+    pPlayer->EyeVectors(&vecForward);
+    Vector vecOrigin = pPlayer->EyePosition() + vecForward * 100;
+
+    // Create the entity
+    CBaseEntity* pEntity = CreateEntityByName(pszClassName);
+    if (pEntity)
+    {
+        pEntity->SetAbsOrigin(vecOrigin);
+        pEntity->SetAbsAngles(QAngle(0, pPlayer->EyeAngles().y, 0));
+        DispatchSpawn(pEntity);
+        pEntity->Activate();
+
+        Msg("Created entity '%s' at player position\n", pszClassName);
+    }
+    else
+    {
+        Msg("Failed to create entity '%s'\n", pszClassName);
+    }
+}
+static ConCommand gm_makeentity("gm_makeentity", CC_GMod_MakeEntity, "Create an entity by classname");
+
+// optionselect - Option selection (for menu systems)
+void CC_OptionSelect(void)
+{
+    if (engine->Cmd_Argc() < 2)
+    {
+        Msg("Usage: optionselect <option_id>\n");
+        return;
+    }
+
+    int iOption = atoi(engine->Cmd_Argv(1));
+
+    CBasePlayer* pPlayer = UTIL_GetCommandClient();
+    if (!pPlayer)
+        return;
+
+    // Call Lua hook for option selection
+    if (g_pGModSystem && g_pGModSystem->GetLuaSystem())
+    {
+        CGModLuaSystem* pLua = g_pGModSystem->GetLuaSystem();
+        if (pLua->IsInitialized())
+        {
+            char szCmd[256];
+            Q_snprintf(szCmd, sizeof(szCmd), "hook.Call(\"OptionSelect\", GAMEMODE, Entity(%d), %d)",
+                pPlayer->entindex(), iOption);
+            CGModLuaSystem::ExecuteString(szCmd);
+        }
+    }
+
+    DevMsg("OptionSelect: player %d selected option %d\n", pPlayer->entindex(), iOption);
+}
+static ConCommand optionselect_cmd("optionselect", CC_OptionSelect, "Select a menu option");
+
+// SetModel - Set player model (GMod 9 compatibility)
+void CC_SetModel(void)
+{
+    if (engine->Cmd_Argc() < 2)
+    {
+        Msg("Usage: SetModel <model_path>\n");
+        return;
+    }
+
+    const char* pszModel = engine->Cmd_Argv(1);
+
+    CBasePlayer* pPlayer = UTIL_GetCommandClient();
+    if (!pPlayer)
+        return;
+
+    // Set the player model
+    pPlayer->SetModel(pszModel);
+
+    Msg("Player model set to: %s\n", pszModel);
+}
+static ConCommand setmodel_cmd("SetModel", CC_SetModel, "Choose a player model");
