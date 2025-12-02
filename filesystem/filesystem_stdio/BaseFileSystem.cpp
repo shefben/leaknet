@@ -568,8 +568,9 @@ void CBaseFileSystem::AddMapPackFile( const char *pPath, SearchPathAdd_t addType
 	}
 
 	CSearchPath *sp = &m_SearchPaths[ nIndex ];
-	
+
 	sp->m_Path			= g_PathIDTable.AddString( newPath );
+	sp->m_PathID		= g_PathIDTable.AddString( "GAME" ); // BSP pakfile materials use GAME pathID
 	sp->m_bIsPackFile	= true;
 	sp->m_bIsMapPath	= true;
 	sp->m_lPackFileTime = GetFileTime( newPath );

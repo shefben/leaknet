@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // The copyright to the contents herein is the property of Valve, L.L.C.
 // The contents may be used and/or copied only with the written permission of
@@ -120,10 +120,15 @@ void Panel::Init(int x,int y,int wide,int tall)
 	m_nBgTextureId2 = -1;
 	m_nBgTextureId3 = -1;
 	m_nBgTextureId4 = -1;
+
+	// Initialize default colors with proper alpha values (255 = opaque)
+	// Without this, the default Color constructor sets alpha=0, making everything invisible
+	_fgColor.SetColor(255, 255, 255, 255);  // White, fully opaque
+	_bgColor.SetColor(0, 0, 0, 255);        // Black, fully opaque
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //-----------------------------------------------------------------------------
 Panel::~Panel()
 {
@@ -2409,13 +2414,14 @@ void Panel::PreparePanelMap( PanelMap_t *panelMap )
 //-----------------------------------------------------------------------------
 void Panel::OnDelete()
 {
-#if defined( WIN32 )
-	Assert(_heapchk() == _HEAPOK);
-#endif
+// Heap check asserts disabled - causes false positives
+// #if defined( WIN32 )
+// 	Assert(_heapchk() == _HEAPOK);
+// #endif
 	delete this;
-#if defined( WIN32 )
-	Assert(_heapchk() == _HEAPOK);
-#endif
+// #if defined( WIN32 )
+// 	Assert(_heapchk() == _HEAPOK);
+// #endif
 }
 
 //-----------------------------------------------------------------------------

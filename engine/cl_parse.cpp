@@ -234,14 +234,40 @@ void CL_ParseClassInfo(CClientState *pState, bf_read *pBuf)
 	}
 }
 
-int DispatchDirectUserMsg(const char *pszName, int iSize, void *pBuf )
+// 2007 protocol - dispatch user message by type index with bf_read
+int DispatchDirectUserMsg( int msg_type, bf_read &msg_data )
 {
-	if ( !g_ClientDLL->DispatchUserMessage( pszName, iSize, pBuf ) )
+	if ( !g_ClientDLL->DispatchUserMessage( msg_type, msg_data ) )
 	{
-		Con_Printf( "Problem Direct Dispatching User Message %s\n", pszName );
+		Con_Printf( "Problem Direct Dispatching User Message %d\n", msg_type );
 		return 0;
 	}
 	return 1;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Legacy helper for dispatching user messages by name (internal engine use)
+//          Creates a bf_read from the void* buffer and looks up the message index
+// Input  : *pszName - message name to dispatch
+//          iSize - size of message data in bytes
+//          *pBuf - pointer to message data buffer
+// Output : Returns 1 on success, 0 on failure
+//-----------------------------------------------------------------------------
+int DispatchDirectUserMsgByName( const char *pszName, int iSize, void *pBuf )
+{
+	// Lookup message index by name using client DLL interface
+	int msg_type = g_ClientDLL->LookupUserMessage( pszName );
+	if ( msg_type == -1 )
+	{
+		Con_Printf( "DispatchDirectUserMsgByName: Unknown message '%s'\n", pszName );
+		return 0;
+	}
+
+	// Create a bf_read from the buffer
+	bf_read msg_data( pszName, pBuf, iSize );
+
+	// Dispatch using the 2007 protocol
+	return DispatchDirectUserMsg( msg_type, msg_data );
 }
 
 ///////////////////////////////////////////////////
@@ -1827,10 +1853,10 @@ void CL_ParseSendLogo( void )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : cmd - 
-//			bufEnd - 
-// Output : Returns true on success, false on failure.
+// Purpose: Parse and dispatch incoming user message (2007 protocol)
+//          Reads msg_type (byte) and msg_size (byte) from network stream,
+//          then creates a bf_read for the message payload and dispatches
+//          directly by type index to the client DLL.
 //-----------------------------------------------------------------------------
 void CL_ParseUserMessage( void )
 {
@@ -1838,44 +1864,39 @@ void CL_ParseUserMessage( void )
 
 	int bufStart = MSG_GetReadBuf()->GetNumBytesRead();
 
-	// Try to read it int
+	// Read message type index (byte)
 	byte msg_type = MSG_ReadByte();
 
-	int MsgSize = 0;
+	// Read message size (byte) - 2007 protocol always sends size
+	int MsgSize = MSG_ReadByte();
 
-	char msgname[ 256 ];
-
-	if ( !g_ClientDLL->GetUserMessageInfo( msg_type, msgname, MsgSize ) )
+	if ( MsgSize > MAX_USER_MSG_DATA )
 	{
-		Host_Error( "Unable to find user message for index %i\n", msg_type );
+		Host_Error( "CL_ParseUserMessage: User Msg %d sent too much data (%i bytes), %i bytes max.\n",
+			msg_type, MsgSize, MAX_USER_MSG_DATA );
 		return;
 	}
 
-	if ( MsgSize == -1 )			// variable-length message
-	{
-		MsgSize = MSG_ReadByte();  // extract the length of the variable-length message from the stream
-	}
-		
-	if ( MsgSize > MAX_USER_MSG_DATA )
-	{
-		Host_Error ("DispatchUserMsg:  User Msg %s/%d sent too much data (%i bytes), %i bytes max.\n",
-			msgname, msg_type, MsgSize, MAX_USER_MSG_DATA );
-	}
+	// Read the message payload into buffer
+	MSG_ReadBuf( MsgSize, buf );
 
-	MSG_ReadBuf( MsgSize, &buf );
+	// Create a bf_read for the message data (2007 protocol)
+	bf_read msg_data( "UserMessage", buf, MsgSize );
 
-	if ( !g_ClientDLL->DispatchUserMessage( msgname, MsgSize, (void *)&buf ) )
+	// Dispatch directly by type index with bf_read buffer
+	if ( !g_ClientDLL->DispatchUserMessage( msg_type, msg_data ) )
 	{
-		Host_Error ( "Problem Dispatching User Message %i:%s\n", msg_type, msgname );
+		// Don't error - just warn. Some messages may not have handlers yet
+		Con_DPrintf( "CL_ParseUserMessage: Unhandled user message %d\n", msg_type );
 	}
 
 	int bufEnd = MSG_GetReadBuf()->GetNumBytesRead();
-	
+
 	cl.frames[ cl.parsecountmod ].usrbytes += (bufEnd - bufStart);
 
 	if ( cl_showmessages.GetInt() )
 	{
-		Con_Printf( "Usr Msg %i:%s, offset(%i)\n", msg_type, msgname, bufStart );
+		Con_Printf( "Usr Msg %d, size %d, offset(%i)\n", msg_type, MsgSize, bufStart );
 	}
 }
 

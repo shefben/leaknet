@@ -14,6 +14,7 @@
 #endif
 
 #include "bumpvects.h"
+#include "datamap.h"  // For BEGIN_BITFIELD/END_BITFIELD macros
 
 #define IDBSPHEADER	(('P'<<24)+('S'<<16)+('B'<<8)+'V')
 		// little-endian "VBSP"
@@ -44,6 +45,7 @@
 #define BSP_VERSION_HAS_HDR(v)		((v) >= BSPVERSION_20)
 #define BSP_VERSION_HAS_AVGCOLOR(v)	((v) <= BSPVERSION_18)	// dface_t has m_AvgLightColor only in v18
 #define BSP_VERSION_HAS_AMBIENT_LUMP(v)	((v) >= BSPVERSION_20)	// dleaf_t ambient in separate lump
+#define BSP_VERSION_HAS_THIN_BRUSHSIDE(v) ((v) >= BSPVERSION_21)	// dbrushside_t has thin field in v21+
 
 
 // This needs to match the value in gl_lightmap.h
@@ -809,9 +811,15 @@ typedef dface_t dface_v18_t;
 
 //-----------------------------------------------------------------------------
 // dleaf_t structures - version specific
-// v18/v19 (Lump version 0): 56 bytes - includes ambient lighting
-// v20+ (Lump version 1): 32 bytes - ambient lighting in separate lump
+// v18 (LeakNet native): 32 bytes - no ambient, no bitfields
+// v19 (Lump version 0): 56 bytes - includes ambient lighting, uses bitfields
+// v20+ (Lump version 1): 32 bytes - ambient lighting in separate lump, uses bitfields
 //-----------------------------------------------------------------------------
+
+// Leaf flags (7 bits stored in v19+ BSP)
+#define LEAF_FLAGS_SKY			0x01		// This leaf has 3D sky in its PVS
+#define LEAF_FLAGS_RADIAL		0x02		// This leaf culled away some portals due to radial vis
+#define LEAF_FLAGS_SKY2D		0x04		// This leaf has 2D sky in its PVS
 
 // Ambient lighting sample for v20+ (stored in separate lump)
 struct dleafambientindex_t
@@ -830,37 +838,14 @@ struct dleafambientlighting_t
 	byte				pad;			// Alignment
 };
 
-// v20+ leaf structure (Lump version 1, 32 bytes)
-// Ambient lighting moved to separate lump for HDR support
-struct dleaf_v1_t
-{
-	int				contents;			// OR of all brushes
-
-	short			cluster;
-	short			area:9;				// Note: area uses 9 bits in v20+
-	short			flags:7;			// Flags use remaining 7 bits
-
-	short			mins[3];			// for frustum culling
-	short			maxs[3];
-
-	unsigned short	firstleafface;
-	unsigned short	numleaffaces;
-
-	unsigned short	firstleafbrush;
-	unsigned short	numleafbrushes;
-	short			leafWaterDataID;	// -1 for not in water
-
-	// Note: no ambient lighting here - it's in LUMP_LEAF_AMBIENT_LIGHTING
-};
-
-// v18/v19 leaf structure (Lump version 0, 56 bytes for v19, 32 bytes for v18)
-// v18 LeakNet uses a simpler 32-byte structure without ambient lighting fields
+// v18 leaf structure (LeakNet native, 32 bytes)
+// No bitfields, no ambient lighting - original HL2 beta format
 struct dleaf_t
 {
 	int				contents;			// OR of all brushes (not needed?)
 
 	short			cluster;
-	short			area;
+	short			area;				// Simple short, no bitfield
 
 	short			mins[3];			// for frustum culling
 	short			maxs[3];
@@ -873,14 +858,20 @@ struct dleaf_t
 	short			leafWaterDataID; // -1 for not in water
 };
 
-// v19 leaf structure with embedded ambient lighting (56 bytes)
-// This was used before the ambient lump was introduced
+// v19 leaf structure with embedded ambient lighting (Lump version 0, 56 bytes)
+// Uses bitfields for area:9 and flags:7
+// This format was used in HL2 retail before HDR support
+#pragma warning( disable:4201 )	// C4201: nonstandard extension used: nameless struct/union
 struct dleaf_v0_t
 {
 	int				contents;			// OR of all brushes
 
 	short			cluster;
-	short			area;
+
+	BEGIN_BITFIELD( bf );
+	short			area:9;				// Area portal index (9 bits)
+	short			flags:7;			// Per-leaf flags (7 bits)
+	END_BITFIELD();
 
 	short			mins[3];			// for frustum culling
 	short			maxs[3];
@@ -895,6 +886,36 @@ struct dleaf_v0_t
 	// v19 only: Embedded ambient lighting (removed in v20+)
 	CompressedLightCube	m_AmbientLighting;
 };
+#pragma warning( default:4201 )
+
+// v20+ leaf structure (Lump version 1, 32 bytes)
+// Ambient lighting moved to separate lump for HDR support
+// Uses bitfields for area:9 and flags:7 (same as v19)
+#pragma warning( disable:4201 )	// C4201: nonstandard extension used: nameless struct/union
+struct dleaf_v1_t
+{
+	int				contents;			// OR of all brushes
+
+	short			cluster;
+
+	BEGIN_BITFIELD( bf );
+	short			area:9;				// Area uses 9 bits
+	short			flags:7;			// Flags use remaining 7 bits
+	END_BITFIELD();
+
+	short			mins[3];			// for frustum culling
+	short			maxs[3];
+
+	unsigned short	firstleafface;
+	unsigned short	numleaffaces;
+
+	unsigned short	firstleafbrush;
+	unsigned short	numleafbrushes;
+	short			leafWaterDataID;	// -1 for not in water
+
+	// Note: no ambient lighting here - it's in LUMP_LEAF_AMBIENT_LIGHTING
+};
+#pragma warning( default:4201 )
 
 // Alias for v18 format (native LeakNet)
 typedef dleaf_t dleaf_v18_t;

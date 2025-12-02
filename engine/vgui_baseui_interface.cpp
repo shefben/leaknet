@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: Implements all the functions exported by the GameUI dll
 //
@@ -30,6 +30,7 @@
 #include "igame.h"
 #include "dinput.h"
 #include "con_nprint.h"
+#include "quakeconsole.h"
 #include "vgui_DebugSystemPanel.h"
 #include "tier0/vprof.h"
 #include "cl_demoactionmanager.h"
@@ -386,9 +387,13 @@ void CBaseUI::Start(struct cl_enginefuncs_s *engineFuncs, int interfaceVersion)
 
 	if(staticGameConsole)
 	{
-		// setup console
-		staticGameConsole->Initialize();
-		staticGameConsole->SetParent(staticGameUIPanel->GetVPanel());
+		// Only initialize VGUI console if not using Quake-style console
+		if ( !Con_IsUsingWonConsole() )
+		{
+			// setup console
+			staticGameConsole->Initialize();
+			staticGameConsole->SetParent(staticGameUIPanel->GetVPanel());
+		}
 	}
 
 	// show the game UI
@@ -396,8 +401,21 @@ void CBaseUI::Start(struct cl_enginefuncs_s *engineFuncs, int interfaceVersion)
 
 	if ( CommandLine()->FindParm( "-toconsole" ) || CommandLine()->FindParm( "-console" ) )
 	{
-		staticGameConsole->Activate();
-		m_bConsoleShowing = true;
+		// Only activate VGUI console if not using Quake-style console
+		if ( !Con_IsUsingWonConsole() )
+		{
+			staticGameConsole->Activate();
+			m_bConsoleShowing = true;
+		}
+		else
+		{
+			// For Quake console, just mark it to show after initialization
+			extern CQuakeConsole *g_pQuakeConsole;
+			if ( g_pQuakeConsole )
+			{
+				g_pQuakeConsole->Show();
+			}
+		}
 	}
 }
 
@@ -501,7 +519,14 @@ void CBaseUI::ActivateGameUI()
 	staticClientDLLPanel->SetMouseInputEnabled(false);
 
 	if( m_bConsoleShowing )
-		staticGameConsole->Activate();
+	{
+		// Only activate VGUI console if not using Quake-style console
+		if ( !Con_IsUsingWonConsole() )
+		{
+			staticGameConsole->Activate();
+		}
+		// Quake console will be painted via VGui_Paint() when visible
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -510,14 +535,38 @@ void CBaseUI::ActivateGameUI()
 void CBaseUI::HideConsole()
 {
 	m_bConsoleShowing = false;
-	staticGameConsole->Hide();
+
+	// Use Quake console if enabled, otherwise VGUI console
+	if ( Con_IsUsingWonConsole() )
+	{
+		if ( g_pQuakeConsole )
+		{
+			g_pQuakeConsole->Hide();
+		}
+	}
+	else
+	{
+		staticGameConsole->Hide();
+	}
 }
 
 
 void CBaseUI::ShowConsole()
 {
 	m_bConsoleShowing = true;
-	staticGameConsole->Activate();
+
+	// Use Quake console if enabled, otherwise VGUI console
+	if ( Con_IsUsingWonConsole() )
+	{
+		if ( g_pQuakeConsole )
+		{
+			g_pQuakeConsole->Show();
+		}
+	}
+	else
+	{
+		staticGameConsole->Activate();
+	}
 
 	staticClientDLLPanel->SetVisible(false);
 	staticClientDLLPanel->SetMouseInputEnabled(false);

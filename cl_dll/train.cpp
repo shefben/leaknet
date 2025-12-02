@@ -40,7 +40,7 @@ public:
 	bool ShouldDraw( void );
 	virtual void	ApplySchemeSettings( vgui::IScheme *scheme );
 	virtual void	Paint( void );
-	void MsgFunc_Train(const char *pszName, int iSize, void *pbuf);
+	void MsgFunc_Train( bf_read &msg );
 
 private:
 	int m_iPos;
@@ -113,10 +113,8 @@ void CHudTrain::Paint()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CHudTrain::MsgFunc_Train( const char *pszName,  int iSize, void *pbuf )
+void CHudTrain::MsgFunc_Train( bf_read &msg )
 {
-	BEGIN_READ( pbuf, iSize );
-
 	// update Train data
-	m_iPos = READ_BYTE();
+	m_iPos = msg.ReadByte();
 }

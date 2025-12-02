@@ -136,41 +136,32 @@ void GameStartFrame( void )
 
 //=========================================================
 // instantiate the proper game rules object
+// BMod/GMod always uses sandbox multiplay rules for weapon spawning
 //=========================================================
 CGameRules *InstallGameRules( void )
 {
 	// Create the player resource
 	g_pPlayerResource = (CPlayerResource*)CBaseEntity::Create( "player_manager", vec3_origin, vec3_angle );
 
-	if ( !gpGlobals->deathmatch )
+	// BMod: Always use multiplay rules (sandbox mode) regardless of deathmatch setting
+	// This ensures players get weapons on spawn and have sandbox gameplay
+	if ( teamplay.GetInt() > 0 )
 	{
-		// generic half-life
-		CHalfLife2 *pEnt = dynamic_cast< CHalfLife2* >( CreateEntityByName( "hl2_gamerules" ) );
+		// teamplay
+		CTeamplayRules *pEnt = dynamic_cast< CTeamplayRules* >( CreateEntityByName( "teamplay_gamerules" ) );
 		if ( !pEnt )
 			Error( "InstallGameRules: pEnt == NULL" );
-		
+
 		return pEnt;
 	}
 	else
 	{
-		if ( teamplay.GetInt() > 0 )
-		{
-			// teamplay
-			CTeamplayRules *pEnt = dynamic_cast< CTeamplayRules* >( CreateEntityByName( "teamplay_gamerules" ) );
-			if ( !pEnt )
-				Error( "InstallGameRules: pEnt == NULL" );
+		// sandbox/deathmatch - this gives weapons on spawn
+		CMultiplayRules *pEnt = dynamic_cast< CMultiplayRules* >( CreateEntityByName( "multiplay_gamerules" ) );
+		if ( !pEnt )
+			Error( "InstallGameRules: pEnt == NULL" );
 
-			return pEnt;
-		}
-		else
-		{
-			// vanilla deathmatch
-			CMultiplayRules *pEnt = dynamic_cast< CMultiplayRules* >( CreateEntityByName( "multiplay_gamerules" ) );
-			if ( !pEnt )
-				Error( "InstallGameRules: pEnt == NULL" );
-
-			return pEnt;
-		}
+		return pEnt;
 	}
 }
 

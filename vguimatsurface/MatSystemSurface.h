@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -231,8 +231,12 @@ public:
 	// Returns the length in pixels of the text
 	virtual int	DrawTextLen( vgui::HFont font, const char *fmt, ... );
 
-	// Draws a panel in 3D space. 
-	virtual void DrawPanelIn3DSpace( vgui::VPANEL pRootPanel, const VMatrix &panelCenterToWorld, int pw, int ph, float sw, float sh ); 
+	// Draws a panel in 3D space.
+	virtual void DrawPanelIn3DSpace( vgui::VPANEL pRootPanel, const VMatrix &panelCenterToWorld, int pw, int ph, float sw, float sh );
+
+	// Start/finish 2D drawing mode for non-VGUI panel drawing (e.g., Quake console)
+	virtual void Start2DDrawing();
+	virtual void Finish2DDrawing();
 
 	// Only visible within vguimatsurface
 	void DrawSetTextureMaterial(int id, IMaterial *pMaterial);

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -39,7 +39,7 @@ public:
 	virtual bool ShouldDraw( void );
 
 	// Handler for our message
-	void MsgFunc_Damage( const char *pszName, int iSize, void *pbuf );
+	void MsgFunc_Damage( bf_read &msg );
 
 private:
 	virtual void Paint();
@@ -62,9 +62,9 @@ private:
 DECLARE_HUDELEMENT( CHudDamageIndicator );
 // DECLARE_HUD_MESSAGE( CHudDamageIndicator, Damage );
 
-void HudDamageIndicator_MsgFunc_Damage( const char *pszName, int iSize, void *pbuf )
+void HudDamageIndicator_MsgFunc_Damage( bf_read &msg )
 {
-	((CHudDamageIndicator *)GET_HUDELEMENT( CHudDamageIndicator ))->MsgFunc_Damage( pszName, iSize, pbuf );
+	((CHudDamageIndicator *)GET_HUDELEMENT( CHudDamageIndicator ))->MsgFunc_Damage( msg );
 }
 
 
@@ -189,20 +189,18 @@ void CHudDamageIndicator::Paint()
 //-----------------------------------------------------------------------------
 // Purpose: Message handler for Damage message
 //-----------------------------------------------------------------------------
-void CHudDamageIndicator::MsgFunc_Damage( const char *pszName, int iSize, void *pbuf )
+void CHudDamageIndicator::MsgFunc_Damage( bf_read &msg )
 {
-	BEGIN_READ( pbuf, iSize );
-
-	int armor = READ_BYTE();	// armor
-	int damageTaken = READ_BYTE();	// health
-	long bitsDamage = READ_LONG(); // damage bits
+	int armor = msg.ReadByte();	// armor
+	int damageTaken = msg.ReadByte();	// health
+	long bitsDamage = msg.ReadLong(); // damage bits
 	bitsDamage; // variable still sent but not used
 
 	Vector vecFrom;
 
-	vecFrom.x = READ_FLOAT();
-	vecFrom.y = READ_FLOAT();
-	vecFrom.z = READ_FLOAT();
+	vecFrom.x = msg.ReadFloat();
+	vecFrom.y = msg.ReadFloat();
+	vecFrom.z = msg.ReadFloat();
 
 	if ( vecFrom == vec3_origin )
 	{

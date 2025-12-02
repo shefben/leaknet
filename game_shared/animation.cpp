@@ -83,28 +83,27 @@ void IndexModelSequences( studiohdr_t *pstudiohdr )
 	if (! pstudiohdr)
 		return;
 
-	mstudioseqdesc_t *pseqdesc;
-
-	pseqdesc = pstudiohdr->pSeqdesc( 0 );
-	
+	// NOTE: Must use pSeqdesc(i) for each element since v37/v48 have different binary sizes
 	for ( i = 0 ; i < pstudiohdr->numseq ; i++ )
 	{
+		mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( i );
+
 		// look up the activity number, but only for sequences that are assigned activities.
 		pszActivityName = GetSequenceActivityName( pstudiohdr, i );
-		if ( pszActivityName[0] != '\0' )
+		if ( pszActivityName && pszActivityName[0] != '\0' )
 		{
 			iActivityIndex = ActivityList_IndexForName( pszActivityName );
-			
+
 			if ( iActivityIndex == -1 )
 			{
 				// Allow this now.  Animators can create custom activities that are referenced only on the client or by scripts, etc.
 				//Warning( "***\nModel %s tried to reference unregistered activity: %s \n***\n", pstudiohdr->name, pszActivityName );
 				//Assert(0);
-				pseqdesc[i].activity = ActivityList_RegisterPrivateActivity( pszActivityName );
+				pseqdesc->activity = ActivityList_RegisterPrivateActivity( pszActivityName );
 			}
 			else
 			{
-				pseqdesc[i].activity = iActivityIndex;
+				pseqdesc->activity = iActivityIndex;
 			}
 		}
 	}
@@ -144,21 +143,22 @@ int SelectWeightedSequence( studiohdr_t *pstudiohdr, int activity, int curSequen
 
 	VerifySequenceIndex( pstudiohdr );
 
-	mstudioseqdesc_t	*pseqdesc = pstudiohdr->pSeqdesc( 0 );
-
 	int weighttotal = 0;
 	int seq = ACTIVITY_NOT_AVAILABLE;
+
+	// NOTE: Must use pSeqdesc(i) for each element since v37/v48 have different binary sizes
 	for (int i = 0; i < pstudiohdr->numseq; i++)
 	{
-		if (pseqdesc[i].activity == activity)
+		mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( i );
+		if (pseqdesc->activity == activity)
 		{
-			if ( curSequence == i && pseqdesc[i].actweight < 0 )
+			if ( curSequence == i && pseqdesc->actweight < 0 )
 			{
 				seq = i;
 				break;
 			}
-			weighttotal += iabs(pseqdesc[i].actweight);
-			if (!weighttotal || random->RandomInt(0,weighttotal-1) < iabs(pseqdesc[i].actweight))
+			weighttotal += iabs(pseqdesc->actweight);
+			if (!weighttotal || random->RandomInt(0,weighttotal-1) < iabs(pseqdesc->actweight))
 				seq = i;
 		}
 	}
@@ -174,17 +174,18 @@ int SelectHeaviestSequence( studiohdr_t *pstudiohdr, int activity )
 
 	VerifySequenceIndex( pstudiohdr );
 
-	mstudioseqdesc_t	*pseqdesc = pstudiohdr->pSeqdesc( 0 );
-
 	int weight = 0;
 	int seq = ACTIVITY_NOT_AVAILABLE;
+
+	// NOTE: Must use pSeqdesc(i) for each element since v37/v48 have different binary sizes
 	for (int i = 0; i < pstudiohdr->numseq; i++)
 	{
-		if (pseqdesc[i].activity == activity)
+		mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( i );
+		if (pseqdesc->activity == activity)
 		{
-			if ( iabs(pseqdesc[i].actweight) > weight )
+			if ( iabs(pseqdesc->actweight) > weight )
 			{
-				weight = iabs(pseqdesc[i].actweight);
+				weight = iabs(pseqdesc->actweight);
 				seq = i;
 			}
 		}
@@ -217,13 +218,16 @@ int LookupActivity( studiohdr_t *pstudiohdr, const char *label )
 		return 0;
 	}
 
-	mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( 0 );
+	if (!label)
+		return ACT_INVALID;
 
+	// NOTE: Must use pSeqdesc(i) for each element since v37/v48 have different binary sizes
 	for ( int i = 0; i < pstudiohdr->numseq; i++ )
 	{
-		if ( _stricmp( pseqdesc[i].pszActivityName(), label ) == 0 )
+		mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( i );
+		if ( _stricmp( pseqdesc->pszActivityName(), label ) == 0 )
 		{
-			return pseqdesc[i].activity;
+			return pseqdesc->activity;
 		}
 	}
 
@@ -241,16 +245,18 @@ int LookupSequence( studiohdr_t *pstudiohdr, const char *label )
 	if (! pstudiohdr)
 		return 0;
 
-	mstudioseqdesc_t	*pseqdesc;
-
-	pseqdesc = pstudiohdr->pSeqdesc( 0 );
+	if (!label)
+		return ACT_INVALID;
 
 	//
 	// Look up by sequence name.
+	// NOTE: Must use pSeqdesc(i) for each element since v37/v48 have different binary sizes
+	// and C++ array indexing uses sizeof(mstudioseqdesc_t) which doesn't match v37 binary layout
 	//
 	for (int i = 0; i < pstudiohdr->numseq; i++)
 	{
-		if (_stricmp( pseqdesc[i].pszLabel(), label ) == 0)
+		mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( i );
+		if (_stricmp( pseqdesc->pszLabel(), label ) == 0)
 			return i;
 	}
 
@@ -429,10 +435,12 @@ int FindTransitionSequence( studiohdr_t *pstudiohdr, int iCurrentSequence, int i
 	if ( ( iCurrentSequence < 0 ) || ( iCurrentSequence >= pstudiohdr->numseq ) )
 		return iGoalSequence;
 
-	mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( 0 );
+	// NOTE: Must use pSeqdesc(i) for each element since v37/v48 have different binary sizes
+	mstudioseqdesc_t *pCurrentSeq = pstudiohdr->pSeqdesc( iCurrentSequence );
+	mstudioseqdesc_t *pGoalSeq = pstudiohdr->pSeqdesc( iGoalSequence );
 
 	// bail if we're going to or from a node 0
-	if (pseqdesc[iCurrentSequence].entrynode == 0 || pseqdesc[iGoalSequence].entrynode == 0)
+	if (pCurrentSeq->entrynode == 0 || pGoalSeq->entrynode == 0)
 	{
 		*piDir = 1;
 		return iGoalSequence;
@@ -445,15 +453,15 @@ int FindTransitionSequence( studiohdr_t *pstudiohdr, int iCurrentSequence, int i
 	// check to see if we should be going forward or backward through the graph
 	if (*piDir > 0)
 	{
-		iEndNode = pseqdesc[iCurrentSequence].exitnode;
+		iEndNode = pCurrentSeq->exitnode;
 	}
 	else
 	{
-		iEndNode = pseqdesc[iCurrentSequence].entrynode;
+		iEndNode = pCurrentSeq->entrynode;
 	}
 
 	// if both sequences are on the same node, just go there
-	if (iEndNode == pseqdesc[iGoalSequence].entrynode)
+	if (iEndNode == pGoalSeq->entrynode)
 	{
 		*piDir = 1;
 		return iGoalSequence;
@@ -461,7 +469,7 @@ int FindTransitionSequence( studiohdr_t *pstudiohdr, int iCurrentSequence, int i
 
 	byte *pTransition = pstudiohdr->pTransition( 0 );
 
-	int iInternNode = pTransition[(iEndNode-1)*pstudiohdr->numtransitions + (pseqdesc[iGoalSequence].entrynode-1)];
+	int iInternNode = pTransition[(iEndNode-1)*pstudiohdr->numtransitions + (pGoalSeq->entrynode-1)];
 
 	// if there is no transitionial node, just go to the goal sequence
 	if (iInternNode == 0)
@@ -473,14 +481,15 @@ int FindTransitionSequence( studiohdr_t *pstudiohdr, int iCurrentSequence, int i
 	// this may be the goal sequences node or an intermediate node
 	for (i = 0; i < pstudiohdr->numseq; i++)
 	{
-		if (pseqdesc[i].entrynode == iEndNode && pseqdesc[i].exitnode == iInternNode)
+		mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( i );
+		if (pseqdesc->entrynode == iEndNode && pseqdesc->exitnode == iInternNode)
 		{
 			*piDir = 1;
 			return i;
 		}
-		if (pseqdesc[i].nodeflags)
+		if (pseqdesc->nodeflags)
 		{
-			if (pseqdesc[i].exitnode == iEndNode && pseqdesc[i].entrynode == iInternNode)
+			if (pseqdesc->exitnode == iEndNode && pseqdesc->entrynode == iInternNode)
 			{
 				*piDir = -1;
 				return i;

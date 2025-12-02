@@ -142,8 +142,7 @@ void CGlobalEntityList::AddListenerEntity( IEntityListener *pListener )
 {
 	if ( m_entityListeners.Find( pListener ) >= 0 )
 	{
-		// During level restart, listeners may try to re-register. Allow it silently.
-		DevMsg( "Entity listener already registered, ignoring duplicate registration\n" );
+		AssertMsg( 0, "Can't add listeners multiple times\n" );
 		return;
 	}
 	m_entityListeners.AddToTail( pListener );
@@ -163,12 +162,17 @@ void CGlobalEntityList::Clear( void )
 	while ( hCur != InvalidHandle() )
 	{
 		IServerNetworkable *ent = GetServerNetworkable( hCur );
-		if ( !ent )
-			continue;
 
-		// Force UpdateOnRemove to be called
-		UTIL_Remove( ent );
-		hCur = NextHandle( hCur );
+		// Always advance the handle before continuing or removing
+		CBaseHandle hNext = NextHandle( hCur );
+
+		if ( ent )
+		{
+			// Force UpdateOnRemove to be called
+			UTIL_Remove( ent );
+		}
+
+		hCur = hNext;
 	}
 		
 	CleanupDeleteList();

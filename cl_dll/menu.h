@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -14,6 +14,7 @@
 #include "utlvector.h"
 #include "hudelement.h"
 #include <vgui_controls/Panel.h>
+#include "bitbuf.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -27,7 +28,7 @@ public:
 	void VidInit( void );
 	void Reset( void );
 	virtual bool ShouldDraw( void );
-	void MsgFunc_ShowMenu( const char *pszName, int iSize, void *pbuf );
+	void MsgFunc_ShowMenu( bf_read &msg );
 
 	bool IsMenuOpen( void );
 	void SelectMenuItem( int menu_item );

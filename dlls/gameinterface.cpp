@@ -55,6 +55,7 @@
 #include "physics.h"
 #include "mapentities.h"
 #include "igameevents.h"
+#include "KeyValues.h"
 #include "eventlog.h"
 #include "engine/ISharedModelLoader.h"
 #ifdef BMOD_DLL
@@ -1016,6 +1017,18 @@ void CServerGameClients::ClientDisconnect( edict_t *pEdict )
 	CBasePlayer *player = ( CBasePlayer * )CBaseEntity::Instance( pEdict );
 	if ( player )
 	{
+		// Fire player_disconnect game event
+		if ( gameeventmanager )
+		{
+			KeyValues *event = new KeyValues( "player_disconnect" );
+			event->SetInt( "userid", engine->GetPlayerUserId( pEdict ) );
+			event->SetString( "reason", "disconnected" );
+			event->SetString( "name", STRING( player->pl.netname ) );
+			// Note: networkid not available in HL2 beta leak engine
+			CRelieableBroadcastRecipientFilter filter;
+			gameeventmanager->FireEvent( event, &filter );
+		}
+
 		if ( !g_fGameOver )
 		{
 			player->SetMaxSpeed( 0.0f );
@@ -1033,7 +1046,7 @@ void CServerGameClients::ClientDisconnect( edict_t *pEdict )
 			CSound *pSound;
 			pSound = CSoundEnt::SoundPointerForIndex( CSoundEnt::ClientSoundIndex( pEdict ) );
 			{
-				// since this client isn't around to think anymore, reset their sound. 
+				// since this client isn't around to think anymore, reset their sound.
 				if ( pSound )
 				{
 					pSound->Reset();

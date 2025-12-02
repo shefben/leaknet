@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -16,6 +16,7 @@
 #include <vgui_controls/RadioButton.h>
 #include <stdio.h>
 #include "ModInfo.h"
+#include "FileSystem.h"
 
 using namespace vgui;
 
@@ -60,13 +61,24 @@ CNewGameDialog::CNewGameDialog(vgui::Panel *parent) : CTaskFrame(parent, "NewGam
 	cancel->SetCommand( "Close" );
 
 	LoadControlSettings("Resource\\NewGameDialog.res");
+
+	// create KeyValues object to load/save server config options
+	m_pServerConfig = new KeyValues( "Server Config" );
+
+	// load the server config data from serverconfig.txt
+	LoadServerSettings();
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //-----------------------------------------------------------------------------
 CNewGameDialog::~CNewGameDialog()
 {
+	if (m_pServerConfig)
+	{
+		m_pServerConfig->deleteThis();
+		m_pServerConfig = NULL;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -106,6 +118,9 @@ void CNewGameDialog::OnCommand( const char *command )
 			sprintf(mapcommand, "disconnect\nmaxplayers 1\ndeathmatch 0\nskill %i\nmap %s\n", m_nPlayMode, ModInfo().GetStartMap() );
 		}
 
+		// Save current difficulty setting to server config before starting the game
+		SaveServerSettings();
+
 		engine->ClientCmd( mapcommand );
 		OnClose();
 	}
@@ -116,11 +131,69 @@ void CNewGameDialog::OnCommand( const char *command )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //-----------------------------------------------------------------------------
 void CNewGameDialog::OnClose()
 {
 	BaseClass::OnClose();
 	MarkForDeletion();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Loads server settings from serverconfig.txt
+//-----------------------------------------------------------------------------
+void CNewGameDialog::LoadServerSettings()
+{
+	if (!m_pServerConfig)
+		return;
+
+	// load the server config data from serverconfig.txt
+	m_pServerConfig->LoadFromFile( filesystem(), "cfg/serverconfig.txt", "MOD" );
+	if (!m_pServerConfig->GetFirstSubKey())
+	{
+		// File doesn't exist or is empty, try from HL2 directory
+		m_pServerConfig->LoadFromFile( filesystem(), "cfg/serverconfig.txt", "HL2" );
+	}
+
+	// Load difficulty setting (skill level)
+	int savedSkill = m_pServerConfig->GetInt("skill", 1); // default to easy
+	m_nPlayMode = savedSkill;
+
+	// Set the appropriate radio button based on saved skill level
+	if (savedSkill == 0)
+	{
+		m_pTraining->SetSelected(true);
+	}
+	else if (savedSkill == 1)
+	{
+		m_pEasy->SetSelected(true);
+	}
+	else if (savedSkill == 2)
+	{
+		m_pMedium->SetSelected(true);
+	}
+	else if (savedSkill >= 3)
+	{
+		m_pHard->SetSelected(true);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Saves server settings to serverconfig.txt
+//-----------------------------------------------------------------------------
+void CNewGameDialog::SaveServerSettings()
+{
+	if (!m_pServerConfig)
+		return;
+
+	// Update server config with current difficulty setting
+	m_pServerConfig->SetInt("skill", m_nPlayMode);
+
+	// Save to file in MOD directory first, fall back to HL2 if needed
+	bool saved = m_pServerConfig->SaveToFile( filesystem(), "cfg/serverconfig.txt", "MOD" );
+	if (!saved)
+	{
+		m_pServerConfig->SaveToFile( filesystem(), "cfg/serverconfig.txt", "HL2" );
+	}
 }
 

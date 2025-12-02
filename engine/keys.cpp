@@ -621,13 +621,14 @@ void Key_Event (int key, bool down)
 	// Does VGUI want a widdew keypwess?
 	if ( !down && g_KeyUpToEngine[key] )
 	{
-		// (The key is being let up, and the engine got the keydown, so make sure the engine 
+		// (The key is being let up, and the engine got the keydown, so make sure the engine
 		// gets the matching keyup).
 		g_KeyUpToEngine[key] = false;
 	}
 	else
 	{
-		if ( vgui::surface()->NeedKBInput() )
+		// Always allow backtick through for console toggle, even when VGUI wants keyboard input
+		if ( key != '`' && vgui::surface()->NeedKBInput() )
 			return;
 	}
 

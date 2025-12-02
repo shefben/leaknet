@@ -432,9 +432,13 @@ public:
 	// Notification that we're moving into another stage during the frame.
 	virtual void			FrameStageNotify( ClientFrameStage_t curStage ) = 0;
 
-	virtual bool			GetUserMessageInfo( int msg_type, char *name, int& size ) = 0;
-	virtual bool			DispatchUserMessage( const char *pszName, int iSize, void *pbuf ) = 0;
+	// Dispatch a user message from the server (2007 protocol)
+	// msg_type: message index from server
+	// msg_data: bf_read buffer containing message payload
+	virtual bool			DispatchUserMessage( int msg_type, bf_read &msg_data ) = 0;
 
+	// Lookup user message index by name (for engine internal use)
+	virtual int				LookupUserMessage( const char *name ) = 0;
 
 	// Save/restore system hooks
 	virtual CSaveRestoreData  *SaveInit( int size ) = 0;

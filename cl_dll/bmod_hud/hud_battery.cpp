@@ -42,7 +42,7 @@ public:
 	void Reset( void );
 	void VidInit( void );
 	void OnThink( void );
-	void MsgFunc_Battery(const char *pszName,  int iSize, void *pbuf );
+	void MsgFunc_Battery( bf_read &msg );
 	
 private:
 	int		m_iBat;	
@@ -139,8 +139,7 @@ void CHudBattery::OnThink( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CHudBattery::MsgFunc_Battery( const char *pszName,  int iSize, void *pbuf )
+void CHudBattery::MsgFunc_Battery( bf_read &msg )
 {
-	BEGIN_READ( pbuf, iSize );
-	m_iNewBat = READ_SHORT();
+	m_iNewBat = msg.ReadShort();
 }

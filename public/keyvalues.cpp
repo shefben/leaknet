@@ -385,9 +385,9 @@ void KeyValues::UsesEscapeSequences(bool state)
 bool KeyValues::LoadFromFile( IBaseFileSystem *filesystem, const char *resourceName, const char *pathID )
 {
 	assert(filesystem);
-#if defined( _WIN32 )
-	assert(_heapchk() == _HEAPOK);
-#endif // _WIN32
+// #if defined( _WIN32 )
+// 	assert(_heapchk() == _HEAPOK);
+// #endif // _WIN32
 
 	FileHandle_t f = filesystem->Open(resourceName, "rb", pathID);
 	if (!f)

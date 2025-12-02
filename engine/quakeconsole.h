@@ -83,6 +83,7 @@ private:
 	int m_nTextureId;  // splash.bmp texture
 	int m_nTextureWidth;
 	int m_nTextureHeight;
+	bool m_bTextureLoadAttempted;  // Have we tried to load the texture?
 	vgui::HFont m_hFont;
 	int m_nConsoleHeight;  // Half screen height
 	int m_nConsoleWidth;   // Full screen width
@@ -93,6 +94,7 @@ private:
 	void DrawBackground();
 	void DrawText();
 	void DrawInputLine();
+	void EnsureFontLoaded();
 	void ScrollUp();
 	void ScrollDown();
 	void ExecuteCommand();

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -11,6 +11,15 @@
 #endif
 
 #include "baseentity.h"
+
+// Animation networking bit counts - must match client-side definitions
+// These values are from the 2007 Source Engine for compatibility with newer models
+#define ANIMATION_SEQUENCE_BITS			12	// 4096 sequences
+#define ANIMATION_SKIN_BITS				10	// 1024 body skin selections
+#define ANIMATION_BODY_BITS				32	// body combinations
+#define ANIMATION_HITBOXSET_BITS		2	// hit box sets
+#define ANIMATION_POSEPARAMETER_BITS	11	// pose parameter resolution
+#define ANIMATION_PLAYBACKRATE_BITS		8	// playback rate
 
 struct animevent_t;
 struct studiocache_t;

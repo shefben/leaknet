@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -30,6 +30,10 @@ protected:
 	virtual void OnClose();
 	virtual void SetTitle(const char *title, bool surfaceTitle);
 
+public:
+	// methods to access server config data
+	KeyValues *GetServerConfig() { return m_pServerConfig; }
+
 private:
 	typedef vgui::PropertyDialog BaseClass;
 
@@ -38,6 +42,9 @@ private:
 
 	// for loading/saving bot config
 	KeyValues *m_pBotSavedData;
+
+	// for loading/saving server config
+	KeyValues *m_pServerConfig;
 };
 
 

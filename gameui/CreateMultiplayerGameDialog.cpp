@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -21,6 +21,7 @@ using namespace vgui;
 extern CTaskbar *g_pTaskbar;
 
 #include <vgui/ILocalize.h>
+#include <vgui_controls/PropertySheet.h>
 
 #include "FileSystem.h"
 #include <KeyValues.h>
@@ -54,6 +55,20 @@ CCreateMultiplayerGameDialog::CCreateMultiplayerGameDialog(vgui::Panel *parent) 
 	if (m_pBotSavedData)
 	{
 		m_pBotSavedData->LoadFromFile( filesystem(), "CSBotConfig.vdf", "CONFIG" );
+	}
+
+	// create KeyValues object to load/save server config options
+	m_pServerConfig = new KeyValues( "Server Config" );
+
+	// load the server config data from serverconfig.txt
+	if (m_pServerConfig)
+	{
+		m_pServerConfig->LoadFromFile( filesystem(), "cfg/serverconfig.txt", "MOD" );
+		if (!m_pServerConfig->GetFirstSubKey())
+		{
+			// File doesn't exist or is empty, try from HL2 directory
+			m_pServerConfig->LoadFromFile( filesystem(), "cfg/serverconfig.txt", "HL2" );
+		}
 	}
 	// add a page of advanced bot controls
 	// NOTE: These controls will use the bot keys to initialize their values
@@ -115,6 +130,12 @@ CCreateMultiplayerGameDialog::~CCreateMultiplayerGameDialog()
 	{
 		m_pBotSavedData->deleteThis();
 		m_pBotSavedData = NULL;
+	}
+
+	if (m_pServerConfig)
+	{
+		m_pServerConfig->deleteThis();
+		m_pServerConfig = NULL;
 	}
 }
 
@@ -201,6 +222,40 @@ void CCreateMultiplayerGameDialog::OnOK()
 		// save bot config to a file
 		m_pBotSavedData->SaveToFile( filesystem(), "CSBotConfig.vdf", "CONFIG" );
 
+		// save server config settings to serverconfig.txt
+		if (m_pServerConfig)
+		{
+			// Update server config with current dialog values
+			m_pServerConfig->SetString("hostname", szHostName);
+			m_pServerConfig->SetInt("maxplayers", m_pServerPage->GetMaxPlayers());
+
+			// Save password only if it's not empty (for security)
+			if (strlen(szPassword) > 0)
+			{
+				m_pServerConfig->SetString("password", szPassword);
+			}
+			else
+			{
+				// Remove password key if empty
+				m_pServerConfig->RemoveSubKey(m_pServerConfig->FindKey("password"));
+			}
+
+			// Get gameplay page settings and update config
+			CCreateMultiplayerGameGameplayPage *pGameplayPage =
+				dynamic_cast<CCreateMultiplayerGameGameplayPage *>(GetPropertySheet()->GetPage(1));
+			if (pGameplayPage)
+			{
+				pGameplayPage->UpdateServerConfig(m_pServerConfig);
+			}
+
+			// Save to file in MOD directory first, fall back to HL2 if needed
+			bool saved = m_pServerConfig->SaveToFile( filesystem(), "cfg/serverconfig.txt", "MOD" );
+			if (!saved)
+			{
+				m_pServerConfig->SaveToFile( filesystem(), "cfg/serverconfig.txt", "HL2" );
+			}
+		}
+
 		// create command to load map, set password, etc
 		sprintf( szMapCommand, "disconnect\nsv_lan 1\nsetmaster enable\nmaxplayers %i\nsv_password \"%s\"\nhostname \"%s\"\nmap %s\n",
 			m_pServerPage->GetMaxPlayers(),
@@ -239,6 +294,40 @@ void CCreateMultiplayerGameDialog::OnOK()
 	}
 	else
 	{
+		// save server config settings to serverconfig.txt for non-Counter-Strike games too
+		if (m_pServerConfig)
+		{
+			// Update server config with current dialog values
+			m_pServerConfig->SetString("hostname", szHostName);
+			m_pServerConfig->SetInt("maxplayers", m_pServerPage->GetMaxPlayers());
+
+			// Save password only if it's not empty (for security)
+			if (strlen(szPassword) > 0)
+			{
+				m_pServerConfig->SetString("password", szPassword);
+			}
+			else
+			{
+				// Remove password key if empty
+				m_pServerConfig->RemoveSubKey(m_pServerConfig->FindKey("password"));
+			}
+
+			// Get gameplay page settings and update config
+			CCreateMultiplayerGameGameplayPage *pGameplayPage =
+				dynamic_cast<CCreateMultiplayerGameGameplayPage *>(GetPropertySheet()->GetPage(1));
+			if (pGameplayPage)
+			{
+				pGameplayPage->UpdateServerConfig(m_pServerConfig);
+			}
+
+			// Save to file in MOD directory first, fall back to HL2 if needed
+			bool saved = m_pServerConfig->SaveToFile( filesystem(), "cfg/serverconfig.txt", "MOD" );
+			if (!saved)
+			{
+				m_pServerConfig->SaveToFile( filesystem(), "cfg/serverconfig.txt", "HL2" );
+			}
+		}
+
 		// create the command to execute
 		sprintf(szMapCommand, "disconnect\nsv_lan 1\nsetmaster enable\nmaxplayers %i\nsv_password \"%s\"\nhostname \"%s\"\nmap %s\n",
 			m_pServerPage->GetMaxPlayers(),

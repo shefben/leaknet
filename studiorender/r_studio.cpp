@@ -443,7 +443,7 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 
 void CStudioRender::R_StudioBuildMeshGroup( studiomeshgroup_t* pMeshGroup,
 		OptimizedModel::StripGroupHeader_t *pStripGroup, mstudiomesh_t* pMesh,
-		studiohdr_t *pStudioHdr )
+		studiohdr_t *pStudioHdr, bool bVtxIsV6 )
 {
 	// We have to do this here because of skinning; there may be any number of
 	// materials that are applied to this mesh.
@@ -456,16 +456,16 @@ void CStudioRender::R_StudioBuildMeshGroup( studiomeshgroup_t* pMeshGroup,
 
 	// This mesh could have tristrips or trilists in it
 	CMeshBuilder meshBuilder;
-	meshBuilder.Begin( pMeshGroup->m_pMesh, MATERIAL_HETEROGENOUS, 
+	meshBuilder.Begin( pMeshGroup->m_pMesh, MATERIAL_HETEROGENOUS,
 		hwSkin ? pStripGroup->numVerts : 0, pStripGroup->numIndices );
 
 	int i;
 	bool ok = true;
 	if (hwSkin)
 	{
-		// v37 VTX files use Vertex_v37_t (15 bytes) with different layout
-		// v48 VTX files use Vertex_t (9 bytes)
-		if ( pStudioHdr && pStudioHdr->IsV37() )
+		// VTX v6 uses Vertex_v37_t (15 bytes), VTX v7+ uses Vertex_t (9 bytes)
+		// Must check VTX file version, not MDL version!
+		if ( bVtxIsV6 )
 		{
 			for (i = 0; i < pStripGroup->numVerts; ++i)
 			{
@@ -581,9 +581,9 @@ void CStudioRender::R_StudioBuildMeshStrips( studiomeshgroup_t* pMeshGroup,
 // Creates a single mesh
 //-----------------------------------------------------------------------------
 
-void CStudioRender::R_StudioCreateSingleMesh(mstudiomesh_t* pMesh, 
+void CStudioRender::R_StudioCreateSingleMesh(mstudiomesh_t* pMesh,
 	OptimizedModel::MeshHeader_t* pVtxMesh, int numBones, studiomeshdata_t* pMeshData,
-	studiohdr_t *pStudioHdr )
+	studiohdr_t *pStudioHdr, bool bVtxIsV6 )
 {
 	// Here are the cases where we don't use any meshes at all...
 	// In the case of eyes, we're just gonna use dynamic buffers
@@ -609,7 +609,7 @@ void CStudioRender::R_StudioCreateSingleMesh(mstudiomesh_t* pMesh,
 			pMeshGroup->m_Flags |= MESHGROUP_IS_HWSKINNED;
 
 		// Build the vertex + index buffers
-		R_StudioBuildMeshGroup( pMeshGroup, pStripGroup, pMesh, pStudioHdr );
+		R_StudioBuildMeshGroup( pMeshGroup, pStripGroup, pMesh, pStudioHdr, bVtxIsV6 );
 
 		// Copy over the tristrip and triangle list data
 		R_StudioBuildMeshStrips( pMeshGroup, pStripGroup );
@@ -617,13 +617,24 @@ void CStudioRender::R_StudioCreateSingleMesh(mstudiomesh_t* pMesh,
 		// Build the mapping from strip group vertex idx to actual mesh idx
 		pMeshGroup->m_pGroupIndexToMeshIndex = new unsigned short[pStripGroup->numVerts + 4];
 		pMeshGroup->m_NumVertices = pStripGroup->numVerts;
-		for (int j = 0; j < pStripGroup->numVerts; ++j)
+		// VTX v6 uses Vertex_v37_t (15 bytes), VTX v7+ uses Vertex_t (9 bytes)
+		if (bVtxIsV6)
 		{
-			pMeshGroup->m_pGroupIndexToMeshIndex[j] = pStripGroup->pVertex(j)->origMeshVertID;
+			for (int j = 0; j < pStripGroup->numVerts; ++j)
+			{
+				pMeshGroup->m_pGroupIndexToMeshIndex[j] = pStripGroup->pVertex_V37(j)->origMeshVertID;
+			}
+		}
+		else
+		{
+			for (int j = 0; j < pStripGroup->numVerts; ++j)
+			{
+				pMeshGroup->m_pGroupIndexToMeshIndex[j] = pStripGroup->pVertex(j)->origMeshVertID;
+			}
 		}
 
 		// Extra copies are for precaching...
-		pMeshGroup->m_pGroupIndexToMeshIndex[pStripGroup->numVerts] = 
+		pMeshGroup->m_pGroupIndexToMeshIndex[pStripGroup->numVerts] =
 			pMeshGroup->m_pGroupIndexToMeshIndex[pStripGroup->numVerts+1] =
 			pMeshGroup->m_pGroupIndexToMeshIndex[pStripGroup->numVerts+2] =
 			pMeshGroup->m_pGroupIndexToMeshIndex[pStripGroup->numVerts+3] = pMeshGroup->m_pGroupIndexToMeshIndex[pStripGroup->numVerts - 1];
@@ -721,8 +732,8 @@ bool CStudioRender::R_StudioCreateStaticMeshes(const char *pModelName, studiohdr
 				OptimizedModel::MeshHeader_t* pVtxMesh = pVtxLOD->pMesh(k);
 
 				Assert( pMesh->meshid < numStudioMeshes );
-				R_StudioCreateSingleMesh( pMesh, pVtxMesh, pVtxHdr->maxBonesPerVert, 
-					&((*ppStudioMeshes)[pMesh->meshid]), pStudioHdr );
+				R_StudioCreateSingleMesh( pMesh, pVtxMesh, pVtxHdr->maxBonesPerVert,
+					&((*ppStudioMeshes)[pMesh->meshid]), pStudioHdr, pVtxHdr->IsV6() );
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -77,8 +77,8 @@ extern qboolean		isDedicated;
 void Host_Error (const char *error, ...);
 void Host_EndGame (const char *message, ...);
 
-// user message
-#define MAX_USER_MSG_DATA 192
+// user message - increased to 16KB for MOTD and other large messages
+#define MAX_USER_MSG_DATA 16384
 
 // build info
 // day counter from 10/24/96

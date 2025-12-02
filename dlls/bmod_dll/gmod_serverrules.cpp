@@ -40,6 +40,15 @@ ConVar gm_sv_allowvoice("gm_sv_allowvoice", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY, "
 ConVar gm_sv_teamplay("gm_sv_teamplay", "0", FCVAR_GAMEDLL | FCVAR_NOTIFY, "Enable team play mode");
 ConVar gm_sv_friendly_fire("gm_sv_friendly_fire", "0", FCVAR_GAMEDLL | FCVAR_NOTIFY, "Enable friendly fire in team mode");
 
+// Additional cvars required by client gmod_menus.cpp
+ConVar gm_sv_allweapons("gm_sv_allweapons", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, "Give all weapons to players");
+ConVar gm_sv_allowignite("gm_sv_allowignite", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, "Allow igniting objects");
+ConVar gm_sv_playerdamage("gm_sv_playerdamage", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, "Enable player damage");
+ConVar gm_sv_pvpdamage("gm_sv_pvpdamage", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, "Enable PvP damage");
+ConVar gm_sv_teamdamage("gm_sv_teamdamage", "0", FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, "Enable team damage");
+ConVar gm_sv_allowspawning("gm_sv_allowspawning", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, "Allow spawning entities");
+ConVar gm_sv_allowmultigun("gm_sv_allowmultigun", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, "Allow multiple physics gun targets");
+
 //-----------------------------------------------------------------------------
 // Purpose: Initialize server rules system
 //-----------------------------------------------------------------------------

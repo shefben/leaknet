@@ -202,10 +202,13 @@ void ClientModeHLNormal::CreateMove( float flFrameTime, float flInputSampleTime,
 
 void ClientModeHLNormal::LevelInit( const char *newmap )
 {
+	Msg("ClientModeHLNormal::LevelInit - Starting for map '%s'\n", newmap);
 	BaseClass::LevelInit( newmap );
 
+	Msg("ClientModeHLNormal::LevelInit - Starting LevelInit animation sequence\n");
 	m_pViewport->GetAnimationController()->StartAnimationSequence("LevelInit");
 	m_pViewport->Enable();
+	Msg("ClientModeHLNormal::LevelInit - Viewport enabled, complete\n");
 }
 
 void ClientModeHLNormal::LevelShutdown( void )

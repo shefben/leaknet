@@ -332,8 +332,67 @@ void CMatSystemTexture::SetTextureRGBA( const char* rgba,int wide,int tall )
 	if ( !IsProcedural() )
 		return;
 
-	Assert( wide == m_iWide );
-	Assert( tall == m_iTall );
+	// If the texture hasn't been initialized yet, create the backing material
+	if ( m_iWide == 0 || m_iTall == 0 || !m_pMaterial || !m_pRegen )
+	{
+		// Create procedural texture with the given dimensions (use empty name like font cache does)
+		ITexture *pTexture = g_pMaterialSystem->CreateProceduralTexture(
+			"",
+			wide,
+			tall,
+			IMAGE_FORMAT_RGBA8888,
+			TEXTUREFLAGS_POINTSAMPLE | TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT |
+			TEXTUREFLAGS_NOMIP | TEXTUREFLAGS_NOLOD | TEXTUREFLAGS_PROCEDURAL | TEXTUREFLAGS_SINGLECOPY
+		);
+
+		if ( pTexture )
+		{
+			// Create material like the font texture cache does
+			m_pMaterial = g_pMaterialSystem->CreateMaterial();
+			if ( m_pMaterial )
+			{
+				m_pMaterial->SetShader( "UnlitGeneric" );
+				m_pMaterial->SetMaterialVarFlag( MATERIAL_VAR_VERTEXCOLOR, true );
+				m_pMaterial->SetMaterialVarFlag( MATERIAL_VAR_VERTEXALPHA, true );
+				m_pMaterial->SetMaterialVarFlag( MATERIAL_VAR_IGNOREZ, true );
+				m_pMaterial->SetMaterialVarFlag( MATERIAL_VAR_NO_DEBUG_OVERRIDE, true );
+				m_pMaterial->SetMaterialVarFlag( MATERIAL_VAR_TRANSLUCENT, true );
+
+				bool bFound;
+				IMaterialVar *pMaterialVar = m_pMaterial->FindVar( "$basetexture", &bFound, false );
+				if ( bFound && pMaterialVar )
+				{
+					pMaterialVar->SetTextureValue( pTexture );
+				}
+
+				// Take all of the new materialvars into account
+				m_pMaterial->Refresh();
+				m_pMaterial->IncrementReferenceCount();
+
+				m_iWide = wide;
+				m_iTall = tall;
+				m_s0 = 0.0f;
+				m_t0 = 0.0f;
+				m_s1 = 1.0f;
+				m_t1 = 1.0f;
+
+				m_pTexture = pTexture;
+				m_pTexture->IncrementReferenceCount();
+
+				CreateRegen( wide, tall );
+				m_pTexture->SetTextureRegenerator( m_pRegen );
+			}
+
+			pTexture->DecrementReferenceCount();
+		}
+	}
+
+	// Verify dimensions match (or we failed to create)
+	if ( wide != m_iWide || tall != m_iTall )
+	{
+		Warning( "SetTextureRGBA: Texture size mismatch (expected %dx%d, got %dx%d)\n", m_iWide, m_iTall, wide, tall );
+		return;
+	}
 
 	// Just replace the whole thing
 	SetSubTextureRGBA( 0, 0, (const unsigned char *)rgba, wide, tall );

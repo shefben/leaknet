@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -38,6 +38,7 @@ protected:
 
 private:
 	void LoadMapList();
+	void LoadServerSettings();
 	vgui::ListPanel *m_pMapList;
 
 	enum { DATA_STR_LENGTH = 64 };

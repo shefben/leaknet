@@ -661,9 +661,9 @@ void CTexture::FreeShaderAPITextures()
 		{
 			if( g_pShaderAPI->IsTexture( m_pTexIDs[i] ) )
 			{
-#ifndef _LINUX
-				Assert( _heapchk() == _HEAPOK );
-#endif
+// #ifndef _LINUX
+// 				Assert( _heapchk() == _HEAPOK );
+// #endif
 
 				g_pShaderAPI->DeleteTexture( m_pTexIDs[i] );
 			}

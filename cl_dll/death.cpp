@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: Draws the death notices
 //
@@ -28,7 +28,7 @@ public:
 	void VidInit( void );
 	bool ShouldDraw( void );
 	virtual void Paint();
-	void MsgFunc_DeathMsg( const char *pszName, int iSize, void *pbuf );
+	void MsgFunc_DeathMsg( bf_read &msg );
 
 	virtual void ApplySchemeSettings( vgui::IScheme *scheme );
 
@@ -205,19 +205,19 @@ void CHudDeathNotice::Paint()
 //-----------------------------------------------------------------------------
 // Purpose: This message handler may be better off elsewhere
 //-----------------------------------------------------------------------------
-void CHudDeathNotice::MsgFunc_DeathMsg( const char *pszName, int iSize, void *pbuf )
+void CHudDeathNotice::MsgFunc_DeathMsg( bf_read &msg )
 {
 	if (!m_pScorePanel || !g_PR)
 		return;
 
-	BEGIN_READ( pbuf, iSize );
-
-	int killer = READ_BYTE();
-	int victim = READ_BYTE();
+	int killer = msg.ReadByte();
+	int victim = msg.ReadByte();
 
 	char killedwith[32];
+	char weaponName[32];
+	msg.ReadString( weaponName, sizeof(weaponName) );
 	strcpy( killedwith, "d_" );
-	strncat( killedwith, READ_STRING(), 32 );
+	strncat( killedwith, weaponName, sizeof(killedwith) - 3 );
 
 	m_pScorePanel->DeathMsg( killer, victim );
 

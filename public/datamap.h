@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -336,6 +336,22 @@ struct datamap_t
 #define IMPLEMENT_NULL_DATADESC( derivedClass ) \
 	BEGIN_DATADESC( derivedClass ) \
 	END_DATADESC()
+
+//-----------------------------------------------------------------------------
+// Bitfield macros for BSP structures
+// These create a union that allows accessing both the raw bitfield storage
+// and the individual bitfield members, enabling proper byte swapping.
+//-----------------------------------------------------------------------------
+#define BEGIN_BITFIELD( name ) \
+	union \
+	{ \
+		char name; \
+		struct \
+		{
+
+#define END_BITFIELD() \
+		}; \
+	};
 
 //-----------------------------------------------------------------------------
 

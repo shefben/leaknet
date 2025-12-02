@@ -478,10 +478,14 @@ void CMatSystemSurface::StartDrawing( void )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::FinishDrawing( void )
 {
+	// Only finish if we actually started drawing
+	if ( !g_bInDrawing )
+		return;
+
 	// We're done with scissoring
 	EnableScissor( false );
 
@@ -495,8 +499,32 @@ void CMatSystemSurface::FinishDrawing( void )
 	g_pMaterialSystem->MatrixMode( MATERIAL_VIEW );
 	g_pMaterialSystem->PopMatrix();
 
-  	Assert( g_bInDrawing );
 	g_bInDrawing = false;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Public interface to start 2D drawing mode
+// Used by non-VGUI components (like Quake console) that need to draw
+// outside the normal PaintTraverse cycle
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::Start2DDrawing()
+{
+	if (!g_bInDrawing)
+	{
+		StartDrawing();
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Public interface to finish 2D drawing mode
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::Finish2DDrawing()
+{
+	if (g_bInDrawing)
+	{
+		FinishDrawing();
+	}
 }
 
 
@@ -584,7 +612,7 @@ void CMatSystemSurface::PopMakeCurrent(VPANEL pPanel)
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawSetColor(int r, int g, int b, int a)
 {
-  	Assert( g_bInDrawing );
+	// Allow setting color even outside drawing context - it just sets internal state
 	m_DrawColor[0]=(unsigned char)r;
 	m_DrawColor[1]=(unsigned char)g;
 	m_DrawColor[2]=(unsigned char)b;
@@ -593,7 +621,6 @@ void CMatSystemSurface::DrawSetColor(int r, int g, int b, int a)
 
 void CMatSystemSurface::DrawSetColor(Color col)
 {
-  	Assert( g_bInDrawing );
 	DrawSetColor(col[0], col[1], col[2], col[3]);
 }
 
@@ -664,7 +691,8 @@ void CMatSystemSurface::DrawTexturedLineInternal( const Vertex_t &a, const Verte
 
 void CMatSystemSurface::DrawLine( int x0, int y0, int x1, int y1 )
 {
-	Assert( g_bInDrawing );
+	if ( !g_bInDrawing )
+		return;
 
 	// Don't bother drawing fully transparent lines
 	if( m_DrawColor[3] == 0 )
@@ -692,7 +720,8 @@ void CMatSystemSurface::DrawTexturedLine( const Vertex_t &a, const Vertex_t &b )
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawPolyLine( int *px, int *py ,int n )
 {
-	Assert( g_bInDrawing );
+	if ( !g_bInDrawing )
+		return;
 
 	Assert( !m_bIn3DPaintMode );
 
@@ -842,7 +871,9 @@ void CMatSystemSurface::DrawFilledRect(int x0,int y0,int x1,int y1)
 {
 	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWFILLEDRECT_TIME );
 
-	Assert( g_bInDrawing );
+	// Guard against drawing outside proper context (gracefully skip instead of assert)
+	if ( !g_bInDrawing )
+		return;
 
 	// Don't even bother drawing fully transparent junk
 	if( m_DrawColor[3]==0 )
@@ -866,7 +897,11 @@ void CMatSystemSurface::DrawFilledRect(int x0,int y0,int x1,int y1)
 // Purpose: Draws an unfilled rectangle in the current drawcolor
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawOutlinedRect(int x0,int y0,int x1,int y1)
-{		
+{
+	// Guard against drawing outside proper context
+	if ( !g_bInDrawing )
+		return;
+
 	// Don't even bother drawing fully transparent junk
 	if ( m_DrawColor[3] == 0 )
 		return;
@@ -883,7 +918,8 @@ void CMatSystemSurface::DrawOutlinedRect(int x0,int y0,int x1,int y1)
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawOutlinedCircle(int x, int y, int radius, int segments)
 {
-	Assert( g_bInDrawing );
+	if ( !g_bInDrawing )
+		return;
 
 	Assert( !m_bIn3DPaintMode );
 
@@ -1029,7 +1065,8 @@ void CMatSystemSurface::DrawTexturedRect( int x0, int y0, int x1, int y1 )
 {
 	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWTEXTUREDRECT_TIME );
 
-	Assert( g_bInDrawing );
+	if ( !g_bInDrawing )
+		return;
 
 	// Don't even bother drawing fully transparent junk
 	if( m_DrawColor[3] == 0 )
@@ -1059,7 +1096,8 @@ void CMatSystemSurface::DrawTexturedSubRect( int x0, int y0, int x1, int y1, flo
 {
 	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWTEXTUREDRECT_TIME );
 
-	Assert( g_bInDrawing );
+	if ( !g_bInDrawing )
+		return;
 
 	// Don't even bother drawing fully transparent junk
 	if( m_DrawColor[3] == 0 )
@@ -1098,7 +1136,8 @@ void CMatSystemSurface::DrawTexturedPolygon(int n, Vertex_t *pVertices)
 {
 	Assert( !m_bIn3DPaintMode );
 
-	Assert( g_bInDrawing );
+	if ( !g_bInDrawing )
+		return;
 
 	// Don't even bother drawing fully transparent junk
 	if( (n == 0) || (m_DrawColor[3]==0) )
@@ -1202,11 +1241,19 @@ void CMatSystemSurface::GetTextSize(HFont font, const wchar_t *text, int &wide, 
 //-----------------------------------------------------------------------------
 bool CMatSystemSurface::AddCustomFontFile(const char *fontFileName)
 {
-	// get local path
-	char *fullPath = (char *)_alloca(filesystem()->GetLocalPathLen(fontFileName) + 1);
+	// Try to get local path from filesystem search paths
+	// GetLocalPath searches through all configured search paths (MOD first, then HL2/base)
+	int pathLen = filesystem()->GetLocalPathLen(fontFileName);
+	if (pathLen <= 0)
+	{
+		Msg("Couldn't find custom font file '%s' in any search path\n", fontFileName);
+		return false;
+	}
+
+	char *fullPath = (char *)_alloca(pathLen + 1);
 	if (!filesystem()->GetLocalPath(fontFileName, fullPath))
 	{
-		Msg("Couldn't find custom font file '%s'\n", fontFileName);
+		Msg("Couldn't resolve local path for custom font file '%s'\n", fontFileName);
 		return false;
 	}
 	_strlwr(fullPath);
@@ -1296,12 +1343,11 @@ void CMatSystemSurface::DrawSetTextFont(HFont font)
 */
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawSetTextFont(HFont font)
 {
-	Assert( g_bInDrawing );
-
+	// Allow font to be set outside drawing context for setup purposes
 	m_hCurrentFont = font;
 }
 
@@ -1334,21 +1380,19 @@ void CMatSystemSurface::DrawSetTextColor(Color col)
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawSetTextPos(int x, int y)
 {
-	Assert( g_bInDrawing );
-
+	// Allow text position to be set outside drawing context for setup purposes
 	m_pDrawTextPos[0] = x;
 	m_pDrawTextPos[1] = y;
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : x - 
-//			y - 
+// Purpose:
+// Input  : x -
+//			y -
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawGetTextPos(int& x,int& y)
 {
-	Assert( g_bInDrawing );
-
+	// Allow text position to be retrieved outside drawing context
 	x = m_pDrawTextPos[0];
 	y = m_pDrawTextPos[1];
 }
@@ -1368,16 +1412,21 @@ void CMatSystemSurface::DrawUnicodeChar(wchar_t ch, FontDrawType_t drawType /*= 
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : ch - 
-//			info - 
+// Purpose:
+// Input  : ch -
+//			info -
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
 bool CMatSystemSurface::DrawGetUnicodeCharRenderInfo( wchar_t ch, CharRenderInfo& info )
 {
 	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWUNICODECHAR_TIME );
 
-	Assert( g_bInDrawing );
+	// Guard against drawing outside proper context
+	if ( !g_bInDrawing )
+	{
+		info.valid = false;
+		return false;
+	}
 	info.valid = false;
 
 	if ( !m_hCurrentFont )
@@ -1415,14 +1464,17 @@ bool CMatSystemSurface::DrawGetUnicodeCharRenderInfo( wchar_t ch, CharRenderInfo
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : info - 
+// Purpose:
+// Input  : info -
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawRenderCharInternal( const CharRenderInfo& info )
 {
 	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWPRINTCHAR_TIME );
 
-	Assert( g_bInDrawing );
+	// Guard against drawing outside proper context
+	if ( !g_bInDrawing )
+		return;
+
 	// Don't even bother drawing fully transparent junk
 	if( m_DrawTextColor[3]==0 )
 		return;
@@ -1476,7 +1528,10 @@ void CMatSystemSurface::DrawPrintText(const wchar_t *text, int iTextLen, FontDra
 {
 	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWPRINTTEXT_TIME );
 
-	Assert( g_bInDrawing );
+	// Guard against drawing outside proper context
+	if ( !g_bInDrawing )
+		return;
+
 	if (!text)
 		return;
 
@@ -2172,7 +2227,8 @@ void CMatSystemSurface::End3DPaint()
 
 void CMatSystemSurface::DrawColoredCircle( int centerx, int centery, float radius, int r, int g, int b, int a )
 {
-	Assert( g_bInDrawing );
+	if ( !g_bInDrawing )
+		return;
 	// Draw a circle
 	int iDegrees = 0;
 	Vector vecPoint, vecLastPoint(0,0,0);
@@ -2218,7 +2274,8 @@ void CMatSystemSurface::DrawColoredCircle( int centerx, int centery, float radiu
 //-----------------------------------------------------------------------------
 int CMatSystemSurface::DrawColoredText( vgui::HFont font, int x, int y, int r, int g, int b, int a, const char *fmt, va_list argptr )
 {
-	Assert( g_bInDrawing );
+	if ( !g_bInDrawing )
+		return 0;
 	int len;
 	char data[ 1024 ];
 
@@ -2347,7 +2404,8 @@ void CMatSystemSurface::DrawTextHeight( vgui::HFont font, int w, int& h, const c
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawColoredTextRect( vgui::HFont font, int x, int y, int w, int h, int r, int g, int b, int a, const char *fmt, ... )
 {
-	Assert( g_bInDrawing );
+	if ( !g_bInDrawing )
+		return;
 	if ( !font )
 		return;
 

@@ -89,7 +89,13 @@ public:
 	// Also assumes the (x,y) coordinates of the panels are defined in 640xN coords
 	// (N isn't necessary 480 because the panel may not be 4x3)
 	// The width + height specified are the size of the panel in world coordinates
-	virtual void DrawPanelIn3DSpace( vgui::VPANEL pRootPanel, const VMatrix &panelCenterToWorld, int nPixelWidth, int nPixelHeight, float flWorldWidth, float flWorldHeight ) = 0; 
+	virtual void DrawPanelIn3DSpace( vgui::VPANEL pRootPanel, const VMatrix &panelCenterToWorld, int nPixelWidth, int nPixelHeight, float flWorldWidth, float flWorldHeight ) = 0;
+
+	// Start/finish 2D drawing mode for non-VGUI panel drawing (e.g., Quake console)
+	// Call Start2DDrawing before any DrawSetText*/DrawPrintText/DrawColoredText calls
+	// Call Finish2DDrawing when done with manual 2D drawing
+	virtual void Start2DDrawing() = 0;
+	virtual void Finish2DDrawing() = 0;
 };
 
 

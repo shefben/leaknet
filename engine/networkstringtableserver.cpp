@@ -585,8 +585,8 @@ static int GetBestPreviousString( CUtlVector< StringHistoryEntry >& history, cha
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Write string table definitions using 2007 Source Engine protocol
-// Single-pass approach: write data to temp buffer, then copy to main buffer
+// Purpose: Write string table definitions using original LeakNet 2003 protocol
+// This is the simple, known-working protocol without the 2007 complexity
 //-----------------------------------------------------------------------------
 void CNetworkStringTableContainerServer::CreateTableDefinitions( bf_write *msg )
 {
@@ -597,10 +597,6 @@ void CNetworkStringTableContainerServer::CreateTableDefinitions( bf_write *msg )
 
 	msg->WriteByte( m_Tables.Size() );
 
-	// Temporary buffer for each table's entry data
-	// Max size: 512KB to handle large string tables like soundprecache (5000+ entries)
-	static unsigned char tempBuffer[524288];
-
 	CUtlVector< StringHistoryEntry > history;
 
 	for ( int i = 0 ; i < m_Tables.Size() ; i++ )
@@ -610,59 +606,33 @@ void CNetworkStringTableContainerServer::CreateTableDefinitions( bf_write *msg )
 		CNetworkStringTableServer *table = GetTable( i );
 		assert( table );
 
-		// Write table name (no ':' prefix for regular tables)
 		msg->WriteString( table->GetTableName() );
-
-		// Write max entries (short)
 		msg->WriteShort( table->GetMaxEntries() );
-
 		int numStrings = table->GetNumStrings();
 		int encodeBits = table->GetEntryBits();
 
-		// 2007 protocol: Write number of used entries (entryBits + 1 bits)
-		msg->WriteUBitLong( numStrings, encodeBits + 1 );
-
-		// Write entry data to temp buffer first to calculate data length
-		bf_write tempBuf( "StringTableTemp", tempBuffer, sizeof( tempBuffer ) );
-		int lastEntry = -1;
-
-		DevMsg( "CreateTableDefinitions: Writing table '%s' with %d entries (maxentries=%d, encodeBits=%d)\n",
-			table->GetTableName(), numStrings, table->GetMaxEntries(), encodeBits );
+		// Original protocol: Write number of used entries (encodeBits bits, NOT +1)
+		msg->WriteUBitLong( numStrings, encodeBits );
 
 		for ( int j = 0; j < numStrings; j++ )
 		{
 			char const *entry = table->GetString( j );
-
-			// 2007 protocol: Delta encoding for entry index
-			if ( j == lastEntry + 1 )
-			{
-				tempBuf.WriteOneBit( 1 ); // Use delta (lastEntry + 1)
-			}
-			else
-			{
-				tempBuf.WriteOneBit( 0 );
-				tempBuf.WriteUBitLong( j, encodeBits );
-			}
-			lastEntry = j;
-
-			// 2007 protocol: Has string bit (always 1 for new entries)
-			tempBuf.WriteOneBit( 1 );
-
-			// Check for substring compression
 			int substringsize = 0;
 			int bestprevious = GetBestPreviousString( history, entry, substringsize );
-			if ( bestprevious != -1 && history.Count() > 0 )
+			if ( bestprevious != -1 )
 			{
-				// 2007 protocol: Fixed 5-bit history index
-				tempBuf.WriteOneBit( 1 ); // Has substring
-				tempBuf.WriteUBitLong( bestprevious, 5 );
-				tempBuf.WriteUBitLong( substringsize, SUBSTRING_BITS );
-				tempBuf.WriteString( entry + substringsize );
+				// Original protocol: Variable-length history index based on history size
+				int sendbits = Q_log2( history.Count() ) + 1;
+
+				msg->WriteOneBit( 1 );
+				msg->WriteUBitLong( bestprevious, sendbits );
+				msg->WriteUBitLong( substringsize, SUBSTRING_BITS );
+				msg->WriteString( entry + substringsize );
 			}
 			else
 			{
-				tempBuf.WriteOneBit( 0 ); // No substring
-				tempBuf.WriteString( entry );
+				msg->WriteOneBit( 0 );
+				msg->WriteString( entry );
 			}
 
 			// Write the item's user data
@@ -670,24 +640,16 @@ void CNetworkStringTableContainerServer::CreateTableDefinitions( bf_write *msg )
 			const void *pUserData = table->GetStringUserData( j, &len );
 			if ( pUserData && len > 0 )
 			{
-				tempBuf.WriteOneBit( 1 );
-				tempBuf.WriteUBitLong( len, CNetworkStringTableItem::MAX_USERDATA_BITS );
-				tempBuf.WriteBits( pUserData, len * 8 );
+				msg->WriteOneBit( 1 );
+				msg->WriteUBitLong( len, CNetworkStringTableItem::MAX_USERDATA_BITS );
+				msg->WriteBits( pUserData, len * 8 );
 			}
 			else
 			{
-				tempBuf.WriteOneBit( 0 );
+				msg->WriteOneBit( 0 );
 			}
 
-			// Check for temp buffer overflow
-			if ( tempBuf.IsOverflowed() )
-			{
-				Warning( "CreateTableDefinitions: Temp buffer overflow at entry %d in table '%s'\n",
-					j, table->GetTableName() );
-				break;
-			}
-
-			// Update history
+			// Update history - original protocol uses >= 31
 			if ( history.Count() >= 31 )
 			{
 				history.Remove( 0 );
@@ -697,26 +659,6 @@ void CNetworkStringTableContainerServer::CreateTableDefinitions( bf_write *msg )
 			Q_strncpy( she.string, entry, sizeof( she.string ) );
 			history.AddToTail( she );
 		}
-
-		int dataLengthBits = tempBuf.GetNumBitsWritten();
-
-		// Check for temp buffer overflow after writing all entries
-		if ( tempBuf.IsOverflowed() )
-		{
-			Warning( "CreateTableDefinitions: Temp buffer overflowed for table '%s', dataLengthBits=%d\n",
-				table->GetTableName(), dataLengthBits );
-		}
-
-		// Write data length in bits (24 bits to support larger tables like soundprecache)
-		// 2007 protocol used 20 bits, but we need more for GMod-compatible servers
-		msg->WriteUBitLong( dataLengthBits, 24 );
-
-		// 2007 protocol: Write user data fixed size info
-		// For now, use variable size (not fixed)
-		msg->WriteOneBit( 0 ); // bUserDataFixedSize = false
-
-		// Copy the entry data from temp buffer to main message buffer
-		msg->WriteBits( tempBuffer, dataLengthBits );
 	}
 }
 

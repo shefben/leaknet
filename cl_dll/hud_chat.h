@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -15,6 +15,7 @@
 #include <vgui_controls/Panel.h>
 #include "vgui_basepanel.h"
 #include "vgui_controls/Frame.h"
+#include "bitbuf.h"
 
 class CHudChatLine;
 class CHudChatInputLine;
@@ -48,16 +49,16 @@ public:
 	void			LevelInit( const char *newmap );
 	void			LevelShutdown( void );
 
-	void			MsgFunc_TextMsg(const char *pszName, int iSize, void *pbuf);
+	void			MsgFunc_TextMsg( bf_read &msg );
 
 	void			Printf( const char *fmt, ... );
-	
+
 	void			StartMessageMode( int iMessageModeType );
 	void			StopMessageMode( void );
 	void			Send( void );
 
 	// Network message handler
-	void			MsgFunc_SayText( const char *pszName, int iSize, void *pbuf );
+	void			MsgFunc_SayText( bf_read &msg );
 
 	virtual void	ApplySchemeSettings(vgui::IScheme *pScheme);
 	virtual void	Paint( void );

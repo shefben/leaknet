@@ -86,16 +86,16 @@ IMPLEMENT_SERVERCLASS_ST(CBaseAnimating, DT_BaseAnimating)
 	SendPropInt		( SENDINFO(m_nForceBone), 8, 0 ),
 	SendPropVector	( SENDINFO(m_vecForce), -1, SPROP_NOSCALE ),
 
-	SendPropInt		(SENDINFO(m_nSkin), 10),
-	SendPropInt		(SENDINFO(m_nBody), 32),
+	SendPropInt		( SENDINFO(m_nSkin), ANIMATION_SKIN_BITS ),
+	SendPropInt		( SENDINFO(m_nBody), ANIMATION_BODY_BITS ),
 
-	SendPropInt		(SENDINFO(m_nHitboxSet),2, SPROP_UNSIGNED ),
+	SendPropInt		( SENDINFO(m_nHitboxSet), ANIMATION_HITBOXSET_BITS, SPROP_UNSIGNED ),
 
-	SendPropFloat	(SENDINFO(m_flModelScale),		8,	SPROP_ROUNDUP,	0.0f,	8.0f),
-	SendPropArray	(SendPropFloat(SENDINFO_ARRAY(m_flPoseParameter),	11, 0, 0.0f, 1.0f), m_flPoseParameter),
-	SendPropInt		(SENDINFO(m_nSequence),	9, 0),
-	SendPropFloat	(SENDINFO(m_flPlaybackRate),	8,	SPROP_ROUNDUP,	-4.0,	12.0f), // NOTE: if this isn't a power of 2 than "1.0" can't be encoded correctly
-	SendPropArray	(SendPropFloat(SENDINFO_ARRAY(m_flEncodedController), 11, SPROP_ROUNDDOWN, 0.0f, 1.0f ), m_flEncodedController),
+	SendPropFloat	( SENDINFO(m_flModelScale), 8, SPROP_ROUNDUP, 0.0f, 8.0f ),
+	SendPropArray	( SendPropFloat(SENDINFO_ARRAY(m_flPoseParameter), ANIMATION_POSEPARAMETER_BITS, 0, 0.0f, 1.0f), m_flPoseParameter ),
+	SendPropInt		( SENDINFO(m_nSequence), ANIMATION_SEQUENCE_BITS, SPROP_UNSIGNED ),
+	SendPropFloat	( SENDINFO(m_flPlaybackRate), ANIMATION_PLAYBACKRATE_BITS, SPROP_ROUNDUP, -4.0, 12.0f ), // NOTE: if this isn't a power of 2 than "1.0" can't be encoded correctly
+	SendPropArray	( SendPropFloat(SENDINFO_ARRAY(m_flEncodedController), 11, SPROP_ROUNDDOWN, 0.0f, 1.0f ), m_flEncodedController ),
 
 	SendPropInt( SENDINFO( m_bClientSideAnimation ), 1, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO( m_bClientSideFrameReset ), 1, SPROP_UNSIGNED ),
@@ -703,10 +703,8 @@ bool CBaseAnimating::HasPoseParameter( int iSequence, int iParameter )
 
 	mstudioseqdesc_t *pSeqDesc = pstudiohdr->pSeqdesc( iSequence );
 
-	// Use version-aware accessor for paramindex (v37 vs v48 binary layout)
-	int paramIdx0 = pSeqDesc->GetParamIndex( 0, pstudiohdr->version );
-	int paramIdx1 = pSeqDesc->GetParamIndex( 1, pstudiohdr->version );
-	if (paramIdx0 == iParameter || paramIdx1 == iParameter)
+	// Direct access (same binary layout for v37 and v48)
+	if (pSeqDesc->paramindex[0] == iParameter || pSeqDesc->paramindex[1] == iParameter)
 	{
 		return true;
 	}

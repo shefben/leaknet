@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: Item pickup history displayed onscreen when items are picked up.
 //
@@ -11,6 +11,7 @@
 
 #include "hudelement.h"
 #include "ehandle.h"
+#include "bitbuf.h"
 
 #include <vgui_controls/Panel.h>
 
@@ -65,7 +66,7 @@ public:
 	void	AddToHistory( int iType, int iId, int iCount = 0 );
 	void	AddToHistory( int iType, const char *szName, int iCount = 0 );
 	void	AddToHistory( int iType, C_BaseCombatWeapon *weapon, int iCount = 0 );
-	void	MsgFunc_ItemPickup( const char *pszName, int iSize, void *pbuf );
+	void	MsgFunc_ItemPickup( bf_read &msg );
 
 	void	CheckClearHistory( void );
 	void	SetHistoryGap( int iNewHistoryGap );

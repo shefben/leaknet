@@ -215,3 +215,5 @@ The project includes a complete master server implementation:
 
 Master server functionality is included in "everything" builds but commented out portions suggest incomplete database integration.
 - the 2007 engine source code directory for reference: F:\back-ups\betahl2_codebases\SourceEngine2007-master\SourceEngine2007-master\src_main
+- clean leaknet codebase with v37 mdl support: F:\development\steam\emulator_bot\LeakNet
+- the location of the game and engine directory is: C:\anon-hl2\  with bmod located within C:\anon-hl2\bmod

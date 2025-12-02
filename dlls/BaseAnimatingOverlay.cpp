@@ -5,6 +5,7 @@
 #include "bone_setup.h"
 #include "ai_basenpc.h"
 #include "npcevent.h"
+#include "baseanimating.h"  // For ANIMATION_SEQUENCE_BITS
 
 
 
@@ -68,7 +69,8 @@ BEGIN_PREDICTION_DATA( CBaseAnimatingOverlay )
 END_PREDICTION_DATA()
 
 
-#define SEQUENCE_BITS		9
+// Use ANIMATION_SEQUENCE_BITS from baseanimating.h for consistency
+#define SEQUENCE_BITS		ANIMATION_SEQUENCE_BITS  // 12 bits = 4096 sequences
 #define PLAYBACKRATE_BITS	15
 #define ORDER_BITS			4
 #define WEIGHT_BITS			8

@@ -48,9 +48,13 @@ END_NETWORK_TABLE()
 
 	CGameRules::CGameRules()
 	{
-		Assert( !g_pGameRules );
+		// Note: g_pGameRules should be NULL here
+		if ( g_pGameRules )
+		{
+			Warning( "CGameRules::CGameRules (client) - g_pGameRules was not NULL!\n" );
+		}
 		g_pGameRules = this;
-	}	
+	}
 
 #else
 
@@ -66,7 +70,12 @@ END_NETWORK_TABLE()
 	//-----------------------------------------------------------------------------
 	CGameRules::CGameRules()
 	{
-		Assert( !g_pGameRules );
+		// Note: g_pGameRules should be NULL here - it's cleaned up in CWorld::Spawn
+		// If it's not, something went wrong with level shutdown
+		if ( g_pGameRules )
+		{
+			Warning( "CGameRules::CGameRules - g_pGameRules was not NULL, previous rules not cleaned up!\n" );
+		}
 		g_pGameRules = this;
 
 		GetVoiceGameMgr()->Init( g_pVoiceGameMgrHelper, gpGlobals->maxClients );

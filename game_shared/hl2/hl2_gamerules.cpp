@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: The Half-Life 2 game rules, such as the relationship tables and ammo
 //			damage cvars.
@@ -1325,6 +1325,13 @@ CAmmoDef *GetAmmoDef()
 		def.AddAmmoType("GaussEnergy",		DMG_SHOCK,					TRACER_NONE, 0,	0, 150, 10 * 400 ); // hit like a 10kg weight at 400 in/s
 		def.AddAmmoType("Hopwire",			DMG_BLAST,					TRACER_NONE, 1,	1, 5, 0);
 		def.AddAmmoType("CombineCannon",	DMG_BULLET,					TRACER_LINE, 5, 5, 15, 1.5 * 750 * 12 ); // hit like a 1.5kg weight at 750 ft/s
+
+		// HL2 retail ammo types - needed for compatibility with newer weapons
+		def.AddAmmoType("Pistol",			DMG_BULLET,					TRACER_LINE, "sk_plr_dmg_small_round",	"sk_npc_dmg_small_round",	"sk_max_small_round",	BULLET_IMPULSE(200, 1225) );
+		def.AddAmmoType("SMG1",				DMG_BULLET,					TRACER_LINE, "sk_plr_dmg_small_round",	"sk_npc_dmg_small_round",	"sk_max_small_round",	BULLET_IMPULSE(200, 1225) );
+		def.AddAmmoType("SMG1_Grenade",		DMG_BURN,					TRACER_NONE, "sk_plr_dmg_ar2_grenade",	"sk_npc_dmg_ar2_grenade",	"sk_max_ar2_grenade",	0 );
+		def.AddAmmoType("AR2",				DMG_BULLET,					TRACER_LINE, "sk_plr_dmg_medium_round",	"sk_npc_dmg_medium_round",	"sk_max_medium_round",	BULLET_IMPULSE(200, 1225) );
+		def.AddAmmoType("AR2AltFire",		DMG_SHOCK,					TRACER_NONE, 0,	0, 3, 0.0f );
 	}
 
 	return &def;

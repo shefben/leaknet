@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -33,6 +33,13 @@ protected:
 	vgui::RadioButton	*m_pEasy;
 	vgui::RadioButton	*m_pMedium;
 	vgui::RadioButton	*m_pHard;
+
+private:
+	void LoadServerSettings();
+	void SaveServerSettings();
+
+	// for loading/saving server config
+	KeyValues *m_pServerConfig;
 };
 
 

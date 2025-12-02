@@ -354,13 +354,11 @@ void CHudMenu::ProcessText( void )
 //		string: menu string to display
 //  if this message is never received, then scores will simply be the combined totals of the players.
 //-----------------------------------------------------------------------------
-void CHudMenu::MsgFunc_ShowMenu( const char *pszName, int iSize, void *pbuf )
+void CHudMenu::MsgFunc_ShowMenu( bf_read &msg )
 {
-	BEGIN_READ( pbuf, iSize );
-
-	m_bitsValidSlots = (short)READ_WORD();
-	int DisplayTime = READ_CHAR();
-	int NeedMore = READ_BYTE();
+	m_bitsValidSlots = (short)msg.ReadWord();
+	int DisplayTime = msg.ReadChar();
+	int NeedMore = msg.ReadByte();
 
 	if ( DisplayTime > 0 )
 	{
@@ -374,18 +372,21 @@ void CHudMenu::MsgFunc_ShowMenu( const char *pszName, int iSize, void *pbuf )
 
 	if ( m_bitsValidSlots )
 	{
+		char szMenuString[MAX_MENU_STRING];
+		msg.ReadString( szMenuString, sizeof(szMenuString) );
+
 		if ( !m_fWaitingForMore ) // this is the start of a new menu
 		{
-			Q_strncpy( g_szPrelocalisedMenuString, READ_STRING(), MAX_MENU_STRING );
+			Q_strncpy( g_szPrelocalisedMenuString, szMenuString, MAX_MENU_STRING );
 		}
 		else
 		{  // append to the current menu string
-			strncat( g_szPrelocalisedMenuString, READ_STRING(), MAX_MENU_STRING - strlen(g_szPrelocalisedMenuString) );
+			strncat( g_szPrelocalisedMenuString, szMenuString, MAX_MENU_STRING - strlen(g_szPrelocalisedMenuString) );
 		}
 		g_szPrelocalisedMenuString[MAX_MENU_STRING-1] = 0;  // ensure null termination
 
 		if ( !NeedMore )
-		{  
+		{
 			g_pClientMode->GetViewportAnimationController()->StartAnimationSequence("MenuOpen");
 			m_nSelectedItem = -1;
 			// we have the whole string, so we can localise it now

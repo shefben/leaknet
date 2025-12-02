@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -25,6 +25,8 @@ class CCreateMultiplayerGameGameplayPage : public vgui::PropertyPage
 public:
 	CCreateMultiplayerGameGameplayPage(vgui::Panel *parent, const char *name);
 	~CCreateMultiplayerGameGameplayPage();
+
+	void UpdateServerConfig(KeyValues *pServerConfig);
 
 protected:
 	virtual void OnApplyChanges();

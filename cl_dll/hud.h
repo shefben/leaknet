@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: CHud handles the message, calculation, and drawing the HUD
 //
@@ -15,6 +15,7 @@
 #include "convar.h"
 #include <vgui/VGUI.h>
 #include <Color.h>
+#include "bitbuf.h"
 
 #define XRES(x)	( x  * ( ( float )ScreenWidth() / 640.0 ) )
 #define YRES(y)	( y  * ( ( float )ScreenHeight() / 480.0 ) )
@@ -149,11 +150,11 @@ public:
 
 	void						RefreshHudTextures();
 
-	// User messages
-	void						MsgFunc_GameMode(const char *pszName, int iSize, void *pbuf);
-	void						MsgFunc_ResetHUD(const char *pszName,  int iSize, void *pbuf);
-	void						MsgFunc_InitHUD(const char *pszName, int iSize, void *pbuf);
-	void						MsgFunc_TeamChange(const char *pszName, int iSize, void *pbuf);
+	// User messages (2007 protocol - bf_read)
+	void						MsgFunc_GameMode( bf_read &msg );
+	void						MsgFunc_ResetHUD( bf_read &msg );
+	void						MsgFunc_InitHUD( bf_read &msg );
+	void						MsgFunc_TeamChange( bf_read &msg );
 
 public:
 

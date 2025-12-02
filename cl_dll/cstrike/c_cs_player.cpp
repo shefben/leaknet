@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2003, Valve Corporation, All rights reserved. =======
+//====== Copyright ï¿½ 1996-2003, Valve Corporation, All rights reserved. =======
 //
 // Purpose: 
 //
@@ -14,11 +14,11 @@
 #endif
 
 
-void __MsgFunc_BarTime( const char *pszName, int iSize, void *pbuf )
+void __MsgFunc_BarTime( bf_read &msg )
 {
-	BEGIN_READ( pbuf, iSize );
+	BEGIN_READ( msg );
 	int theTime = READ_BYTE();
-	
+
 	// Reset the clock.
 	C_CSPlayer *pPlayer = C_CSPlayer::GetLocalCSPlayer();
 	if ( pPlayer )

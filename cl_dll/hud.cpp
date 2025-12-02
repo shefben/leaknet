@@ -36,7 +36,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-void __MsgFunc_ClearDecals(const char *pszName, int iSize, void *pbuf);
+void __MsgFunc_ClearDecals( bf_read &msg );
 
 static 	CClassMemoryPool< CHudTexture >	 g_HudTextureMemoryPool( 128 );
 
@@ -182,6 +182,8 @@ CHud::CHud()
 //-----------------------------------------------------------------------------
 void CHud::Init( void )
 {
+	DevMsg("CHud::Init - Starting HUD initialization\n");
+
 	HOOK_MESSAGE( ResetHUD );
 	HOOK_MESSAGE( GameMode );
 	HOOK_MESSAGE( InitHUD );
@@ -189,15 +191,20 @@ void CHud::Init( void )
 	HOOK_MESSAGE( ClearDecals );
 
 	InitFonts();
+	DevMsg("CHud::Init - Fonts initialized\n");
 
 	// Create all the Hud elements and then tell them to initialise
+	DevMsg("CHud::Init - Creating all HUD elements...\n");
 	CHudElementHelper::CreateAllElements();
+	DevMsg("CHud::Init - Created %d HUD elements\n", m_HudList.Size());
 	for ( int i = 0; i < m_HudList.Size(); i++ )
 	{
 		m_HudList[i]->Init();
 	}
 
-	MsgFunc_ResetHUD( 0, 0, NULL );
+	// Create a dummy bf_read for initialization reset
+	bf_read dummyMsg;
+	MsgFunc_ResetHUD( dummyMsg );
 
 	m_bHudTexturesLoaded = false;
 
@@ -294,12 +301,16 @@ void CHud::Shutdown( void )
 //-----------------------------------------------------------------------------
 void CHud::LevelInit( void )
 {
+	Msg("CHud::LevelInit - Initializing %d HUD elements for new level\n", m_HudList.Size());
+
 	// Tell all the registered hud elements to LevelInit
 	for ( int i = 0; i < m_HudList.Size(); i++ )
 	{
 		m_HudList[i]->SetGameRestored( false );
 		m_HudList[i]->LevelInit();
 	}
+
+	Msg("CHud::LevelInit - Complete\n");
 }
 
 //-----------------------------------------------------------------------------

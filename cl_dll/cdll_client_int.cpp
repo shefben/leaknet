@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -220,8 +220,11 @@ public:
 
 	virtual void					FrameStageNotify( ClientFrameStage_t curStage );
 
-	virtual bool					GetUserMessageInfo( int msg_type, char *name, int& size );
-	virtual bool					DispatchUserMessage( const char *pszName, int iSize, void *pbuf );
+	// 2007 protocol - dispatch user message by type index with bf_read buffer
+	virtual bool					DispatchUserMessage( int msg_type, bf_read &msg_data );
+
+	// Lookup user message index by name (for engine internal use)
+	virtual int						LookupUserMessage( const char *name );
 
 	// Save/restore system hooks
 	virtual CSaveRestoreData  *SaveInit( int size );
@@ -315,8 +318,35 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 	// Hook up the gaussian random number generator
 	s_GaussianRandomStream.AttachToStream( random );
 
+	// Debug: Count commands before registration and look for +menu
+	int nPreCount = 0;
+	bool bFoundMenu = false;
+	const ConCommandBase *pDebug = ConCommandBase::GetCommands();
+	while ( pDebug )
+	{
+		nPreCount++;
+		if ( pDebug->GetName() && !Q_stricmp( pDebug->GetName(), "+menu" ) )
+		{
+			bFoundMenu = true;
+		}
+		pDebug = pDebug->GetNext();
+	}
+	Msg( "Client DLL: %d commands/cvars in list before OneTimeInit, +menu found: %s\n",
+		nPreCount, bFoundMenu ? "YES" : "NO" );
+
 	// Initialize the console variables.
 	ConCommandBaseMgr::OneTimeInit(&g_ConVarAccessor);
+
+	// Debug: Verify +menu exists in engine's cvar list
+	const ConVar *pMenuCmd = cvar->FindVar( "+menu" );
+	if ( pMenuCmd )
+	{
+		Msg( "Client DLL: +menu command found in engine's cvar list after registration\n" );
+	}
+	else
+	{
+		Warning( "Client DLL: +menu command NOT found in engine's cvar list!\n" );
+	}
 
 	if(!Initializer::InitializeAllObjects())
 		return false;
@@ -415,9 +445,6 @@ void CHLClient::Shutdown( void )
 
 	Initializer::FreeAllObjects();
 
-	g_pClientMode->Disable();
-	g_pClientMode->Shutdown();
-
 	input->Shutdown_All();
 	C_BaseTempEntity::ClearDynamicTempEnts();
 	TermSmokeFogOverlay();
@@ -426,7 +453,14 @@ void CHLClient::Shutdown( void )
 
 	IGameSystem::ShutdownAllSystems();
 
+	// Shutdown HUD BEFORE disabling client mode (reverse of init order)
+	// HUD elements are parented to the viewport, so they must be destroyed
+	// while the viewport is still valid
 	gHUD.Shutdown();
+
+	g_pClientMode->Disable();
+	g_pClientMode->Shutdown();
+
 	VGui_Shutdown();
 
 	g_pMatSystemSurface = NULL;
@@ -691,18 +725,25 @@ void CHLClient::View_Fade( ScreenFade_t *pSF )
 //-----------------------------------------------------------------------------
 void CHLClient::LevelInitPreEntity( char const* pMapName )
 {
+	Msg("CHLClient::LevelInitPreEntity - Starting for map '%s'\n", pMapName);
+
 	// HACK: Bogus, but the logic is too complicated in the engine
 	if (g_bLevelInitialized)
+	{
+		Msg("CHLClient::LevelInitPreEntity - Already initialized, skipping\n");
 		return;
+	}
 	g_bLevelInitialized = true;
 
 	// FIXME: Sucky, figure out logic for this crap
 	partition->SuppressLists( PARTITION_ALL_CLIENT_EDICTS, false );
 
 	vieweffects->LevelInit();
-	
+
 	// Tell mode manager that map is changing
+	Msg("CHLClient::LevelInitPreEntity - Calling modemanager->LevelInit\n");
 	modemanager->LevelInit( pMapName );
+	Msg("CHLClient::LevelInitPreEntity - modemanager->LevelInit complete\n");
 
 	C_BaseTempEntity::ClearDynamicTempEnts();
 	clienteffects->Flush();
@@ -715,7 +756,9 @@ void CHLClient::LevelInitPreEntity( char const* pMapName )
 	// don't do prediction if single player!
 	cl_predict.SetValue( engine->GetMaxClients() > 1 ? 1 : 0 );
 
+	Msg("CHLClient::LevelInitPreEntity - Calling gHUD.LevelInit\n");
 	gHUD.LevelInit();
+	Msg("CHLClient::LevelInitPreEntity - Complete\n");
 
 	partition->SuppressLists( PARTITION_ALL_CLIENT_EDICTS, true );
 }
@@ -896,32 +939,24 @@ void CHLClient::UncacheAllMaterials( )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : msg_type - 
-//			*name - 
-//			size - 
+// Purpose: Dispatch incoming user message to registered handlers (2007 protocol)
+// Input  : msg_type - message type index from server
+//			msg_data - bf_read buffer containing message payload
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CHLClient::GetUserMessageInfo( int msg_type, char *name, int& size )
+bool CHLClient::DispatchUserMessage( int msg_type, bf_read &msg_data )
 {
-	if ( !usermessages->IsValidIndex( msg_type ) )
-		return false;
-
-	Q_strcpy( name, usermessages->GetUserMessageName( msg_type ) );
-	size = usermessages->GetUserMessageSize( msg_type );
-	return true;
+	return usermessages->DispatchUserMessage( msg_type, msg_data );
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *pszName - 
-//			iSize - 
-//			*pbuf - 
-// Output : Returns true on success, false on failure.
+// Purpose: Lookup user message index by name (for engine internal use)
+// Input  : *name - message name to lookup
+// Output : Returns message index, or -1 if not found
 //-----------------------------------------------------------------------------
-bool CHLClient::DispatchUserMessage( const char *pszName, int iSize, void *pbuf )
+int CHLClient::LookupUserMessage( const char *name )
 {
-	return usermessages->DispatchUserMessage( pszName, iSize, pbuf );
+	return usermessages->LookupUserMessage( name );
 }
 
 

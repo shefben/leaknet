@@ -1,117 +1,149 @@
-/***
-*
-*	Copyright (c) 1999, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-*   Use, distribution, and modification of this source code and/or resulting
-*   object code is restricted to non-commercial enhancements to products from
-*   Valve LLC.  All other use, distribution, or modification is prohibited
-*   without written permission from Valve LLC.
-*
-****/
+//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
-//  parsemsg.cpp
+// Purpose: User message parsing utilities (2007 protocol compatible)
+//          Provides READ_* functions that work with bf_read buffers
 //
+//=============================================================================//
+
 #include "cbase.h"
-#include "bitbuf.h"
+#include "parsemsg.h"
 
-static bf_read gBuf;
+// Global buffer pointer - points to current message being read
+static bf_read *g_pReadBuf = NULL;
+// Fallback buffer for legacy BEGIN_READ(void*, int) calls
+static bf_read g_LegacyBuf;
 
-void BEGIN_READ( void *buf, int size )
+//-----------------------------------------------------------------------------
+// Purpose: Initialize reading from a bf_read buffer (2007 protocol)
+//-----------------------------------------------------------------------------
+void BEGIN_READ( bf_read &buf )
 {
-	gBuf.StartReading( buf, size );
+	g_pReadBuf = &buf;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Initialize reading from a void* buffer (legacy compatibility)
+//-----------------------------------------------------------------------------
+void BEGIN_READ( void *buf, int size )
+{
+	g_LegacyBuf.StartReading( buf, size );
+	g_pReadBuf = &g_LegacyBuf;
+}
 
 int READ_CHAR( void )
 {
-	return gBuf.ReadChar();
+	return g_pReadBuf ? g_pReadBuf->ReadChar() : 0;
 }
 
 int READ_BYTE( void )
 {
-	return gBuf.ReadByte();
+	return g_pReadBuf ? g_pReadBuf->ReadByte() : 0;
 }
 
 int READ_SHORT( void )
 {
-	return gBuf.ReadShort();
+	return g_pReadBuf ? g_pReadBuf->ReadShort() : 0;
 }
 
 int READ_WORD( void )
 {
-	return gBuf.ReadWord();
+	return g_pReadBuf ? g_pReadBuf->ReadWord() : 0;
 }
-
 
 int READ_LONG( void )
 {
-	return gBuf.ReadLong();
+	return g_pReadBuf ? g_pReadBuf->ReadLong() : 0;
 }
 
 float READ_FLOAT( void )
 {
-	return gBuf.ReadFloat();
+	return g_pReadBuf ? g_pReadBuf->ReadFloat() : 0.0f;
 }
 
 char* READ_STRING( void )
 {
-	static char     string[2048];
-	gBuf.ReadString( string, 2048);
+	static char string[2048];
+	if ( g_pReadBuf )
+	{
+		g_pReadBuf->ReadString( string, sizeof(string) );
+	}
+	else
+	{
+		string[0] = '\0';
+	}
 	return string;
 }
 
 float READ_COORD( void )
 {
-	return gBuf.ReadBitCoord();
+	return g_pReadBuf ? g_pReadBuf->ReadBitCoord() : 0.0f;
 }
 
 float READ_ANGLE( void )
 {
-	return (float)(READ_CHAR() * (360.0/256));
+	return (float)(READ_CHAR() * (360.0 / 256));
 }
 
 float READ_HIRESANGLE( void )
 {
-	return (float)(READ_SHORT() * (360.0/65536));
+	return (float)(READ_SHORT() * (360.0 / 65536));
 }
 
 void READ_VEC3COORD( Vector& vec )
 {
-	gBuf.ReadBitVec3Coord( vec );
+	if ( g_pReadBuf )
+	{
+		g_pReadBuf->ReadBitVec3Coord( vec );
+	}
+	else
+	{
+		vec.Init();
+	}
 }
 
 void READ_VEC3NORMAL( Vector& vec )
 {
-	gBuf.ReadBitVec3Normal( vec );
+	if ( g_pReadBuf )
+	{
+		g_pReadBuf->ReadBitVec3Normal( vec );
+	}
+	else
+	{
+		vec.Init();
+	}
 }
 
 void READ_ANGLES( QAngle &angles )
 {
-	gBuf.ReadBitAngles( angles );	
+	if ( g_pReadBuf )
+	{
+		g_pReadBuf->ReadBitAngles( angles );
+	}
+	else
+	{
+		angles.Init();
+	}
 }
 
-// bitwise
 bool READ_BOOL( void )
 {
-	return gBuf.ReadOneBit() ? true : false;
+	return g_pReadBuf ? (g_pReadBuf->ReadOneBit() != 0) : false;
 }
 
 unsigned int READ_UBITLONG( int numbits )
 {
-	return gBuf.ReadUBitLong( numbits );
+	return g_pReadBuf ? g_pReadBuf->ReadUBitLong( numbits ) : 0;
 }
 
 int READ_SBITLONG( int numbits )
 {
-	return gBuf.ReadBitLong( numbits, true );
+	return g_pReadBuf ? g_pReadBuf->ReadSBitLong( numbits ) : 0;
 }
 
 void READ_BITS( void *buffer, int nbits )
 {
-	gBuf.ReadBits( buffer, nbits );
+	if ( g_pReadBuf )
+	{
+		g_pReadBuf->ReadBits( buffer, nbits );
+	}
 }
-

@@ -77,8 +77,10 @@ Studio models are position independent, so the cache manager can move them.
 #define STUDIO_VERSION_MIN		STUDIO_VERSION_37
 #define STUDIO_VERSION_MAX		STUDIO_VERSION_48
 
-// Current target version for new models
-#define STUDIO_VERSION			STUDIO_VERSION_48
+// Current target version for new models written by studiomdl
+// Set to 37 for native HL2 Beta 2003 compatibility
+// The engine runtime supports loading v37-v48 models regardless of this setting
+#define STUDIO_VERSION			STUDIO_VERSION_37
 
 // Backward compatibility macro - check if version uses embedded vertex data
 #define STUDIO_VERSION_HAS_EMBEDDED_VERTICES(v)		((v) <= STUDIO_VERSION_37)
@@ -88,8 +90,9 @@ union mstudioanimvalue_t;
 // Check if version uses external VVD files
 #define STUDIO_VERSION_HAS_EXTERNAL_VERTICES(v)		((v) >= STUDIO_VERSION_44)
 
-#define MAXSTUDIOTRIANGLES	25000	// TODO: tune this
-#define MAXSTUDIOVERTS		25000	// TODO: tune this
+// v48: Increased limits to match Source 2007 engine for complex models
+#define MAXSTUDIOTRIANGLES	65536	// v48: increased from 25000
+#define MAXSTUDIOVERTS		65536	// v48: increased from 25000 to support complex models
 #define MAXSTUDIOSKINS		32		// total textures
 #define MAXSTUDIOBONES		128		// total bones actually used
 #define MAXSTUDIOBLENDS		32
@@ -856,10 +859,9 @@ struct mstudioseqdesc_t
 
 	int					numblends;
 
-#if STUDIO_VERSION != 37
-	int					anim[MAXSTUDIOBLENDS][MAXSTUDIOBLENDS];	// animation number
-#else
 	// Index into array of shorts which is groupsize[0] x groupsize[1] in length
+	// NOTE: Both v37 and v48 use animindexindex - the 2007 Source Engine confirms this.
+	// The previous anim[32][32] layout assumption was INCORRECT.
 	int					animindexindex;
 
 	inline int			anim( int x, int y ) const
@@ -881,102 +883,11 @@ struct mstudioseqdesc_t
 	}
 
 	inline short * const pBlends( void ) const { return (short *)(((byte *)this) + animindexindex); }
-#endif
 
-	//-----------------------------------------------------------------------------
-	// v37 binary layout offset calculations
-	// The v37 struct is smaller because it uses animindexindex (4 bytes) instead of anim[32][32] (4096 bytes)
-	// and doesn't have seqgroup field. Fields after numblends are at different offsets.
-	//
-	// v37 layout after numblends (offset 52):
-	//   +0: animindexindex (4 bytes)
-	//   +4: movementindex (4 bytes)
-	//   +8: groupsize[0] (4 bytes)
-	//   +12: groupsize[1] (4 bytes)
-	//   +16: paramindex[0] (4 bytes)
-	//   ...
-	//
-	// v48 layout after numblends (offset 52):
-	//   +0: anim[32][32] (4096 bytes)
-	//   +4096: movementindex (4 bytes)
-	//   +4100: groupsize[0] (4 bytes)
-	//   +4104: groupsize[1] (4 bytes)
-	//   +4108: paramindex[0] (4 bytes)
-	//   ...
-	//   seqgroup is also added after paramparent in v48
-	//-----------------------------------------------------------------------------
-
-	// Offset from numblends to groupsize[0] in v37 binary
-	static const int V37_GROUPSIZE_OFFSET = 4 + 4;  // animindexindex + movementindex = 8 bytes from numblends
-	// Offset from numblends to groupsize[0] in v48 compiled code
-	static const int V48_GROUPSIZE_OFFSET = 4096 + 4;  // anim[32][32] + movementindex = 4100 bytes from numblends
-
-	// Helper: Get groupsize[0] accounting for v37 binary layout
-	inline int GetGroupSize0( int version ) const
-	{
-		if ( version <= STUDIO_VERSION_37 )
-		{
-			// Read from v37 binary offset: numblends offset (52) + 8 = 60
-			const byte *base = (const byte *)&numblends;
-			return *(int *)(base + 4 + V37_GROUPSIZE_OFFSET);  // +4 for numblends itself
-		}
-		return groupsize[0];
-	}
-
-	// Helper: Get groupsize[1] accounting for v37 binary layout
-	inline int GetGroupSize1( int version ) const
-	{
-		if ( version <= STUDIO_VERSION_37 )
-		{
-			// Read from v37 binary offset: numblends offset (52) + 12 = 64
-			const byte *base = (const byte *)&numblends;
-			return *(int *)(base + 4 + V37_GROUPSIZE_OFFSET + 4);  // +4 for numblends, +4 for groupsize[0]
-		}
-		return groupsize[1];
-	}
-
-	// Runtime accessor for animation index that works with both v37 and v48 binary data
-	// For v48 compiled code loading v37 models, the binary layout differs
+	// Version-aware accessor for animation index (both v37 and v48 use same layout)
 	inline int GetAnimIndex( int x, int y, int version ) const
 	{
-		if ( version <= STUDIO_VERSION_37 )
-		{
-			// v37 binary layout: anim[0][0] position contains animindexindex
-			// The rest of the "anim" array space contains different data (movementindex, groupsize, etc)
-			int animindexindex_runtime = anim[0][0];
-			short *blends = (short *)(((byte *)this) + animindexindex_runtime);
-
-			// CRITICAL: Read groupsize from correct v37 binary offset, not from v48 struct members
-			int gs0 = GetGroupSize0( version );
-			int gs1 = GetGroupSize1( version );
-
-			int gx = (x >= gs0) ? gs0 - 1 : x;
-			int gy = (y >= gs1) ? gs1 - 1 : y;
-
-			// Bounds check to prevent crashes
-			if (gx < 0) gx = 0;
-			if (gy < 0) gy = 0;
-
-			int offset = gy * gs0 + gx;
-			return (int)blends[offset];
-		}
-		else
-		{
-			// v44+ binary layout: direct 2D array access
-			return anim[x][y];
-		}
-	}
-
-	// Runtime accessor for blends array pointer (v37 only, returns NULL for other versions)
-	inline short * GetBlends( int version ) const
-	{
-		if ( version <= STUDIO_VERSION_37 )
-		{
-			// v37 binary layout: anim[0][0] contains animindexindex
-			int animindexindex_runtime = anim[0][0];
-			return (short *)(((byte *)this) + animindexindex_runtime);
-		}
-		return NULL;  // v44+ doesn't have a separate blends array
+		return anim( x, y );  // Same layout for all versions
 	}
 
 	int					movementindex;	// [blend] float array for blended movement
@@ -985,10 +896,6 @@ struct mstudioseqdesc_t
 	float				paramstart[2];	// local (0..1) starting value
 	float				paramend[2];	// local (0..1) ending value
 	int					paramparent;
-
-#if STUDIO_VERSION != 37
-	int					seqgroup;		// sequence group for demand loading
-#endif
 
 	float				fadeintime;		// ideal cross fate in time (0.2 default)
 	float				fadeouttime;	// ideal cross fade out time (0.2 default)
@@ -1028,129 +935,10 @@ struct mstudioseqdesc_t
 	int					keyvaluesize;
 	inline const char * KeyValueText( void ) const { return keyvaluesize != 0 ? ((char *)this) + keyvalueindex : NULL; }
 
-	int					unused[3];		// remove/add as appropriate (grow back to 8 ints on version change!)
+	// v48 fields (not present in v37)
+	int					cycleposeindex;		// index of pose parameter to use as cycle index
 
-	//-----------------------------------------------------------------------------
-	// Version-aware field accessors for v37 binary compatibility
-	//
-	// When compiled with STUDIO_VERSION=48 but loading v37 models, fields after
-	// numblends are at different binary offsets:
-	// - v48 struct has anim[32][32] (4096 bytes) + seqgroup (4 bytes) = 4100 extra bytes
-	// - v37 struct has just animindexindex (4 bytes)
-	// - Offset difference: 4096 bytes
-	//
-	// These accessors read fields from the correct binary offset based on version.
-	//-----------------------------------------------------------------------------
-
-	// Offset adjustment for v37: all fields after numblends are 4096 bytes earlier
-	static const int V37_FIELD_OFFSET_ADJ = 4096;
-
-	// Helper: Read an int field at v37-adjusted offset
-	inline int GetV37Int( int version, const int &v48_member ) const
-	{
-		if (version <= STUDIO_VERSION_37)
-		{
-			// For v37 binary, the field is 4096 bytes earlier than v48 layout
-			const byte *adjusted_ptr = ((const byte *)&v48_member) - V37_FIELD_OFFSET_ADJ;
-			return *(const int *)adjusted_ptr;
-		}
-		return v48_member;
-	}
-
-	// Helper: Read a float field at v37-adjusted offset
-	inline float GetV37Float( int version, const float &v48_member ) const
-	{
-		if (version <= STUDIO_VERSION_37)
-		{
-			const byte *adjusted_ptr = ((const byte *)&v48_member) - V37_FIELD_OFFSET_ADJ;
-			return *(const float *)adjusted_ptr;
-		}
-		return v48_member;
-	}
-
-	// Version-aware accessors for critical fields used in bone_setup.cpp
-	inline int GetWeightListIndex( int version ) const { return GetV37Int( version, weightlistindex ); }
-	inline int GetAutoLayerIndex( int version ) const { return GetV37Int( version, autolayerindex ); }
-	inline int GetNumAutoLayers( int version ) const { return GetV37Int( version, numautolayers ); }
-	inline int GetNumIKRules( int version ) const { return GetV37Int( version, numikrules ); }
-	inline int GetFlags( int version ) const
-	{
-		// flags is before the anim array, so it's at the same offset in both versions
-		return flags;
-	}
-
-	// Version-aware bone weight accessor
-	inline float GetWeight( int i, int version ) const
-	{
-		int wli = GetWeightListIndex( version );
-		float *weights = (float *)(((byte *)this) + wli);
-		return weights[i];
-	}
-
-	// Version-aware autolayer accessor
-	inline mstudioautolayer_t *pAutoLayerV( int i, int version ) const
-	{
-		int ali = GetAutoLayerIndex( version );
-		return (mstudioautolayer_t *)(((byte *)this) + ali) + i;
-	}
-
-	// Version-aware pose key accessor
-	inline float GetPoseKey( int iParam, int iAnim, int version ) const
-	{
-		int pki = GetV37Int( version, posekeyindex );
-		int gs0 = GetGroupSize0( version );
-		float *keys = (float *)(((byte *)this) + pki);
-		return keys[iParam * gs0 + iAnim];
-	}
-
-	// Version-aware paramindex accessor (index into studiohdr_t pose parameters)
-	inline int GetParamIndex( int i, int version ) const
-	{
-		if (i < 0 || i >= 2)
-			return -1;
-		return GetV37Int( version, paramindex[i] );
-	}
-
-	// Version-aware paramstart accessor
-	inline float GetParamStart( int i, int version ) const
-	{
-		if (i < 0 || i >= 2)
-			return 0.0f;
-		return GetV37Float( version, paramstart[i] );
-	}
-
-	// Version-aware paramend accessor
-	inline float GetParamEnd( int i, int version ) const
-	{
-		if (i < 0 || i >= 2)
-			return 0.0f;
-		return GetV37Float( version, paramend[i] );
-	}
-
-	// Version-aware posekeyindex accessor
-	inline int GetPoseKeyIndex( int version ) const
-	{
-		return GetV37Int( version, posekeyindex );
-	}
-
-	// Version-aware numiklocks accessor
-	inline int GetNumIKLocks( int version ) const
-	{
-		return GetV37Int( version, numiklocks );
-	}
-
-	// Version-aware iklockindex accessor
-	inline int GetIKLockIndex( int version ) const
-	{
-		return GetV37Int( version, iklockindex );
-	}
-
-	// Version-aware IK lock accessor
-	inline mstudioiklock_t *pIKLockV( int i, int version ) const
-	{
-		int idx = GetIKLockIndex( version );
-		return (mstudioiklock_t *)(((byte *)this) + idx) + i;
-	}
+	int					unused[7];		// remove/add as appropriate (grow back to 8 ints on version change!)
 };
 
 
@@ -2095,9 +1883,16 @@ struct studiohdr_t
 	// v37 seqdesc binary size (must match the actual v37 binary layout)
 	// The difference between v48 and v37 seqdesc is:
 	// - anim[32][32] (4096 bytes) vs animindexindex (4 bytes) = 4092 bytes
-	// - seqgroup (4 bytes) only in v48 = 4 bytes
-	// Total difference: 4096 bytes
-	// v48 struct size is approximately 4284 bytes, so v37 is 4284 - 4096 = 188 bytes
+	// v37 sequence descriptor size (counted from original LeakNet v37 struct):
+	// szlabelindex(4) + szactivitynameindex(4) + flags(4) + activity(4) + actweight(4)
+	// + numevents(4) + eventindex(4) + bbmin(12) + bbmax(12) + numblends(4)
+	// + animindexindex(4) + movementindex(4) + groupsize[2](8) + paramindex[2](8)
+	// + paramstart[2](8) + paramend[2](8) + paramparent(4) + fadeintime(4) + fadeouttime(4)
+	// + entrynode(4) + exitnode(4) + nodeflags(4) + entryphase(4) + exitphase(4)
+	// + lastframe(4) + nextseq(4) + pose(4) + numikrules(4) + numautolayers(4)
+	// + autolayerindex(4) + weightlistindex(4) + posekeyindex(4) + numiklocks(4)
+	// + iklockindex(4) + keyvalueindex(4) + keyvaluesize(4) + unused[3](12) = 188 bytes
+	// Note: v37 does NOT have baseptr, cycleposeindex, or seqgroup fields
 	static const int SEQDESC_V37_SIZE = 188;
 
 	inline mstudioseqdesc_t *pSeqdesc( int i ) const

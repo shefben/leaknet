@@ -743,9 +743,21 @@ void VGui_Paint()
 	staticUIFuncs->Paint(pnt.x, pnt.y, rect.right, rect.bottom);
 
 	// Paint Quake-style console if active
+	// Note: The console is painted outside the normal VGUI paint cycle,
+	// so we need to manually start/finish the 2D drawing context
 	if ( Con_IsUsingWonConsole() && g_pQuakeConsole )
 	{
+		if ( g_pMatSystemSurface )
+		{
+			g_pMatSystemSurface->Start2DDrawing();
+		}
+
 		g_pQuakeConsole->Paint();
+
+		if ( g_pMatSystemSurface )
+		{
+			g_pMatSystemSurface->Finish2DDrawing();
+		}
 	}
 
 	con_refreshonprint = true;

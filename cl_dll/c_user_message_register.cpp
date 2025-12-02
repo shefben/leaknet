@@ -1,12 +1,14 @@
-//====== Copyright © 1996-2003, Valve Corporation, All rights reserved. =======
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Client-side user message hook registration system (2007 protocol)
 //
-//=============================================================================
+//=============================================================================//
 
 #include "cbase.h"
 #include "c_user_message_register.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 CUserMessageRegister *CUserMessageRegister::s_pHead = NULL;
 

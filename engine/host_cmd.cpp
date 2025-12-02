@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -561,8 +561,20 @@ void Host_Disconnect_f (void)
 	Host_Disconnect();
 }
 
+#if !defined( SWDS )
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: Enable the loading progress bar (GMod compatibility)
+//-----------------------------------------------------------------------------
+void Host_ProgressEnable_f (void)
+{
+	// Start the loading progress bar - used by GMod before loading a map
+	StartLoadingProgressBar("Loading", 12);
+	DevMsg("Progress bar enabled\n");
+}
+#endif
+
+//-----------------------------------------------------------------------------
+// Purpose:
 // Output : void Host_Version_f
 //-----------------------------------------------------------------------------
 void Host_Version_f (void)
@@ -1463,6 +1475,21 @@ void Host_KillServer_f(void)
 	}
 }
 
+/*
+==================
+Host_NetStart_f
+
+Enable multiplayer networking (open network sockets).
+Used by GMod-style server creation menus.
+==================
+*/
+void Host_NetStart_f(void)
+{
+	// Enable multiplayer networking by opening network sockets
+	NET_Config( true );
+	Con_Printf( "Network started - multiplayer networking enabled\n" );
+}
+
 #ifndef SWDS
 
 void Host_VoiceRecordStart_f(void)
@@ -1596,10 +1623,12 @@ static ConCommand stopdemo("stopdemo", Host_Stopdemo_f);
 static ConCommand mat_showmaterials("mat_showmaterials", Host_ShowMaterials_f);
 static ConCommand mat_showmaterialsverbose("mat_showmaterialsverbose", Host_ShowMaterialsVerbose_f);
 static ConCommand mat_showtextures("mat_showtextures", Host_ShowTextures_f);
+static ConCommand progress_enable("progress_enable", Host_ProgressEnable_f, "Enable the loading progress bar");
 #endif
 
 static ConCommand restart("restart", Host_Restart_f);
 static ConCommand disconnect("disconnect", Host_Disconnect_f);
+static ConCommand net_start("net_start", Host_NetStart_f, "Enable multiplayer networking");
 static ConCommand reload("reload", Host_Reload_f);
 static ConCommand version("version", Host_Version_f);
 static ConCommand say("say", Host_Say_f);

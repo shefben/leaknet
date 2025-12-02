@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -11,11 +11,11 @@
 #include "hud_macros.h"
 #include "iefx.h"
 
-void __MsgFunc_TerrainMod( const char *pszName, int iSize, void *pbuf )
+void __MsgFunc_TerrainMod( bf_read &msg )
 {
 	CTerrainModParams params;
 
-	BEGIN_READ( pbuf, iSize );
+	BEGIN_READ( msg );
 
 	unsigned char type = READ_BYTE();
 

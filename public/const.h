@@ -162,7 +162,12 @@ enum SolidFlags_t
 	FSOLID_NOT_STANDABLE		= 0x0010,	// You can't stand on this
 	FSOLID_VOLUME_CONTENTS		= 0x0020,	// Contains volumetric contents (like water)
 
-	FSOLID_MAX_BITS	= 6
+	FSOLID_FORCE_WORLD_ALIGNED	= 0x0040,	// Forces the collision rep to be world-aligned even if its SOLID_BSP or SOLID_VPHYSICS
+	FSOLID_USE_TRIGGER_BOUNDS	= 0x0080,	// Uses a special trigger bounds separate from the normal OBB
+	FSOLID_ROOT_PARENT_ALIGNED	= 0x0100,	// Collisions are defined in root parents local coordinate space
+	FSOLID_TRIGGER_TOUCH_DEBRIS	= 0x0200,	// This trigger will touch debris objects
+
+	FSOLID_MAX_BITS	= 10	// Increased from 6 to match Source 2007 engine
 };
 
 //-----------------------------------------------------------------------------
@@ -192,7 +197,7 @@ enum
 	EF_NOSHADOW				= 0x020,	// Don't cast no shadow
 	EF_NODRAW				= 0x040,	// don't draw entity
 	EF_NORECEIVESHADOW		= 0x080,	// Don't receive no shadow
-	EF_MAX_BITS = 8
+	EF_MAX_BITS = 10	// Increased from 8 to match Source 2007 engine
 };
 
 #define EF_PARITY_BITS	3

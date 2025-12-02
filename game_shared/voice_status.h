@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -17,6 +17,7 @@
 #include "voice_common.h"
 #include "voice_banmgr.h"
 #include "hudelement.h"
+#include "bitbuf.h"
 
 
 class CVoiceStatus;
@@ -104,10 +105,10 @@ public:
 	void	DrawHeadLabels();
 
 	// Called when the server registers a change to who this client can hear.
-	void	HandleVoiceMaskMsg(int iSize, void *pbuf);
+	void	HandleVoiceMaskMsg( bf_read &msg );
 
 	// The server sends this message initially to tell the client to send their state.
-	void	HandleReqStateMsg(int iSize, void *pbuf);
+	void	HandleReqStateMsg( bf_read &msg );
 
 
 // Squelch mode functions.

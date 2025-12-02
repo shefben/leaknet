@@ -920,8 +920,10 @@ END_NETWORK_TABLE()
 		engine->ChangeLevel( szNextMap, NULL );
 	}
 
-	#define MAX_MOTD_CHUNK	  60
-	#define MAX_MOTD_LENGTH   (MAX_MOTD_CHUNK * 4)
+	// MOTD can now be sent in a single message since MAX_USER_MSG_DATA is 16KB
+	// Keep chunking for compatibility but use larger chunks
+	#define MAX_MOTD_CHUNK	  4096
+	#define MAX_MOTD_LENGTH   16384
 
 	void CMultiplayRules :: SendMOTDToClient( edict_t *client )
 	{

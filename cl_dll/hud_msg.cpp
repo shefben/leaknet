@@ -21,7 +21,7 @@
 
 /// USER-DEFINED SERVER MESSAGE HANDLERS
 
-void CHud::MsgFunc_ResetHUD( const char *pszName, int iSize, void *pbuf )
+void CHud::MsgFunc_ResetHUD( bf_read &msg )
 {
 	// clear all hud data
 	for ( int i = 0; i < m_HudList.Size(); i++ )
@@ -34,23 +34,21 @@ void CHud::MsgFunc_ResetHUD( const char *pszName, int iSize, void *pbuf )
 	m_flMouseSensitivityFactor = 0;
 }
 
-void CHud::MsgFunc_InitHUD( const char *pszName, int iSize, void *pbuf )
+void CHud::MsgFunc_InitHUD( bf_read &msg )
 {
 }
 
-void CHud::MsgFunc_GameMode( const char *pszName, int iSize, void *pbuf )
+void CHud::MsgFunc_GameMode( bf_read &msg )
 {
-	BEGIN_READ( pbuf, iSize );
-	m_bTeamplay = READ_BYTE() ? true : false;
+	m_bTeamplay = msg.ReadByte() ? true : false;
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //-----------------------------------------------------------------------------
-void CHud::MsgFunc_TeamChange(const char *pszName, int iSize, void *pbuf)
+void CHud::MsgFunc_TeamChange( bf_read &msg )
 {
-	BEGIN_READ( pbuf, iSize );
-	int iNewTeam = READ_BYTE();
+	int iNewTeam = msg.ReadByte();
 
 	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
 	if ( pLocalPlayer )

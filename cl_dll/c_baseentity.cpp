@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -4421,11 +4421,11 @@ RenderGroup_t C_BaseEntity::GetRenderGroup()
 	return renderGroup;
 }
 
-// Purpose: Decal removing
+// Purpose: Decal removing (2007 protocol)
 //-----------------------------------------------------------------------------
-void __MsgFunc_ClearDecals(const char *pszName, int iSize, void *pbuf)
+void __MsgFunc_ClearDecals( bf_read &msg )
 {
-	BEGIN_READ( pbuf, iSize );
+	BEGIN_READ( msg );
 
 	int iEntIndex = READ_BYTE();
 	C_BaseEntity *pEntity = cl_entitylist->GetEnt( iEntIndex );

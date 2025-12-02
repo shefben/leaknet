@@ -15,30 +15,19 @@
 
 //-----------------------------------------------------------------------------
 // Spawn menu manager class - handles initialization and cleanup
+// Uses CAutoGameSystem for automatic registration with the game system list
 //-----------------------------------------------------------------------------
-class CSpawnMenuManager : public IGameSystem
+class CSpawnMenuManager : public CAutoGameSystem
 {
 public:
 	CSpawnMenuManager();
 	virtual ~CSpawnMenuManager();
 
-	// IGameSystem interface
-	virtual char const *Name() { return "CSpawnMenuManager"; }
+	// CAutoGameSystem overrides
 	virtual bool Init();
-	virtual void PostInit() {}
 	virtual void Shutdown();
-	virtual void LevelInitPreEntity() {}
 	virtual void LevelInitPostEntity();
-	virtual void LevelShutdownPreEntity() {}
 	virtual void LevelShutdownPostEntity();
-	virtual void OnSave() {}
-	virtual void OnRestore() {}
-	virtual void SafeRemoveIfDesired() {}
-	virtual bool IsPerFrame() { return false; }
-
-	// CLIENT_DLL specific IGameSystem methods
-	virtual void PreRender() {}
-	virtual void Update( float frametime ) {}
 
 	// Spawn menu access
 	CClientSpawnDialog *GetSpawnMenu() { return m_pSpawnMenu; }
@@ -57,9 +46,9 @@ static CSpawnMenuManager g_SpawnMenuManager;
 IGameSystem *SpawnMenuManager() { return &g_SpawnMenuManager; }
 
 //-----------------------------------------------------------------------------
-// Constructor
+// Constructor - calls CAutoGameSystem with a name to register with game systems
 //-----------------------------------------------------------------------------
-CSpawnMenuManager::CSpawnMenuManager()
+CSpawnMenuManager::CSpawnMenuManager() : CAutoGameSystem( "CSpawnMenuManager" )
 {
 	m_pSpawnMenu = NULL;
 	m_bInitialized = false;

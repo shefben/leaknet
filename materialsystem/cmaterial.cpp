@@ -1047,9 +1047,12 @@ void CMaterial::CleanUpStateSnapshots()
 //-----------------------------------------------------------------------------
 void CMaterial::SetupErrorShader()
 {
-	// Preserve the model flags
-	Assert( m_pShaderParams[FLAGS] );
-	int flags = (m_pShaderParams[FLAGS]->GetIntValue() & MATERIAL_VAR_MODEL);
+	// Preserve the model flags (if shader params exist)
+	int flags = 0;
+	if ( m_pShaderParams && m_pShaderParams[FLAGS] )
+	{
+		flags = (m_pShaderParams[FLAGS]->GetIntValue() & MATERIAL_VAR_MODEL);
+	}
 
 	CleanUpShaderParams();
 	CleanUpMaterialProxy();
@@ -1127,35 +1130,45 @@ inline bool CMaterial::IsValidRenderState() const
 //-----------------------------------------------------------------------------
 inline int CMaterial::GetMaterialVarFlags() const
 {
+	if ( !m_pShaderParams || !m_pShaderParams[FLAGS] )
+		return 0;
 	return m_pShaderParams[FLAGS]->GetIntValue();
 }
 
 inline void CMaterial::SetMaterialVarFlags( int flags, bool on )
 {
+	if ( !m_pShaderParams || !m_pShaderParams[FLAGS] || !m_pShaderParams[FLAGS_DEFINED] )
+		return;
+
 	if (on)
 		m_pShaderParams[FLAGS]->SetIntValue( GetMaterialVarFlags() | flags );
 	else
 		m_pShaderParams[FLAGS]->SetIntValue( GetMaterialVarFlags() & (~flags) );
 
 	// Mark it as being defined...
-	m_pShaderParams[FLAGS_DEFINED]->SetIntValue( 
+	m_pShaderParams[FLAGS_DEFINED]->SetIntValue(
 		m_pShaderParams[FLAGS_DEFINED]->GetIntValue() | flags );
 }
 
 inline int CMaterial::GetMaterialVarFlags2() const
 {
+	if ( !m_pShaderParams || !m_pShaderParams[FLAGS2] )
+		return 0;
 	return m_pShaderParams[FLAGS2]->GetIntValue();
 }
 
 inline void CMaterial::SetMaterialVarFlags2( int flags, bool on )
 {
+	if ( !m_pShaderParams || !m_pShaderParams[FLAGS2] || !m_pShaderParams[FLAGS_DEFINED2] )
+		return;
+
 	if (on)
 		m_pShaderParams[FLAGS2]->SetIntValue( GetMaterialVarFlags2() | flags );
 	else
 		m_pShaderParams[FLAGS2]->SetIntValue( GetMaterialVarFlags2() & (~flags) );
 
 	// Mark it as being defined...
-	m_pShaderParams[FLAGS_DEFINED2]->SetIntValue( 
+	m_pShaderParams[FLAGS_DEFINED2]->SetIntValue(
 		m_pShaderParams[FLAGS_DEFINED2]->GetIntValue() | flags );
 }
 
@@ -1165,13 +1178,21 @@ inline void CMaterial::SetMaterialVarFlags2( int flags, bool on )
 //-----------------------------------------------------------------------------
 VertexFormat_t CMaterial::GetVertexFormat() const
 {
-	Assert( IsValidRenderState() );
+	if ( !IsValidRenderState() )
+	{
+		// Return a safe default for invalid materials to prevent crashes
+		return 0;
+	}
 	return m_ShaderRenderState.m_VertexFormat;
 }
 
 int CMaterial::GetVertexUsage() const
 {
-	Assert( IsValidRenderState() );
+	if ( !IsValidRenderState() )
+	{
+		// Return a safe default for invalid materials to prevent crashes
+		return 0;
+	}
 	return m_ShaderRenderState.m_VertexUsage;
 }
 
@@ -1339,13 +1360,15 @@ bool CMaterial::NeedsSoftwareLighting( void )
 void CMaterial::AlphaModulate( float alpha )
 {
 	Precache();
-	m_pShaderParams[ALPHA]->SetFloatValue(alpha);
+	if ( m_pShaderParams && m_pShaderParams[ALPHA] )
+		m_pShaderParams[ALPHA]->SetFloatValue(alpha);
 }
 
 void CMaterial::ColorModulate( float r, float g, float b )
 {
 	Precache();
-	m_pShaderParams[COLOR]->SetVecValue( r, g, b );
+	if ( m_pShaderParams && m_pShaderParams[COLOR] )
+		m_pShaderParams[COLOR]->SetVecValue( r, g, b );
 }
 
 
@@ -1820,14 +1843,17 @@ IMaterialVar *CMaterial::FindVar( char const *pVarName, bool *pFound, bool compl
 
 	// FIXME: Could look for flags here too...
 
-	MaterialVarSym_t sym = IMaterialVar::GetSymbol(pVarName);
-	for (int i = m_VarCount; --i >= 0; )
+	if ( m_pShaderParams )
 	{
-		if (m_pShaderParams[i]->GetNameAsSymbol() == sym)
+		MaterialVarSym_t sym = IMaterialVar::GetSymbol(pVarName);
+		for (int i = m_VarCount; --i >= 0; )
 		{
-			if( pFound )
-				*pFound = true;					  
-			return m_pShaderParams[i];
+			if ( m_pShaderParams[i] && m_pShaderParams[i]->GetNameAsSymbol() == sym)
+			{
+				if( pFound )
+					*pFound = true;
+				return m_pShaderParams[i];
+			}
 		}
 	}
 
@@ -1899,8 +1925,9 @@ bool CMaterial::IsTranslucent()
 	{
 		// I have to check for alpha modulation here because it isn't
 		// factored into the shader's notion of whether or not it's transparent
-		return ::IsTranslucent(&m_ShaderRenderState) || 
-				(m_pShaderParams[ALPHA]->GetFloatValue() < 1.0f) ||
+		float alpha = ( m_pShaderParams && m_pShaderParams[ALPHA] ) ? m_pShaderParams[ALPHA]->GetFloatValue() : 1.0f;
+		return ::IsTranslucent(&m_ShaderRenderState) ||
+				(alpha < 1.0f) ||
 				GetMaterialVarFlag( MATERIAL_VAR_TRANSLUCENT );
 	}
 	return false;
@@ -1961,7 +1988,8 @@ void CMaterial::CallBindProxy( void *proxyData )
 		// alpha mod all....
 		{
 			float value = ( sin( 2.0f * M_PI * Plat_FloatTime() / 10.0f ) * 0.5f ) + 0.5f;
-			m_pShaderParams[ALPHA]->SetFloatValue( value );
+			if ( m_pShaderParams && m_pShaderParams[ALPHA] )
+				m_pShaderParams[ALPHA]->SetFloatValue( value );
 		}
 		break;
 
@@ -1969,7 +1997,8 @@ void CMaterial::CallBindProxy( void *proxyData )
 		// color mod all...
 		{
 			float value = ( sin( 2.0f * M_PI * Plat_FloatTime() / 10.0f ) * 0.5f ) + 0.5f;
-			m_pShaderParams[COLOR]->SetVecValue( value, 1.0f, 1.0f );
+			if ( m_pShaderParams && m_pShaderParams[COLOR] )
+				m_pShaderParams[COLOR]->SetVecValue( value, 1.0f, 1.0f );
 		}
 		break;
 	}
@@ -2024,6 +2053,8 @@ IShader *CMaterial::GetShader( ) const
 
 IMaterialVar *CMaterial::GetShaderParam( int id )
 {
+	if ( !m_pShaderParams || id < 0 || id >= m_VarCount )
+		return NULL;
 	return m_pShaderParams[id];
 }
 
@@ -2221,6 +2252,7 @@ static void ApplyPatchKeyValues( KeyValues &keyValues, KeyValues &patchKeyValues
 
 //-----------------------------------------------------------------------------
 // Expands patch materials to their base material with modifications applied
+// Uses "GAME" pathID to search all game paths including BSP pak files
 //-----------------------------------------------------------------------------
 static void ExpandPatchFile( KeyValues& keyValues )
 {
@@ -2239,34 +2271,57 @@ static void ExpandPatchFile( KeyValues& keyValues )
 		if( pIncludeFileName )
 		{
 			KeyValues *includeKeyValues = new KeyValues( "vmt" );
+			bool success = false;
+			char pFileName[512];
 
-			// The include path may or may not have "materials/" prefix
-			// Try loading as-is first (for embedded materials that use full paths)
-			bool success = includeKeyValues->LoadFromFile( g_pFileSystem, pIncludeFileName );
+			// Normalize the filename - ensure it has materials/ prefix and .vmt extension
+			if ( _strnicmp( pIncludeFileName, "materials/", 10 ) != 0 &&
+			     _strnicmp( pIncludeFileName, "materials\\", 10 ) != 0 )
+			{
+				Q_snprintf( pFileName, sizeof(pFileName), "materials/%s", pIncludeFileName );
+			}
+			else
+			{
+				Q_strncpy( pFileName, pIncludeFileName, sizeof(pFileName) );
+			}
+
+			// Add .vmt extension if not present
+			if ( !strstr( pFileName, ".vmt" ) )
+			{
+				Q_strncat( pFileName, ".vmt", sizeof(pFileName), -1 );
+			}
+
+			// Search order: 1) BSP pak files, 2) Current mod directory, 3) hl2 directory
+
+			// Try loading from BSP pak files first
+			success = includeKeyValues->LoadFromFile( g_pFileSystem, pFileName, "GAME" );
 
 			if( !success )
 			{
-				// Try prepending "materials/" if the path doesn't start with it
-				char pFileName[512];
-				if ( _strnicmp( pIncludeFileName, "materials/", 10 ) != 0 &&
-				     _strnicmp( pIncludeFileName, "materials\\", 10 ) != 0 )
+				// Try loading from current mod directory
+				success = includeKeyValues->LoadFromFile( g_pFileSystem, pFileName, "MOD" );
+			}
+
+			if( !success )
+			{
+				// Try loading from hl2 directory as fallback
+				success = includeKeyValues->LoadFromFile( g_pFileSystem, pFileName, "HL2" );
+			}
+
+			if( !success )
+			{
+				// Also try with just the original filename in case it was already fully qualified
+				success = includeKeyValues->LoadFromFile( g_pFileSystem, pIncludeFileName, "GAME" );
+
+				if( !success )
 				{
-					Q_snprintf( pFileName, sizeof(pFileName), "materials/%s", pIncludeFileName );
-					// Add .vmt extension if not present
-					if ( !strstr( pFileName, ".vmt" ) )
-					{
-						Q_strncat( pFileName, ".vmt", sizeof(pFileName), -1 );
-					}
+					success = includeKeyValues->LoadFromFile( g_pFileSystem, pIncludeFileName, "MOD" );
 				}
-				else
+
+				if( !success )
 				{
-					Q_strncpy( pFileName, pIncludeFileName, sizeof(pFileName) );
-					if ( !strstr( pFileName, ".vmt" ) )
-					{
-						Q_strncat( pFileName, ".vmt", sizeof(pFileName), -1 );
-					}
+					success = includeKeyValues->LoadFromFile( g_pFileSystem, pIncludeFileName, "HL2" );
 				}
-				success = includeKeyValues->LoadFromFile( g_pFileSystem, pFileName );
 			}
 
 			if( success )
@@ -2306,9 +2361,26 @@ bool CMaterial::LoadVMTFile( KeyValues& vmtKeyValues )
 {
 	char pFileName[256];
 	sprintf( pFileName, "materials/%s.vmt", GetName() );
-	if (!vmtKeyValues.LoadFromFile( g_pFileSystem, pFileName))
+	bool success = false;
+
+	// Search order: 1) BSP pak files, 2) Current mod directory, 3) hl2 directory
+	success = vmtKeyValues.LoadFromFile( g_pFileSystem, pFileName, "GAME" );
+
+	if (!success)
 	{
-		Warning( "CMaterial::LoadVMTFile: can't open \"%s\"\n", pFileName );
+		// Try loading from current mod directory
+		success = vmtKeyValues.LoadFromFile( g_pFileSystem, pFileName, "MOD" );
+	}
+
+	if (!success)
+	{
+		// Try loading from hl2 directory as fallback
+		success = vmtKeyValues.LoadFromFile( g_pFileSystem, pFileName, "HL2" );
+	}
+
+	if (!success)
+	{
+		Warning( "CMaterial::LoadVMTFile: can't open \"%s\" in BSP, MOD, or HL2 directories\n", pFileName );
 		return false;
 	}
 	ExpandPatchFile( vmtKeyValues );
@@ -2328,11 +2400,14 @@ int CMaterial::GetTextureMemoryBytes( void )
 {
 	Precache();
 	int bytes = 0;
+	if ( !m_pShaderParams )
+		return 0;
+
 	int i;
 	for( i = 0; i < m_VarCount; i++ )
 	{
 		IMaterialVar *pVar = m_pShaderParams[i];
-		if( pVar->GetType() == MATERIAL_VAR_TYPE_TEXTURE )
+		if( pVar && pVar->GetType() == MATERIAL_VAR_TYPE_TEXTURE )
 		{
 			ITexture *pTexture = pVar->GetTextureValue();
 			if( pTexture && pTexture != ( ITexture * )0xffffffff )

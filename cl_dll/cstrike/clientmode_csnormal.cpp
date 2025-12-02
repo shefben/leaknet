@@ -53,10 +53,11 @@ public:
 static CCSModeManager g_ModeManager;
 IVModeManager *modemanager = ( IVModeManager * )&g_ModeManager;
 
-static void __MsgFunc_VGUIMenu( const char *pszName, int iSize, void *pbuf )
+static void __MsgFunc_VGUIMenu( bf_read &msg )
 {
-	const char *pMenuName = (const char*)pbuf;
-	if ( Q_stricmp( pMenuName, "buy" ) == 0 )
+	char menuName[256];
+	msg.ReadString( menuName, sizeof(menuName) );
+	if ( Q_stricmp( menuName, "buy" ) == 0 )
 	{
 		GetClientModeCSNormal()->m_pBuyMenu = new CBuyMenu( GetClientModeCSNormal()->GetViewport() );
 		GetClientModeCSNormal()->m_pBuyMenu->ActivateBuyMenu();

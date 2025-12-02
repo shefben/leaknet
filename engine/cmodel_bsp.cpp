@@ -387,48 +387,21 @@ void CollisionBSPData_LoadTexinfo( CCollisionBSPData *pBSPData,
 
 
 //-----------------------------------------------------------------------------
-// Multi-version leaf loading helper
-// v18/v20+: 32-byte leaf structure
-// v19 with ambient: 56-byte leaf structure with embedded lighting
+// Purpose: Load leafs - Lump version 0 (v19 BSP with embedded ambient lighting, 56 bytes)
 //-----------------------------------------------------------------------------
-static int GetLeafStructureSize( int nBSPVersion, int nLumpVersion )
+static void CollisionBSPData_LoadLeafs_Version_0( CCollisionBSPData *pBSPData, CMapLoadHelper &lh )
 {
-	// v20+ uses 32-byte leaves with ambient in separate lump
-	if ( BSP_VERSION_HAS_AMBIENT_LUMP( nBSPVersion ) )
-	{
-		return sizeof(dleaf_v1_t);
-	}
-
-	// v19 with lump version 0 may have 56-byte leaves with ambient
-	if ( nBSPVersion == BSPVERSION_19 && nLumpVersion == LUMP_LEAFS_VERSION_0 )
-	{
-		return sizeof(dleaf_v0_t);
-	}
-
-	// v18 (LeakNet native) uses 32-byte leaves
-	return sizeof(dleaf_t);
-}
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-void CollisionBSPData_LoadLeafs( CCollisionBSPData *pBSPData )
-{
-	CMapLoadHelper lh( LUMP_LEAFS );
-
 	int			i;
+	dleaf_v0_t 	*in;
 	int			count;
 
-	// Determine leaf structure size based on BSP version
-	int nBSPVersion = GetCurrentBSPVersion();
-	int nLeafSize = GetLeafStructureSize( nBSPVersion, lh.LumpVersion() );
-
-	byte *pLeafData = (byte *)lh.LumpBase();
-	if (lh.LumpSize() % nLeafSize)
+	in = (dleaf_v0_t *)lh.LumpBase();
+	if (lh.LumpSize() % sizeof(*in))
 	{
-		Sys_Error( "CollisionBSPData_LoadLeafs: funny lump size (size=%d, elem=%d)", lh.LumpSize(), nLeafSize);
+		Sys_Error( "CollisionBSPData_LoadLeafs: funny lump size (v0)");
 	}
 
-	count = lh.LumpSize() / nLeafSize;
+	count = lh.LumpSize() / sizeof(*in);
 
 	if (count < 1)
 	{
@@ -441,8 +414,7 @@ void CollisionBSPData_LoadLeafs( CCollisionBSPData *pBSPData )
 		Sys_Error( "Map has too many planes");
 	}
 
-	// Need an extra one for the emptyleaf below, another extra one
-	// needed for CM_InitBoxHull
+	// Need an extra one for the emptyleaf below, another extra one for CM_InitBoxHull
 	int nSize = (count + 2) * sizeof(cleaf_t);
 	pBSPData->map_leafs.Attach( count + 2, (cleaf_t*)malloc( nSize ) );
 	memset( pBSPData->map_leafs.Base(), 0, nSize );
@@ -450,51 +422,16 @@ void CollisionBSPData_LoadLeafs( CCollisionBSPData *pBSPData )
 	pBSPData->numleafs = count;
 	pBSPData->numclusters = 0;
 
-	Con_DPrintf( "Loading %d leaves (BSP v%d, %d bytes each)\n", count, nBSPVersion, nLeafSize );
+	Con_DPrintf( "Loading %d leaves (lump v0, 56 bytes each)\n", count );
 
-	for ( i=0 ; i<count ; i++ )
+	for ( i=0 ; i<count ; i++, in++ )
 	{
 		cleaf_t	*out = &pBSPData->map_leafs[i];
-		int contents, cluster, area, firstleafbrush, numleafbrushes;
-
-		// Read leaf data based on version
-		if ( nLeafSize == sizeof(dleaf_v0_t) )
-		{
-			// v19 with embedded ambient (56 bytes)
-			dleaf_v0_t *in = (dleaf_v0_t *)(pLeafData + i * nLeafSize);
-			contents = LittleLong(in->contents);
-			cluster = LittleShort(in->cluster);
-			area = LittleShort(in->area);
-			firstleafbrush = (unsigned short)LittleShort(in->firstleafbrush);
-			numleafbrushes = (unsigned short)LittleShort(in->numleafbrushes);
-		}
-		else if ( BSP_VERSION_HAS_AMBIENT_LUMP( nBSPVersion ) )
-		{
-			// v20+ with area bitfield (32 bytes)
-			dleaf_v1_t *in = (dleaf_v1_t *)(pLeafData + i * nLeafSize);
-			contents = LittleLong(in->contents);
-			cluster = LittleShort(in->cluster);
-			// v20+ uses bitfield for area (9 bits) - bitfield handles extraction
-			area = in->area;
-			firstleafbrush = (unsigned short)LittleShort(in->firstleafbrush);
-			numleafbrushes = (unsigned short)LittleShort(in->numleafbrushes);
-		}
-		else
-		{
-			// v18 LeakNet native (32 bytes)
-			dleaf_t *in = (dleaf_t *)(pLeafData + i * nLeafSize);
-			contents = LittleLong(in->contents);
-			cluster = LittleShort(in->cluster);
-			area = LittleShort(in->area);
-			firstleafbrush = (unsigned short)LittleShort(in->firstleafbrush);
-			numleafbrushes = (unsigned short)LittleShort(in->numleafbrushes);
-		}
-
-		out->contents = contents;
-		out->cluster = cluster;
-		out->area = area;
-		out->firstleafbrush = firstleafbrush;
-		out->numleafbrushes = numleafbrushes;
+		out->contents = in->contents;
+		out->cluster = in->cluster;
+		out->area = in->area;		// Bitfield extraction works directly
+		out->firstleafbrush = in->firstleafbrush;
+		out->numleafbrushes = in->numleafbrushes;
 		out->m_pDisplacements = NULL;
 
 		if (out->cluster >= pBSPData->numclusters)
@@ -512,6 +449,169 @@ void CollisionBSPData_LoadLeafs( CCollisionBSPData *pBSPData )
 	pBSPData->emptyleaf = pBSPData->numleafs;
 	memset( &pBSPData->map_leafs[pBSPData->emptyleaf], 0, sizeof(pBSPData->map_leafs[pBSPData->emptyleaf]) );
 	pBSPData->numleafs++;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Load leafs - Lump version 1 (v20+ BSP, 32 bytes, ambient in separate lump)
+//-----------------------------------------------------------------------------
+static void CollisionBSPData_LoadLeafs_Version_1( CCollisionBSPData *pBSPData, CMapLoadHelper &lh )
+{
+	int			i;
+	dleaf_v1_t 	*in;
+	int			count;
+
+	in = (dleaf_v1_t *)lh.LumpBase();
+	if (lh.LumpSize() % sizeof(*in))
+	{
+		Sys_Error( "CollisionBSPData_LoadLeafs: funny lump size (v1)");
+	}
+
+	count = lh.LumpSize() / sizeof(*in);
+
+	if (count < 1)
+	{
+		Sys_Error( "Map with no leafs");
+	}
+
+	// need to save space for box planes
+	if (count > MAX_MAP_PLANES)
+	{
+		Sys_Error( "Map has too many planes");
+	}
+
+	// Need an extra one for the emptyleaf below, another extra one for CM_InitBoxHull
+	int nSize = (count + 2) * sizeof(cleaf_t);
+	pBSPData->map_leafs.Attach( count + 2, (cleaf_t*)malloc( nSize ) );
+	memset( pBSPData->map_leafs.Base(), 0, nSize );
+
+	pBSPData->numleafs = count;
+	pBSPData->numclusters = 0;
+
+	Con_DPrintf( "Loading %d leaves (lump v1, 32 bytes each)\n", count );
+
+	for ( i=0 ; i<count ; i++, in++ )
+	{
+		cleaf_t	*out = &pBSPData->map_leafs[i];
+		out->contents = in->contents;
+		out->cluster = in->cluster;
+		out->area = in->area;		// Bitfield extraction works directly
+		out->firstleafbrush = in->firstleafbrush;
+		out->numleafbrushes = in->numleafbrushes;
+		out->m_pDisplacements = NULL;
+
+		if (out->cluster >= pBSPData->numclusters)
+		{
+			pBSPData->numclusters = out->cluster + 1;
+		}
+	}
+
+	if (pBSPData->map_leafs[0].contents != CONTENTS_SOLID)
+	{
+		Sys_Error( "Map leaf 0 is not CONTENTS_SOLID");
+	}
+
+	pBSPData->solidleaf = 0;
+	pBSPData->emptyleaf = pBSPData->numleafs;
+	memset( &pBSPData->map_leafs[pBSPData->emptyleaf], 0, sizeof(pBSPData->map_leafs[pBSPData->emptyleaf]) );
+	pBSPData->numleafs++;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Load leafs - v18 native (LeakNet original, 32 bytes, no bitfields)
+//-----------------------------------------------------------------------------
+static void CollisionBSPData_LoadLeafs_Native( CCollisionBSPData *pBSPData, CMapLoadHelper &lh )
+{
+	int			i;
+	dleaf_t 	*in;
+	int			count;
+
+	in = (dleaf_t *)lh.LumpBase();
+	if (lh.LumpSize() % sizeof(*in))
+	{
+		Sys_Error( "CollisionBSPData_LoadLeafs: funny lump size (native)");
+	}
+
+	count = lh.LumpSize() / sizeof(*in);
+
+	if (count < 1)
+	{
+		Sys_Error( "Map with no leafs");
+	}
+
+	// need to save space for box planes
+	if (count > MAX_MAP_PLANES)
+	{
+		Sys_Error( "Map has too many planes");
+	}
+
+	// Need an extra one for the emptyleaf below, another extra one for CM_InitBoxHull
+	int nSize = (count + 2) * sizeof(cleaf_t);
+	pBSPData->map_leafs.Attach( count + 2, (cleaf_t*)malloc( nSize ) );
+	memset( pBSPData->map_leafs.Base(), 0, nSize );
+
+	pBSPData->numleafs = count;
+	pBSPData->numclusters = 0;
+
+	Con_DPrintf( "Loading %d leaves (v18 native, 32 bytes each)\n", count );
+
+	for ( i=0 ; i<count ; i++, in++ )
+	{
+		cleaf_t	*out = &pBSPData->map_leafs[i];
+		out->contents = LittleLong(in->contents);
+		out->cluster = LittleShort(in->cluster);
+		out->area = LittleShort(in->area);
+		out->firstleafbrush = (unsigned short)LittleShort(in->firstleafbrush);
+		out->numleafbrushes = (unsigned short)LittleShort(in->numleafbrushes);
+		out->m_pDisplacements = NULL;
+
+		if (out->cluster >= pBSPData->numclusters)
+		{
+			pBSPData->numclusters = out->cluster + 1;
+		}
+	}
+
+	if (pBSPData->map_leafs[0].contents != CONTENTS_SOLID)
+	{
+		Sys_Error( "Map leaf 0 is not CONTENTS_SOLID");
+	}
+
+	pBSPData->solidleaf = 0;
+	pBSPData->emptyleaf = pBSPData->numleafs;
+	memset( &pBSPData->map_leafs[pBSPData->emptyleaf], 0, sizeof(pBSPData->map_leafs[pBSPData->emptyleaf]) );
+	pBSPData->numleafs++;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Load leafs with multi-version support
+//          Dispatches based on LUMP VERSION (not BSP version!) like 2007 engine
+//-----------------------------------------------------------------------------
+void CollisionBSPData_LoadLeafs( CCollisionBSPData *pBSPData )
+{
+	CMapLoadHelper lh( LUMP_LEAFS );
+	int nBSPVersion = GetCurrentBSPVersion();
+
+	// v18 BSP has no lump versioning, use native loader
+	if ( BSP_VERSION_HAS_AVGCOLOR( nBSPVersion ) )
+	{
+		CollisionBSPData_LoadLeafs_Native( pBSPData, lh );
+		return;
+	}
+
+	// v19+ BSP: Dispatch based on LUMP VERSION (critical for v20 support!)
+	switch( lh.LumpVersion() )
+	{
+	case 0:
+		// Lump version 0: v19 format with embedded ambient lighting (56 bytes)
+		CollisionBSPData_LoadLeafs_Version_0( pBSPData, lh );
+		break;
+	case 1:
+		// Lump version 1: v20+ format with ambient in separate lump (32 bytes)
+		CollisionBSPData_LoadLeafs_Version_1( pBSPData, lh );
+		break;
+	default:
+		Sys_Error( "Unknown LUMP_LEAFS version %d\n", lh.LumpVersion() );
+		break;
+	}
 }
 
 
@@ -652,22 +752,33 @@ void CollisionBSPData_LoadBrushes( CCollisionBSPData *pBSPData )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Multi-version brushside loading
+// v18-v20: 8-byte structure with short bevel field
+// v21+: 8-byte structure with byte bevel and byte thin fields
+//-----------------------------------------------------------------------------
 void CollisionBSPData_LoadBrushSides( CCollisionBSPData *pBSPData, CUtlVector<unsigned short> &map_texinfo )
 {
 	CMapLoadHelper lh( LUMP_BRUSHSIDES );
 
 	int				i, j;
-	dbrushside_t 	*in;
 	int				count;
 	int				num;
 
-	in = (dbrushside_t *)lh.LumpBase();
-	if (lh.LumpSize() % sizeof(*in))
+	// Determine brushside structure size based on BSP version
+	int nBSPVersion = GetCurrentBSPVersion();
+	bool bV21Format = BSP_VERSION_HAS_THIN_BRUSHSIDE( nBSPVersion );
+
+	// Both v18-v20 and v21 brushsides are 8 bytes, just with different field layouts
+	int nBrushSideSize = bV21Format ? sizeof(dbrushside_v21_t) : sizeof(dbrushside_t);
+
+	byte *pBrushSideData = (byte *)lh.LumpBase();
+	if (lh.LumpSize() % nBrushSideSize)
 	{
-		Sys_Error( "CMod_LoadBrushSides: funny lump size");
+		Sys_Error( "CMod_LoadBrushSides: funny lump size (size=%d, elem=%d)", lh.LumpSize(), nBrushSideSize);
 	}
 
-	count = lh.LumpSize() / sizeof(*in);
+	count = lh.LumpSize() / nBrushSideSize;
 
 	// need to save space for box planes
 	if (count > MAX_MAP_BRUSHSIDES)
@@ -682,18 +793,40 @@ void CollisionBSPData_LoadBrushSides( CCollisionBSPData *pBSPData, CUtlVector<un
 
 	pBSPData->numbrushsides = count;
 
-	for ( i=0 ; i<count ; i++, in++)
+	Con_DPrintf( "Loading %d brushsides (BSP v%d, %s format)\n", count, nBSPVersion, bV21Format ? "v21" : "v18-v20" );
+
+	for ( i=0 ; i<count ; i++ )
 	{
 		cbrushside_t *out = &pBSPData->map_brushsides[i];
+		unsigned short planenum;
+		short texinfo;
+		bool bevel;
 
-		num = (unsigned short)LittleShort (in->planenum);
+		if ( bV21Format )
+		{
+			// v21+ format with byte bevel and thin fields
+			dbrushside_v21_t *in = (dbrushside_v21_t *)(pBrushSideData + i * nBrushSideSize);
+			planenum = (unsigned short)LittleShort(in->planenum);
+			texinfo = LittleShort(in->texinfo);
+			bevel = (in->bevel != 0);
+		}
+		else
+		{
+			// v18-v20 format with short bevel field
+			dbrushside_t *in = (dbrushside_t *)(pBrushSideData + i * nBrushSideSize);
+			planenum = (unsigned short)LittleShort(in->planenum);
+			texinfo = LittleShort(in->texinfo);
+			bevel = (LittleShort(in->bevel) != 0);
+		}
+
+		num = planenum;
 		out->plane = &pBSPData->map_planes[num];
-		j = LittleShort (in->texinfo);
+		j = texinfo;
 		if (j >= map_texinfo.Size())
 		{
 			Sys_Error( "Bad brushside texinfo");
 		}
-		
+
 		// BUGBUG: Why is vbsp writing out -1 as the texinfo id?  (TEXINFO_NODE ?)
 		if ( j < 0 )
 		{
@@ -704,7 +837,7 @@ void CollisionBSPData_LoadBrushSides( CCollisionBSPData *pBSPData, CUtlVector<un
 			out->surface = &pBSPData->map_surfaces[map_texinfo[j]];
 		}
 
-		out->bBevel = FALSE;
+		out->bBevel = bevel ? TRUE : FALSE;
 	}
 }
 

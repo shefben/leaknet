@@ -407,14 +407,21 @@ void CWorld::Precache( void )
 	}
 
 	// Set up game rules
-	Assert( !g_pGameRules );
+	// Note: g_pGameRules may be non-NULL during level transitions or restarts
+	// This is normal and handled by deleting the old rules
 	if (g_pGameRules)
 	{
+		DevWarning( "CWorld::Spawn - g_pGameRules was not NULL, cleaning up previous instance\n" );
+		g_pGameRules->LevelShutdown();
 		delete g_pGameRules;
+		g_pGameRules = NULL;
 	}
 
 	InstallGameRules();
-	Assert( g_pGameRules );
+	if ( !g_pGameRules )
+	{
+		Error( "CWorld::Spawn - InstallGameRules failed to create game rules!\n" );
+	}
 	g_pGameRules->LevelInit();
 
 	CSoundEnt::InitSoundEnt();

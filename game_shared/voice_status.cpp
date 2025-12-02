@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -83,16 +83,16 @@ void ClientVoiceMgr_Shutdown()
 
 static CVoiceStatus *g_pInternalVoiceStatus = NULL;
 
-void __MsgFunc_VoiceMask(const char *pszName, int iSize, void *pbuf)
+void __MsgFunc_VoiceMask( bf_read &msg )
 {
 	if(g_pInternalVoiceStatus)
-		g_pInternalVoiceStatus->HandleVoiceMaskMsg(iSize, pbuf);
+		g_pInternalVoiceStatus->HandleVoiceMaskMsg( msg );
 }
 
-void __MsgFunc_RequestState(const char *pszName, int iSize, void *pbuf)
+void __MsgFunc_RequestState( bf_read &msg )
 {
 	if(g_pInternalVoiceStatus)
-		g_pInternalVoiceStatus->HandleReqStateMsg(iSize, pbuf);
+		g_pInternalVoiceStatus->HandleReqStateMsg( msg );
 }
 
 
@@ -608,15 +608,13 @@ void CVoiceStatus::UpdateBanButton(int iClient)
 }
 
 
-void CVoiceStatus::HandleVoiceMaskMsg(int iSize, void *pbuf)
+void CVoiceStatus::HandleVoiceMaskMsg( bf_read &msg )
 {
-	BEGIN_READ( pbuf, iSize );
-
 	unsigned long dw;
 	for(dw=0; dw < VOICE_MAX_PLAYERS_DW; dw++)
 	{
-		m_AudiblePlayers.SetDWord(dw, (unsigned long)READ_LONG());
-		m_ServerBannedPlayers.SetDWord(dw, (unsigned long)READ_LONG());
+		m_AudiblePlayers.SetDWord(dw, (unsigned long)msg.ReadLong());
+		m_ServerBannedPlayers.SetDWord(dw, (unsigned long)msg.ReadLong());
 
 		if( voice_clientdebug.GetInt())
 		{
@@ -626,17 +624,17 @@ void CVoiceStatus::HandleVoiceMaskMsg(int iSize, void *pbuf)
 		}
 	}
 
-	m_bServerModEnable = READ_BYTE();
+	m_bServerModEnable = msg.ReadByte();
 }
 
-void CVoiceStatus::HandleReqStateMsg(int iSize, void *pbuf)
+void CVoiceStatus::HandleReqStateMsg( bf_read &msg )
 {
 	if(voice_clientdebug.GetInt())
 	{
 		Msg("CVoiceStatus::HandleReqStateMsg\n");
 	}
 
-	UpdateServerState(true);	
+	UpdateServerState(true);
 }
 
 void CVoiceStatus::StartSquelchMode()

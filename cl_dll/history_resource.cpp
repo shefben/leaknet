@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: Item pickup history displayed onscreen when items are picked up.
 //
@@ -156,10 +156,10 @@ void CHudHistoryResource::AddToHistory( int iType, const char *szName, int iCoun
 //-----------------------------------------------------------------------------
 // Purpose: Handle an item pickup event from the server
 //-----------------------------------------------------------------------------
-void CHudHistoryResource::MsgFunc_ItemPickup( const char *pszName, int iSize, void *pbuf )
+void CHudHistoryResource::MsgFunc_ItemPickup( bf_read &msg )
 {
-	BEGIN_READ( pbuf, iSize );
-	const char *szName = READ_STRING();
+	char szName[256];
+	msg.ReadString( szName, sizeof(szName) );
 
 	// Add the item to the history
 	AddToHistory( HISTSLOT_ITEM, szName );

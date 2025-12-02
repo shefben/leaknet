@@ -57,8 +57,8 @@ DECLARE_COMMAND( g_ModeManager, Normal );
 HOOK_COMMAND( commander, Commander );
 HOOK_COMMAND( normal, Normal );
 
-void __MsgFunc_ActBegin(const char *pszName, int iSize, void *pbuf);
-void __MsgFunc_ActEnd(const char *pszName, int iSize, void *pbuf);
+void __MsgFunc_ActBegin( bf_read &msg );
+void __MsgFunc_ActEnd( bf_read &msg );
 
 #define MINIMAP_FILE	"scripts/minimap_overlays.txt"
 #define SCREEN_FILE		"scripts/vgui_screens.txt"
@@ -169,11 +169,11 @@ void CTFModeManager::LevelShutdown( void )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: A new act has just begun
+// Purpose: A new act has just begun (2007 protocol)
 //-----------------------------------------------------------------------------
-void __MsgFunc_ActBegin(const char *pszName, int iSize, void *pbuf)
+void __MsgFunc_ActBegin( bf_read &msg )
 {
-	BEGIN_READ( pbuf, iSize );
+	BEGIN_READ( msg );
 
 	int iActNumber = (char)READ_BYTE();
 	float flStartTime = READ_FLOAT();
@@ -182,11 +182,11 @@ void __MsgFunc_ActBegin(const char *pszName, int iSize, void *pbuf)
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: An act has just ended
+// Purpose: An act has just ended (2007 protocol)
 //-----------------------------------------------------------------------------
-void __MsgFunc_ActEnd(const char *pszName, int iSize, void *pbuf)
+void __MsgFunc_ActEnd( bf_read &msg )
 {
-	BEGIN_READ( pbuf, iSize );
+	BEGIN_READ( msg );
 
 	CHudTimer *timer = GET_HUDELEMENT( CHudTimer );
 	if ( timer )

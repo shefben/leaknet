@@ -66,7 +66,7 @@
 #define SPROP_PROXY_ALWAYS_YES	(1<<9)	// Set for datatable props using one of the default datatable proxies like
 										// SendProxy_DataTableToDataTable that always send the data to all clients.
 
-#define SPROP_NUMFLAGBITS		10
+#define SPROP_NUMFLAGBITS		16	// Increased from 10 to match Source 2007 engine
 
 
 // Used by the SendProp and RecvProp functions to disable debug checks on type sizes.

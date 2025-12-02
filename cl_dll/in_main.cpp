@@ -111,6 +111,7 @@ static	kbutton_t	in_reload;
 static	kbutton_t	in_alt1;
 static	kbutton_t	in_score;
 static	kbutton_t	in_break;
+static	kbutton_t	in_menu;	// BarrysMod spawn menu toggle
 
 /*
 ===========
@@ -533,6 +534,24 @@ void IN_BudgetDown(void)
 void IN_BudgetUp(void)
 {
 	(GET_HUDELEMENT( CBudgetPanel ))->UserCmd_HideBudgetPanel();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: BarrysMod spawn menu toggle (+menu/-menu commands)
+//-----------------------------------------------------------------------------
+void IN_MenuDown(void)
+{
+	KeyDown(&in_menu);
+	// Execute the spawnmenu toggle command
+	engine->ClientCmd_Unrestricted("spawnmenu\n");
+}
+
+void IN_MenuUp(void)
+{
+	KeyUp(&in_menu);
+	// Hide the spawn menu on key release for hold-to-show behavior
+	// Comment this line out if you want toggle behavior instead
+	// engine->ClientCmd_Unrestricted("spawnmenu\n");
 }
 
 void IN_MLookUp (void)
@@ -1342,6 +1361,8 @@ static ConCommand startgraph("+graph", IN_GraphDown);
 static ConCommand endgraph("-graph", IN_GraphUp);
 static ConCommand startbreak("+break",IN_BreakDown);
 static ConCommand endbreak("-break",IN_BreakUp);
+static ConCommand startmenu("+menu", IN_MenuDown);
+static ConCommand endmenu("-menu", IN_MenuUp);
 static ConCommand force_centerview("force_centerview", IN_CenterView_f);
 static ConCommand joyadvancedupdate("joyadvancedupdate", IN_Joystick_Advanced_f);
 

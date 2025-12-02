@@ -23,6 +23,39 @@
 #include "host.h"
 #include <wchar.h>
 
+#ifdef _WIN32
+#include <windows.h>
+// Undefine Windows macros that conflict with method names
+#ifdef DrawText
+#undef DrawText
+#endif
+#else
+// BMP file structures for non-Windows platforms
+#pragma pack(push, 1)
+typedef struct {
+	unsigned short bfType;
+	unsigned int   bfSize;
+	unsigned short bfReserved1;
+	unsigned short bfReserved2;
+	unsigned int   bfOffBits;
+} BITMAPFILEHEADER;
+
+typedef struct {
+	unsigned int   biSize;
+	int            biWidth;
+	int            biHeight;
+	unsigned short biPlanes;
+	unsigned short biBitCount;
+	unsigned int   biCompression;
+	unsigned int   biSizeImage;
+	int            biXPelsPerMeter;
+	int            biYPelsPerMeter;
+	unsigned int   biClrUsed;
+	unsigned int   biClrImportant;
+} BITMAPINFOHEADER;
+#pragma pack(pop)
+#endif
+
 // External declarations
 extern double realtime;
 
@@ -51,6 +84,7 @@ CQuakeConsole::CQuakeConsole()
 	m_nTextureId = -1;
 	m_nTextureWidth = 0;
 	m_nTextureHeight = 0;
+	m_bTextureLoadAttempted = false;
 	m_hFont = 0;
 	m_nConsoleHeight = 0;
 	m_nConsoleWidth = 0;
@@ -78,8 +112,8 @@ void CQuakeConsole::Initialize()
 	m_nConsoleWidth = (vid.width > 0) ? vid.width : 640;
 	m_nConsoleHeight = (vid.height > 0) ? (vid.height / 2) : 240;
 
-	// Load background texture (has its own safety checks)
-	LoadBackgroundTexture();
+	// Note: Background texture loading is deferred to first paint
+	// when VGUI surface is guaranteed to be ready
 
 	// Get font - with safety checks
 	m_hFont = 0;
@@ -362,6 +396,10 @@ void CQuakeConsole::Paint()
 	if (!IsVisible())
 		return;
 
+	// Safety check - VGUI surface must be available
+	if (!vgui::surface())
+		return;
+
 	// Update screen dimensions in case resolution changed
 	if (vid.width > 0 && vid.height > 0)
 	{
@@ -371,6 +409,18 @@ void CQuakeConsole::Paint()
 
 	UpdateAnimation();
 
+	// Get the embedded panel for drawing context
+	vgui::VPANEL embeddedPanel = vgui::surface()->GetEmbeddedPanel();
+	if (!embeddedPanel)
+	{
+		// No embedded panel available, can't draw
+		return;
+	}
+
+	// Start VGUI drawing context if not already active
+	// This ensures we can draw even if called outside normal VGUI paint cycle
+	vgui::surface()->PushMakeCurrent( embeddedPanel, false );
+
 	// Draw background
 	DrawBackground();
 
@@ -379,10 +429,15 @@ void CQuakeConsole::Paint()
 
 	// Draw input line
 	DrawInputLine();
+
+	// Finish the drawing context
+	vgui::surface()->PopMakeCurrent( embeddedPanel );
 }
 
 //-----------------------------------------------------------------------------
 // Load background texture
+// Looks for console background in gfx/shell/console_background.bmp (mod path)
+// Falls back to materials (VTF/VMT) if BMP not found
 //-----------------------------------------------------------------------------
 void CQuakeConsole::LoadBackgroundTexture()
 {
@@ -391,55 +446,128 @@ void CQuakeConsole::LoadBackgroundTexture()
 	m_nTextureWidth = 0;
 	m_nTextureHeight = 0;
 
-	// Safety checks - VGUI surface and filesystem must be available
+	// Safety checks - VGUI surface must be available
 	if (!vgui::surface())
 		return;
 
-	if (!g_pFileSystem)
-		return;
+	// Try to load BMP from gfx/shell/console_background.bmp first (GoldSrc/GMod style)
+	const char *bmpPaths[] = {
+		"gfx/shell/console_background.bmp",  // Primary mod-specific path
+		"gfx/shell/conback.bmp",             // Alternative name
+		NULL
+	};
 
-	char texturePath[MAX_PATH];
-	bool bTextureFound = false;
-
-	// First try mod-specific splash: <mod>/gfx/shell/splash.bmp
-	// Note: DrawSetTextureFile expects path without extension and relative to game root
-	if (com_gamedir[0])
+	for (int i = 0; bmpPaths[i] != NULL; i++)
 	{
-		Q_snprintf(texturePath, sizeof(texturePath), "%s/gfx/shell/splash", com_gamedir);
-
-		// Check if the .bmp file exists
-		char fullPath[MAX_PATH];
-		Q_snprintf(fullPath, sizeof(fullPath), "%s.bmp", texturePath);
-		if (g_pFileSystem->FileExists(fullPath))
+		FileHandle_t hFile = g_pFileSystem->Open(bmpPaths[i], "rb", "GAME");
+		if (hFile)
 		{
-			bTextureFound = true;
+			// Read BMP header
+			BITMAPFILEHEADER bmfh;
+			BITMAPINFOHEADER bmih;
+
+			g_pFileSystem->Read(&bmfh, sizeof(bmfh), hFile);
+			g_pFileSystem->Read(&bmih, sizeof(bmih), hFile);
+
+			// Verify it's a valid BMP
+			if (bmfh.bfType == 0x4D42) // 'BM'
+			{
+				int width = bmih.biWidth;
+				int height = abs(bmih.biHeight);  // Height can be negative for top-down BMP
+				bool bottomUp = (bmih.biHeight > 0);
+				int bpp = bmih.biBitCount;
+
+				if ((bpp == 24 || bpp == 32) && width > 0 && height > 0)
+				{
+					// Allocate RGBA buffer
+					unsigned char *rgba = new unsigned char[width * height * 4];
+					if (rgba)
+					{
+						// Seek to pixel data
+						g_pFileSystem->Seek(hFile, bmfh.bfOffBits, FILESYSTEM_SEEK_HEAD);
+
+						// Calculate row size with padding (BMP rows are 4-byte aligned)
+						int bytesPerPixel = bpp / 8;
+						int rowSize = ((width * bytesPerPixel + 3) / 4) * 4;
+						unsigned char *rowBuffer = new unsigned char[rowSize];
+
+						if (rowBuffer)
+						{
+							for (int y = 0; y < height; y++)
+							{
+								// Determine which row to write to (flip if bottom-up)
+								int destY = bottomUp ? (height - 1 - y) : y;
+
+								g_pFileSystem->Read(rowBuffer, rowSize, hFile);
+
+								for (int x = 0; x < width; x++)
+								{
+									int srcIdx = x * bytesPerPixel;
+									int destIdx = (destY * width + x) * 4;
+
+									// BMP stores BGR, convert to RGBA
+									rgba[destIdx + 0] = rowBuffer[srcIdx + 2];  // R
+									rgba[destIdx + 1] = rowBuffer[srcIdx + 1];  // G
+									rgba[destIdx + 2] = rowBuffer[srcIdx + 0];  // B
+									rgba[destIdx + 3] = (bpp == 32) ? rowBuffer[srcIdx + 3] : 255;  // A
+								}
+							}
+
+							// Create texture from RGBA data
+							m_nTextureId = vgui::surface()->CreateNewTextureID(true);  // Procedural texture
+							vgui::surface()->DrawSetTextureRGBA(m_nTextureId, rgba, width, height, 0, false);
+
+							m_nTextureWidth = width;
+							m_nTextureHeight = height;
+
+							delete[] rowBuffer;
+							delete[] rgba;
+							g_pFileSystem->Close(hFile);
+
+							Msg("Console: Loaded background BMP '%s' (%dx%d)\n", bmpPaths[i], width, height);
+							return;
+						}
+
+						delete[] rgba;
+					}
+				}
+			}
+
+			g_pFileSystem->Close(hFile);
 		}
 	}
 
-	if (!bTextureFound)
+	// BMP not found - try material system (VTF/VMT) as fallback
+	const char *materialPaths[] = {
+		"vgui/console/console_background",  // Mod-specific or game console background
+		"console/background",               // Alternative path
+		"vgui/splash",                      // Splash screen as fallback
+		NULL
+	};
+
+	m_nTextureId = vgui::surface()->CreateNewTextureID(false);  // Non-procedural texture
+
+	for (int i = 0; materialPaths[i] != NULL; i++)
 	{
-		// Fallback to hl2/gfx/shell/splash.bmp
-		Q_strncpy(texturePath, "hl2/gfx/shell/splash", sizeof(texturePath));
-		char fullPath[MAX_PATH];
-		Q_snprintf(fullPath, sizeof(fullPath), "%s.bmp", texturePath);
-		if (g_pFileSystem->FileExists(fullPath))
+		// Try to load the material - DrawSetTextureFile handles VTF/VMT lookup
+		vgui::surface()->DrawSetTextureFile(m_nTextureId, materialPaths[i], 0, false);
+
+		// Check if the texture loaded successfully by getting its size
+		vgui::surface()->DrawGetTextureSize(m_nTextureId, m_nTextureWidth, m_nTextureHeight);
+
+		if (m_nTextureWidth > 0 && m_nTextureHeight > 0)
 		{
-			bTextureFound = true;
+			Msg("Console: Loaded background material '%s' (%dx%d)\n",
+				materialPaths[i], m_nTextureWidth, m_nTextureHeight);
+			return;
 		}
 	}
 
-	if (bTextureFound)
-	{
-		// Create texture ID and load the texture
-		m_nTextureId = vgui::surface()->CreateNewTextureID();
-		vgui::surface()->DrawSetTextureFile(m_nTextureId, texturePath, true, false);
-
-		// Get texture dimensions
-		int texWide, texTall;
-		vgui::surface()->DrawGetTextureSize(m_nTextureId, texWide, texTall);
-		m_nTextureWidth = texWide;
-		m_nTextureHeight = texTall;
-	}
+	// No material found - texture will stay invalid, DrawBackground will use solid color
+	Msg("Console: No background material found, using solid background\n");
+	m_nTextureId = -1;
+	m_nTextureWidth = 0;
+	m_nTextureHeight = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -471,30 +599,62 @@ void CQuakeConsole::DrawBackground()
 	if (!vgui::surface())
 		return;
 
+	// Lazy load the background texture on first draw (VGUI is guaranteed ready here)
+	if (!m_bTextureLoadAttempted)
+	{
+		m_bTextureLoadAttempted = true;
+		LoadBackgroundTexture();
+	}
+
 	int y = GetConsoleY();
 
-	// Draw textured background if available
+	// Draw textured background if available - no transparency, solid image
 	if (m_nTextureId != -1 && m_nTextureWidth > 0 && m_nTextureHeight > 0)
 	{
-		// Draw the splash texture, tiled or stretched to fit
+		// Draw the splash texture stretched to fit console area
 		vgui::surface()->DrawSetTexture(m_nTextureId);
 		vgui::surface()->DrawSetColor(255, 255, 255, 255);
 		vgui::surface()->DrawTexturedRect(0, y, m_nConsoleWidth, y + m_nConsoleHeight);
-
-		// Overlay a semi-transparent dark layer for text readability
-		vgui::surface()->DrawSetColor(0, 0, 0, 140);
-		vgui::surface()->DrawFilledRect(0, y, m_nConsoleWidth, y + m_nConsoleHeight);
 	}
 	else
 	{
-		// Fallback: solid semi-transparent background
-		vgui::surface()->DrawSetColor(0, 0, 0, 200);
+		// Fallback: solid black background (no transparency)
+		vgui::surface()->DrawSetColor(0, 0, 0, 255);
 		vgui::surface()->DrawFilledRect(0, y, m_nConsoleWidth, y + m_nConsoleHeight);
 	}
 
-	// Draw border
-	vgui::surface()->DrawSetColor(100, 100, 100, 255);
-	vgui::surface()->DrawOutlinedRect(0, y, m_nConsoleWidth, y + m_nConsoleHeight);
+	// Draw bottom border line (like WON console)
+	vgui::surface()->DrawSetColor(128, 128, 128, 255);
+	vgui::surface()->DrawFilledRect(0, y + m_nConsoleHeight - 2, m_nConsoleWidth, y + m_nConsoleHeight);
+}
+
+//-----------------------------------------------------------------------------
+// Ensure font is loaded - called lazily since scheme may not be ready at init
+//-----------------------------------------------------------------------------
+void CQuakeConsole::EnsureFontLoaded()
+{
+	// If we already have a valid font, nothing to do
+	if (m_hFont != 0)
+		return;
+
+	// Try to load the font from scheme
+	if (vgui::scheme())
+	{
+		vgui::IScheme *pScheme = vgui::scheme()->GetIScheme(vgui::scheme()->GetDefaultScheme());
+		if (pScheme)
+		{
+			m_hFont = pScheme->GetFont("DefaultFixed", false);
+			if (!m_hFont)
+			{
+				// Try alternate font names
+				m_hFont = pScheme->GetFont("DefaultSmall", false);
+			}
+			if (!m_hFont)
+			{
+				m_hFont = pScheme->GetFont("Default", false);
+			}
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -502,6 +662,9 @@ void CQuakeConsole::DrawBackground()
 //-----------------------------------------------------------------------------
 void CQuakeConsole::DrawText()
 {
+	// Try to ensure font is loaded
+	EnsureFontLoaded();
+
 	if (!m_hFont || !vgui::surface() || !vgui::localize())
 		return;
 
@@ -531,10 +694,13 @@ void CQuakeConsole::DrawText()
 }
 
 //-----------------------------------------------------------------------------
-// Draw input line
+// Draw input line at the very bottom of the console
 //-----------------------------------------------------------------------------
 void CQuakeConsole::DrawInputLine()
 {
+	// Try to ensure font is loaded
+	EnsureFontLoaded();
+
 	if (!m_hFont || !vgui::surface() || !vgui::localize())
 		return;
 
@@ -542,31 +708,38 @@ void CQuakeConsole::DrawInputLine()
 	int fontTall = vgui::surface()->GetFontTall(m_hFont);
 	if (fontTall <= 0)
 		return;
-	int inputY = y + m_nConsoleHeight - fontTall - 10;
+
+	// Position input line at the very bottom of the console (above the border line)
+	int inputY = y + m_nConsoleHeight - fontTall - 4;
 
 	vgui::surface()->DrawSetTextFont(m_hFont);
 
-	// Draw prompt
+	// Draw prompt character "]"
 	vgui::surface()->DrawSetTextColor(255, 255, 255, 255);
-	vgui::surface()->DrawSetTextPos(10, inputY);
+	vgui::surface()->DrawSetTextPos(8, inputY);
 	wchar_t prompt[4];
 	vgui::localize()->ConvertANSIToUnicode("]", prompt, sizeof(prompt));
 	vgui::surface()->DrawPrintText(prompt, 1);
 
+	// Get prompt width to position input text after it
+	int promptWide = 0, promptTall = 0;
+	vgui::surface()->GetTextSize(m_hFont, prompt, promptWide, promptTall);
+	int textStartX = 8 + promptWide;
+
 	// Draw input text
 	if (m_nInputLength > 0)
 	{
-		vgui::surface()->DrawSetTextPos(20, inputY);
+		vgui::surface()->DrawSetTextPos(textStartX, inputY);
 		wchar_t wideInput[INPUT_LINE_LENGTH];
 		vgui::localize()->ConvertANSIToUnicode(m_szInputLine, wideInput, sizeof(wideInput));
 		vgui::surface()->DrawPrintText(wideInput, m_nInputLength);
 	}
 
-	// Draw cursor
+	// Draw blinking cursor (block cursor like classic console)
 	static float lastBlinkTime = 0;
 	static bool bShowCursor = true;
 
-	if (realtime - lastBlinkTime > 0.5f)
+	if (realtime - lastBlinkTime > 0.4f)
 	{
 		bShowCursor = !bShowCursor;
 		lastBlinkTime = realtime;
@@ -574,7 +747,7 @@ void CQuakeConsole::DrawInputLine()
 
 	if (bShowCursor)
 	{
-		int cursorX = 20;
+		int cursorX = textStartX;
 		if (m_nInputPos > 0)
 		{
 			char savedChar = m_szInputLine[m_nInputPos];
@@ -590,8 +763,9 @@ void CQuakeConsole::DrawInputLine()
 			cursorX += wide;
 		}
 
+		// Draw a block cursor (8 pixels wide, like classic console)
 		vgui::surface()->DrawSetColor(255, 255, 255, 255);
-		vgui::surface()->DrawFilledRect(cursorX, inputY, cursorX + 1, inputY + fontTall);
+		vgui::surface()->DrawFilledRect(cursorX, inputY, cursorX + 8, inputY + fontTall);
 	}
 }
 

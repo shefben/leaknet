@@ -27,11 +27,28 @@ void BuildBoneChain(
 //-----------------------------------------------------------------------------
 mstudioanimdesc_t *GetAnimDescriptions( const studiohdr_t *pStudioHdr, mstudioseqdesc_t *pseqdesc, int x, int y )
 {
+	// Safety check: verify we have animations
+	if ( pStudioHdr->numanim <= 0 )
+	{
+		Warning( "GetAnimDescriptions: Model %s has no animations!\n", pStudioHdr->name );
+		return NULL;
+	}
+
 	//-----------------------------------------------------------------------------
 	// v37 path: Animation groups and sequence groups
 	//-----------------------------------------------------------------------------
 	if (pStudioHdr->version <= STUDIO_VERSION_37)
 	{
+		// v37 models with no animation groups use direct indexing
+		if ( pStudioHdr->animdata.v37.numanimgroups <= 0 )
+		{
+			// No animation groups - use direct animation index from sequence
+			int iAnim = pseqdesc->anim( x, y );
+			if ( iAnim < 0 || iAnim >= pStudioHdr->numanim )
+				iAnim = 0;
+			return pStudioHdr->pAnimdesc( iAnim );
+		}
+
 		int iAnimGroup = pseqdesc->GetAnimIndex( x, y, pStudioHdr->version );
 		if ( iAnimGroup < 0 || iAnimGroup >= pStudioHdr->animdata.v37.numanimgroups )
 			return pStudioHdr->pAnimdesc( 0 );
@@ -45,6 +62,11 @@ mstudioanimdesc_t *GetAnimDescriptions( const studiohdr_t *pStudioHdr, mstudiose
 			return pStudioHdr->pAnimdesc( 0 );
 
 		int iAnimIndex = pAnimGroup->index;
+
+		// Validate iAnimIndex is in range
+		if ( iAnimIndex < 0 || iAnimIndex >= pStudioHdr->numanim )
+			iAnimIndex = 0;
+
 		if ( iSeqGroup == 0 )
 			return pStudioHdr->pAnimdesc( iAnimIndex );
 
@@ -73,8 +95,8 @@ mstudioanimdesc_t *GetAnimDescriptions( const studiohdr_t *pStudioHdr, mstudiose
 	//-----------------------------------------------------------------------------
 	else
 	{
-		// For v48 models, pseqdesc->anim is a simple 2D array of indices
-		int iAnim = pseqdesc->anim[x][y];
+		// For v48 models, use the anim() accessor function
+		int iAnim = pseqdesc->anim( x, y );
 		if (iAnim < 0 || iAnim >= pStudioHdr->numanim)
 			return pStudioHdr->pAnimdesc( 0 );
 
@@ -443,6 +465,239 @@ void CalcBonePosition( const studiohdr_t *pStudioHdr, int frame, float s,
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Helper function to extract animation values from mstudioanimvalue_t
+// Used by CalcDecompressedAnimation for local hierarchy support
+//-----------------------------------------------------------------------------
+inline void ExtractAnimValue( int frame, mstudioanimvalue_t *panimvalue, float scale, float &v1, float &v2 )
+{
+	if ( !panimvalue )
+	{
+		v1 = v2 = 0;
+		return;
+	}
+
+	int k = frame;
+
+	while (panimvalue->num.total <= k)
+	{
+		k -= panimvalue->num.total;
+		panimvalue += panimvalue->num.valid + 1;
+		if ( panimvalue->num.total == 0 )
+		{
+			Assert( 0 ); // bad data
+			v1 = v2 = 0;
+			return;
+		}
+	}
+
+	if (panimvalue->num.valid > k)
+	{
+		v1 = panimvalue[k+1].value * scale;
+
+		if (panimvalue->num.valid > k + 1)
+		{
+			v2 = panimvalue[k+2].value * scale;
+		}
+		else
+		{
+			if (panimvalue->num.total > k + 1)
+				v2 = v1;
+			else
+				v2 = panimvalue[panimvalue->num.valid+2].value * scale;
+		}
+	}
+	else
+	{
+		v1 = panimvalue[panimvalue->num.valid].value * scale;
+		if (panimvalue->num.total > k + 1)
+		{
+			v2 = v1;
+		}
+		else
+		{
+			v2 = panimvalue[panimvalue->num.valid + 2].value * scale;
+		}
+	}
+}
+
+inline void ExtractAnimValue( int frame, mstudioanimvalue_t *panimvalue, float scale, float &v1 )
+{
+	if ( !panimvalue )
+	{
+		v1 = 0;
+		return;
+	}
+
+	int k = frame;
+
+	while (panimvalue->num.total <= k)
+	{
+		k -= panimvalue->num.total;
+		panimvalue += panimvalue->num.valid + 1;
+		if ( panimvalue->num.total == 0 )
+		{
+			Assert( 0 ); // bad data
+			v1 = 0;
+			return;
+		}
+	}
+
+	if (panimvalue->num.valid > k)
+	{
+		v1 = panimvalue[k+1].value * scale;
+	}
+	else
+	{
+		v1 = panimvalue[panimvalue->num.valid].value * scale;
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Decompress animation data from mstudiocompressedikerror_t
+// Used for local hierarchy bone animations (v48)
+//-----------------------------------------------------------------------------
+static void CalcDecompressedAnimation( const mstudiocompressedikerror_t *pCompressed, int iFrame, float fraq, Vector &pos, Quaternion &q )
+{
+	if (fraq > 0.0001f)
+	{
+		Vector p1, p2;
+		ExtractAnimValue( iFrame, pCompressed->pAnimvalue( 0 ), pCompressed->scale[0], p1.x, p2.x );
+		ExtractAnimValue( iFrame, pCompressed->pAnimvalue( 1 ), pCompressed->scale[1], p1.y, p2.y );
+		ExtractAnimValue( iFrame, pCompressed->pAnimvalue( 2 ), pCompressed->scale[2], p1.z, p2.z );
+		pos = p1 * (1 - fraq) + p2 * fraq;
+
+		Quaternion			q1, q2;
+		RadianEuler			angle1, angle2;
+		ExtractAnimValue( iFrame, pCompressed->pAnimvalue( 3 ), pCompressed->scale[3], angle1.x, angle2.x );
+		ExtractAnimValue( iFrame, pCompressed->pAnimvalue( 4 ), pCompressed->scale[4], angle1.y, angle2.y );
+		ExtractAnimValue( iFrame, pCompressed->pAnimvalue( 5 ), pCompressed->scale[5], angle1.z, angle2.z );
+
+		if (angle1.x != angle2.x || angle1.y != angle2.y || angle1.z != angle2.z)
+		{
+			AngleQuaternion( angle1, q1 );
+			AngleQuaternion( angle2, q2 );
+			QuaternionBlend( q1, q2, fraq, q );
+		}
+		else
+		{
+			AngleQuaternion( angle1, q );
+		}
+	}
+	else
+	{
+		ExtractAnimValue( iFrame, pCompressed->pAnimvalue( 0 ), pCompressed->scale[0], pos.x );
+		ExtractAnimValue( iFrame, pCompressed->pAnimvalue( 1 ), pCompressed->scale[1], pos.y );
+		ExtractAnimValue( iFrame, pCompressed->pAnimvalue( 2 ), pCompressed->scale[2], pos.z );
+
+		RadianEuler			angle;
+		ExtractAnimValue( iFrame, pCompressed->pAnimvalue( 3 ), pCompressed->scale[3], angle.x );
+		ExtractAnimValue( iFrame, pCompressed->pAnimvalue( 4 ), pCompressed->scale[4], angle.y );
+		ExtractAnimValue( iFrame, pCompressed->pAnimvalue( 5 ), pCompressed->scale[5], angle.z );
+
+		AngleQuaternion( angle, q );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Calculate local hierarchy animation overrides (v48)
+// Allows bones to be temporarily reparented during an animation
+//-----------------------------------------------------------------------------
+static void CalcLocalHierarchyAnimation(
+	const studiohdr_t *pStudioHdr,
+	matrix3x4_t *boneToWorld,
+	Vector *pos,
+	Quaternion *q,
+	const mstudiobone_t *pbone,
+	mstudiolocalhierarchy_t *pHierarchy,
+	int iBone,
+	int iNewParent,
+	float cycle,
+	int iFrame,
+	float flFraq,
+	int boneMask
+	)
+{
+	Vector localPos;
+	Quaternion localQ;
+
+	// make fake root transform
+	static matrix3x4_t rootXform( 1.0f, 0, 0, 0,   0, 1.0f, 0, 0,  0, 0, 1.0f, 0 );
+
+	float weight = 1.0f;
+
+	// check to see if there's a ramp on the influence
+	if ( pHierarchy->tail - pHierarchy->peak < 1.0f )
+	{
+		float index = cycle;
+
+		if (pHierarchy->end > 1.0f && index < pHierarchy->start)
+			index += 1.0f;
+
+		if (index < pHierarchy->start)
+			return;
+		if (index >= pHierarchy->end)
+			return;
+
+		if (index < pHierarchy->peak && pHierarchy->start != pHierarchy->peak)
+		{
+			weight = (index - pHierarchy->start) / (pHierarchy->peak - pHierarchy->start);
+		}
+		else if (index > pHierarchy->tail && pHierarchy->end != pHierarchy->tail)
+		{
+			weight = (pHierarchy->end - index) / (pHierarchy->end - pHierarchy->tail);
+		}
+
+		weight = SimpleSpline( weight );
+	}
+
+	CalcDecompressedAnimation( pHierarchy->pLocalAnim(), iFrame - pHierarchy->iStart, flFraq, localPos, localQ );
+
+	// Build bone chains for both bones
+	BuildBoneChain( pStudioHdr, rootXform, pos, q, iBone, boneToWorld );
+	BuildBoneChain( pStudioHdr, rootXform, pos, q, iNewParent, boneToWorld );
+
+	matrix3x4_t localXform;
+	QuaternionMatrix( localQ, localPos, localXform );
+
+	ConcatTransforms( boneToWorld[iNewParent], localXform, boneToWorld[iBone] );
+
+	// back solve
+	Vector p1;
+	Quaternion q1;
+	int n = pbone[iBone].parent;
+	if (n == -1)
+	{
+		if (weight == 1.0f)
+		{
+			MatrixAngles( boneToWorld[iBone], q[iBone], pos[iBone] );
+		}
+		else
+		{
+			MatrixAngles( boneToWorld[iBone], q1, p1 );
+			QuaternionSlerp( q[iBone], q1, weight, q[iBone] );
+			VectorLerp( pos[iBone], p1, weight, pos[iBone] );
+		}
+	}
+	else
+	{
+		matrix3x4_t worldToBone;
+		MatrixInvert( boneToWorld[n], worldToBone );
+
+		matrix3x4_t local;
+		ConcatTransforms( worldToBone, boneToWorld[iBone], local );
+		if (weight == 1.0f)
+		{
+			MatrixAngles( local, q[iBone], pos[iBone] );
+		}
+		else
+		{
+			MatrixAngles( local, q1, p1 );
+			QuaternionSlerp( q[iBone], q1, weight, q[iBone] );
+			VectorLerp( pos[iBone], p1, weight, pos[iBone] );
+		}
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Calculate bone rotations for v37 models (array-based animation)
@@ -466,7 +721,7 @@ static void CalcRotations_v37( const studiohdr_t *pStudioHdr, Vector *pos, Quate
 
 	for (i = 0; i < pStudioHdr->numbones; i++, pbone++, panim++)
 	{
-		if (pseqdesc->GetWeight(i, pStudioHdr->version) > 0 && (pbone->flags & boneMask))
+		if (pseqdesc->weight(i) > 0 && (pbone->flags & boneMask))
 		{
 			CalcBoneQuaternion( pStudioHdr, iFrame, s, pbone, panim, q[i] );
 			CalcBonePosition  ( pStudioHdr, iFrame, s, pbone, panim, pos[i] );
@@ -478,6 +733,7 @@ static void CalcRotations_v37( const studiohdr_t *pStudioHdr, Vector *pos, Quate
 // Purpose: Calculate bone rotations for v48 models (linked-list animation)
 // v48 uses a linked list of animated bones instead of array indexing.
 // Only bones with animation data are in the list, others use bone defaults.
+// Also handles local hierarchy overrides for runtime bone reparenting.
 //-----------------------------------------------------------------------------
 static void CalcRotations_v48_internal( const studiohdr_t *pStudioHdr, Vector *pos, Quaternion *q,
 	const mstudioseqdesc_t *pseqdesc,
@@ -494,7 +750,7 @@ static void CalcRotations_v48_internal( const studiohdr_t *pStudioHdr, Vector *p
 	for (int i = 0; i < pStudioHdr->numbones; i++)
 	{
 		mstudiobone_v48_t *pbone = pStudioHdr->pBone_v48( i );
-		if (pseqdesc->GetWeight(i, pStudioHdr->version) > 0 && (pbone->flags & boneMask))
+		if (pseqdesc->weight(i) > 0 && (pbone->flags & boneMask))
 		{
 			// Default pose from bone data
 			pos[i] = pbone->pos;
@@ -514,7 +770,7 @@ static void CalcRotations_v48_internal( const studiohdr_t *pStudioHdr, Vector *p
 		{
 			mstudiobone_v48_t *pbone = pStudioHdr->pBone_v48( iBone );
 
-			if (pseqdesc->GetWeight(iBone, pStudioHdr->version) > 0 && (pbone->flags & boneMask))
+			if (pseqdesc->weight(iBone) > 0 && (pbone->flags & boneMask))
 			{
 				CalcBoneQuaternion_v48( pStudioHdr, iFrame, s, pbone, panim, q[iBone] );
 				CalcBonePosition_v48( pStudioHdr, iFrame, s, pbone, panim, pos[iBone] );
@@ -523,6 +779,45 @@ static void CalcRotations_v48_internal( const studiohdr_t *pStudioHdr, Vector *p
 
 		// Move to next bone in the linked list
 		panim = panim->pNext();
+	}
+
+	//-----------------------------------------------------------------------------
+	// v48 Local Hierarchy Support
+	// Apply any local hierarchy overrides (runtime bone reparenting)
+	//-----------------------------------------------------------------------------
+	if (panimdesc->numlocalhierarchy > 0)
+	{
+		// Allocate temporary bone-to-world matrices for local hierarchy calculation
+		matrix3x4_t *boneToWorld = (matrix3x4_t *)stackalloc( pStudioHdr->numbones * sizeof(matrix3x4_t) );
+
+		// Initialize with identity matrices
+		for (int i = 0; i < pStudioHdr->numbones; i++)
+		{
+			SetIdentityMatrix( boneToWorld[i] );
+		}
+
+		mstudiobone_t *pbone = pStudioHdr->pBone( 0 );
+
+		// Process each local hierarchy override
+		for (int i = 0; i < panimdesc->numlocalhierarchy; i++)
+		{
+			mstudiolocalhierarchy_t *pHierarchy = panimdesc->pHierarchy( i );
+			if ( !pHierarchy )
+				break;
+
+			int iBone = pHierarchy->iBone;
+			if (iBone >= 0 && iBone < pStudioHdr->numbones &&
+				(pStudioHdr->pBone(iBone)->flags & boneMask))
+			{
+				int iNewParent = pHierarchy->iNewParent;
+				if (iNewParent >= 0 && iNewParent < pStudioHdr->numbones &&
+					(pStudioHdr->pBone(iNewParent)->flags & boneMask))
+				{
+					CalcLocalHierarchyAnimation( pStudioHdr, boneToWorld, pos, q, pbone,
+						pHierarchy, iBone, iNewParent, cycle, iFrame, s, boneMask );
+				}
+			}
+		}
 	}
 }
 
@@ -625,7 +920,7 @@ void SlerpBones(
 				continue;
 			}
 
-			s2 = s * pseqdesc->GetWeight( i, pStudioHdr->version );	// blend in based on this bones weight
+			s2 = s * pseqdesc->weight( i );	// blend in based on this bones weight
 			if (s2 > 0.0)
 			{
 				if (pseqdesc->flags & STUDIO_POST)
@@ -659,7 +954,7 @@ void SlerpBones(
 				continue;
 			}
 
-			s2 = s * pseqdesc->GetWeight( i, pStudioHdr->version );	// blend in based on this animations weights
+			s2 = s * pseqdesc->weight( i );	// blend in based on this animations weights
 			if (s2 > 0.0)
 			{
 				s1 = 1.0 - s2;
@@ -717,7 +1012,7 @@ void BlendBones(
 				continue;
 			}
 
-			if (pseqdesc->GetWeight( i, pStudioHdr->version ) > 0.0)
+			if (pseqdesc->weight( i ) > 0.0)
 			{
 				q1[i] = q2[i];
 				pos1[i] = pos2[i];
@@ -737,7 +1032,7 @@ void BlendBones(
 			continue;
 		}
 
-		if (pseqdesc->GetWeight( i, pStudioHdr->version ) > 0.0)
+		if (pseqdesc->weight( i ) > 0.0)
 		{
 			if (pStudioHdr->pBone(i)->flags & BONE_FIXED_ALIGNMENT)
 			{
@@ -764,11 +1059,15 @@ void BlendBones(
 //-----------------------------------------------------------------------------
 void Studio_LocalPoseParameter( const studiohdr_t *pStudioHdr, const float poseParameter[], const mstudioseqdesc_t *pSeqDesc, int iLocalPose, float &flSetting, int &index )
 {
-	// Get model version for version-aware field access (v37 vs v48 binary layout)
-	int version = pStudioHdr->version;
+	// paramindex: direct access (same binary layout for v37 and v48)
+	if (iLocalPose < 0 || iLocalPose >= 2)
+	{
+		flSetting = 0;
+		index = 0;
+		return;
+	}
 
-	// Use version-aware accessor for paramindex
-	int paramIdx = pSeqDesc->GetParamIndex( iLocalPose, version );
+	int paramIdx = pSeqDesc->paramindex[iLocalPose];
 	if (paramIdx == -1)
 	{
 		flSetting = 0;
@@ -796,17 +1095,15 @@ void Studio_LocalPoseParameter( const studiohdr_t *pStudioHdr, const float poseP
 		flValue = flValue - pPose->loop * floor((flValue + shift) / pPose->loop);
 	}
 
-	// Use version-aware accessor for posekeyindex
-	int poseKeyIdx = pSeqDesc->GetPoseKeyIndex( version );
-
-	// Use version-aware accessor for groupsize
-	int groupSize = (iLocalPose == 0) ? pSeqDesc->GetGroupSize0( version ) : pSeqDesc->GetGroupSize1( version );
+	// Direct access (same binary layout for v37 and v48)
+	int poseKeyIdx = pSeqDesc->posekeyindex;
+	int groupSize = pSeqDesc->groupsize[iLocalPose];
 
 	if (poseKeyIdx == 0)
 	{
-		// Use version-aware accessors for paramstart and paramend
-		float flLocalStart	= (pSeqDesc->GetParamStart( iLocalPose, version ) - pPose->start) / (pPose->end - pPose->start);
-		float flLocalEnd	= (pSeqDesc->GetParamEnd( iLocalPose, version ) - pPose->start) / (pPose->end - pPose->start);
+		// Direct access to paramstart/paramend
+		float flLocalStart	= (pSeqDesc->paramstart[iLocalPose] - pPose->start) / (pPose->end - pPose->start);
+		float flLocalEnd	= (pSeqDesc->paramend[iLocalPose] - pPose->start) / (pPose->end - pPose->start);
 
 		// convert into local range
 		flSetting = (flValue - flLocalStart) / (flLocalEnd - flLocalStart);
@@ -833,9 +1130,9 @@ void Studio_LocalPoseParameter( const studiohdr_t *pStudioHdr, const float poseP
 
 		while (1)
 		{
-			// Use version-aware accessor for poseKey
-			float poseKeyThis = pSeqDesc->GetPoseKey( iLocalPose, index, version );
-			float poseKeyNext = pSeqDesc->GetPoseKey( iLocalPose, index + 1, version );
+			// Direct access to poseKey
+			float poseKeyThis = pSeqDesc->poseKey( iLocalPose, index );
+			float poseKeyNext = pSeqDesc->poseKey( iLocalPose, index + 1 );
 			flSetting = (flValue - poseKeyThis) / (poseKeyNext - poseKeyThis);
 			if (index > 0 && flSetting < 0.0)
 			{
@@ -962,22 +1259,32 @@ bool CalcPoseSingle(
 		}
 	}
 
-	// Use version-aware groupsize accessors for v37 binary compatibility
-	int version = pStudioHdr->version;
-	int groupSize0 = pseqdesc->GetGroupSize0( version );
-	int groupSize1 = pseqdesc->GetGroupSize1( version );
+	// Direct access (same binary layout for v37 and v48)
+	int groupSize0 = pseqdesc->groupsize[0];
+	int groupSize1 = pseqdesc->groupsize[1];
 
 	if (groupSize1 == 1)
 	{
 		if (groupSize0 == 1)
 		{
 			panim0 = GetAnimDescriptions( pStudioHdr, pseqdesc, 0, 0 );
+			if ( !panim0 )
+			{
+				Warning( "CalcPoseSingle: No animation data for sequence %d in model %s\n", sequence, pStudioHdr->name );
+				return false;
+			}
 			CalcRotations( pStudioHdr, pos, q, pseqdesc, panim0, cycle, boneMask);
 		}
 		else
 		{
 			panim0 = GetAnimDescriptions( pStudioHdr, pseqdesc, i0  , i1  );
 			panim1 = GetAnimDescriptions( pStudioHdr, pseqdesc, i0+1, i1  );
+
+			if ( !panim0 || !panim1 )
+			{
+				Warning( "CalcPoseSingle: Missing animation blend data for sequence %d in model %s\n", sequence, pStudioHdr->name );
+				return false;
+			}
 
 			// remove "zero" positional blends
 			if ((panim0->flags & STUDIO_ALLZEROS) && (s0 < 0.001))
@@ -1002,6 +1309,12 @@ bool CalcPoseSingle(
 			panim0 = GetAnimDescriptions( pStudioHdr, pseqdesc, i0  , i1  );
 			panim1 = GetAnimDescriptions( pStudioHdr, pseqdesc, i0  , i1+1);
 
+			if ( !panim0 || !panim1 )
+			{
+				Warning( "CalcPoseSingle: Missing animation blend data for sequence %d in model %s\n", sequence, pStudioHdr->name );
+				return false;
+			}
+
 			CalcRotations( pStudioHdr, pos,  q,  pseqdesc, panim0, cycle, boneMask );
 			CalcRotations( pStudioHdr, pos2, q2, pseqdesc, panim1, cycle, boneMask );
 
@@ -1012,6 +1325,12 @@ bool CalcPoseSingle(
 			panim0 = GetAnimDescriptions( pStudioHdr, pseqdesc, i0  , i1);
 			panim1 = GetAnimDescriptions( pStudioHdr, pseqdesc, i0+1, i1);
 
+			if ( !panim0 || !panim1 )
+			{
+				Warning( "CalcPoseSingle: Missing animation blend data for sequence %d in model %s\n", sequence, pStudioHdr->name );
+				return false;
+			}
+
 			CalcRotations( pStudioHdr, pos,  q,  pseqdesc, panim0, cycle, boneMask );
 			CalcRotations( pStudioHdr, pos2, q2, pseqdesc, panim1, cycle, boneMask );
 
@@ -1019,6 +1338,12 @@ bool CalcPoseSingle(
 
 			panim0 = GetAnimDescriptions( pStudioHdr, pseqdesc, i0  , i1+1);
 			panim1 = GetAnimDescriptions( pStudioHdr, pseqdesc, i0+1, i1+1);
+
+			if ( !panim0 || !panim1 )
+			{
+				Warning( "CalcPoseSingle: Missing animation blend data for sequence %d in model %s\n", sequence, pStudioHdr->name );
+				return false;
+			}
 
 			CalcRotations( pStudioHdr, pos2, q2, pseqdesc, panim0, cycle, boneMask );
 			CalcRotations( pStudioHdr, pos3, q3, pseqdesc, panim1, cycle, boneMask );
@@ -1052,9 +1377,9 @@ void AddSequenceLayers(
 {
 	mstudioseqdesc_t	*pseqdesc = pStudioHdr->pSeqdesc( sequence );
 	
-	for (int i = 0; i < pseqdesc->GetNumAutoLayers(pStudioHdr->version); i++)
+	for (int i = 0; i < pseqdesc->numautolayers; i++)
 	{
-		mstudioautolayer_t *pLayer = pseqdesc->pAutoLayerV( i, pStudioHdr->version );
+		mstudioautolayer_t *pLayer = pseqdesc->pAutolayer( i );
 
 		float layerCycle = cycle;
 		float layerWeight = flWeight;
@@ -1130,7 +1455,7 @@ void CalcPose(
 
 	// add any IK locks to prevent numautolayers from moving extremities
 	CIKContext seq_ik;
-	int numIKLocks = pseqdesc->GetNumIKLocks( pStudioHdr->version );
+	int numIKLocks = pseqdesc->numiklocks;
 	if (numIKLocks)
 	{
 		seq_ik.Init( pStudioHdr, QAngle( 0, 0, 0 ), Vector( 0, 0, 0 ), 0.0 ); // local space relative so absolute position doesn't mater
@@ -1178,7 +1503,7 @@ void AccumulatePose(
 
 	// add any IK locks to prevent extremities from moving
 	CIKContext seq_ik;
-	int numIKLocks = pseqdesc->GetNumIKLocks( pStudioHdr->version );
+	int numIKLocks = pseqdesc->numiklocks;
 	if (numIKLocks)
 	{
 		seq_ik.Init( pStudioHdr, QAngle( 0, 0, 0 ), Vector( 0, 0, 0 ), 0.0 );  // local space relative so absolute position doesn't mater
@@ -1966,7 +2291,7 @@ void CIKContext::AddDependencies(
 	flWeight = clamp( flWeight, 0.0f, 1.0f );
 
 	// FIXME: add proper number of rules!!!
-	for (i = 0; i < pseqdesc->GetNumIKRules(m_pStudioHdr->version); i++)
+	for (i = 0; i < pseqdesc->numikrules; i++)
 	{
 		if (Studio_IKSequenceError( m_pStudioHdr, iSequence, flCycle, i, poseParameters, ikrule ))
 		{
@@ -2032,10 +2357,10 @@ void CIKContext::AddSequenceLocks( mstudioseqdesc_t *pSeqDesc, Vector pos[], Qua
 	int i;
 	static matrix3x4_t boneToWorld[MAXSTUDIOBONES];
 
-	int numIKLocks = pSeqDesc->GetNumIKLocks( m_pStudioHdr->version );
+	int numIKLocks = pSeqDesc->numiklocks;
 	for (i = 0; i < numIKLocks; i++)
 	{
-		mstudioiklock_t *plock = pSeqDesc->pIKLockV( i, m_pStudioHdr->version );
+		mstudioiklock_t *plock = pSeqDesc->pIKLock( i );
 		mstudioikchain_t *pchain = m_pStudioHdr->pIKChain( plock->chain );
 		int bone = pchain->pLink( 2 )->bone;
 
@@ -2343,7 +2668,7 @@ void CIKContext::SolveSequenceLocks(
 
 	for (i = 0; i < m_ikRule.Count(); i++)
 	{
-		mstudioiklock_t *plock = pSeqDesc->pIKLockV( i, m_pStudioHdr->version );
+		mstudioiklock_t *plock = pSeqDesc->pIKLock( i );
 		mstudioikchain_t *pchain = m_pStudioHdr->pIKChain( plock->chain );
 		int bone = pchain->pLink( 2 )->bone;
 

@@ -46,7 +46,7 @@ static ConVar current_team( "current_team", "-1", 0 );
 // Start out new maps at this zoom level
 #define DEFAULT_ZOOM_LEVEL	0
 
-void __MsgFunc_MinimapPulse(const char *pszName, int iSize, void *pbuf);
+void __MsgFunc_MinimapPulse( bf_read &msg );
 
 using namespace vgui;
 
@@ -1358,11 +1358,11 @@ void CMinimapPanel::ProcessInput()
 static ConCommand zoom_minimap( "zoom_minimap", CMinimapPanel::Zoom_Minimap_f, "Zoom in on minimap." );
 
 //-----------------------------------------------------------------------------
-// Purpose: Play a pulse on the minimap
+// Purpose: Play a pulse on the minimap (2007 protocol)
 //-----------------------------------------------------------------------------
-void __MsgFunc_MinimapPulse(const char *pszName, int iSize, void *pbuf)
+void __MsgFunc_MinimapPulse( bf_read &msg )
 {
-	BEGIN_READ( pbuf, iSize );
+	BEGIN_READ( msg );
 
 	Vector vecPosition;
 	READ_VEC3COORD( vecPosition );

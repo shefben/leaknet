@@ -198,8 +198,8 @@ public:
 	// Print contents to console
 	virtual void			Dump( void );
 
-	// Parse changed field info (2007 protocol)
-	void					ParseUpdate( int numEntries );
+	// Parse changed field info (original 2003 protocol)
+	void					ParseUpdate( void );
 
 	void					SetStringChangedCallback( void *object, pfnStringChanged changeFunc );
 
@@ -436,178 +436,48 @@ bool CNetworkStringTableClient::ReadStringTable( CUtlBuffer& buf )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Parse string update with robust error handling (2007 protocol)
-// Input  : numEntries - number of entries to read
+// Purpose: Parse string update using original LeakNet 2003 protocol
 //-----------------------------------------------------------------------------
-void CNetworkStringTableClient::ParseUpdate( int numEntries )
+void CNetworkStringTableClient::ParseUpdate( void )
 {
-	// Check for buffer overflow before starting
-	if ( MSG_IsOverflowed() )
+	while ( MSG_ReadOneBit() )
 	{
-		Warning( "CNetworkStringTableClient::ParseUpdate: Buffer already overflowed for table '%s'\n", GetTableName() );
-		return;
-	}
-
-	CUtlVector< StringHistoryEntry > history;
-	int lastEntry = -1;
-
-	for ( int i = 0; i < numEntries; i++ )
-	{
-		// Check overflow
-		if ( MSG_IsOverflowed() )
-		{
-			Warning( "CNetworkStringTableClient::ParseUpdate: Buffer overflow during update %d for table '%s'\n",
-				i, GetTableName() );
-			return;
-		}
-
-		// 2007 protocol: Delta encoding for entry index
-		int entryIndex;
-		if ( MSG_ReadOneBit() )
-		{
-			// Sequential - use lastEntry + 1
-			entryIndex = lastEntry + 1;
-		}
-		else
-		{
-			// Read full index
-			entryIndex = MSG_ReadBitLong( GetEntryBits() );
-		}
-		lastEntry = entryIndex;
-
+		int entryIndex = MSG_ReadBitLong( GetEntryBits() );
 		if ( entryIndex < 0 || entryIndex >= GetMaxEntries() )
 		{
-			Warning( "CNetworkStringTableClient::ParseUpdate: Bogus string index %i for table '%s'\n",
-				entryIndex, GetTableName() );
-			return;
+			Host_Error( "Server sent bogus string index %i for table %s\n", entryIndex, GetTableName() );
 		}
 
-		const char *pEntry = NULL;
-		char entry[ 1024 ];
-		char substr[ 1024 ];
-
-		// 2007 protocol: Check if string is included
-		if ( MSG_ReadOneBit() )
-		{
-			// Has string data
-			bool substringcheck = MSG_ReadOneBit() ? true : false;
-
-			if ( substringcheck )
-			{
-				// 2007 protocol: Fixed 5-bit history index
-				int index = MSG_ReadBitLong( 5 );
-
-				if ( index >= 0 && index < history.Count() )
-				{
-					int bytestocopy = MSG_ReadBitLong( SUBSTRING_BITS );
-					Q_strncpy( entry, history[ index ].string, bytestocopy + 1 );
-					MSG_GetReadBuf()->ReadString( substr, sizeof( substr ) );
-					Q_strncat( entry, substr, sizeof( entry ), COPY_ALL_CHARACTERS );
-				}
-				else
-				{
-					Warning( "CNetworkStringTableClient::ParseUpdate: Invalid history index %d for table '%s'\n",
-						index, GetTableName() );
-					return;
-				}
-			}
-			else
-			{
-				MSG_GetReadBuf()->ReadString( entry, sizeof( entry ) );
-			}
-
-			pEntry = entry;
-		}
+		const char *pName = MSG_ReadString();
 
 		// Read in the user data
 		unsigned char tempbuf[ CNetworkStringTableItem::MAX_USERDATA_SIZE ];
-		memset( tempbuf, 0, sizeof( tempbuf ) );
 		const void *pUserData = NULL;
 		int nBytes = 0;
 
 		if ( MSG_ReadOneBit() )
 		{
-			if ( IsUserDataFixedSize() )
-			{
-				// 2007 protocol: Fixed size user data
-				nBytes = GetUserDataSize();
-				if ( nBytes > 0 && nBytes <= (int)sizeof( tempbuf ) )
-				{
-					tempbuf[nBytes - 1] = 0; // Safety clear
-					MSG_GetReadBuf()->ReadBits( tempbuf, GetUserDataSizeBits() );
-				}
-			}
-			else
-			{
-				// Variable size user data
-				nBytes = MSG_ReadBitLong( CNetworkStringTableItem::MAX_USERDATA_BITS );
+			nBytes = MSG_ReadBitLong( CNetworkStringTableItem::MAX_USERDATA_BITS );
+			ErrorIfNot( nBytes <= sizeof( tempbuf ),
+				("CNetworkStringTableClient::ParseUpdate: message too large (%d bytes).", nBytes)
+			);
 
-				// Validate nBytes
-				if ( nBytes < 0 || nBytes > (int)sizeof( tempbuf ) )
-				{
-					Warning( "CNetworkStringTableClient::ParseUpdate: Invalid userdata size %d for entry %d in table '%s'\n",
-						nBytes, entryIndex, GetTableName() );
-					return;
-				}
-
-				if ( nBytes > 0 )
-				{
-					MSG_GetReadBuf()->ReadBytes( tempbuf, nBytes );
-				}
-			}
-
+			MSG_GetReadBuf()->ReadBytes( tempbuf, nBytes );
 			pUserData = tempbuf;
-		}
-
-		// Check overflow after reading
-		if ( MSG_IsOverflowed() )
-		{
-			Warning( "CNetworkStringTableClient::ParseUpdate: Buffer overflow reading entry %d in table '%s'\n",
-				entryIndex, GetTableName() );
-			return;
 		}
 
 		// Check if we are updating an old entry or adding a new one
 		if ( entryIndex < GetNumStrings() )
 		{
-			// Update existing entry
+			SetString( entryIndex, pName );
 			SetStringUserData( entryIndex, nBytes, pUserData );
-#ifdef _DEBUG
-			if ( pEntry )
-			{
-				Assert( !Q_strcmp( pEntry, GetString( entryIndex ) ) ); // make sure string didn't change
-			}
-#endif
-			pEntry = GetString( entryIndex ); // string didn't change
 		}
 		else
 		{
 			// Grow the table (entryindex must be the next empty slot)
-			if ( entryIndex != GetNumStrings() )
-			{
-				Warning( "CNetworkStringTableClient::ParseUpdate: Non-sequential entry index %d (expected %d) in table '%s'\n",
-					entryIndex, GetNumStrings(), GetTableName() );
-			}
-
-			if ( pEntry == NULL )
-			{
-				Warning( "CNetworkStringTableClient::ParseUpdate: NULL pEntry for table '%s', index %i\n",
-					GetTableName(), entryIndex );
-				pEntry = ""; // Prevent crash
-			}
-
-			AddString( pEntry, nBytes, pUserData );
+			Assert( entryIndex == GetNumStrings() );
+			AddString( pName, nBytes, pUserData );
 		}
-
-		// Update history
-		if ( history.Count() > 31 )
-		{
-			history.Remove( 0 );
-		}
-
-		StringHistoryEntry she;
-		Q_strncpy( she.string, pEntry, sizeof( she.string ) );
-		history.AddToTail( she );
 	}
 }
 
@@ -802,37 +672,16 @@ CNetworkStringTableClient *CNetworkStringTableContainerClient::GetTable( TABLEID
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Parse string table definitions from server (2007 Source Engine protocol)
-// Supports both 2003 LeakNet protocol and newer 2007 protocol
-// Includes robust error handling for buffer overflow and corrupted data
+// Purpose: Parse string table definitions using original LeakNet 2003 protocol
+// This is the simple, known-working protocol without 2007 complexity
 //-----------------------------------------------------------------------------
 void CNetworkStringTableContainerClient::ParseTableDefinitions( void )
 {
 	// Kill any existing ones
 	RemoveAllTables();
 
-	// Check for buffer overflow before starting
-	if ( MSG_IsOverflowed() )
-	{
-		Warning( "ParseTableDefinitions: Message buffer already overflowed before parsing\n" );
-		return;
-	}
-
 	int numTables = MSG_ReadByte();
-
-	// Validate numTables
-	if ( numTables < 0 || numTables > MAX_TABLES )
-	{
-		Warning( "ParseTableDefinitions: Invalid numTables %d (max %d) - buffer may be corrupted\n", numTables, MAX_TABLES );
-		return;
-	}
-
-	// Check for overflow after reading
-	if ( MSG_IsOverflowed() )
-	{
-		Warning( "ParseTableDefinitions: Buffer overflow reading numTables\n" );
-		return;
-	}
+	assert( numTables >= 0 && numTables <= MAX_TABLES );
 
 	CUtlVector< StringHistoryEntry > history;
 
@@ -840,131 +689,17 @@ void CNetworkStringTableContainerClient::ParseTableDefinitions( void )
 	{
 		history.RemoveAll();
 
-		// Check overflow before reading table name
-		if ( MSG_IsOverflowed() )
-		{
-			Warning( "ParseTableDefinitions: Buffer overflow before table %d\n", i );
-			return;
-		}
-
-		// 2007 protocol: Check for ':' prefix indicating filenames table
-		bool bIsFilenames = false;
-		char prefix = MSG_GetReadBuf()->PeekUBitLong( 8 );
-		if ( prefix == ':' )
-		{
-			bIsFilenames = true;
-			MSG_ReadByte(); // consume the prefix
-		}
-
 		char tableName[ 256 ];
-		const char *pReadName = MSG_ReadString();
-		if ( !pReadName || MSG_IsOverflowed() )
-		{
-			Warning( "ParseTableDefinitions: Failed to read table name for table %d\n", i );
-			return;
-		}
-		Q_strncpy( tableName, pReadName, sizeof( tableName ) );
-
-		// Validate table name - must be non-empty
-		if ( tableName[0] == '\0' )
-		{
-			Warning( "ParseTableDefinitions: Empty table name at index %d - buffer may be corrupted\n", i );
-			return;
-		}
+		Q_strncpy( tableName, MSG_ReadString(), sizeof( tableName ) );
 
 		int maxentries = MSG_ReadShort();
-
-		// Check overflow after reading maxentries
-		if ( MSG_IsOverflowed() )
-		{
-			Warning( "ParseTableDefinitions: Buffer overflow reading maxentries for table '%s'\n", tableName );
-			return;
-		}
-
-		// Validate maxentries - must be > 0 and a power of 2
-		// If invalid, message buffer is likely corrupted
-		if ( maxentries <= 0 )
-		{
-			Warning( "ParseTableDefinitions: Invalid maxentries %d for table '%s' - buffer may be corrupted\n", maxentries, tableName );
-			return;
-		}
-		// Check if power of 2
-		if ( (maxentries & (maxentries - 1)) != 0 )
-		{
-			Warning( "ParseTableDefinitions: maxentries %d not power of 2 for '%s' - buffer may be corrupted\n", maxentries, tableName );
-			return;
-		}
-		// Sanity check - maxentries shouldn't be unreasonably large
-		if ( maxentries > 65536 )
-		{
-			Warning( "ParseTableDefinitions: maxentries %d too large for '%s' - buffer may be corrupted\n", maxentries, tableName );
-			return;
-		}
-
-		// Calculate entry bits
-		int entryBits = Q_log2( maxentries );
-
-		// 2007 protocol: Read number of entries
-		int usedentries = MSG_ReadBitLong( entryBits + 1 );
-
-		// Debug: Log table info being parsed
-		DevMsg( "ParseTableDefinitions: Reading table '%s' (maxentries=%d, entryBits=%d, usedentries=%d)\n",
-			tableName, maxentries, entryBits, usedentries );
-
-		// Validate usedentries
-		if ( usedentries < 0 || usedentries > maxentries )
-		{
-			Warning( "ParseTableDefinitions: Invalid usedentries %d (max %d) for table '%s'\n",
-				usedentries, maxentries, tableName );
-			return;
-		}
-
-		// Read data length in bits (24 bits to support larger tables like soundprecache)
-		// Original 2007 protocol used 20 bits, but we need more for GMod-compatible servers
-		int dataLengthBits = MSG_ReadBitLong( 24 );
-
-		DevMsg( "ParseTableDefinitions: Table '%s' dataLengthBits=%d\n", tableName, dataLengthBits );
-
-		if ( dataLengthBits < 0 )
-		{
-			Warning( "ParseTableDefinitions: Invalid data length %d for table '%s'\n", dataLengthBits, tableName );
-			return;
-		}
-
-		// 2007 protocol: Read user data fixed size info
-		bool bUserDataFixedSize = MSG_ReadOneBit() ? true : false;
-		int nUserDataSize = 0;
-		int nUserDataSizeBits = 0;
-
-		if ( bUserDataFixedSize )
-		{
-			nUserDataSize = MSG_ReadBitLong( 12 );
-			nUserDataSizeBits = MSG_ReadBitLong( 4 );
-		}
-
-		// Check overflow after reading header
-		if ( MSG_IsOverflowed() )
-		{
-			Warning( "ParseTableDefinitions: Buffer overflow reading header for table '%s'\n", tableName );
-			return;
-		}
+		assert( maxentries >= 0 );
 
 		TABLEID id = AddTable( tableName, maxentries );
-		if ( id == INVALID_STRING_TABLE )
-		{
-			Warning( "ParseTableDefinitions: Failed to add table '%s'\n", tableName );
-			return;
-		}
+		assert( id != INVALID_STRING_TABLE );
 
 		CNetworkStringTableClient *table = GetTable( id );
-		if ( !table )
-		{
-			Warning( "ParseTableDefinitions: Failed to get table '%s'\n", tableName );
-			return;
-		}
-
-		// Store user data fixed size info in table (for later use in ParseUpdate)
-		table->SetUserDataInfo( bUserDataFixedSize, nUserDataSize, nUserDataSizeBits );
+		assert( table );
 
 		// Let engine hook callbacks before we read in any data values at all
 		if ( !CL_InstallEngineStringTableCallback( tableName ) )
@@ -973,258 +708,71 @@ void CNetworkStringTableContainerClient::ParseTableDefinitions( void )
 			g_ClientDLL->InstallStringTableCallback( tableName );
 		}
 
-		// Track bit position before reading entries
-		int startBit = MSG_GetReadBuf()->GetNumBitsRead();
-
-		// 2007 protocol: Use delta encoding for entry indices
-		int lastEntry = -1;
+		// Original protocol: Read number of entries (entryBits bits, NOT +1)
+		int usedentries = MSG_ReadBitLong( table->GetEntryBits() );
 
 		for ( int j = 0; j < usedentries; j++ )
 		{
-			// Check overflow at start of each entry
-			if ( MSG_IsOverflowed() )
-			{
-				Warning( "ParseTableDefinitions: Buffer overflow at entry %d of table '%s'\n", j, tableName );
-				return;
-			}
-
-			// 2007 protocol: Delta encoding for entry index
-			// If bit is 1, use lastEntry + 1, else read full index
-			int entryIndex;
-			if ( MSG_ReadOneBit() )
-			{
-				entryIndex = lastEntry + 1;
-			}
-			else
-			{
-				entryIndex = MSG_ReadBitLong( entryBits );
-			}
-			lastEntry = entryIndex;
-
-			// Validate entry index
-			if ( entryIndex < 0 || entryIndex >= maxentries )
-			{
-				Warning( "ParseTableDefinitions: Invalid entry index %d in table '%s'\n", entryIndex, tableName );
-				return;
-			}
-
 			char entry[ 1024 ];
 			entry[ 0 ] = 0;
-			const char *pEntry = NULL;
 
-			// 2007 protocol: Check if string is included
-			if ( MSG_ReadOneBit() )
+			bool substringcheck = MSG_ReadOneBit() ? true : false;
+			if ( substringcheck )
 			{
-				// Has string data
-				bool substringcheck = MSG_ReadOneBit() ? true : false;
-				if ( substringcheck )
-				{
-					// 2007 protocol: Fixed 5-bit history index
-					int index = MSG_ReadBitLong( 5 );
-
-					// Validate history index
-					if ( index < 0 || index >= history.Count() )
-					{
-						Warning( "ParseTableDefinitions: Invalid history index %d (count %d) in table '%s'\n",
-							index, history.Count(), tableName );
-						return;
-					}
-
-					int bytestocopy = MSG_ReadBitLong( SUBSTRING_BITS );
-
-					// Validate bytes to copy
-					if ( bytestocopy < 0 || bytestocopy > (int)sizeof( history[index].string ) )
-					{
-						Warning( "ParseTableDefinitions: Invalid bytestocopy %d in table '%s'\n", bytestocopy, tableName );
-						return;
-					}
-
-					Q_strncpy( entry, history[ index ].string, bytestocopy + 1 );
-
-					char substr[ 1024 ];
-					MSG_GetReadBuf()->ReadString( substr, sizeof( substr ) );
-					Q_strncat( entry, substr, sizeof( entry ), COPY_ALL_CHARACTERS );
-				}
-				else
-				{
-					MSG_GetReadBuf()->ReadString( entry, sizeof( entry ) );
-				}
-
-				pEntry = entry;
-			}
-
-			// Check overflow after reading entry string
-			if ( MSG_IsOverflowed() )
-			{
-				Warning( "ParseTableDefinitions: Buffer overflow reading entry string %d in table '%s'\n", j, tableName );
-				return;
-			}
-
-			// Read userdata
-			unsigned char tempbuf[ CNetworkStringTableItem::MAX_USERDATA_SIZE ];
-			memset( tempbuf, 0, sizeof( tempbuf ) );
-			const void *pUserData = NULL;
-			int nBytes = 0;
-
-			if ( MSG_ReadOneBit() )
-			{
-				if ( bUserDataFixedSize )
-				{
-					// 2007 protocol: Fixed size user data
-					nBytes = nUserDataSize;
-					if ( nBytes > 0 && nBytes <= (int)sizeof( tempbuf ) )
-					{
-						tempbuf[nBytes - 1] = 0; // Safety clear
-						MSG_GetReadBuf()->ReadBits( tempbuf, nUserDataSizeBits );
-					}
-				}
-				else
-				{
-					// Variable size user data
-					nBytes = MSG_ReadBitLong( CNetworkStringTableItem::MAX_USERDATA_BITS );
-
-					// Validate nBytes
-					if ( nBytes < 0 || nBytes > CNetworkStringTableItem::MAX_USERDATA_SIZE )
-					{
-						Warning( "ParseTableDefinitions: Invalid userdata size %d in table '%s'\n", nBytes, tableName );
-						return;
-					}
-
-					if ( nBytes > 0 )
-					{
-						MSG_GetReadBuf()->ReadBytes( tempbuf, nBytes );
-					}
-				}
-
-				pUserData = tempbuf;
-			}
-
-			// Check overflow after reading user data
-			if ( MSG_IsOverflowed() )
-			{
-				Warning( "ParseTableDefinitions: Buffer overflow reading userdata in table '%s'\n", tableName );
-				return;
-			}
-
-			// Check if we are updating an old entry or adding a new one
-			if ( entryIndex < table->GetNumStrings() )
-			{
-				// Update existing entry
-				if ( pEntry )
-				{
-					table->SetString( entryIndex, pEntry );
-				}
-				table->SetStringUserData( entryIndex, nBytes, pUserData );
+				// Original protocol: Variable-length history index based on history size
+				int recvbits = Q_log2( history.Count() ) + 1;
+				int index = MSG_ReadBitLong( recvbits );
+				int bytestocopy = MSG_ReadBitLong( SUBSTRING_BITS );
+				Q_strncpy( entry, history[ index ].string, bytestocopy + 1 );
+				Q_strcat( entry, MSG_ReadString() );
 			}
 			else
 			{
-				// Add new entry (should be sequential)
-				if ( pEntry == NULL )
-				{
-					Warning( "ParseTableDefinitions: NULL string for new entry %d in table '%s'\n", entryIndex, tableName );
-					pEntry = ""; // Prevent crash
-				}
-				table->AddString( pEntry, nBytes, pUserData );
+				Q_strncpy( entry, MSG_ReadString(), sizeof( entry ) );
 			}
 
-			// Update history
-			if ( history.Count() > 31 )
+			if ( MSG_ReadOneBit() )
+			{
+				byte data[ CNetworkStringTableItem::MAX_USERDATA_SIZE ];
+				int nBytes = MSG_ReadBitLong( CNetworkStringTableItem::MAX_USERDATA_BITS );
+				MSG_GetReadBuf()->ReadBytes( data, nBytes );
+
+				table->AddString( entry, nBytes, data );
+			}
+			else
+			{
+				table->AddString( entry );
+			}
+
+			// Update history - original protocol uses >= 31
+			if ( history.Count() >= 31 )
 			{
 				history.Remove( 0 );
 			}
 
 			StringHistoryEntry she;
-			if ( pEntry )
-			{
-				Q_strncpy( she.string, pEntry, sizeof( she.string ) );
-			}
-			else if ( entryIndex < table->GetNumStrings() )
-			{
-				Q_strncpy( she.string, table->GetString( entryIndex ), sizeof( she.string ) );
-			}
-			else
-			{
-				she.string[0] = '\0';
-			}
+			Q_strncpy( she.string, entry, sizeof( she.string ) );
 			history.AddToTail( she );
 		}
-
-		// Verify we read the expected number of bits
-		int endBit = MSG_GetReadBuf()->GetNumBitsRead();
-		int bitsRead = endBit - startBit;
-		if ( bitsRead != dataLengthBits )
-		{
-			Warning( "ParseTableDefinitions: Bit count mismatch for table '%s': read %d bits, expected %d bits\n",
-				tableName, bitsRead, dataLengthBits );
-		}
-
-		DevMsg( "ParseTableDefinitions: Loaded table '%s' with %d entries (fixedsize=%d, userdata=%d bits, dataBits=%d)\n",
-			tableName, usedentries, bUserDataFixedSize, nUserDataSizeBits, dataLengthBits );
 	}
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Parse string table update with error handling (2007 protocol)
+// Purpose: Parse string table update using original LeakNet 2003 protocol
 //-----------------------------------------------------------------------------
 void CNetworkStringTableContainerClient::ParseUpdate( void )
 {
-	// Check for buffer overflow before reading
-	if ( MSG_IsOverflowed() )
-	{
-		Warning( "CNetworkStringTableContainerClient::ParseUpdate: Buffer already overflowed\n" );
-		return;
-	}
-
-	// 2007 protocol: Read table ID (5 bits for up to 32 tables)
 	TABLEID tableId;
-	tableId = MSG_ReadBitLong( 5 );
-
-	// Check for overflow after reading table ID
-	if ( MSG_IsOverflowed() )
-	{
-		Warning( "CNetworkStringTableContainerClient::ParseUpdate: Buffer overflow reading table ID\n" );
-		return;
-	}
-
+	tableId = MSG_ReadBitLong( Q_log2( MAX_TABLES ) );
 	if ( tableId < 0 || tableId >= m_Tables.Size() )
 	{
-		Warning( "CNetworkStringTableContainerClient::ParseUpdate: Invalid table id %i (max %d)\n",
-			tableId, m_Tables.Size() );
-		return;
+		Host_Error( "Server sent bogus table id %i\n", tableId );
 	}
 
 	CNetworkStringTableClient *table = m_Tables[ tableId ];
-	if ( !table )
-	{
-		Warning( "CNetworkStringTableContainerClient::ParseUpdate: Null table at id %i\n", tableId );
-		return;
-	}
+	assert( table );
 
-	// 2007 protocol: Read number of changed entries
-	int numChangedEntries = 1; // Default to 1 for backwards compatibility
-	if ( MSG_ReadOneBit() )
-	{
-		numChangedEntries = MSG_ReadBitLong( 16 );
-	}
-
-	// 2007 protocol: Read data length in bits
-	int dataLengthBits = MSG_ReadBitLong( 20 );
-	if ( dataLengthBits < 0 )
-	{
-		Warning( "CNetworkStringTableContainerClient::ParseUpdate: Invalid data length for table '%s'\n",
-			table->GetTableName() );
-		return;
-	}
-
-	// Check for overflow
-	if ( MSG_IsOverflowed() )
-	{
-		Warning( "CNetworkStringTableContainerClient::ParseUpdate: Buffer overflow reading header for table '%s'\n",
-			table->GetTableName() );
-		return;
-	}
-
-	table->ParseUpdate( numChangedEntries );
+	table->ParseUpdate();
 }
 
 //-----------------------------------------------------------------------------

@@ -14,6 +14,7 @@
 #include "cbase.h"
 #include "c_basetempentity.h"
 #include "client_textmessage.h"
+#include "bitbuf.h"
 
 #define NETWORK_MESSAGE1 "__NETMESSAGE__1"
 #define NETWORK_MESSAGE2 "__NETMESSAGE__2"
@@ -23,7 +24,7 @@
 
 static const char *gNetworkMessageNames[MAX_NETMESSAGE] = { NETWORK_MESSAGE1, NETWORK_MESSAGE2, NETWORK_MESSAGE3, NETWORK_MESSAGE4 };
 
-void DispatchHudText( const char *pszName,  int iSize, void *pbuf );
+void DispatchHudText( bf_read &msg );
 
 //-----------------------------------------------------------------------------
 // Purpose: TextMessage
@@ -131,7 +132,13 @@ void C_TETextMessage::PostDataUpdate( DataUpdateType_t updateType )
 
 	Q_strncpy( (char *)pNetMessage->pMessage, m_szMessage, sizeof( m_szMessage ) );
 
-	DispatchHudText( "HudText", Q_strlen( pNetMessage->pName ) + 1, (void *)pNetMessage->pName );
+	// Create a bf_write to serialize the message name, then read it back as bf_read
+	char msgBuf[256];
+	bf_write msgWrite( "HudText", msgBuf, sizeof(msgBuf) );
+	msgWrite.WriteString( pNetMessage->pName );
+
+	bf_read msgRead( "HudText", msgBuf, msgWrite.GetNumBytesWritten() );
+	DispatchHudText( msgRead );
 }
 
 IMPLEMENT_CLIENTCLASS_EVENT_DT(C_TETextMessage, DT_TETextMessage, CTETextMessage)

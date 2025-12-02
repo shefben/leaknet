@@ -1037,7 +1037,37 @@ int COM_FindFile( const char *filename, FileHandle_t *file )
 {
 	assert( file );
 
-	*file = g_pFileSystem->Open( filename, "rb" );
+	// Check if filename has embedded path ID (starts with //)
+	// If so, let the filesystem handle it directly without specifying a pathID
+	if ( filename[0] == '/' && filename[1] == '/' )
+	{
+		*file = g_pFileSystem->Open( filename, "rb", NULL );
+		if ( *file )
+		{
+			com_filesize = g_pFileSystem->Size( *file );
+		}
+		else
+		{
+			com_filesize = -1;
+		}
+		return com_filesize;
+	}
+
+	// Search order for models, sounds, and other game files:
+	// 1) Current mod directory (MOD pathID) - check mod first for config files
+	// 2) BSP pak files (GAME pathID)
+	// 3) hl2 directory (HL2 pathID)
+
+	*file = g_pFileSystem->Open( filename, "rb", "MOD" );
+	if ( !*file )
+	{
+		*file = g_pFileSystem->Open( filename, "rb", "GAME" );
+	}
+	if ( !*file )
+	{
+		*file = g_pFileSystem->Open( filename, "rb", "HL2" );
+	}
+
 	if ( *file )
 	{
 		com_filesize = g_pFileSystem->Size( *file );

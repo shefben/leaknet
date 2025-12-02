@@ -333,12 +333,12 @@ private:
 									OptimizedModel::FileHeader_t* pVtxHdr,
 									int numStudioMeshes, studiomeshdata_t **ppStudioMeshes,
 									int lodID );
-	void R_StudioCreateSingleMesh(mstudiomesh_t* pMesh, 
+	void R_StudioCreateSingleMesh(mstudiomesh_t* pMesh,
 		OptimizedModel::MeshHeader_t* pVtxMesh, int numBones, studiomeshdata_t* pMeshData,
-		studiohdr_t *pStudioHdr );
+		studiohdr_t *pStudioHdr, bool bVtxIsV6 );
 	void R_StudioBuildMeshGroup( studiomeshgroup_t* pMeshGroup,
 			OptimizedModel::StripGroupHeader_t *pStripGroup, mstudiomesh_t* pMesh,
-			studiohdr_t *pStudioHdr );
+			studiohdr_t *pStudioHdr, bool bVtxIsV6 );
 	void R_StudioBuildMeshStrips( studiomeshgroup_t* pMeshGroup,
 								OptimizedModel::StripGroupHeader_t *pStripGroup );
 	bool R_AddVertexToMesh( CMeshBuilder& meshBuilder,

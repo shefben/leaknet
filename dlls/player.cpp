@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: Functions dealing with the player.
 //
@@ -49,6 +49,10 @@
 #include "usermessages.h"
 #include "gamevars_shared.h"
 #include "world.h"
+#include "gameinterface.h"
+#include "igameevents.h"
+#include "KeyValues.h"
+#include "recipientfilter.h"
 
 static ConVar	sv_aim( "sv_aim", "1", FCVAR_ARCHIVE | FCVAR_SERVER, "Autoaim state" );
 static ConVar dsp_explosion_effect_duration( "dsp_explosion_effect_duration", "4", 0, "How long to apply confusion/ear-ringing effect after taking damage from blast." );
@@ -3659,6 +3663,15 @@ void CBasePlayer::Spawn( void )
 
 	m_vecSmoothedVelocity = vec3_origin;
 	InitVCollision();
+
+	// Fire player_spawn game event
+	if ( gameeventmanager )
+	{
+		KeyValues *event = new KeyValues( "player_spawn" );
+		event->SetInt( "userid", engine->GetPlayerUserId( edict() ) );
+		CRelieableBroadcastRecipientFilter filter;
+		gameeventmanager->FireEvent( event, &filter );
+	}
 }
 
 void CBasePlayer::Precache( void )
@@ -4343,8 +4356,17 @@ void CBasePlayer::ImpulseCommands( )
 void CBasePlayer::CheatImpulseCommands( int iImpulse )
 {
 #if !defined( HLDEMO_BUILD )
-	if ( g_iWeaponCheat == 0 )
+	// Check sv_cheats directly instead of cached g_iWeaponCheat
+	// This ensures cheat commands work immediately after sv_cheats is changed
+	ConVar const *cheats = cvar->FindVar( "sv_cheats" );
+
+	// Debug output to help diagnose impulse 101 issues
+	DevMsg("CheatImpulseCommands: impulse=%d, sv_cheats cvar=%p, value=%d\n",
+		iImpulse, cheats, cheats ? cheats->GetInt() : -1);
+
+	if ( !cheats || cheats->GetInt() == 0 )
 	{
+		DevMsg("CheatImpulseCommands: Cheats disabled, ignoring impulse %d\n", iImpulse);
 		return;
 	}
 

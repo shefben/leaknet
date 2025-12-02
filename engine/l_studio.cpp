@@ -126,33 +126,46 @@ bool Mod_LoadStudioModel (model_t *mod, void *buffer, bool zerostructure )
 #endif // STUDIO_VERSION == 37
 #endif // _DEBUG
 
-	Studio_ConvertStudioHdrToNewVersion( phdr );
-	
-	version = LittleLong (phdr->version);
-	if (version != STUDIO_VERSION)
+	if ( !Studio_ConvertStudioHdrToNewVersion( phdr ) )
 	{
 		memset( phdr, 0, sizeof( studiohdr_t ));
 
-		Msg("%s has wrong version number (%i should be %i)\n", mod->name, version, STUDIO_VERSION);
+		version = LittleLong (phdr->version);
+		Msg("%s has unsupported version number (%i, supported range: %i-%i)\n",
+			mod->name, version, STUDIO_VERSION_MIN, STUDIO_VERSION_MAX);
 		return false;
 	}
 
+	version = LittleLong (phdr->version);
+
 
 	// Make sure we don't have too many verts in each model (will kill decal vertex caching if so)
-	int bodyPartID;
-	for( bodyPartID = 0; bodyPartID < phdr->numbodyparts; bodyPartID++ )
+	// NOTE: Only check v37 models. v44+ models have different mstudiomodel_t layout with
+	// additional vertexdata member, causing structure size mismatch when iterating.
+	// v44+ models also use external VVD files for vertex data, making embedded counts unreliable.
+	if (phdr->version == STUDIO_VERSION_37)
 	{
-		mstudiobodyparts_t *pBodyPart = phdr->pBodypart( bodyPartID );
-		int modelID;
-		for( modelID = 0; modelID < pBodyPart->nummodels; modelID++ )
+		int bodyPartID;
+		for( bodyPartID = 0; bodyPartID < phdr->numbodyparts; bodyPartID++ )
 		{
-			mstudiomodel_t *pModel = pBodyPart->pModel( modelID );
-//			Assert( pModel->numvertices < MAXSTUDIOVERTS );
-			if( pModel->numvertices >= MAXSTUDIOVERTS )
+			mstudiobodyparts_t *pBodyPart = phdr->pBodypart( bodyPartID );
+			if (!pBodyPart)
+				continue;
+
+			int modelID;
+			for( modelID = 0; modelID < pBodyPart->nummodels; modelID++ )
 			{
-				Warning( "%s exceeds MAXSTUDIOVERTS (%d >= %d)\n", phdr->name, pModel->numvertices,
-					( int )MAXSTUDIOVERTS );
-				return false;
+				mstudiomodel_t *pModel = pBodyPart->pModel( modelID );
+				if (!pModel)
+					continue;
+
+	//			Assert( pModel->numvertices < MAXSTUDIOVERTS );
+				if( pModel->numvertices >= MAXSTUDIOVERTS )
+				{
+					Warning( "%s exceeds MAXSTUDIOVERTS (%d >= %d)\n", phdr->name, pModel->numvertices,
+						( int )MAXSTUDIOVERTS );
+					return false;
+				}
 			}
 		}
 	}
@@ -187,16 +200,11 @@ bool Mod_LoadStudioModel (model_t *mod, void *buffer, bool zerostructure )
 			mod->radius = fabs(mod->maxs[i]);
 	}
 
-	if (version != STUDIO_VERSION)
-	{
-		return false;
-	}
-	else
-	{
-		// force the collision to load
-		Mod_VCollide( mod );
-		return true;
-	}
+	// Version was already validated by Studio_ConvertStudioHdrToNewVersion above
+	// All versions in supported range (v37-v48) should load successfully
+	// force the collision to load
+	Mod_VCollide( mod );
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -1181,10 +1189,11 @@ private:
 	void ComputeModelVertexLightingOld( mstudiomodel_t *pModel, 
 		matrix3x4_t& matrix, const LightingState_t &lightingState, color24 *pLighting );
 
-	// Old-style computation of vertex lighting
-	void ComputeModelVertexLighting( IHandleEntity *pProp, 
+	// New-style computation of vertex lighting
+	void ComputeModelVertexLighting( IHandleEntity *pProp,
 		mstudiomodel_t *pModel, OptimizedModel::ModelLODHeader_t *pVtxLOD,
-		matrix3x4_t& matrix, Vector4D *pTempMem, color24 *pLighting );
+		matrix3x4_t& matrix, Vector4D *pTempMem, color24 *pLighting,
+		studiohdr_t *pStudioHdr, bool bVtxIsV6 );
 
 	// Model instance data
 	CUtlLinkedList< ModelInstance_t, ModelInstanceHandle_t > m_ModelInstances; 
@@ -1976,9 +1985,10 @@ void CModelRender::ComputeModelVertexLightingOld( mstudiomodel_t *pModel,
 //-----------------------------------------------------------------------------
 // New-style computation of vertex lighting
 //-----------------------------------------------------------------------------
-void CModelRender::ComputeModelVertexLighting( IHandleEntity *pProp, 
+void CModelRender::ComputeModelVertexLighting( IHandleEntity *pProp,
 	mstudiomodel_t *pModel, OptimizedModel::ModelLODHeader_t *pVtxLOD,
-	matrix3x4_t& matrix, Vector4D *pTempMem, color24 *pLighting )
+	matrix3x4_t& matrix, Vector4D *pTempMem, color24 *pLighting,
+	studiohdr_t *pStudioHdr, bool bVtxIsV6 )
 {
 #ifndef SWDS
 	int i;
@@ -1991,7 +2001,7 @@ void CModelRender::ComputeModelVertexLighting( IHandleEntity *pProp,
 		VectorTransform( pos, matrix, worldPos );
 		VectorRotate( normal, matrix, worldNormal );
 		bool bNonSolid = ComputeVertexLightingFromSphericalSamples( worldPos, worldNormal, pProp, &(pTempMem[i].AsVector3D()) );
-		
+
 		int nByte = i >> 3;
 		int nBit = i & 0x7;
 
@@ -2020,7 +2030,7 @@ void CModelRender::ComputeModelVertexLighting( IHandleEntity *pProp,
 		for( int stripGroupID = 0; stripGroupID < pVtxMesh->numStripGroups; ++stripGroupID )
 		{
 			OptimizedModel::StripGroupHeader_t* pStripGroup = pVtxMesh->pStripGroup(stripGroupID);
-			
+
 			// Iterate over all indices
 			Assert( pStripGroup->numIndices % 3 == 0 );
 			for (i = 0; i < pStripGroup->numIndices; i += 3)
@@ -2029,10 +2039,20 @@ void CModelRender::ComputeModelVertexLighting( IHandleEntity *pProp,
 				unsigned short nIndex2 = *pStripGroup->pIndex( i + 1 );
 				unsigned short nIndex3 = *pStripGroup->pIndex( i + 2 );
 
+				// VTX v6 uses Vertex_v37_t (15 bytes), VTX v7+ uses Vertex_t (9 bytes)
 				int v[3];
-				v[0] = pStripGroup->pVertex( nIndex1 )->origMeshVertID + pMesh->vertexoffset;
-				v[1] = pStripGroup->pVertex( nIndex2 )->origMeshVertID + pMesh->vertexoffset;
-				v[2] = pStripGroup->pVertex( nIndex3 )->origMeshVertID + pMesh->vertexoffset;
+				if (bVtxIsV6)
+				{
+					v[0] = pStripGroup->pVertex_V37( nIndex1 )->origMeshVertID + pMesh->vertexoffset;
+					v[1] = pStripGroup->pVertex_V37( nIndex2 )->origMeshVertID + pMesh->vertexoffset;
+					v[2] = pStripGroup->pVertex_V37( nIndex3 )->origMeshVertID + pMesh->vertexoffset;
+				}
+				else
+				{
+					v[0] = pStripGroup->pVertex( nIndex1 )->origMeshVertID + pMesh->vertexoffset;
+					v[1] = pStripGroup->pVertex( nIndex2 )->origMeshVertID + pMesh->vertexoffset;
+					v[2] = pStripGroup->pVertex( nIndex3 )->origMeshVertID + pMesh->vertexoffset;
+				}
 
 				Assert( v[0] < pModel->numvertices );
 				Assert( v[1] < pModel->numvertices );
@@ -2171,7 +2191,7 @@ void CModelRender::UpdateStaticPropColorData( IHandleEntity *pProp, ModelInstanc
 				else
 				{
 					tmpColorMem.EnsureCapacity( pModel->numvertices );
-					ComputeModelVertexLighting( pProp, pModel, pVtxLOD, matrix, tmpColorMem.Base(), tmpLightingMem.Base() );
+					ComputeModelVertexLighting( pProp, pModel, pVtxLOD, matrix, tmpColorMem.Base(), tmpLightingMem.Base(), pStudioHdr, pVtxHdr->IsV6() );
 				}
 
 				// Iterate over all the meshes....
@@ -2197,8 +2217,19 @@ void CModelRender::UpdateStaticPropColorData( IHandleEntity *pProp, ModelInstanc
 						int i;
 						for (i = 0; i < pStripGroup->numVerts; ++i)
 						{
-							OptimizedModel::Vertex_t *pVtxVertex = pStripGroup->pVertex(i);
-							int nVertIndex = pMesh->vertexoffset + pVtxVertex->origMeshVertID;
+							// VTX v6 uses Vertex_v37_t (15 bytes), VTX v7+ uses Vertex_t (9 bytes)
+							// Must check VTX file version, not MDL version!
+							int nVertIndex;
+							if (pVtxHdr->IsV6())
+							{
+								OptimizedModel::Vertex_v37_t *pVtxVertex = pStripGroup->pVertex_V37(i);
+								nVertIndex = pMesh->vertexoffset + pVtxVertex->origMeshVertID;
+							}
+							else
+							{
+								OptimizedModel::Vertex_t *pVtxVertex = pStripGroup->pVertex(i);
+								nVertIndex = pMesh->vertexoffset + pVtxVertex->origMeshVertID;
+							}
 							// Add bounds checking to prevent crash
 							if (nVertIndex >= pModel->numvertices)
 							{

@@ -214,7 +214,10 @@ void CL_TakeSnapshotAndSwap();
 //
 void CL_ParseServerMessage ( qboolean normal_message = true );
 void CL_WriteMessageHistory( void );
-int DispatchDirectUserMsg(const char *pszName, int iSize, void *pBuf);
+// 2007 protocol - dispatch user message by type index with bf_read
+int DispatchDirectUserMsg( int msg_type, bf_read &msg_data );
+// Legacy helper - dispatch by message name (for internal engine use only)
+int DispatchDirectUserMsgByName( const char *pszName, int iSize, void *pBuf );
 void CL_PostReadMessages();
 
 //

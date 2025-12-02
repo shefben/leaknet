@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -6,6 +6,7 @@
 //=============================================================================
 
 #include "CreateMultiplayerGameServerPage.h"
+#include "CreateMultiplayerGameDialog.h"
 
 using namespace vgui;
 
@@ -54,15 +55,32 @@ CCreateMultiplayerGameServerPage::CCreateMultiplayerGameServerPage(vgui::Panel *
 		m_iMaxPlayers = 20; // this was the default for the old launcher
 	}
 
-	// initialize hostname
-	SetControlString("ServerNameEdit", ModInfo().GetGameDescription());//szHostName);
+	// Load settings from server config if available
+	LoadServerSettings();
+
+	// initialize hostname (use config or default)
+	if (strlen(m_szHostName) == 0)
+	{
+		SetControlString("ServerNameEdit", ModInfo().GetGameDescription());//szHostName);
+	}
+	else
+	{
+		SetControlString("ServerNameEdit", m_szHostName);
+	}
 
 	// initialize password
 //	SetControlString("PasswordEdit", engine->pfnGetCvarString("sv_password"));
-	ConVar const *var = cvar->FindVar( "sv_password" );
-	if ( var )
+	if (strlen(m_szPassword) > 0)
 	{
-		SetControlString("PasswordEdit", var->GetString() );
+		SetControlString("PasswordEdit", m_szPassword);
+	}
+	else
+	{
+		ConVar const *var = cvar->FindVar( "sv_password" );
+		if ( var )
+		{
+			SetControlString("PasswordEdit", var->GetString() );
+		}
 	}
 
 
@@ -201,5 +219,44 @@ const char *CCreateMultiplayerGameServerPage::GetPassword()
 
 const char *CCreateMultiplayerGameServerPage::GetHostName()
 {
-	return GetControlString("ServerNameEdit", "Half-Life");	
+	return GetControlString("ServerNameEdit", "Half-Life");
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Loads server settings from serverconfig.txt
+//-----------------------------------------------------------------------------
+void CCreateMultiplayerGameServerPage::LoadServerSettings()
+{
+	// Get the parent dialog to access server config data
+	CCreateMultiplayerGameDialog *pParent =
+		dynamic_cast<CCreateMultiplayerGameDialog *>(GetParent()->GetParent());
+
+	if (!pParent)
+		return;
+
+	KeyValues *pServerConfig = pParent->GetServerConfig();
+	if (!pServerConfig)
+		return;
+
+	// Load hostname setting
+	const char *hostname = pServerConfig->GetString("hostname", "");
+	if (hostname && strlen(hostname) > 0)
+	{
+		Q_strncpy(m_szHostName, hostname, DATA_STR_LENGTH);
+	}
+
+	// Load max players setting
+	int maxPlayers = pServerConfig->GetInt("maxplayers", -1);
+	if (maxPlayers > 0)
+	{
+		m_iMaxPlayers = maxPlayers;
+	}
+
+	// Note: Password is typically not saved to config files for security
+	// but we'll check if it exists
+	const char *password = pServerConfig->GetString("password", "");
+	if (password && strlen(password) > 0)
+	{
+		Q_strncpy(m_szPassword, password, DATA_STR_LENGTH);
+	}
 }

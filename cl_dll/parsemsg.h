@@ -1,21 +1,26 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: User message parsing utilities (2007 protocol compatible)
+//          Provides READ_* macros that work with bf_read buffers
 //
-// $NoKeywords: $
-//=============================================================================
+//=============================================================================//
+
 #if !defined( PARSEMSG_H )
 #define PARSEMSG_H
 #ifdef _WIN32
 #pragma once
 #endif
 
+#include "bitbuf.h"
+
 class QAngle;
 class Vector;
 
-void	BEGIN_READ( void *buf, int size );
+// Setup functions - use one of these before READ_* functions
+void	BEGIN_READ( bf_read &buf );					// 2007 protocol - use bf_read directly
+void	BEGIN_READ( void *buf, int size );			// Legacy support - wraps void* in bf_read
 
-// bytewise
+// Byte-wise reading functions
 int		READ_CHAR( void );
 int		READ_BYTE( void );
 int		READ_SHORT( void );
@@ -30,7 +35,7 @@ void	READ_VEC3NORMAL( Vector& vec );
 float	READ_HIRESANGLE( void );
 void	READ_ANGLES( QAngle &angles );
 
-// bitwise
+// Bit-wise reading functions
 bool	READ_BOOL( void );
 unsigned int READ_UBITLONG( int numbits );
 int		READ_SBITLONG( int numbits );

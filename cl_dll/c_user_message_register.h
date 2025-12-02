@@ -1,8 +1,12 @@
-//====== Copyright © 1996-2003, Valve Corporation, All rights reserved. =======
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose: Client-side user message hook registration system (2007 protocol)
 //
-//=============================================================================
+// Provides two ways to register user message handlers:
+// 1. HOOK_MESSAGE macro - for registering at initialization time
+// 2. USER_MESSAGE_REGISTER macro - for static/global registration
+//
+//=============================================================================//
 
 #ifndef C_USER_MESSAGE_REGISTER_H
 #define C_USER_MESSAGE_REGISTER_H
@@ -10,35 +14,55 @@
 #pragma once
 #endif
 
-
 #include "usermessages.h"
-#include "parsemsg.h"
 
-
-// This provides an alternative to HOOK_MESSAGE, where you can declare it globally
-// instead of finding a place to run it.
-// It registers a function called __MsgFunc_<msgName>
+//-----------------------------------------------------------------------------
+// USER_MESSAGE_REGISTER: Global/static registration macro
+//
+// Use this when you want to declare message handlers globally without needing
+// to call them from an initialization function. Registers a function with the
+// naming convention __MsgFunc_<msgName>
+//
+// Example:
+//   void __MsgFunc_SayText( bf_read &msg ) { ... }
+//   USER_MESSAGE_REGISTER( SayText )
+//-----------------------------------------------------------------------------
 #define USER_MESSAGE_REGISTER( msgName ) \
 	static CUserMessageRegister userMessageRegister_##msgName( #msgName, __MsgFunc_##msgName );
 
+//-----------------------------------------------------------------------------
+// HOOK_MESSAGE: Traditional registration macro
+//
+// Use this within initialization functions to hook message handlers.
+// The handler function must be named __MsgFunc_<name>
+//
+// Example:
+//   void __MsgFunc_SayText( bf_read &msg ) { ... }
+//   // In Init():
+//   HOOK_MESSAGE( SayText );
+//-----------------------------------------------------------------------------
+#define HOOK_MESSAGE( name ) \
+	usermessages->HookMessage( #name, __MsgFunc_##name );
 
+//-----------------------------------------------------------------------------
+// Purpose: Static registration class for user message handlers
+//          Creates a linked list of handlers registered at global init time
+//-----------------------------------------------------------------------------
 class CUserMessageRegister
 {
 public:
 	CUserMessageRegister( const char *pMessageName, pfnUserMsgHook pHookFn );
 
-	// This is called at startup to register all the user messages.
+	// Called during client initialization to register all static hooks
 	static void RegisterAll();
-
 
 private:
 	const char *m_pMessageName;
 	pfnUserMsgHook m_pHookFn;
 
-	// Linked list of all the CUserMessageRegisters.
+	// Linked list of all CUserMessageRegister instances
 	static CUserMessageRegister *s_pHead;
 	CUserMessageRegister *m_pNext;
 };
-
 
 #endif // C_USER_MESSAGE_REGISTER_H

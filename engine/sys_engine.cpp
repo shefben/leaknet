@@ -272,6 +272,17 @@ double CEngine::GetCurTime( void )
 void CEngine::TrapKey_Event( int key, bool down )
 {
 #ifndef SWDS
+	// Handle Quake console input first if visible (takes priority over GameUI)
+	if ( Con_IsUsingWonConsole() && VGui_IsConsoleVisible() && g_pQuakeConsole )
+	{
+		// Backtick toggles console - let it through to Key_Event
+		if ( key != '`' )
+		{
+			g_pQuakeConsole->HandleKeyInput( key, down );
+			return;
+		}
+	}
+
 	if ( VGui_IsGameUIVisible() || VGui_IsDebugSystemVisible() )
 	{
 		if ( down && key == K_ESCAPE )
@@ -280,7 +291,7 @@ void CEngine::TrapKey_Event( int key, bool down )
 			{
 				VGui_HideGameUI();
 			}
-			
+
 			if ( VGui_IsDebugSystemVisible() )
 			{
 				VGui_HideDebugSystem();
@@ -304,19 +315,12 @@ void CEngine::TrapKey_Event( int key, bool down )
 			return;
 		}
 
-		// Swallow ev
-		if ( down && key != K_ESCAPE && key != '`' ) // only sink down events, let up ones go into the engine to
-													 // to trigger key releases
+		// Swallow events when GameUI is visible, except escape and backtick
+		// only sink down events, let up ones go into the engine to trigger key releases
+		if ( down && key != K_ESCAPE && key != '`' )
 		{
 			return;
 		}
-	}
-
-	// Handle Quake console input if visible
-	if ( Con_IsUsingWonConsole() && VGui_IsConsoleVisible() && g_pQuakeConsole )
-	{
-		g_pQuakeConsole->HandleKeyInput( key, down );
-		return;
 	}
 
 	// Only key down events are trapped
