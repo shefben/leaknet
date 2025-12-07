@@ -161,39 +161,32 @@ void bf_write::WriteSBitLong( int data, int numbits )
 	// Do we have a valid # of bits to encode with?
 	Assert( numbits >= 1 );
 
-	// Clamp data to valid range to prevent stream corruption
-	// This is especially important for v19/v20 BSP compatibility
-	if( numbits < 32 )
-	{
-		int minVal = -(1 << (numbits-1));
-		int maxVal = (1 << (numbits-1)) - 1;
-
-		if( data < minVal )
-		{
-#ifdef _DEBUG
-			CallErrorHandler( BITBUFERROR_VALUE_OUT_OF_RANGE, GetDebugName() );
-#endif
-			data = minVal;
-		}
-		else if( data > maxVal )
-		{
-#ifdef _DEBUG
-			CallErrorHandler( BITBUFERROR_VALUE_OUT_OF_RANGE, GetDebugName() );
-#endif
-			data = maxVal;
-		}
-	}
-
 	// Note: it does this wierdness here so it's bit-compatible with regular integer data in the buffer.
 	// (Some old code writes direct integers right into the buffer).
 	if(data < 0)
 	{
+#ifdef _DEBUG
+	if( numbits < 32 )
+	{
+		// Make sure it doesn't overflow.
+
+		if( data < 0 )
+		{
+			Assert( data >= -(1 << (numbits-1)) );
+		}
+		else
+		{
+			Assert( data < (1 << (numbits-1)) );
+		}
+	}
+#endif
+
 		WriteUBitLong( (unsigned int)(0x80000000 + data), numbits - 1, false );
 		WriteOneBit( 1 );
 	}
 	else
 	{
-		WriteUBitLong((unsigned int)data, numbits - 1, false);
+		WriteUBitLong((unsigned int)data, numbits - 1);
 		WriteOneBit( 0 );
 	}
 }

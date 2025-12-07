@@ -77,8 +77,8 @@ extern qboolean		isDedicated;
 void Host_Error (const char *error, ...);
 void Host_EndGame (const char *message, ...);
 
-// user message - increased to 16KB for MOTD and other large messages
-#define MAX_USER_MSG_DATA 16384
+// user message
+#define MAX_USER_MSG_DATA 192
 
 // build info
 // day counter from 10/24/96

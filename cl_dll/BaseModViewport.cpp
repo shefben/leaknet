@@ -71,15 +71,15 @@ static CClientMOTD *GetStandaloneMOTDPanel()
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Handle MOTD user message (2007 protocol)
+// Purpose: Handle MOTD user message (2003 protocol)
 //         Works standalone without requiring TeamFortressViewport
 //-----------------------------------------------------------------------------
-void __MsgFunc_MOTD( bf_read &msg )
+void __MsgFunc_MOTD( const char *pszName, int iSize, void *pbuf )
 {
 	// If TeamFortressViewport is available, use it
 	if (gViewPortMsgs)
 	{
-		gViewPortMsgs->MsgFunc_MOTD( msg );
+		gViewPortMsgs->MsgFunc_MOTD( pszName, iSize, pbuf );
 		return;
 	}
 
@@ -90,7 +90,7 @@ void __MsgFunc_MOTD( bf_read &msg )
 		g_szMOTD[0] = '\0';
 	}
 
-	BEGIN_READ( msg );
+	BEGIN_READ( pbuf, iSize );
 
 	g_bGotAllMOTD = READ_BYTE() != 0;  // true when this is the last chunk
 
@@ -133,12 +133,12 @@ void __MsgFunc_MOTD( bf_read &msg )
 USER_MESSAGE_REGISTER( MOTD );
 
 
-void __MsgFunc_VGUIMenu( bf_read &msg )
+void __MsgFunc_VGUIMenu( const char *pszName, int iSize, void *pbuf )
 {
 	// Only call if viewport is available
 	if (gViewPortMsgs)
 	{
-		gViewPortMsgs->MsgFunc_VGUIMenu( msg );
+		gViewPortMsgs->MsgFunc_VGUIMenu( pszName, iSize, pbuf );
 	}
 }
 USER_MESSAGE_REGISTER( VGUIMenu );

@@ -66,8 +66,8 @@ public:
 	void VidInit( void );
 	bool ShouldDraw( void );
 	virtual void Paint();
-	void MsgFunc_HudText( bf_read &msg );
-	void MsgFunc_GameTitle( bf_read &msg );
+	void MsgFunc_HudText( const char *pszName, int iSize, void *pbuf );
+	void MsgFunc_GameTitle( const char *pszName, int iSize, void *pbuf );
 
 	float FadeBlend( float fadein, float fadeout, float hold, float localTime );
 	int	XPosition( float x, int width, int lineWidth );
@@ -577,12 +577,14 @@ void CHudMessage::MessageAdd( const char *pName, float time )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //-----------------------------------------------------------------------------
-void CHudMessage::MsgFunc_HudText( bf_read &msg )
+void CHudMessage::MsgFunc_HudText( const char *pszName, int iSize, void *pbuf )
 {
+	BEGIN_READ( pbuf, iSize );
+
 	char szString[2048];
-	msg.ReadString( szString, sizeof(szString) );
+	Q_strncpy( szString, READ_STRING(), sizeof(szString) );
 
 	MessageAdd( szString, gpGlobals->curtime );
 	// Remember the time -- to fix up level transitions
@@ -595,10 +597,12 @@ void CHudMessage::MsgFunc_HudText( bf_read &msg )
 #include "shake.h"
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //-----------------------------------------------------------------------------
-void CHudMessage::MsgFunc_GameTitle( bf_read &msg )
+void CHudMessage::MsgFunc_GameTitle( const char *pszName, int iSize, void *pbuf )
 {
+	BEGIN_READ( pbuf, iSize );
+
 	m_pGameTitle = TextMessageGet( "GAMETITLE" );
 	if ( m_pGameTitle != NULL )
 	{
@@ -607,7 +611,7 @@ void CHudMessage::MsgFunc_GameTitle( bf_read &msg )
 		m_bHaveMessage = true;
 	}
 
-	if ( msg.ReadByte() )
+	if ( READ_BYTE() )
 	{
 		ScreenFade_t sf;
 		memset( &sf, 0, sizeof( sf ) );
@@ -623,9 +627,9 @@ void CHudMessage::MsgFunc_GameTitle( bf_read &msg )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //-----------------------------------------------------------------------------
-void DispatchHudText( bf_read &msg )
+void DispatchHudText( const char *pszName, int iSize, void *pbuf )
 {
-	(GET_HUDELEMENT( CHudMessage ))->MsgFunc_HudText( msg );
+	(GET_HUDELEMENT( CHudMessage ))->MsgFunc_HudText( pszName, iSize, pbuf );
 }

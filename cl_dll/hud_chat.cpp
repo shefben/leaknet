@@ -818,16 +818,17 @@ void CHudChat::StopMessageMode( void )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *pszName - 
-//			iSize - 
-//			*pbuf - 
+// Purpose:
+// Input  : *pszName -
+//			iSize -
+//			*pbuf -
 //-----------------------------------------------------------------------------
-void CHudChat::MsgFunc_SayText( bf_read &msg )
+void CHudChat::MsgFunc_SayText( const char *pszName, int iSize, void *pbuf )
 {
-	msg.ReadByte();		// the client who spoke the message
+	BEGIN_READ( pbuf, iSize );
+	READ_BYTE();		// the client who spoke the message
 	char szString[2048];
-	msg.ReadString( szString, sizeof(szString) );
+	Q_strncpy( szString, READ_STRING(), sizeof(szString) );
 	Printf( "%s", szString );
 }
 
@@ -993,38 +994,40 @@ static char* ConvertCRtoNL( char *str )
 //   string: message parameter 4
 // any string that starts with the character '#' is a message name, and is used to look up the real message in titles.txt
 // the next (optional) one to four strings are parameters for that string (which can also be message names if they begin with '#')
-void CHudChat::MsgFunc_TextMsg( bf_read &msg )
+void CHudChat::MsgFunc_TextMsg( const char *pszName, int iSize, void *pbuf )
 {
-	int msg_dest = msg.ReadByte();
+	BEGIN_READ( pbuf, iSize );
+
+	int msg_dest = READ_BYTE();
 
 	static char szBuf[6][128];
 	static char szReadBuf[5][128];
 
-	msg.ReadString( szReadBuf[0], sizeof(szReadBuf[0]) );
+	Q_strncpy( szReadBuf[0], READ_STRING(), sizeof(szReadBuf[0]) );
 	char *msg_text = hudtextmessage->LookupString( szReadBuf[0], &msg_dest );
 	Q_strncpy( szBuf[0], msg_text, sizeof( szBuf[0] ) );
 	msg_text = szBuf[0];
 
 	// keep reading strings and using C format strings for subsituting the strings into the localised text string
-	msg.ReadString( szReadBuf[1], sizeof(szReadBuf[1]) );
+	Q_strncpy( szReadBuf[1], READ_STRING(), sizeof(szReadBuf[1]) );
 	char *sstr1 = hudtextmessage->LookupString( szReadBuf[1] );
 	Q_strncpy( szBuf[1], sstr1, sizeof( szBuf[1] ) );
 	sstr1 = szBuf[1];
 
 	StripEndNewlineFromString( sstr1 );  // these strings are meant for subsitution into the main strings, so cull the automatic end newlines
-	msg.ReadString( szReadBuf[2], sizeof(szReadBuf[2]) );
+	Q_strncpy( szReadBuf[2], READ_STRING(), sizeof(szReadBuf[2]) );
 	char *sstr2 = hudtextmessage->LookupString( szReadBuf[2] );
 	Q_strncpy( szBuf[2], sstr2, sizeof( szBuf[2] ) );
 	sstr2 = szBuf[2];
 
 	StripEndNewlineFromString( sstr2 );
-	msg.ReadString( szReadBuf[3], sizeof(szReadBuf[3]) );
+	Q_strncpy( szReadBuf[3], READ_STRING(), sizeof(szReadBuf[3]) );
 	char *sstr3 = hudtextmessage->LookupString( szReadBuf[3] );
 	Q_strncpy( szBuf[3], sstr3, sizeof( szBuf[3] ) );
 	sstr3 = szBuf[3];
 
 	StripEndNewlineFromString( sstr3 );
-	msg.ReadString( szReadBuf[4], sizeof(szReadBuf[4]) );
+	Q_strncpy( szReadBuf[4], READ_STRING(), sizeof(szReadBuf[4]) );
 	char *sstr4 = hudtextmessage->LookupString( szReadBuf[4] );
 	Q_strncpy( szBuf[4], sstr4, sizeof( szBuf[4] ) );
 	sstr4 = szBuf[4];

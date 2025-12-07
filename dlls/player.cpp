@@ -4359,14 +4359,8 @@ void CBasePlayer::CheatImpulseCommands( int iImpulse )
 	// Check sv_cheats directly instead of cached g_iWeaponCheat
 	// This ensures cheat commands work immediately after sv_cheats is changed
 	ConVar const *cheats = cvar->FindVar( "sv_cheats" );
-
-	// Debug output to help diagnose impulse 101 issues
-	DevMsg("CheatImpulseCommands: impulse=%d, sv_cheats cvar=%p, value=%d\n",
-		iImpulse, cheats, cheats ? cheats->GetInt() : -1);
-
 	if ( !cheats || cheats->GetInt() == 0 )
 	{
-		DevMsg("CheatImpulseCommands: Cheats disabled, ignoring impulse %d\n", iImpulse);
 		return;
 	}
 

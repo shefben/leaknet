@@ -291,25 +291,15 @@ inline void	bf_write::WriteOneBitAt( int iBit, int nValue )
 
 inline void bf_write::WriteUBitLong( unsigned int curData, int numbits, bool bCheckRange )
 {
-	// Clamp data to fit within the bit count to prevent stream corruption
-	// This is especially important for v19/v20 BSP compatibility where entity
-	// properties may have values that exceed the network encoding limits
-	if ( numbits < 32 )
-	{
-		unsigned int maxValue = (1u << numbits) - 1;
-		if ( curData > maxValue )
-		{
 #ifdef _DEBUG
-			if ( bCheckRange )
-			{
-				CallErrorHandler( BITBUFERROR_VALUE_OUT_OF_RANGE, GetDebugName() );
-			}
-#endif
-			curData = maxValue;  // Clamp to max value to prevent stream corruption
+	// Make sure it doesn't overflow.
+	if ( bCheckRange && numbits < 32 )
+	{
+		if ( curData >= (unsigned long)(1 << numbits) )
+		{
+			CallErrorHandler( BITBUFERROR_VALUE_OUT_OF_RANGE, GetDebugName() );
 		}
 	}
-
-#ifdef _DEBUG
 	Assert( numbits >= 0 && numbits <= 32 );
 #endif
 

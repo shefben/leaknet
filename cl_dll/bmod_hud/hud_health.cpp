@@ -32,7 +32,7 @@
 #include <vgui/ISystem.h>
 #include <vgui_controls/AnimationController.h>
 
-extern void HudDamageIndicator_MsgFunc_Damage( bf_read &msg );
+extern void HudDamageIndicator_MsgFunc_Damage( const char *pszName, int iSize, void *pbuf );
 
 using namespace vgui;
 
@@ -56,8 +56,8 @@ public:
 	virtual void VidInit( void );
 	virtual void Reset( void );
 	virtual void			OnThink();
-	void MsgFunc_Health( bf_read &msg );
-	void MsgFunc_Damage( bf_read &msg );
+	void MsgFunc_Health( const char *pszName, int iSize, void *pbuf );
+	void MsgFunc_Damage( const char *pszName, int iSize, void *pbuf );
 
 private:
 	// old variables
@@ -157,20 +157,22 @@ void CHudHealth::OnThink()
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //-----------------------------------------------------------------------------
-void CHudHealth::MsgFunc_Damage( bf_read &msg )
+void CHudHealth::MsgFunc_Damage( const char *pszName, int iSize, void *pbuf )
 {
-	int armor = msg.ReadByte();	// armor
-	int damageTaken = msg.ReadByte();	// health
-	long bitsDamage = msg.ReadLong(); // damage bits
+	BEGIN_READ( pbuf, iSize );
+
+	int armor = READ_BYTE();	// armor
+	int damageTaken = READ_BYTE();	// health
+	long bitsDamage = READ_LONG(); // damage bits
 	bitsDamage; // variable still sent but not used
 
 	Vector vecFrom;
 
-	vecFrom.x = msg.ReadFloat();
-	vecFrom.y = msg.ReadFloat();
-	vecFrom.z = msg.ReadFloat();
+	vecFrom.x = READ_FLOAT();
+	vecFrom.y = READ_FLOAT();
+	vecFrom.z = READ_FLOAT();
 
 	// Actually took damage?
 	if ( damageTaken > 0 || armor > 0 )
@@ -181,9 +183,4 @@ void CHudHealth::MsgFunc_Damage( bf_read &msg )
 			g_pClientMode->GetViewportAnimationController()->StartAnimationSequence("HealthDamageTaken");
 		}
 	}
-
-	// Reset the read position for damage indicator and call it
-	// Note: damage indicator reads from the same message, so we need to handle this
-	// In 2007 style, each handler should hook the message directly instead of forwarding
-	// For now, just update damage indicator with the values we already read
 }

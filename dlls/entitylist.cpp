@@ -98,7 +98,11 @@ void CGlobalEntityList::AddToDeleteList( IServerNetworkable *ent )
 {
 	if ( ent && ent->GetRefEHandle() != INVALID_EHANDLE_INDEX )
 	{
-		g_DeleteList.AddToTail( ent );
+		// Check if entity is already in the delete list to prevent double-delete crashes
+		if ( g_DeleteList.Find( ent ) == g_DeleteList.InvalidIndex() )
+		{
+			g_DeleteList.AddToTail( ent );
+		}
 	}
 }
 
@@ -116,7 +120,17 @@ void CGlobalEntityList::CleanupDeleteList( void )
 	g_bDisableEhandleAccess = true;
 	for ( int i = 0; i < g_DeleteList.Count(); i++ )
 	{
-		delete g_DeleteList[i];
+		IServerNetworkable *pNetworkable = g_DeleteList[i];
+		if ( pNetworkable )
+		{
+			CBaseEntity *pEntity = pNetworkable->GetBaseEntity();
+			// Clear the pointer in the list BEFORE deleting to prevent double-delete
+			g_DeleteList[i] = NULL;
+			if ( pEntity )
+			{
+				delete pEntity;
+			}
+		}
 	}
 	g_bDisableEhandleAccess = false;
 	g_DeleteList.RemoveAll();
@@ -142,7 +156,8 @@ void CGlobalEntityList::AddListenerEntity( IEntityListener *pListener )
 {
 	if ( m_entityListeners.Find( pListener ) >= 0 )
 	{
-		AssertMsg( 0, "Can't add listeners multiple times\n" );
+		// During level restart, listeners may try to re-register. Allow it silently.
+		DevMsg( "Entity listener already registered, ignoring duplicate registration\n" );
 		return;
 	}
 	m_entityListeners.AddToTail( pListener );
@@ -162,17 +177,12 @@ void CGlobalEntityList::Clear( void )
 	while ( hCur != InvalidHandle() )
 	{
 		IServerNetworkable *ent = GetServerNetworkable( hCur );
+		if ( !ent )
+			continue;
 
-		// Always advance the handle before continuing or removing
-		CBaseHandle hNext = NextHandle( hCur );
-
-		if ( ent )
-		{
-			// Force UpdateOnRemove to be called
-			UTIL_Remove( ent );
-		}
-
-		hCur = hNext;
+		// Force UpdateOnRemove to be called
+		UTIL_Remove( ent );
+		hCur = NextHandle( hCur );
 	}
 		
 	CleanupDeleteList();

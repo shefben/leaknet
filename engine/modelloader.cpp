@@ -1831,7 +1831,7 @@ static void Mod_LoadLeafs_Version_0( CMapLoadHelper &lh )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Load leafs - native v18 format (32 bytes, no ambient, no bitfields)
+// Purpose: Load leafs - native v18 format (32 bytes, no ambient)
 //-----------------------------------------------------------------------------
 static void Mod_LoadLeafs_Native( CMapLoadHelper &lh )
 {
@@ -1880,90 +1880,46 @@ static void Mod_LoadLeafs_Native( CMapLoadHelper &lh )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Load leafs - Lump version 1 (v20+ BSP, 32 bytes, uses bitfields)
-//          This is CRITICAL for v20 maps - uses dleaf_v1_t with area:9/flags:7 bitfields
-//-----------------------------------------------------------------------------
-static void Mod_LoadLeafs_Version_1( CMapLoadHelper &lh )
-{
-	Vector mins( 0, 0, 0 ), maxs( 0, 0, 0 );
-	dleaf_v1_t 	*in;
-	mleaf_t 	*out;
-	int			i, j, count, p;
-
-	in = (dleaf_v1_t *)lh.LumpBase();
-	if (lh.LumpSize() % sizeof(*in))
-		Host_Error ("Mod_LoadLeafs: funny lump size in %s (lump v1/v20+)",lh.GetMapName());
-	count = lh.LumpSize() / sizeof(*in);
-	out = (mleaf_t *)Hunk_AllocName( count*sizeof(*out), lh.GetLoadName() );
-
-	lh.GetMap()->brush.leafs = out;
-	lh.GetMap()->brush.numleafs = count;
-
-	Con_DPrintf( "Loading %d leafs (lump v1/v20+ format, %d bytes each)\n", count, (int)sizeof(dleaf_v1_t) );
-
-	for ( i=0 ; i<count ; i++, in++, out++)
-	{
-		for (j=0 ; j<3 ; j++)
-		{
-			mins[j] = LittleShort (in->mins[j]);
-			maxs[j] = LittleShort (in->maxs[j]);
-		}
-
-		VectorAdd( mins, maxs, out->m_vecCenter );
-		out->m_vecCenter *= 0.5f;
-		VectorSubtract( maxs, out->m_vecCenter, out->m_vecHalfDiagonal );
-
-		p = LittleLong(in->contents);
-		out->contents = p;
-
-		out->cluster = LittleShort(in->cluster);
-		// CRITICAL: v20+ uses bitfield for area (9 bits) - direct access works for bitfields
-		out->area = in->area;
-
-		out->firstmarksurface = (int)LittleShort(in->firstleafface);
-		out->nummarksurfaces = (unsigned short)LittleShort(in->numleaffaces);
-		out->parent = NULL;
-
-		out->m_pDisplacements = NULL;
-
-		out->leafWaterDataID = in->leafWaterDataID;
-	}
-
-	// TODO: Load ambient lighting from LUMP_LEAF_AMBIENT_LIGHTING
-	// if BSP_VERSION_HAS_AMBIENT_LUMP( GetCurrentBSPVersion() )
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: Load leafs with multi-version support
-//          Dispatches based on LUMP VERSION (not BSP version!) like 2007 engine
+// Input  : *loadmodel -
+//			*l -
+//			*loadname -
 //-----------------------------------------------------------------------------
 void Mod_LoadLeafs( void )
 {
 	CMapLoadHelper lh( LUMP_LEAFS );
 	int nBSPVersion = GetCurrentBSPVersion();
 
-	// v18 BSP has no lump versioning, use native loader
+	// Determine which leaf format to use based on lump version and BSP version
+	// v18 BSP: Native 32-byte format (no lump versioning)
+	// v19 BSP: Lump version 0, 56-byte format with embedded ambient
+	// v20+ BSP: Lump version 1, 32-byte format with ambient in separate lump
+
 	if ( BSP_VERSION_HAS_AVGCOLOR( nBSPVersion ) )
 	{
+		// v18: Native LeakNet format
 		Mod_LoadLeafs_Native( lh );
-		return;
 	}
-
-	// v19+ BSP: Dispatch based on LUMP VERSION (critical for v20 support!)
-	switch( lh.LumpVersion() )
+	else
 	{
-	case 0:
-		// Lump version 0: v19 format with embedded ambient lighting (56 bytes)
-		Mod_LoadLeafs_Version_0( lh );
-		break;
-	case 1:
-		// Lump version 1: v20+ format with ambient in separate lump (32 bytes)
-		// MUST use dleaf_v1_t which has bitfields for area:9/flags:7
-		Mod_LoadLeafs_Version_1( lh );
-		break;
-	default:
-		Host_Error( "Unknown LUMP_LEAFS version %d in %s\n", lh.LumpVersion(), lh.GetMapName() );
-		break;
+		// v19+: Check lump version
+		int nLumpVersion = lh.LumpVersion();
+
+		if ( nLumpVersion == 0 )
+		{
+			// v19: Embedded ambient lighting (56 bytes)
+			Mod_LoadLeafs_Version_0( lh );
+		}
+		else
+		{
+			// v20+: Ambient in separate lump - structure is same size as v18
+			// but we should use the proper v1 loader if ambient lumps exist
+			// For now, use native loader as structures are compatible
+			Mod_LoadLeafs_Native( lh );
+
+			// TODO: Load ambient lighting from LUMP_LEAF_AMBIENT_LIGHTING
+			// if BSP_VERSION_HAS_AMBIENT_LUMP( nBSPVersion )
+		}
 	}
 }
 

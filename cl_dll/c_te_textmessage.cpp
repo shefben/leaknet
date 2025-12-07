@@ -24,7 +24,7 @@
 
 static const char *gNetworkMessageNames[MAX_NETMESSAGE] = { NETWORK_MESSAGE1, NETWORK_MESSAGE2, NETWORK_MESSAGE3, NETWORK_MESSAGE4 };
 
-void DispatchHudText( bf_read &msg );
+void DispatchHudText( const char *pszName, int iSize, void *pbuf );
 
 //-----------------------------------------------------------------------------
 // Purpose: TextMessage
@@ -132,13 +132,8 @@ void C_TETextMessage::PostDataUpdate( DataUpdateType_t updateType )
 
 	Q_strncpy( (char *)pNetMessage->pMessage, m_szMessage, sizeof( m_szMessage ) );
 
-	// Create a bf_write to serialize the message name, then read it back as bf_read
-	char msgBuf[256];
-	bf_write msgWrite( "HudText", msgBuf, sizeof(msgBuf) );
-	msgWrite.WriteString( pNetMessage->pName );
-
-	bf_read msgRead( "HudText", msgBuf, msgWrite.GetNumBytesWritten() );
-	DispatchHudText( msgRead );
+	// 2003 protocol - pass message name directly in buffer for READ_STRING()
+	DispatchHudText( "HudText", strlen(pNetMessage->pName) + 1, (void*)pNetMessage->pName );
 }
 
 IMPLEMENT_CLIENTCLASS_EVENT_DT(C_TETextMessage, DT_TETextMessage, CTETextMessage)

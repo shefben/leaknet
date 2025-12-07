@@ -1185,7 +1185,7 @@ void ClientDLL_Init( void )
 	{
 		// Enable Logo
 		int i = 1;
-		DispatchDirectUserMsgByName("Logo", 1, (void *)&i);
+		DispatchDirectUserMsg("Logo", 1, (void *)&i);
 	}
 
 	ClientDLL_InitRecvTableMgr();

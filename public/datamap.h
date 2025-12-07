@@ -338,21 +338,5 @@ struct datamap_t
 	END_DATADESC()
 
 //-----------------------------------------------------------------------------
-// Bitfield macros for BSP structures
-// These create a union that allows accessing both the raw bitfield storage
-// and the individual bitfield members, enabling proper byte swapping.
-//-----------------------------------------------------------------------------
-#define BEGIN_BITFIELD( name ) \
-	union \
-	{ \
-		char name; \
-		struct \
-		{
-
-#define END_BITFIELD() \
-		}; \
-	};
-
-//-----------------------------------------------------------------------------
 
 #endif // DATAMAP_H

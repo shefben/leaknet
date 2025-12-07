@@ -105,10 +105,10 @@ public:
 	void	DrawHeadLabels();
 
 	// Called when the server registers a change to who this client can hear.
-	void	HandleVoiceMaskMsg( bf_read &msg );
+	void	HandleVoiceMaskMsg( const char *pszName, int iSize, void *pbuf );
 
 	// The server sends this message initially to tell the client to send their state.
-	void	HandleReqStateMsg( bf_read &msg );
+	void	HandleReqStateMsg( const char *pszName, int iSize, void *pbuf );
 
 
 // Squelch mode functions.

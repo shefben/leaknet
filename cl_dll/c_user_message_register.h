@@ -1,12 +1,12 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
 //
-// Purpose: Client-side user message hook registration system (2007 protocol)
+// Purpose: Client-side user message hook registration system (2003 protocol)
 //
 // Provides two ways to register user message handlers:
 // 1. HOOK_MESSAGE macro - for registering at initialization time
 // 2. USER_MESSAGE_REGISTER macro - for static/global registration
 //
-//=============================================================================//
+//=============================================================================
 
 #ifndef C_USER_MESSAGE_REGISTER_H
 #define C_USER_MESSAGE_REGISTER_H
@@ -24,7 +24,7 @@
 // naming convention __MsgFunc_<msgName>
 //
 // Example:
-//   void __MsgFunc_SayText( bf_read &msg ) { ... }
+//   void __MsgFunc_SayText( const char *pszName, int iSize, void *pbuf ) { ... }
 //   USER_MESSAGE_REGISTER( SayText )
 //-----------------------------------------------------------------------------
 #define USER_MESSAGE_REGISTER( msgName ) \
@@ -37,7 +37,7 @@
 // The handler function must be named __MsgFunc_<name>
 //
 // Example:
-//   void __MsgFunc_SayText( bf_read &msg ) { ... }
+//   void __MsgFunc_SayText( const char *pszName, int iSize, void *pbuf ) { ... }
 //   // In Init():
 //   HOOK_MESSAGE( SayText );
 //-----------------------------------------------------------------------------

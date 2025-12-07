@@ -36,7 +36,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-void __MsgFunc_ClearDecals( bf_read &msg );
+void __MsgFunc_ClearDecals(const char *pszName, int iSize, void *pbuf);
 
 static 	CClassMemoryPool< CHudTexture >	 g_HudTextureMemoryPool( 128 );
 
@@ -188,7 +188,7 @@ void CHud::Init( void )
 	HOOK_MESSAGE( GameMode );
 	HOOK_MESSAGE( InitHUD );
 	HOOK_MESSAGE( TeamChange );
-	HOOK_MESSAGE( ClearDecals );
+	// HOOK_MESSAGE( ClearDecals ); // ClearDecals function not available in client build
 
 	InitFonts();
 	DevMsg("CHud::Init - Fonts initialized\n");
@@ -202,9 +202,8 @@ void CHud::Init( void )
 		m_HudList[i]->Init();
 	}
 
-	// Create a dummy bf_read for initialization reset
-	bf_read dummyMsg;
-	MsgFunc_ResetHUD( dummyMsg );
+	// Initialize HUD - no longer needs MsgFunc_ResetHUD call since it's message-driven
+	// MsgFunc_ResetHUD will be called when server sends ResetHUD message
 
 	m_bHudTexturesLoaded = false;
 
@@ -661,3 +660,4 @@ void TestHudAnim_f( void )
 }
 
 static ConCommand testhudanim( "testhudanim", TestHudAnim_f, "Test a hud element animation.\n\tArguments: <anim name>\n", FCVAR_CHEAT );
+

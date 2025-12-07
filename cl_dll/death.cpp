@@ -28,7 +28,7 @@ public:
 	void VidInit( void );
 	bool ShouldDraw( void );
 	virtual void Paint();
-	void MsgFunc_DeathMsg( bf_read &msg );
+	void MsgFunc_DeathMsg( const char *pszName, int iSize, void *pbuf );
 
 	virtual void ApplySchemeSettings( vgui::IScheme *scheme );
 
@@ -205,17 +205,19 @@ void CHudDeathNotice::Paint()
 //-----------------------------------------------------------------------------
 // Purpose: This message handler may be better off elsewhere
 //-----------------------------------------------------------------------------
-void CHudDeathNotice::MsgFunc_DeathMsg( bf_read &msg )
+void CHudDeathNotice::MsgFunc_DeathMsg( const char *pszName, int iSize, void *pbuf )
 {
 	if (!m_pScorePanel || !g_PR)
 		return;
 
-	int killer = msg.ReadByte();
-	int victim = msg.ReadByte();
+	BEGIN_READ( pbuf, iSize );
+
+	int killer = READ_BYTE();
+	int victim = READ_BYTE();
 
 	char killedwith[32];
 	char weaponName[32];
-	msg.ReadString( weaponName, sizeof(weaponName) );
+	Q_strncpy( weaponName, READ_STRING(), sizeof(weaponName) );
 	strcpy( killedwith, "d_" );
 	strncat( killedwith, weaponName, sizeof(killedwith) - 3 );
 

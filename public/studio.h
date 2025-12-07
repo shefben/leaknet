@@ -229,7 +229,7 @@ struct mstudioaimatbone_t
 struct mstudiobone_t
 {
 	int					sznameindex;
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 	int		 			parent;		// parent bone
 	int					bonecontroller[6];	// bone controller index, -1 == none
 	// FIXME: remove the damn default value fields and put in pos
@@ -256,7 +256,7 @@ struct mstudiobone_t
 struct mstudiobone_v48_t
 {
 	int					sznameindex;
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 	int		 			parent;		// parent bone
 	int					bonecontroller[6];	// bone controller index, -1 == none
 
@@ -419,7 +419,7 @@ struct mstudioseqgroup_t
 	int					szlabelindex;	// textual name
 	inline char * const pszLabel( void ) const { return ((char *)this) + szlabelindex; }
 	int					sznameindex;	// file name
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 	/* cache_user_t */	void *cache;	// cache index pointer
 	int					data;			// hack for group 0
 
@@ -444,7 +444,7 @@ struct mstudioevent_t
 struct mstudioattachment_t
 {
 	int					sznameindex;
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 	int					type;
 	int					bone;
 	matrix3x4_t			local; // attachment point
@@ -454,7 +454,7 @@ struct mstudioattachment_t
 struct mstudioattachment_v48_t
 {
 	int					sznameindex;
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 	unsigned int		flags;		// v48: was 'type'
 	int					localbone;	// v48: was 'bone'
 	matrix3x4_t			local;		// attachment point
@@ -708,7 +708,7 @@ struct mstudiomovement_t
 struct mstudioanimdesc_t
 {
 	int					sznameindex;
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 
 	float				fps;		// frames per second
 	int					flags;		// looping/non-looping flags
@@ -754,7 +754,7 @@ struct mstudioanimdesc_v48_t
 	// Note: Use pStudiohdr() for access
 
 	int					sznameindex;
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 
 	float				fps;		// frames per second
 	int					flags;		// looping/non-looping flags
@@ -945,7 +945,7 @@ struct mstudioseqdesc_t
 struct mstudioposeparamdesc_t
 {
 	int					sznameindex;
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 	int					flags;	// ????
 	float				start;	// starting value
 	float				end;	// ending value
@@ -964,7 +964,7 @@ struct mstudioflexcontroller_t
 	int					sztypeindex;
 	inline char * const pszType( void ) const { return ((char *)this) + sztypeindex; }
 	int					sznameindex;
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 	mutable int			link;	// remapped at load time to master list
 	float				min;
 	float				max;
@@ -1071,7 +1071,7 @@ private:
 struct mstudiotexture_v37_t
 {
 	int						sznameindex;
-	inline char * const		pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char *		pszName( void ) const { return ((char *)this) + sznameindex; }
 	int						flags;
 	float					width;		// portion used
 	float					height;		// portion used
@@ -1085,7 +1085,7 @@ struct mstudiotexture_v37_t
 struct mstudiotexture_t
 {
 	int						sznameindex;
-	inline char * const		pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char *			pszName( void ) const { return ((char *)this) + sznameindex; }
 	int						flags;
 	int						used;		// usage flag
 	int						unused1;	// padding
@@ -1104,7 +1104,7 @@ struct mstudiotexture_t
 struct mstudioeyeball_t
 {
 	int					sznameindex;
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 	int		bone;
 	Vector	org;
 	float	zoffset;
@@ -1135,7 +1135,7 @@ struct mstudioeyeball_t
 struct mstudioeyeball_v48_t
 {
 	int					sznameindex;
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 	int		bone;
 	Vector	org;
 	float	zoffset;
@@ -1171,7 +1171,7 @@ struct mstudioiklink_t
 struct mstudioikchain_t
 {
 	int					sznameindex;
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 	int				linktype;
 	int				numlinks;
 	int				linkindex;
@@ -1447,7 +1447,7 @@ struct studiohwdata_t
 struct mstudiobodyparts_t
 {
 	int					sznameindex;
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 	int					nummodels;
 	int					base;
 	int					modelindex; // index into models array
@@ -1465,7 +1465,7 @@ struct mstudiomouth_t
 struct mstudiohitboxset_t
 {
 	int					sznameindex;
-	inline char * const	pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char *	pszName( void ) const { return ((char *)this) + sznameindex; }
 	int					numhitboxes;
 	int					hitboxindex;
 	inline mstudiobbox_t *pHitbox( int i ) const { return (mstudiobbox_t *)(((byte *)this) + hitboxindex) + i; };
@@ -1517,7 +1517,7 @@ struct mstudioanimgroup_t
 struct mstudiobonedesc_t
 {
 	int					sznameindex;
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 
 	int					parent;
 
@@ -1567,7 +1567,7 @@ struct mstudiomodelgroup_t
 	int					szlabelindex;	// textual name
 	inline char * const pszLabel( void ) const { return ((char *)this) + szlabelindex; }
 	int					sznameindex;	// file name
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 };
 
 // forward declaration for virtualmodel_t
@@ -1646,7 +1646,7 @@ struct virtualmodel_t
 struct mstudioflexcontrollerui_t
 {
 	int					sznameindex;
-	inline char * const pszName( void ) const { return ((char *)this) + sznameindex; }
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 
 	// These are used like a union to save space
 	// Here anchors the loaded value.

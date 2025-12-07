@@ -46,7 +46,7 @@ public:
 	bool ShouldDraw( void );
 	virtual void	ApplySchemeSettings( vgui::IScheme *scheme );
 	virtual void	Paint( void );
-	void MsgFunc_Geiger( bf_read &msg );
+	void MsgFunc_Geiger( const char *pszName, int iSize, void *pbuf );
 	
 private:
 	int m_iGeigerRange;
@@ -93,12 +93,13 @@ void CHudGeiger::VidInit(void)
 };
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //-----------------------------------------------------------------------------
-void CHudGeiger::MsgFunc_Geiger( bf_read &msg )
+void CHudGeiger::MsgFunc_Geiger( const char *pszName, int iSize, void *pbuf )
 {
+	BEGIN_READ( pbuf, iSize );
 	// update geiger data
-	m_iGeigerRange = msg.ReadByte();
+	m_iGeigerRange = READ_BYTE();
 	m_iGeigerRange = m_iGeigerRange << 2;
 }
 

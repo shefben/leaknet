@@ -66,7 +66,7 @@ public:
 	void	AddToHistory( int iType, int iId, int iCount = 0 );
 	void	AddToHistory( int iType, const char *szName, int iCount = 0 );
 	void	AddToHistory( int iType, C_BaseCombatWeapon *weapon, int iCount = 0 );
-	void	MsgFunc_ItemPickup( bf_read &msg );
+	void	MsgFunc_ItemPickup( const char *pszName, int iSize, void *pbuf );
 
 	void	CheckClearHistory( void );
 	void	SetHistoryGap( int iNewHistoryGap );

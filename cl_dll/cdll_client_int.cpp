@@ -220,11 +220,9 @@ public:
 
 	virtual void					FrameStageNotify( ClientFrameStage_t curStage );
 
-	// 2007 protocol - dispatch user message by type index with bf_read buffer
-	virtual bool					DispatchUserMessage( int msg_type, bf_read &msg_data );
-
-	// Lookup user message index by name (for engine internal use)
-	virtual int						LookupUserMessage( const char *name );
+	// User message system (2003 protocol)
+	virtual bool					GetUserMessageInfo( int msg_type, char *name, int& size );
+	virtual bool					DispatchUserMessage( const char *pszName, int iSize, void *pbuf );
 
 	// Save/restore system hooks
 	virtual CSaveRestoreData  *SaveInit( int size );
@@ -381,15 +379,24 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 #endif
 
 	modemanager->Init( );
+	DevMsg("CHLClient::Init - modemanager initialized\n");
 
-	gHUD.Init();
-
+	// CRITICAL: Enable the viewport BEFORE creating HUD elements
+	// HUD elements parent themselves to g_pClientMode->GetViewport() during creation.
+	// The viewport must be attached to the root panel and visible BEFORE HUD elements
+	// try to attach to it, otherwise they'll be orphaned and invisible.
 	g_pClientMode->Init();
+	DevMsg("CHLClient::Init - g_pClientMode->Init() complete, viewport=%p\n", g_pClientMode->GetViewport());
+	g_pClientMode->Enable();
+	DevMsg("CHLClient::Init - g_pClientMode->Enable() complete\n");
+
+	// Now create HUD elements - viewport is ready to receive them
+	DevMsg("CHLClient::Init - calling gHUD.Init()\n");
+	gHUD.Init();
+	DevMsg("CHLClient::Init - gHUD.Init() complete\n");
 
 	if( !IGameSystem::InitAllSystems() )
 		return false;
-
-	g_pClientMode->Enable();
 
 	view->Init();
 	vieweffects->Init();
@@ -939,24 +946,32 @@ void CHLClient::UncacheAllMaterials( )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Dispatch incoming user message to registered handlers (2007 protocol)
-// Input  : msg_type - message type index from server
-//			msg_data - bf_read buffer containing message payload
+// Purpose: 
+// Input  : msg_type - 
+//			*name - 
+//			size - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CHLClient::DispatchUserMessage( int msg_type, bf_read &msg_data )
+bool CHLClient::GetUserMessageInfo( int msg_type, char *name, int& size )
 {
-	return usermessages->DispatchUserMessage( msg_type, msg_data );
+	if ( !usermessages->IsValidIndex( msg_type ) )
+		return false;
+
+	Q_strcpy( name, usermessages->GetUserMessageName( msg_type ) );
+	size = usermessages->GetUserMessageSize( msg_type );
+	return true;
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Lookup user message index by name (for engine internal use)
-// Input  : *name - message name to lookup
-// Output : Returns message index, or -1 if not found
+// Purpose: Dispatch a user message to registered handlers (2003 protocol)
+// Input  : *pszName - message name
+//			iSize - message size in bytes
+//			*pbuf - raw message data buffer
+// Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-int CHLClient::LookupUserMessage( const char *name )
+bool CHLClient::DispatchUserMessage( const char *pszName, int iSize, void *pbuf )
 {
-	return usermessages->LookupUserMessage( name );
+	return usermessages->DispatchUserMessage( pszName, iSize, pbuf );
 }
 
 

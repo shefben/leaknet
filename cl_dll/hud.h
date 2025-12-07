@@ -150,11 +150,11 @@ public:
 
 	void						RefreshHudTextures();
 
-	// User messages (2007 protocol - bf_read)
-	void						MsgFunc_GameMode( bf_read &msg );
-	void						MsgFunc_ResetHUD( bf_read &msg );
-	void						MsgFunc_InitHUD( bf_read &msg );
-	void						MsgFunc_TeamChange( bf_read &msg );
+	// User messages (2003 protocol - raw buffer)
+	void						MsgFunc_GameMode( const char *pszName, int iSize, void *pbuf );
+	void						MsgFunc_ResetHUD( const char *pszName, int iSize, void *pbuf );
+	void						MsgFunc_InitHUD( const char *pszName, int iSize, void *pbuf );
+	void						MsgFunc_TeamChange( const char *pszName, int iSize, void *pbuf );
 
 public:
 

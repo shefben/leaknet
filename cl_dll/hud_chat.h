@@ -49,7 +49,7 @@ public:
 	void			LevelInit( const char *newmap );
 	void			LevelShutdown( void );
 
-	void			MsgFunc_TextMsg( bf_read &msg );
+	void			MsgFunc_TextMsg( const char *pszName, int iSize, void *pbuf );
 
 	void			Printf( const char *fmt, ... );
 
@@ -58,7 +58,7 @@ public:
 	void			Send( void );
 
 	// Network message handler
-	void			MsgFunc_SayText( bf_read &msg );
+	void			MsgFunc_SayText( const char *pszName, int iSize, void *pbuf );
 
 	virtual void	ApplySchemeSettings(vgui::IScheme *pScheme);
 	virtual void	Paint( void );

@@ -156,10 +156,12 @@ void CHudHistoryResource::AddToHistory( int iType, const char *szName, int iCoun
 //-----------------------------------------------------------------------------
 // Purpose: Handle an item pickup event from the server
 //-----------------------------------------------------------------------------
-void CHudHistoryResource::MsgFunc_ItemPickup( bf_read &msg )
+void CHudHistoryResource::MsgFunc_ItemPickup( const char *pszName, int iSize, void *pbuf )
 {
+	BEGIN_READ( pbuf, iSize );
+
 	char szName[256];
-	msg.ReadString( szName, sizeof(szName) );
+	Q_strncpy( szName, READ_STRING(), sizeof(szName) );
 
 	// Add the item to the history
 	AddToHistory( HISTSLOT_ITEM, szName );

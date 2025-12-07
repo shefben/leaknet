@@ -11,11 +11,11 @@
 #include "hud_macros.h"
 #include "iefx.h"
 
-void __MsgFunc_TerrainMod( bf_read &msg )
+void __MsgFunc_TerrainMod( const char *pszName, int iSize, void *pbuf )
 {
 	CTerrainModParams params;
 
-	BEGIN_READ( msg );
+	BEGIN_READ( pbuf, iSize );
 
 	unsigned char type = READ_BYTE();
 

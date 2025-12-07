@@ -24,8 +24,10 @@
 
 
 // This is a useful macro to iterate from head to tail in a linked list.
+#ifndef FOR_EACH_LL
 #define FOR_EACH_LL( listName, iteratorName ) \
 	for( int iteratorName=listName.Head(); iteratorName != listName.InvalidIndex(); iteratorName = listName.Next( iteratorName ) )
+#endif
 
 #define INVALID_LLIST_IDX ((I)~0)
 

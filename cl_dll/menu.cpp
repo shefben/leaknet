@@ -354,11 +354,13 @@ void CHudMenu::ProcessText( void )
 //		string: menu string to display
 //  if this message is never received, then scores will simply be the combined totals of the players.
 //-----------------------------------------------------------------------------
-void CHudMenu::MsgFunc_ShowMenu( bf_read &msg )
+void CHudMenu::MsgFunc_ShowMenu( const char *pszName, int iSize, void *pbuf )
 {
-	m_bitsValidSlots = (short)msg.ReadWord();
-	int DisplayTime = msg.ReadChar();
-	int NeedMore = msg.ReadByte();
+	BEGIN_READ( pbuf, iSize );
+
+	m_bitsValidSlots = (short)READ_SHORT();
+	int DisplayTime = READ_CHAR();
+	int NeedMore = READ_BYTE();
 
 	if ( DisplayTime > 0 )
 	{
@@ -373,7 +375,7 @@ void CHudMenu::MsgFunc_ShowMenu( bf_read &msg )
 	if ( m_bitsValidSlots )
 	{
 		char szMenuString[MAX_MENU_STRING];
-		msg.ReadString( szMenuString, sizeof(szMenuString) );
+		Q_strncpy( szMenuString, READ_STRING(), sizeof(szMenuString) );
 
 		if ( !m_fWaitingForMore ) // this is the start of a new menu
 		{

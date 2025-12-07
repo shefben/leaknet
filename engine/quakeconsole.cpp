@@ -84,7 +84,6 @@ CQuakeConsole::CQuakeConsole()
 	m_nTextureId = -1;
 	m_nTextureWidth = 0;
 	m_nTextureHeight = 0;
-	m_bTextureLoadAttempted = false;
 	m_hFont = 0;
 	m_nConsoleHeight = 0;
 	m_nConsoleWidth = 0;
@@ -112,8 +111,8 @@ void CQuakeConsole::Initialize()
 	m_nConsoleWidth = (vid.width > 0) ? vid.width : 640;
 	m_nConsoleHeight = (vid.height > 0) ? (vid.height / 2) : 240;
 
-	// Note: Background texture loading is deferred to first paint
-	// when VGUI surface is guaranteed to be ready
+	// Load background texture (has its own safety checks)
+	LoadBackgroundTexture();
 
 	// Get font - with safety checks
 	m_hFont = 0;
@@ -436,8 +435,7 @@ void CQuakeConsole::Paint()
 
 //-----------------------------------------------------------------------------
 // Load background texture
-// Looks for console background in gfx/shell/console_background.bmp (mod path)
-// Falls back to materials (VTF/VMT) if BMP not found
+// Uses the top 299 pixels of the splash.bmp image as specified
 //-----------------------------------------------------------------------------
 void CQuakeConsole::LoadBackgroundTexture()
 {
@@ -446,128 +444,146 @@ void CQuakeConsole::LoadBackgroundTexture()
 	m_nTextureWidth = 0;
 	m_nTextureHeight = 0;
 
-	// Safety checks - VGUI surface must be available
+	// Safety checks - VGUI surface and filesystem must be available
 	if (!vgui::surface())
 		return;
 
-	// Try to load BMP from gfx/shell/console_background.bmp first (GoldSrc/GMod style)
-	const char *bmpPaths[] = {
-		"gfx/shell/console_background.bmp",  // Primary mod-specific path
-		"gfx/shell/conback.bmp",             // Alternative name
-		NULL
-	};
+	if (!g_pFileSystem)
+		return;
 
-	for (int i = 0; bmpPaths[i] != NULL; i++)
+	char bmpPath[MAX_PATH];
+	FileHandle_t file = FILESYSTEM_INVALID_HANDLE;
+
+	// First try mod-specific splash: <mod>/gfx/shell/splash.bmp
+	if (com_gamedir[0])
 	{
-		FileHandle_t hFile = g_pFileSystem->Open(bmpPaths[i], "rb", "GAME");
-		if (hFile)
+		Q_snprintf(bmpPath, sizeof(bmpPath), "%s/gfx/shell/splash.bmp", com_gamedir);
+		file = g_pFileSystem->Open(bmpPath, "rb");
+		if (file != FILESYSTEM_INVALID_HANDLE)
 		{
-			// Read BMP header
-			BITMAPFILEHEADER bmfh;
-			BITMAPINFOHEADER bmih;
+			Msg("Console: Found mod splash at %s\n", bmpPath);
+		}
+	}
 
-			g_pFileSystem->Read(&bmfh, sizeof(bmfh), hFile);
-			g_pFileSystem->Read(&bmih, sizeof(bmih), hFile);
+	// Fallback to gfx/shell/splash.bmp (root game directory)
+	if (file == FILESYSTEM_INVALID_HANDLE)
+	{
+		Q_strncpy(bmpPath, "gfx/shell/splash.bmp", sizeof(bmpPath));
+		file = g_pFileSystem->Open(bmpPath, "rb");
+		if (file != FILESYSTEM_INVALID_HANDLE)
+		{
+			Msg("Console: Found splash at %s\n", bmpPath);
+		}
+	}
 
-			// Verify it's a valid BMP
-			if (bmfh.bfType == 0x4D42) // 'BM'
+	if (file == FILESYSTEM_INVALID_HANDLE)
+	{
+		Msg("Console: No splash.bmp found, using solid background\n");
+		return;
+	}
+
+	// Read BMP file header
+	BITMAPFILEHEADER bmfHeader;
+	g_pFileSystem->Read(&bmfHeader, sizeof(bmfHeader), file);
+
+	// Check for valid BMP signature
+	if (bmfHeader.bfType != 0x4D42) // 'BM'
+	{
+		Msg("Console: Invalid BMP file\n");
+		g_pFileSystem->Close(file);
+		return;
+	}
+
+	// Read BMP info header
+	BITMAPINFOHEADER bmiHeader;
+	g_pFileSystem->Read(&bmiHeader, sizeof(bmiHeader), file);
+
+	int bmpWidth = bmiHeader.biWidth;
+	int bmpHeight = abs(bmiHeader.biHeight);
+	int bitCount = bmiHeader.biBitCount;
+	bool topDown = (bmiHeader.biHeight < 0);
+
+	// Only use top 299 pixels as per WON console style
+	int useHeight = min(bmpHeight, 299);
+
+	Msg("Console: BMP is %dx%d, %d-bit, using top %d pixels\n", bmpWidth, bmpHeight, bitCount, useHeight);
+
+	// Seek to pixel data
+	g_pFileSystem->Seek(file, bmfHeader.bfOffBits, FILESYSTEM_SEEK_HEAD);
+
+	// Calculate row size (BMP rows are padded to 4-byte boundaries)
+	int bytesPerPixel = bitCount / 8;
+	int rowSize = ((bmpWidth * bytesPerPixel + 3) / 4) * 4;
+
+	// Read the entire bitmap data
+	int totalSize = rowSize * bmpHeight;
+	unsigned char *bmpData = new unsigned char[totalSize];
+	g_pFileSystem->Read(bmpData, totalSize, file);
+	g_pFileSystem->Close(file);
+
+	// Create RGBA buffer for the texture (only top 299 pixels)
+	unsigned char *rgbaData = new unsigned char[bmpWidth * useHeight * 4];
+
+	// Convert BMP to RGBA
+	// BMP is stored bottom-up by default, we need top-down
+	for (int y = 0; y < useHeight; y++)
+	{
+		// Source row - for top 299 pixels, we want from (bmpHeight - 299) to (bmpHeight - 1) in BMP coordinates
+		int srcY;
+		if (topDown)
+		{
+			srcY = y;
+		}
+		else
+		{
+			// Bottom-up BMP: row 0 in BMP is bottom, we want top rows
+			// Top of image is at (bmpHeight - 1), we want rows (bmpHeight - useHeight) to (bmpHeight - 1)
+			srcY = bmpHeight - useHeight + y;
+		}
+
+		unsigned char *srcRow = bmpData + (topDown ? y : (bmpHeight - 1 - srcY)) * rowSize;
+		unsigned char *dstRow = rgbaData + y * bmpWidth * 4;
+
+		for (int x = 0; x < bmpWidth; x++)
+		{
+			unsigned char *src = srcRow + x * bytesPerPixel;
+			unsigned char *dst = dstRow + x * 4;
+
+			if (bitCount == 24)
 			{
-				int width = bmih.biWidth;
-				int height = abs(bmih.biHeight);  // Height can be negative for top-down BMP
-				bool bottomUp = (bmih.biHeight > 0);
-				int bpp = bmih.biBitCount;
-
-				if ((bpp == 24 || bpp == 32) && width > 0 && height > 0)
-				{
-					// Allocate RGBA buffer
-					unsigned char *rgba = new unsigned char[width * height * 4];
-					if (rgba)
-					{
-						// Seek to pixel data
-						g_pFileSystem->Seek(hFile, bmfh.bfOffBits, FILESYSTEM_SEEK_HEAD);
-
-						// Calculate row size with padding (BMP rows are 4-byte aligned)
-						int bytesPerPixel = bpp / 8;
-						int rowSize = ((width * bytesPerPixel + 3) / 4) * 4;
-						unsigned char *rowBuffer = new unsigned char[rowSize];
-
-						if (rowBuffer)
-						{
-							for (int y = 0; y < height; y++)
-							{
-								// Determine which row to write to (flip if bottom-up)
-								int destY = bottomUp ? (height - 1 - y) : y;
-
-								g_pFileSystem->Read(rowBuffer, rowSize, hFile);
-
-								for (int x = 0; x < width; x++)
-								{
-									int srcIdx = x * bytesPerPixel;
-									int destIdx = (destY * width + x) * 4;
-
-									// BMP stores BGR, convert to RGBA
-									rgba[destIdx + 0] = rowBuffer[srcIdx + 2];  // R
-									rgba[destIdx + 1] = rowBuffer[srcIdx + 1];  // G
-									rgba[destIdx + 2] = rowBuffer[srcIdx + 0];  // B
-									rgba[destIdx + 3] = (bpp == 32) ? rowBuffer[srcIdx + 3] : 255;  // A
-								}
-							}
-
-							// Create texture from RGBA data
-							m_nTextureId = vgui::surface()->CreateNewTextureID(true);  // Procedural texture
-							vgui::surface()->DrawSetTextureRGBA(m_nTextureId, rgba, width, height, 0, false);
-
-							m_nTextureWidth = width;
-							m_nTextureHeight = height;
-
-							delete[] rowBuffer;
-							delete[] rgba;
-							g_pFileSystem->Close(hFile);
-
-							Msg("Console: Loaded background BMP '%s' (%dx%d)\n", bmpPaths[i], width, height);
-							return;
-						}
-
-						delete[] rgba;
-					}
-				}
+				dst[0] = src[2]; // R (BMP is BGR)
+				dst[1] = src[1]; // G
+				dst[2] = src[0]; // B
+				dst[3] = 255;    // A (fully opaque)
 			}
-
-			g_pFileSystem->Close(hFile);
+			else if (bitCount == 32)
+			{
+				dst[0] = src[2]; // R
+				dst[1] = src[1]; // G
+				dst[2] = src[0]; // B
+				dst[3] = 255;    // A (force opaque)
+			}
+			else
+			{
+				// Fallback for other bit depths
+				dst[0] = dst[1] = dst[2] = 128;
+				dst[3] = 255;
+			}
 		}
 	}
 
-	// BMP not found - try material system (VTF/VMT) as fallback
-	const char *materialPaths[] = {
-		"vgui/console/console_background",  // Mod-specific or game console background
-		"console/background",               // Alternative path
-		"vgui/splash",                      // Splash screen as fallback
-		NULL
-	};
+	delete[] bmpData;
 
-	m_nTextureId = vgui::surface()->CreateNewTextureID(false);  // Non-procedural texture
+	// Create texture and upload RGBA data
+	m_nTextureId = vgui::surface()->CreateNewTextureID(true); // procedural texture
+	vgui::surface()->DrawSetTextureRGBA(m_nTextureId, rgbaData, bmpWidth, useHeight, 0, false);
 
-	for (int i = 0; materialPaths[i] != NULL; i++)
-	{
-		// Try to load the material - DrawSetTextureFile handles VTF/VMT lookup
-		vgui::surface()->DrawSetTextureFile(m_nTextureId, materialPaths[i], 0, false);
+	m_nTextureWidth = bmpWidth;
+	m_nTextureHeight = useHeight;
 
-		// Check if the texture loaded successfully by getting its size
-		vgui::surface()->DrawGetTextureSize(m_nTextureId, m_nTextureWidth, m_nTextureHeight);
+	delete[] rgbaData;
 
-		if (m_nTextureWidth > 0 && m_nTextureHeight > 0)
-		{
-			Msg("Console: Loaded background material '%s' (%dx%d)\n",
-				materialPaths[i], m_nTextureWidth, m_nTextureHeight);
-			return;
-		}
-	}
-
-	// No material found - texture will stay invalid, DrawBackground will use solid color
-	Msg("Console: No background material found, using solid background\n");
-	m_nTextureId = -1;
-	m_nTextureWidth = 0;
-	m_nTextureHeight = 0;
+	Msg("Console: Created texture %dx%d\n", m_nTextureWidth, m_nTextureHeight);
 }
 
 //-----------------------------------------------------------------------------
@@ -598,13 +614,6 @@ void CQuakeConsole::DrawBackground()
 {
 	if (!vgui::surface())
 		return;
-
-	// Lazy load the background texture on first draw (VGUI is guaranteed ready here)
-	if (!m_bTextureLoadAttempted)
-	{
-		m_bTextureLoadAttempted = true;
-		LoadBackgroundTexture();
-	}
 
 	int y = GetConsoleY();
 

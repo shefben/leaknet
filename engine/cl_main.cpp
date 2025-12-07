@@ -170,13 +170,13 @@ void CL_HideHud_f( void )
 	{
 		Con_Printf( "hiding hud\n" );
 		c = HIDEHUD_ALL;
-		DispatchDirectUserMsgByName("HideWeapon", 1, (void *)&c);
+		DispatchDirectUserMsg("HideWeapon", 1, (void *)&c);
 	}
 	else if ( !_stricmp( Cmd_Argv(1), "on" ) )
 	{
 		c = 0;
 		Con_Printf( "showing hud\n" );
-		DispatchDirectUserMsgByName("HideWeapon", 1, (void *)&c);
+		DispatchDirectUserMsg("HideWeapon", 1, (void *)&c);
 	}
 	else
 	{
@@ -2246,7 +2246,7 @@ bool UserIsConnectedOnLoopback()
 //-----------------------------------------------------------------------------
 void CL_HudMessage( const char *pMessage )
 {
-	DispatchDirectUserMsgByName( "HudText", strlen(pMessage) + 1, (void *)pMessage );
+	DispatchDirectUserMsg( "HudText", strlen(pMessage) + 1, (void *)pMessage );
 }
 void CL_ShowEnts_f()
 {

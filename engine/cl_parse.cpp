@@ -234,40 +234,21 @@ void CL_ParseClassInfo(CClientState *pState, bf_read *pBuf)
 	}
 }
 
-// 2007 protocol - dispatch user message by type index with bf_read
-int DispatchDirectUserMsg( int msg_type, bf_read &msg_data )
-{
-	if ( !g_ClientDLL->DispatchUserMessage( msg_type, msg_data ) )
-	{
-		Con_Printf( "Problem Direct Dispatching User Message %d\n", msg_type );
-		return 0;
-	}
-	return 1;
-}
-
 //-----------------------------------------------------------------------------
-// Purpose: Legacy helper for dispatching user messages by name (internal engine use)
-//          Creates a bf_read from the void* buffer and looks up the message index
+// Purpose: Helper for dispatching user messages by name (2003 protocol)
 // Input  : *pszName - message name to dispatch
 //          iSize - size of message data in bytes
 //          *pBuf - pointer to message data buffer
 // Output : Returns 1 on success, 0 on failure
 //-----------------------------------------------------------------------------
-int DispatchDirectUserMsgByName( const char *pszName, int iSize, void *pBuf )
+int DispatchDirectUserMsg( const char *pszName, int iSize, void *pBuf )
 {
-	// Lookup message index by name using client DLL interface
-	int msg_type = g_ClientDLL->LookupUserMessage( pszName );
-	if ( msg_type == -1 )
+	if ( !g_ClientDLL->DispatchUserMessage( pszName, iSize, pBuf ) )
 	{
-		Con_Printf( "DispatchDirectUserMsgByName: Unknown message '%s'\n", pszName );
+		Con_Printf( "Problem Direct Dispatching User Message '%s'\n", pszName );
 		return 0;
 	}
-
-	// Create a bf_read from the buffer
-	bf_read msg_data( pszName, pBuf, iSize );
-
-	// Dispatch using the 2007 protocol
-	return DispatchDirectUserMsg( msg_type, msg_data );
+	return 1;
 }
 
 ///////////////////////////////////////////////////
@@ -1853,10 +1834,9 @@ void CL_ParseSendLogo( void )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Parse and dispatch incoming user message (2007 protocol)
-//          Reads msg_type (byte) and msg_size (byte) from network stream,
-//          then creates a bf_read for the message payload and dispatches
-//          directly by type index to the client DLL.
+// Purpose: Parse and dispatch incoming user message (2003 protocol)
+//          Uses GetUserMessageInfo to get registered size, only reads size
+//          from stream for variable-length messages (-1 size)
 //-----------------------------------------------------------------------------
 void CL_ParseUserMessage( void )
 {
@@ -1867,27 +1847,35 @@ void CL_ParseUserMessage( void )
 	// Read message type index (byte)
 	byte msg_type = MSG_ReadByte();
 
-	// Read message size (byte) - 2007 protocol always sends size
-	int MsgSize = MSG_ReadByte();
+	int MsgSize = 0;
+	char msgname[ 256 ];
 
-	if ( MsgSize > MAX_USER_MSG_DATA )
+	// Get message info from client DLL registry - this tells us the registered size
+	if ( !g_ClientDLL->GetUserMessageInfo( msg_type, msgname, MsgSize ) )
 	{
-		Host_Error( "CL_ParseUserMessage: User Msg %d sent too much data (%i bytes), %i bytes max.\n",
-			msg_type, MsgSize, MAX_USER_MSG_DATA );
+		Host_Error( "Unable to find user message for index %i\n", msg_type );
 		return;
 	}
 
-	// Read the message payload into buffer
-	MSG_ReadBuf( MsgSize, buf );
-
-	// Create a bf_read for the message data (2007 protocol)
-	bf_read msg_data( "UserMessage", buf, MsgSize );
-
-	// Dispatch directly by type index with bf_read buffer
-	if ( !g_ClientDLL->DispatchUserMessage( msg_type, msg_data ) )
+	// Only read size from stream if variable-length message
+	if ( MsgSize == -1 )
 	{
-		// Don't error - just warn. Some messages may not have handlers yet
-		Con_DPrintf( "CL_ParseUserMessage: Unhandled user message %d\n", msg_type );
+		MsgSize = MSG_ReadByte();  // extract the length of the variable-length message from the stream
+	}
+
+	if ( MsgSize > MAX_USER_MSG_DATA )
+	{
+		Host_Error( "DispatchUserMsg: User Msg %s/%d sent too much data (%i bytes), %i bytes max.\n",
+			msgname, msg_type, MsgSize, MAX_USER_MSG_DATA );
+	}
+
+	// Read the message payload into buffer
+	MSG_ReadBuf( MsgSize, &buf );
+
+	// Dispatch with message name and raw buffer (2003 protocol)
+	if ( !g_ClientDLL->DispatchUserMessage( msgname, MsgSize, (void *)&buf ) )
+	{
+		Host_Error( "Problem Dispatching User Message %i:%s\n", msg_type, msgname );
 	}
 
 	int bufEnd = MSG_GetReadBuf()->GetNumBytesRead();
@@ -1896,7 +1884,7 @@ void CL_ParseUserMessage( void )
 
 	if ( cl_showmessages.GetInt() )
 	{
-		Con_Printf( "Usr Msg %d, size %d, offset(%i)\n", msg_type, MsgSize, bufStart );
+		Con_Printf( "Usr Msg %i:%s, offset(%i)\n", msg_type, msgname, bufStart );
 	}
 }
 

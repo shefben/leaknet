@@ -28,7 +28,7 @@ public:
 	void VidInit( void );
 	void Reset( void );
 	virtual bool ShouldDraw( void );
-	void MsgFunc_ShowMenu( bf_read &msg );
+	void MsgFunc_ShowMenu( const char *pszName, int iSize, void *pbuf );
 
 	bool IsMenuOpen( void );
 	void SelectMenuItem( int menu_item );

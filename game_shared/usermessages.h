@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
 //
-// Purpose: User message registration and dispatch system (2007 protocol)
+// Purpose: User message registration and dispatch system (2003 protocol)
 //
-//=============================================================================//
+//=============================================================================
 
 #ifndef USERMESSAGES_H
 #define USERMESSAGES_H
@@ -12,19 +12,18 @@
 
 #include "utldict.h"
 #include "utlvector.h"
-#include "bitbuf.h"
 
-// Client dispatch function for usermessages - uses bf_read for efficient binary reading
-typedef void (*pfnUserMsgHook)(bf_read &msg);
+// Client dispatch function for usermessages (2003 protocol)
+// pszName: message name
+// iSize: message size in bytes
+// pbuf: raw message data buffer
+typedef void (*pfnUserMsgHook)(const char *pszName, int iSize, void *pbuf);
 
 //-----------------------------------------------------------------------------
 // Purpose: Individual user message entry
 //-----------------------------------------------------------------------------
-class CUserMessage
+struct UserMessage
 {
-public:
-	CUserMessage() : size(0), name(NULL) {}
-
 	// byte size of message, or -1 for variable sized
 	int				size;
 	// Message name (pointer to registered name string)
@@ -56,11 +55,11 @@ public:
 	// Client only - hook a message handler
 	void	HookMessage( const char *name, pfnUserMsgHook hook );
 
-	// Client only - dispatch an incoming message by type index
-	bool	DispatchUserMessage( int msg_type, bf_read &msg_data );
+	// Client only - dispatch an incoming message (2003 protocol)
+	bool	DispatchUserMessage( const char *pszName, int iSize, void *pbuf );
 
 private:
-	CUtlDict< CUserMessage*, int >	m_UserMessages;
+	CUtlDict< UserMessage*, int >	m_UserMessages;
 };
 
 extern CUserMessages *usermessages;

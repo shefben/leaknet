@@ -110,7 +110,7 @@ BEGIN_SRC( CLIENT_BMOD_SOURCE_FILES "Source Files" )
 			"bmod_dll/hud_damageindicator.cpp"
 			"bmod_hud/hud_suitpower.cpp"
 			"${SRCDIR}/game_shared/hl2/hl2_gamerules.cpp"
-			"${SRCDIR}/game_shared/bmod/bmod_usermessages.cpp"
+			# "${SRCDIR}/game_shared/bmod/bmod_usermessages.cpp" # Commented out due to multiple definition conflicts with usermessages.cpp
 			"${SRCDIR}/game_shared/hl_gamemovement.cpp"
 			"bmod_hud/hud_suitpower.h"
 			"bmod_hud/hud_weaponselection.cpp"

@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
 //
-// Purpose: HUD message and command hook macros (2007 protocol)
+// Purpose: HUD message and command hook macros (2003 protocol)
 //
-//=============================================================================//
+//=============================================================================
 
 #if !defined( HUD_MACROS_H )
 #define HUD_MACROS_H
@@ -11,31 +11,29 @@
 #endif
 
 #include "usermessages.h"
-#include "parsemsg.h"
 
 //-----------------------------------------------------------------------------
-// Message Hooks (2007 protocol)
+// Message Hooks (2003 protocol)
 //-----------------------------------------------------------------------------
 
 // Hook a message handler to the usermessages system
 #define HOOK_MESSAGE(x) usermessages->HookMessage(#x, __MsgFunc_##x );
 
 // Message declaration for non-CHudElement classes
-// Creates wrapper that initializes READ_* functions and forwards to class method
-#define DECLARE_MESSAGE(y, x) void __MsgFunc_##x( bf_read &msg ) \
+// Uses raw buffer with name, size, and buffer pointer (2003 protocol)
+#define DECLARE_MESSAGE(y, x) void __MsgFunc_##x(const char *pszName, int iSize, void *pbuf) \
 	{											\
-		BEGIN_READ( msg );						\
-		y.MsgFunc_##x( msg );					\
+		y.MsgFunc_##x(pszName, iSize, pbuf );	\
 	}
 
 // Message declaration for CHudElement classes that use the hud element factory
-#define DECLARE_HUD_MESSAGE(y, x) void __MsgFunc_##x( bf_read &msg ) \
+// Uses raw buffer with name, size, and buffer pointer (2003 protocol)
+#define DECLARE_HUD_MESSAGE(y, x) void __MsgFunc_##x(const char *pszName, int iSize, void *pbuf) \
 	{																\
-		BEGIN_READ( msg );											\
 		CHudElement *pElement = gHUD.FindElement( #y );				\
 		if ( pElement )												\
 		{															\
-			((y *)pElement)->MsgFunc_##x( msg );					\
+			((y *)pElement)->MsgFunc_##x(pszName, iSize, pbuf );	\
 		}															\
 	}
 
@@ -44,8 +42,8 @@
 //-----------------------------------------------------------------------------
 
 // Declare a standalone message handler function
-// Use this for messages that don't go to a specific class
-#define DECLARE_MESSAGE_FUNC(x) void __MsgFunc_##x( bf_read &msg )
+// Uses raw buffer with name, size, and buffer pointer (2003 protocol)
+#define DECLARE_MESSAGE_FUNC(x) void __MsgFunc_##x(const char *pszName, int iSize, void *pbuf)
 
 //-----------------------------------------------------------------------------
 // Command Hooks

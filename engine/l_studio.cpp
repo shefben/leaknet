@@ -140,10 +140,9 @@ bool Mod_LoadStudioModel (model_t *mod, void *buffer, bool zerostructure )
 
 
 	// Make sure we don't have too many verts in each model (will kill decal vertex caching if so)
-	// NOTE: Only check v37 models. v44+ models have different mstudiomodel_t layout with
-	// additional vertexdata member, causing structure size mismatch when iterating.
-	// v44+ models also use external VVD files for vertex data, making embedded counts unreliable.
-	if (phdr->version == STUDIO_VERSION_37)
+	// Note: Skip this check for v37 models as the structure layout may differ
+	// and vertex counts are embedded differently
+	if (phdr->version >= STUDIO_VERSION_44)
 	{
 		int bodyPartID;
 		for( bodyPartID = 0; bodyPartID < phdr->numbodyparts; bodyPartID++ )

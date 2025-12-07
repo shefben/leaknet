@@ -4421,11 +4421,11 @@ RenderGroup_t C_BaseEntity::GetRenderGroup()
 	return renderGroup;
 }
 
-// Purpose: Decal removing (2007 protocol)
+// Purpose: Decal removing (2003 protocol)
 //-----------------------------------------------------------------------------
-void __MsgFunc_ClearDecals( bf_read &msg )
+void __MsgFunc_ClearDecals( const char *pszName, int iSize, void *pbuf )
 {
-	BEGIN_READ( msg );
+	BEGIN_READ( pbuf, iSize );
 
 	int iEntIndex = READ_BYTE();
 	C_BaseEntity *pEntity = cl_entitylist->GetEnt( iEntIndex );
