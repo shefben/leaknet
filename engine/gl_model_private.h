@@ -325,12 +325,19 @@ struct studiodata_t
 	vcollide_t	vcollisionData;
 
 	studiohwdata_t hardwareData;
-	
+
 	// true if the studio mesh data has been loaded
 	bool		studiomeshLoaded;
 
 	// true if the collision data has been loaded
 	bool		vcollisionLoaded;
+
+	//-----------------------------------------------------------------------------
+	// v48: VVD vertex data storage for models with external vertex files
+	// This memory is owned by the model and freed when the model is unloaded
+	//-----------------------------------------------------------------------------
+	void		*pVvdData;			// External VVD vertex data (NULL for v37 embedded)
+	int			nVvdDataSize;		// Size of VVD data in bytes
 };
 
 

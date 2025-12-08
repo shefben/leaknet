@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -216,6 +216,9 @@ static int R_StudioAssignMeshIDs( studiohdr_t *pStudioHdr )
 
 	assert( pStudioHdr );
 
+	// Runtime version check - engine must support all model versions
+	bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
+
 	// Iterate over every body part...
 	for ( i = 0; i < pStudioHdr->numbodyparts; i++ )
 	{
@@ -224,13 +227,35 @@ static int R_StudioAssignMeshIDs( studiohdr_t *pStudioHdr )
 		// Iterate over every submodel...
 		for (j = 0; j < pBodyPart->nummodels; ++j)
 		{
-			mstudiomodel_t* pModel = pBodyPart->pModel(j);
-			
-			// Iterate over all the meshes....
-			for (k = 0; k < pModel->nummeshes; ++k)
+			// Get nummeshes using correct struct based on MDL version
+			int nummeshes;
+			if (bIsV44Plus)
 			{
-				mstudiomesh_t* pMesh = pModel->pMesh(k);
-				pMesh->meshid = id++;
+				mstudiomodel_v44_t* pModel44 = pBodyPart->pModel_v44(j);
+				nummeshes = pModel44->nummeshes;
+			}
+			else
+			{
+				mstudiomodel_t* pModel37 = pBodyPart->pModel(j);
+				nummeshes = pModel37->nummeshes;
+			}
+
+			// Iterate over all the meshes....
+			for (k = 0; k < nummeshes; ++k)
+			{
+				// Assign mesh ID using correct struct based on MDL version
+				if (bIsV44Plus)
+				{
+					mstudiomodel_v44_t* pModel44 = pBodyPart->pModel_v44(j);
+					mstudiomesh_v44_t* pMesh44 = pModel44->pMesh(k);
+					pMesh44->meshid = id++;
+				}
+				else
+				{
+					mstudiomodel_t* pModel37 = pBodyPart->pModel(j);
+					mstudiomesh_t* pMesh37 = pModel37->pMesh(k);
+					pMesh37->meshid = id++;
+				}
 			}
 		}
 	}
@@ -286,13 +311,16 @@ void CStudioRender::Mat_Stub( IMaterialSystem *pMatSys )
 }
 
 
-bool CStudioRender::LoadModel( 
+bool CStudioRender::LoadModel(
 	studiohdr_t *pStudioHdr, 	// read from the mdl file.
 	void *pVtxHdr, 				// read from the vtx file (format /*OptimizedModel::FileHeader_t)
-	studiohwdata_t	*pHardwareData 
+	studiohwdata_t	*pHardwareData
 	)
 {
 #ifdef _DEBUG
+	// Runtime version check - engine must support all model versions
+	bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
+
 	int bodyPartID;
 	for( bodyPartID = 0; bodyPartID < pStudioHdr->numbodyparts; bodyPartID++ )
 	{
@@ -300,9 +328,20 @@ bool CStudioRender::LoadModel(
 		int modelID;
 		for( modelID = 0; modelID < pBodyPart->nummodels; modelID++ )
 		{
-			mstudiomodel_t *pModel = pBodyPart->pModel( modelID );
+			// Get numvertices using correct struct based on MDL version
+			int numvertices;
+			if (bIsV44Plus)
+			{
+				mstudiomodel_v44_t *pModel44 = pBodyPart->pModel_v44( modelID );
+				numvertices = pModel44->numvertices;
+			}
+			else
+			{
+				mstudiomodel_t *pModel37 = pBodyPart->pModel( modelID );
+				numvertices = pModel37->numvertices;
+			}
 			int vertID;
-			for( vertID = 0; vertID < pModel->numvertices; vertID++ )
+			for( vertID = 0; vertID < numvertices; vertID++ )
 			{
 //				Vector4D *pTangentS = pModel->TangentS( vertID );
 //				Assert( pTangentS->w == -1.0f || pTangentS->w == 1.0f );
@@ -312,7 +351,7 @@ bool CStudioRender::LoadModel(
 #endif
 
 	pHardwareData->m_NumStudioMeshes = R_StudioAssignMeshIDs( pStudioHdr );
-	return Mod_LoadStudioModelVertexData( pStudioHdr, pVtxHdr, pHardwareData->m_NumStudioMeshes, 
+	return Mod_LoadStudioModelVertexData( pStudioHdr, pVtxHdr, pHardwareData->m_NumStudioMeshes,
 		&pHardwareData->m_NumLODs, &pHardwareData->m_pLODs );
 }
 

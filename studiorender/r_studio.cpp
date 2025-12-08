@@ -711,6 +711,9 @@ bool CStudioRender::R_StudioCreateStaticMeshes(const char *pModelName, studiohdr
 
 	int					i, j, k;
 
+	// Runtime version check - engine must support all model versions
+	bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
+
 	// Iterate over every body part...
 	for ( i = 0; i < pStudioHdr->numbodyparts; i++ )
 	{
@@ -720,20 +723,49 @@ bool CStudioRender::R_StudioCreateStaticMeshes(const char *pModelName, studiohdr
 		// Iterate over every submodel...
 		for (j = 0; j < pBodyPart->nummodels; ++j)
 		{
-			mstudiomodel_t* pModel = pBodyPart->pModel(j);
 			OptimizedModel::ModelHeader_t* pVtxModel = pVtxBodyPart->pModel(j);
-			
 			OptimizedModel::ModelLODHeader_t *pVtxLOD = pVtxModel->pLOD( lodID );
-			// Iterate over all the meshes....
-			for (k = 0; k < pModel->nummeshes; ++k)
+
+			// Get nummeshes using correct struct based on MDL version
+			int nummeshes;
+			if (bIsV44Plus)
 			{
-				Assert( pModel->nummeshes == pVtxLOD->numMeshes );
-				mstudiomesh_t* pMesh = pModel->pMesh(k);
+				mstudiomodel_v44_t* pModel44 = pBodyPart->pModel_v44(j);
+				nummeshes = pModel44->nummeshes;
+			}
+			else
+			{
+				mstudiomodel_t* pModel37 = pBodyPart->pModel(j);
+				nummeshes = pModel37->nummeshes;
+			}
+
+			// Iterate over all the meshes....
+			for (k = 0; k < nummeshes; ++k)
+			{
+				Assert( nummeshes == pVtxLOD->numMeshes );
 				OptimizedModel::MeshHeader_t* pVtxMesh = pVtxLOD->pMesh(k);
 
-				Assert( pMesh->meshid < numStudioMeshes );
+				// Get mesh data using correct struct based on MDL version
+				mstudiomesh_t* pMesh;
+				int meshid;
+				if (bIsV44Plus)
+				{
+					mstudiomodel_v44_t* pModel44 = pBodyPart->pModel_v44(j);
+					mstudiomesh_v44_t* pMesh44 = pModel44->pMesh(k);
+					// Cast to v37 struct for R_StudioCreateSingleMesh - fields at same offsets
+					pMesh = (mstudiomesh_t*)pMesh44;
+					meshid = pMesh44->meshid;
+				}
+				else
+				{
+					mstudiomodel_t* pModel37 = pBodyPart->pModel(j);
+					pMesh = pModel37->pMesh(k);
+					meshid = pMesh->meshid;
+				}
+
+				Assert( meshid < numStudioMeshes );
 				R_StudioCreateSingleMesh( pMesh, pVtxMesh, pVtxHdr->maxBonesPerVert,
-					&((*ppStudioMeshes)[pMesh->meshid]), pStudioHdr, pVtxHdr->IsV6() );
+					&((*ppStudioMeshes)[meshid]), pStudioHdr, pVtxHdr->IsV6() );
 			}
 		}
 	}

@@ -1213,6 +1213,10 @@ void CStaticPropMgr::OutputLevelStats( void )
 		}
 		Assert( pModel->type == mod_studio );
 		studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( pModel );
+
+		// Runtime version check - engine must support all model versions
+		bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
+
 		int bodyPart;
 		for( bodyPart = 0; bodyPart < pStudioHdr->numbodyparts; bodyPart++ )
 		{
@@ -1220,8 +1224,19 @@ void CStaticPropMgr::OutputLevelStats( void )
 			int model;
 			for( model = 0; model < pBodyPart->nummodels; model++ )
 			{
-				mstudiomodel_t *pModel = pBodyPart->pModel( model );
-				totalVerts += pModel->numvertices;
+				// Use runtime version check to get correct struct
+				int numvertices;
+				if (bIsV44Plus)
+				{
+					mstudiomodel_v44_t *pModel44 = pBodyPart->pModel_v44( model );
+					numvertices = pModel44->numvertices;
+				}
+				else
+				{
+					mstudiomodel_t *pModel37 = pBodyPart->pModel( model );
+					numvertices = pModel37->numvertices;
+				}
+				totalVerts += numvertices;
 			}
 		}
 	}

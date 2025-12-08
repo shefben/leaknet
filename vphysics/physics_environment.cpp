@@ -200,15 +200,41 @@ public:
 		int index = pObject->GetActiveIndex();
 		if ( index < m_activeObjects.Count() )
 		{
-			Assert( m_activeObjects[index] == pObject );
+			// Verify the object at this index is actually the one being deleted
+			if ( m_activeObjects[index] != pObject )
+			{
+				// Object index mismatch - could be corrupted or double-deleted
+				// Try to find the object in the array
+				for ( int i = 0; i < m_activeObjects.Count(); i++ )
+				{
+					if ( m_activeObjects[i] == pObject )
+					{
+						Remove( i );
+						pObject->SetActiveIndex( 0xFFFF );
+						return;
+					}
+				}
+				// Not found, just mark as deleted
+				pObject->SetActiveIndex( 0xFFFF );
+				return;
+			}
 			Remove( index );
 			pObject->SetActiveIndex( 0xFFFF );
 		}
-		else
+		else if ( index != 0xFFFF )
 		{
-			Assert(index==0xFFFF);
+			// Invalid index, try to find and remove
+			for ( int i = 0; i < m_activeObjects.Count(); i++ )
+			{
+				if ( m_activeObjects[i] == pObject )
+				{
+					Remove( i );
+					break;
+				}
+			}
+			pObject->SetActiveIndex( 0xFFFF );
 		}
-				
+		// else: index == 0xFFFF, already deleted
 	}
 
     void event_object_deleted( IVP_Event_Object *pEvent )

@@ -37,6 +37,20 @@ BEGIN_SRC( SERVER_BMOD_SOURCE_FILES "Source Files" )
 			"hl2_dll/weapon_ar2.cpp"
 			"hl2_dll/weapon_ar2.h"
 			"hl2_dll/weapon_shotgun.cpp"
+
+			# Additional HL2 weapons
+			"bmod_dll/weapon_frag.cpp"
+			"bmod_dll/weapon_gauss.cpp"
+			"bmod_dll/weapon_rpg.cpp"
+
+			# Grenades needed by weapons
+			"bmod_dll/grenade_ar2.cpp"
+			"bmod_dll/grenade_frag.cpp"
+			"bmod_dll/ar2_explosion.cpp"
+
+			# Map entities
+			"bmod_dll/WaterLODControl.cpp"
+
 			"bmod_dll/hl_playermove.cpp"
 			"${SRCDIR}/game_shared/hl_gamemovement.cpp"
 			"bmod_dll/hl2_eventlog.cpp"
@@ -86,7 +100,7 @@ BEGIN_SRC( SERVER_BMOD_SOURCE_FILES "Source Files" )
 		"bmod_dll/gmod_player_start.cpp"
 		"bmod_dll/gmod_gamesetup.cpp"
 		"bmod_dll/lua_utility.cpp"
-		"bmod_dll/te_gauss.cpp"
+		# "bmod_dll/te_gauss.cpp" - TE_GaussExplosion is defined in weapon_gauss.cpp
 		"bmod_dll/skill_cvars.cpp"
 	#}
 	)

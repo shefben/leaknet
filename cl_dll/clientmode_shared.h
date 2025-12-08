@@ -42,6 +42,7 @@ public:
 	virtual			~ClientModeShared();
 	
 	virtual void	Init();
+	virtual void	InitHudElements();	// Called from LevelInit after HUD elements are created
 	virtual void	Shutdown();
 
 	virtual void	LevelInit( const char *newmap );

@@ -43,13 +43,31 @@ ClientModeShared::~ClientModeShared()
 
 //-----------------------------------------------------------------------------
 // Purpose:
+// Note: HUD elements are created in CHud::Init() which runs after this,
+// so we defer the element lookup to InitHudElements() called from LevelInit
 //-----------------------------------------------------------------------------
 void ClientModeShared::Init()
 {
-	m_pChatElement = GET_HUDELEMENT( CHudChat );
-	Assert( m_pChatElement );
-	m_pWeaponSelection = ( CBaseHudWeaponSelection * )GET_HUDELEMENT( CHudWeaponSelection );
-	Assert( m_pWeaponSelection );
+	// HUD elements are not created yet at this point
+	// They will be fetched in InitHudElements() called during LevelInit
+	m_pChatElement = NULL;
+	m_pWeaponSelection = NULL;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Fetch HUD elements after they've been created
+// Called from LevelInit since HUD elements are created by then
+//-----------------------------------------------------------------------------
+void ClientModeShared::InitHudElements()
+{
+	if (!m_pChatElement)
+	{
+		m_pChatElement = GET_HUDELEMENT( CHudChat );
+	}
+	if (!m_pWeaponSelection)
+	{
+		m_pWeaponSelection = ( CBaseHudWeaponSelection * )GET_HUDELEMENT( CHudWeaponSelection );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -275,6 +293,9 @@ void ClientModeShared::StartMessageMode( int iMessageModeType )
 //-----------------------------------------------------------------------------
 void ClientModeShared::LevelInit( const char *newmap )
 {
+	// Initialize HUD element pointers (they're created by now)
+	InitHudElements();
+
 	// Tell the Chat Interface
 	if ( m_pChatElement )
 	{

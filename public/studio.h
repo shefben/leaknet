@@ -413,7 +413,7 @@ struct mstudiobbox_t
 	}
 };
 
-// demand loaded sequence groups
+// demand loaded sequence groups - v37 format (no padding)
 struct mstudioseqgroup_t
 {
 	int					szlabelindex;	// textual name
@@ -422,10 +422,18 @@ struct mstudioseqgroup_t
 	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
 	/* cache_user_t */	void *cache;	// cache index pointer
 	int					data;			// hack for group 0
+};
 
-#if STUDIO_VERSION != 37
-	char				padding[32];	// future expansion.
-#endif
+// demand loaded sequence groups - v44+ format (with padding)
+struct mstudioseqgroup_v44_t
+{
+	int					szlabelindex;	// textual name
+	inline char * const pszLabel( void ) const { return ((char *)this) + szlabelindex; }
+	int					sznameindex;	// file name
+	inline char * pszName( void ) const { return ((char *)this) + sznameindex; }
+	/* cache_user_t */	void *cache;	// cache index pointer
+	int					data;			// hack for group 0
+	char				padding[32];	// future expansion (v44+)
 };
 
 
@@ -1276,7 +1284,8 @@ struct mstudiomesh_t
 	int					unused[5]; // remove as appropriate
 };
 
-// studio models
+// studio models - v37 format (HL2 Beta 2003)
+// This is the base struct used for v37 models with embedded vertex data
 struct mstudiomodel_t
 {
 	char				name[64];
@@ -1285,7 +1294,7 @@ struct mstudiomodel_t
 
 	float				boundingradius;
 
-	int					nummeshes;	
+	int					nummeshes;
 	int					meshindex;
 	inline mstudiomesh_t *pMesh( int i ) const { return (mstudiomesh_t *)(((byte *)this) + meshindex) + i; };
 
@@ -1307,6 +1316,72 @@ struct mstudiomodel_t
 	int					numeyeballs;
 	int					eyeballindex;
 	inline  mstudioeyeball_t *pEyeball( int i ) { return (mstudioeyeball_t *)(((byte *)this) + eyeballindex) + i; };
+
+	int					unused[8];		// remove as appropriate
+};
+
+//-----------------------------------------------------------------------------
+// v44+ struct definitions - Source 2004-2007 format with external VVD vertex data
+// These structs have embedded vertexdata members that change the struct size
+//-----------------------------------------------------------------------------
+
+// v44+ mesh struct - includes embedded mstudio_meshvertexdata_t
+struct mstudiomesh_v44_t
+{
+	int					material;
+
+	int					modelindex;
+	// Note: pModel() for v44+ must be implemented separately due to struct size differences
+
+	int					numvertices;		// number of unique vertices/normals/texcoords
+	int					vertexoffset;		// vertex mstudiovertex_t
+
+	int					numflexes;			// vertex animation
+	int					flexindex;
+	inline mstudioflex_t *pFlex( int i ) const { return (mstudioflex_t *)(((byte *)this) + flexindex) + i; };
+
+	// special codes for material operations
+	int					materialtype;
+	int					materialparam;
+
+	// a unique ordinal for this mesh
+	int					meshid;
+
+	Vector				center;
+
+	// v44+: Embedded vertex data for external VVD files
+	mstudio_meshvertexdata_t vertexdata;
+
+	int					unused[8]; // remove as appropriate
+};
+
+// v44+ model struct - includes embedded mstudio_modelvertexdata_t
+struct mstudiomodel_v44_t
+{
+	char				name[64];
+
+	int					type;
+
+	float				boundingradius;
+
+	int					nummeshes;
+	int					meshindex;
+	inline mstudiomesh_v44_t *pMesh( int i ) const { return (mstudiomesh_v44_t *)(((byte *)this) + meshindex) + i; };
+
+	// cache purposes
+	int					numvertices;		// number of unique vertices/normals/texcoords
+	int					vertexindex;		// vertex Vector
+	int					tangentsindex;		// tangents Vector
+
+	int					numattachments;
+	int					attachmentindex;
+
+	int					numeyeballs;
+	int					eyeballindex;
+	inline  mstudioeyeball_t *pEyeball( int i ) { return (mstudioeyeball_t *)(((byte *)this) + eyeballindex) + i; };
+
+	// v44+: Embedded vertex data pointers for external VVD files
+	mstudio_modelvertexdata_t vertexdata;
 
 	int					unused[8];		// remove as appropriate
 };
@@ -1451,7 +1526,12 @@ struct mstudiobodyparts_t
 	int					nummodels;
 	int					base;
 	int					modelindex; // index into models array
+
+	// v37 accessor - uses v37 struct size for pointer arithmetic
 	inline mstudiomodel_t *pModel( int i ) const { return (mstudiomodel_t *)(((byte *)this) + modelindex) + i; };
+
+	// v44+ accessor - uses v44+ struct size for pointer arithmetic
+	inline mstudiomodel_v44_t *pModel_v44( int i ) const { return (mstudiomodel_v44_t *)(((byte *)this) + modelindex) + i; };
 };
 
 

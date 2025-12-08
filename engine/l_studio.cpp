@@ -114,10 +114,14 @@ bool Mod_LoadStudioModel (model_t *mod, void *buffer, bool zerostructure )
 
 	phdr = (studiohdr_t *)pin;
 
+	// Early debug
+	Warning("Mod_LoadStudioModel ENTER: %s, v=%d, id=0x%x\n", mod->name, phdr->version, phdr->id);
+
 	// VXP: For debugger
 #ifdef _DEBUG
-	phdr->pSeqgroup(0)->pszLabel();
-	phdr->pSeqgroup(0)->pszName();
+	// Disabled: unsafe struct access for v44+ models
+	// phdr->pSeqgroup(0)->pszLabel();
+	// phdr->pSeqgroup(0)->pszName();
 
 #if STUDIO_VERSION == 37
 	phdr->pSeqdesc(0)->anim(0, 0);
@@ -154,14 +158,19 @@ bool Mod_LoadStudioModel (model_t *mod, void *buffer, bool zerostructure )
 			int modelID;
 			for( modelID = 0; modelID < pBodyPart->nummodels; modelID++ )
 			{
-				mstudiomodel_t *pModel = pBodyPart->pModel( modelID );
-				if (!pModel)
-					continue;
-
-	//			Assert( pModel->numvertices < MAXSTUDIOVERTS );
-				if( pModel->numvertices >= MAXSTUDIOVERTS )
+				int numverts = 0;
+				// v44+ uses 148-byte model struct, v37 uses 140-byte
+				if (phdr->version >= STUDIO_VERSION_44) {
+					mstudiomodel_v44_t *pModel = pBodyPart->pModel_v44( modelID );
+					if (pModel) numverts = pModel->numvertices;
+				} else {
+					mstudiomodel_t *pModel = pBodyPart->pModel( modelID );
+					if (pModel) numverts = pModel->numvertices;
+				}
+	//			Assert( numverts < MAXSTUDIOVERTS );
+				if( numverts >= MAXSTUDIOVERTS )
 				{
-					Warning( "%s exceeds MAXSTUDIOVERTS (%d >= %d)\n", phdr->name, pModel->numvertices,
+					Warning( "%s exceeds MAXSTUDIOVERTS (%d >= %d)\n", phdr->name, numverts,
 						( int )MAXSTUDIOVERTS );
 					return false;
 				}

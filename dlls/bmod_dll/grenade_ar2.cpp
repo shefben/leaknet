@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -23,8 +23,7 @@ extern short	g_sModelIndexFireball;			// (in combatweapon.cpp) holds the index f
 extern ConVar    sk_plr_dmg_ar2_grenade;
 extern ConVar    sk_npc_dmg_ar2_grenade;
 extern ConVar    sk_max_ar2_grenade;
-
-ConVar	  sk_ar2_grenade_radius		( "sk_ar2_grenade_radius","0");
+extern ConVar    sk_ar2_grenade_radius;
 
 ConVar g_CV_DustExplosion("dust_explosion", "0", 0); // temporary dust explosion switch
 ConVar g_CV_SmokeTrail("smoke_trail", "1", 0); // temporary dust explosion switch

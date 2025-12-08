@@ -3654,6 +3654,88 @@ static void ComputeFlags( model_t* mod )
 
 
 //-----------------------------------------------------------------------------
+// v48: Setup vertex data pointers in studiohdr from VVD data
+// This patches the model's vertex indices to point to VVD vertex data
+//-----------------------------------------------------------------------------
+static void Studio_SetupVvdVertexPointers( studiohdr_t *pStudioHdr, vertexFileHeader_t *pVvdHdr )
+{
+	if (!pStudioHdr || !pVvdHdr)
+		return;
+
+	// Get vertex and tangent data from VVD
+	const byte *pVertexData = pVvdHdr->GetVertexData();
+	const byte *pTangentData = pVvdHdr->GetTangentData();
+
+	if (!pVertexData)
+	{
+		DevWarning("Studio_SetupVvdVertexPointers: VVD has no vertex data\n");
+		return;
+	}
+
+	DevMsg("Setting up VVD vertex pointers for %s (v%d)\n", pStudioHdr->name, pStudioHdr->version);
+
+	// Runtime version check - engine must support all model versions
+	bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
+
+	// Iterate through all bodyparts and models to patch vertex indices
+	int vertexOffset = 0;
+	for (int bodyPartID = 0; bodyPartID < pStudioHdr->numbodyparts; bodyPartID++)
+	{
+		mstudiobodyparts_t *pBodyPart = pStudioHdr->pBodypart(bodyPartID);
+		for (int modelID = 0; modelID < pBodyPart->nummodels; modelID++)
+		{
+			// Use runtime version check to get correct struct
+			int numvertices;
+			char *modelName;
+			int *pVertexIndex;
+			int *pTangentsIndex;
+
+			if (bIsV44Plus)
+			{
+				mstudiomodel_v44_t *pModel44 = pBodyPart->pModel_v44(modelID);
+				numvertices = pModel44->numvertices;
+				modelName = pModel44->name;
+				pVertexIndex = &pModel44->vertexindex;
+				pTangentsIndex = &pModel44->tangentsindex;
+
+				// Calculate offset from pModel to vertex data in VVD
+				ptrdiff_t vertexDataOffset = (ptrdiff_t)(pVertexData + vertexOffset * sizeof(mstudiovertex_t)) - (ptrdiff_t)pModel44;
+				*pVertexIndex = (int)vertexDataOffset;
+
+				if (pTangentData)
+				{
+					ptrdiff_t tangentDataOffset = (ptrdiff_t)(pTangentData + vertexOffset * sizeof(Vector4D)) - (ptrdiff_t)pModel44;
+					*pTangentsIndex = (int)tangentDataOffset;
+				}
+			}
+			else
+			{
+				mstudiomodel_t *pModel37 = pBodyPart->pModel(modelID);
+				numvertices = pModel37->numvertices;
+				modelName = pModel37->name;
+				pVertexIndex = &pModel37->vertexindex;
+				pTangentsIndex = &pModel37->tangentsindex;
+
+				// Calculate offset from pModel to vertex data in VVD
+				ptrdiff_t vertexDataOffset = (ptrdiff_t)(pVertexData + vertexOffset * sizeof(mstudiovertex_t)) - (ptrdiff_t)pModel37;
+				*pVertexIndex = (int)vertexDataOffset;
+
+				if (pTangentData)
+				{
+					ptrdiff_t tangentDataOffset = (ptrdiff_t)(pTangentData + vertexOffset * sizeof(Vector4D)) - (ptrdiff_t)pModel37;
+					*pTangentsIndex = (int)tangentDataOffset;
+				}
+			}
+
+			DevMsg("  Model %s: %d verts, vertexindex patched to offset %d\n",
+				modelName, numvertices, *pVertexIndex);
+
+			vertexOffset += numvertices;
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
 // Loads the static meshes
 // Supports both v37 (embedded vertices) and v44+ (external VVD vertices) models
 //-----------------------------------------------------------------------------
@@ -3705,7 +3787,30 @@ void CModelLoader::Studio_LoadStaticMeshes( model_t* mod )
 				mod->studio.studiomeshLoaded = false;
 				return;
 			}
-			pVvdData = tmpVvdMem.Base();
+
+			// Persist VVD data - copy from temp buffer to permanent storage
+			int vvdSize = tmpVvdMem.Count();
+			mod->studio.pVvdData = malloc(vvdSize);
+			if (!mod->studio.pVvdData)
+			{
+				Con_DPrintf( "--ERROR-- : Failed to allocate %d bytes for VVD data: %s\n",
+					vvdSize, pStudioHdr->name );
+				mod->studio.studiomeshLoaded = false;
+				return;
+			}
+			memcpy(mod->studio.pVvdData, tmpVvdMem.Base(), vvdSize);
+			mod->studio.nVvdDataSize = vvdSize;
+
+			pVvdData = mod->studio.pVvdData;
+
+			// Setup vertex pointers in studiohdr to point to VVD data
+			Studio_SetupVvdVertexPointers(pStudioHdr, (vertexFileHeader_t *)pVvdData);
+		}
+		else
+		{
+			// v37 models don't have VVD data
+			mod->studio.pVvdData = NULL;
+			mod->studio.nVvdDataSize = 0;
 		}
 
 		//-----------------------------------------------------------------------------
@@ -3718,6 +3823,13 @@ void CModelLoader::Studio_LoadStaticMeshes( model_t* mod )
 				pVvdData, &mod->studio.hardwareData ) )
 			{
 				mod->studio.studiomeshLoaded = false;
+				// Free VVD data on failure
+				if (mod->studio.pVvdData)
+				{
+					free(mod->studio.pVvdData);
+					mod->studio.pVvdData = NULL;
+					mod->studio.nVvdDataSize = 0;
+				}
 				return;
 			}
 		}

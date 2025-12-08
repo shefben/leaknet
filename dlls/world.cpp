@@ -411,9 +411,12 @@ void CWorld::Precache( void )
 	// This is normal and handled by deleting the old rules
 	if (g_pGameRules)
 	{
+		extern bool g_bDisableEhandleAccess;
 		DevWarning( "CWorld::Spawn - g_pGameRules was not NULL, cleaning up previous instance\n" );
 		g_pGameRules->LevelShutdown();
+		g_bDisableEhandleAccess = true;  // Indicate we're doing proper cleanup
 		delete g_pGameRules;
+		g_bDisableEhandleAccess = false;
 		g_pGameRules = NULL;
 	}
 

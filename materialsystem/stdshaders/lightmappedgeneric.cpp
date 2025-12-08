@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: Lightmap only shader
 //
@@ -308,15 +308,15 @@ BEGIN_VS_SHADER( LightmappedGeneric,
 			pShaderAPI->SetVertexShaderIndex( vshIndex.GetIndex() );
 
 			SetVertexShaderTextureTransform( 90, BASETEXTURETRANSFORM );
-			if( hasDetailTexture )
-			{
-				SetVertexShaderTextureScaledTransform( 92, BASETEXTURETRANSFORM, DETAILSCALE );
-				Assert( !hasBump );
-			}
-			if( hasBump )
+			// Note: Detail and bump share vertex constant 92, so they are mutually exclusive
+		// When both are present, bump takes priority (like DX8 version)
+		if( hasBump )
 			{
 				SetVertexShaderTextureTransform( 92, BUMPTRANSFORM );
-				Assert( !hasDetailTexture );
+			}
+		else if( hasDetailTexture )
+			{
+				SetVertexShaderTextureScaledTransform( 92, BASETEXTURETRANSFORM, DETAILSCALE );
 			}
 			if( hasEnvmapMask )
 			{
