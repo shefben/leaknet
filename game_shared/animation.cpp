@@ -508,10 +508,10 @@ void SetBodygroup( studiohdr_t *pstudiohdr, int& body, int iGroup, int iValue )
 	if (! pstudiohdr)
 		return;
 
-	if (iGroup >= pstudiohdr->numbodyparts)
+	if (iGroup >= StudioHdr_GetNumBodyparts(pstudiohdr))
 		return;
 
-	mstudiobodyparts_t *pbodypart = pstudiohdr->pBodypart( iGroup );
+	mstudiobodyparts_t *pbodypart = StudioHdr_GetBodypart( pstudiohdr, iGroup );
 
 	if (iValue >= pbodypart->nummodels)
 		return;
@@ -527,10 +527,10 @@ int GetBodygroup( studiohdr_t *pstudiohdr, int body, int iGroup )
 	if (! pstudiohdr)
 		return 0;
 
-	if (iGroup >= pstudiohdr->numbodyparts)
+	if (iGroup >= StudioHdr_GetNumBodyparts(pstudiohdr))
 		return 0;
 
-	mstudiobodyparts_t *pbodypart = pstudiohdr->pBodypart( iGroup );
+	mstudiobodyparts_t *pbodypart = StudioHdr_GetBodypart( pstudiohdr, iGroup );
 
 	if (pbodypart->nummodels <= 1)
 		return 0;
@@ -545,10 +545,10 @@ const char *GetBodygroupName( studiohdr_t *pstudiohdr, int iGroup )
 	if ( !pstudiohdr)
 		return "";
 
-	if (iGroup >= pstudiohdr->numbodyparts)
+	if (iGroup >= StudioHdr_GetNumBodyparts(pstudiohdr))
 		return "";
 
-	mstudiobodyparts_t *pbodypart = pstudiohdr->pBodypart( iGroup );
+	mstudiobodyparts_t *pbodypart = StudioHdr_GetBodypart( pstudiohdr, iGroup );
 	return pbodypart->pszName();
 }
 
@@ -558,9 +558,9 @@ int FindBodygroupByName( studiohdr_t *pstudiohdr, const char *name )
 		return -1;
 
 	int group;
-	for ( group = 0; group < pstudiohdr->numbodyparts; group++ )
+	for ( group = 0; group < StudioHdr_GetNumBodyparts(pstudiohdr); group++ )
 	{
-		mstudiobodyparts_t *pbodypart = pstudiohdr->pBodypart( group );
+		mstudiobodyparts_t *pbodypart = StudioHdr_GetBodypart( pstudiohdr, group );
 		if ( !Q_strcasecmp( name, pbodypart->pszName() ) )
 		{
 			return group;
@@ -575,10 +575,10 @@ int GetBodygroupCount( studiohdr_t *pstudiohdr, int iGroup )
 	if ( !pstudiohdr )
 		return 0;
 
-	if (iGroup >= pstudiohdr->numbodyparts)
+	if (iGroup >= StudioHdr_GetNumBodyparts(pstudiohdr))
 		return 0;
 
-	mstudiobodyparts_t *pbodypart = pstudiohdr->pBodypart( iGroup );
+	mstudiobodyparts_t *pbodypart = StudioHdr_GetBodypart( pstudiohdr, iGroup );
 	return pbodypart->nummodels;
 }
 
@@ -587,7 +587,7 @@ int GetNumBodyGroups( studiohdr_t *pstudiohdr )
 	if ( !pstudiohdr )
 		return 0;
 
-	return pstudiohdr->numbodyparts;
+	return StudioHdr_GetNumBodyparts(pstudiohdr);
 }
 
 int GetSequenceActivity( studiohdr_t *pstudiohdr, int sequence )

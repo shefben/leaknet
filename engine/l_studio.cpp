@@ -144,33 +144,29 @@ bool Mod_LoadStudioModel (model_t *mod, void *buffer, bool zerostructure )
 
 
 	// Make sure we don't have too many verts in each model (will kill decal vertex caching if so)
-	// Note: Skip this check for v37 models as the structure layout may differ
-	// and vertex counts are embedded differently
+	// For v44+ models, we must use studiohdr_v44_t which has the correct binary layout
 	if (phdr->version >= STUDIO_VERSION_44)
 	{
+		// Cast to v44 header - critical for correct field offsets!
+		studiohdr_v44_t *phdr44 = (studiohdr_v44_t *)phdr;
+
 		int bodyPartID;
-		for( bodyPartID = 0; bodyPartID < phdr->numbodyparts; bodyPartID++ )
+		for( bodyPartID = 0; bodyPartID < phdr44->numbodyparts; bodyPartID++ )
 		{
-			mstudiobodyparts_t *pBodyPart = phdr->pBodypart( bodyPartID );
+			mstudiobodyparts_t *pBodyPart = phdr44->pBodypart( bodyPartID );
 			if (!pBodyPart)
 				continue;
 
 			int modelID;
 			for( modelID = 0; modelID < pBodyPart->nummodels; modelID++ )
 			{
-				int numverts = 0;
-				// v44+ uses 148-byte model struct, v37 uses 140-byte
-				if (phdr->version >= STUDIO_VERSION_44) {
-					mstudiomodel_v44_t *pModel = pBodyPart->pModel_v44( modelID );
-					if (pModel) numverts = pModel->numvertices;
-				} else {
-					mstudiomodel_t *pModel = pBodyPart->pModel( modelID );
-					if (pModel) numverts = pModel->numvertices;
-				}
-	//			Assert( numverts < MAXSTUDIOVERTS );
+				// v44+ uses 148-byte model struct with mstudio_modelvertexdata_t
+				mstudiomodel_v44_t *pModel = pBodyPart->pModel_v44( modelID );
+				int numverts = pModel ? pModel->numvertices : 0;
+
 				if( numverts >= MAXSTUDIOVERTS )
 				{
-					Warning( "%s exceeds MAXSTUDIOVERTS (%d >= %d)\n", phdr->name, numverts,
+					Warning( "%s exceeds MAXSTUDIOVERTS (%d >= %d)\n", phdr44->name, numverts,
 						( int )MAXSTUDIOVERTS );
 					return false;
 				}

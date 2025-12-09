@@ -220,9 +220,9 @@ static int R_StudioAssignMeshIDs( studiohdr_t *pStudioHdr )
 	bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
 
 	// Iterate over every body part...
-	for ( i = 0; i < pStudioHdr->numbodyparts; i++ )
+	for ( i = 0; i < StudioHdr_GetNumBodyparts(pStudioHdr); i++ )
 	{
-		mstudiobodyparts_t* pBodyPart = pStudioHdr->pBodypart(i);
+		mstudiobodyparts_t* pBodyPart = StudioHdr_GetBodypart(pStudioHdr, i);
 
 		// Iterate over every submodel...
 		for (j = 0; j < pBodyPart->nummodels; ++j)
@@ -322,9 +322,9 @@ bool CStudioRender::LoadModel(
 	bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
 
 	int bodyPartID;
-	for( bodyPartID = 0; bodyPartID < pStudioHdr->numbodyparts; bodyPartID++ )
+	for( bodyPartID = 0; bodyPartID < StudioHdr_GetNumBodyparts(pStudioHdr); bodyPartID++ )
 	{
-		mstudiobodyparts_t *pBodyPart = pStudioHdr->pBodypart( bodyPartID );
+		mstudiobodyparts_t *pBodyPart = StudioHdr_GetBodypart(pStudioHdr, bodyPartID );
 		int modelID;
 		for( modelID = 0; modelID < pBodyPart->nummodels; modelID++ )
 		{
@@ -926,7 +926,7 @@ void CStudioRender::GetPerfStats( DrawModelInfo_t &info, CUtlBuffer *pSpewBuf ) 
 	short *pSkinRef	= info.m_pStudioHdr->pSkinref( info.m_Skin * info.m_pStudioHdr->numskinref );
 	
 	int i;
-	for (i=0 ; i < info.m_pStudioHdr->numbodyparts ; i++) 
+	for (i=0 ; i < StudioHdr_GetNumBodyparts(info.m_pStudioHdr) ; i++) 
 	{
 		mstudiomodel_t *pModel = NULL;
 		R_StudioSetupModel( i, info.m_Body, &pModel, info.m_pStudioHdr );

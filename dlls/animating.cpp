@@ -1040,9 +1040,9 @@ void CBaseAnimating::GetEyeballs( Vector &origin, QAngle &angles )
 		return;
 	}
 
-	for (int iBodypart = 0; iBodypart < pStudioHdr->numbodyparts; iBodypart++)
+	for (int iBodypart = 0; iBodypart < StudioHdr_GetNumBodyparts(pStudioHdr); iBodypart++)
 	{
-		mstudiobodyparts_t *pBodypart = pStudioHdr->pBodypart( iBodypart );
+		mstudiobodyparts_t *pBodypart = StudioHdr_GetBodypart( pStudioHdr, iBodypart );
 		for (int iModel = 0; iModel < pBodypart->nummodels; iModel++)
 		{
 			mstudiomodel_t *pModel = pBodypart->pModel( iModel );

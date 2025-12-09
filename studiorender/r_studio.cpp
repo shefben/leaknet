@@ -714,10 +714,13 @@ bool CStudioRender::R_StudioCreateStaticMeshes(const char *pModelName, studiohdr
 	// Runtime version check - engine must support all model versions
 	bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
 
+	// Use version-safe accessors for header fields that differ between v37 and v44+
+	int numBodyParts = StudioHdr_GetNumBodyparts(pStudioHdr);
+
 	// Iterate over every body part...
-	for ( i = 0; i < pStudioHdr->numbodyparts; i++ )
+	for ( i = 0; i < numBodyParts; i++ )
 	{
-		mstudiobodyparts_t* pBodyPart = pStudioHdr->pBodypart(i);
+		mstudiobodyparts_t* pBodyPart = StudioHdr_GetBodypart(pStudioHdr, i);
 		OptimizedModel::BodyPartHeader_t* pVtxBodyPart = pVtxHdr->pBodyPart(i);
 
 		// Iterate over every submodel...
@@ -875,19 +878,25 @@ int CStudioRender::R_StudioSetupModel ( int bodypart, int entity_body, mstudiomo
 	int index;
 	mstudiobodyparts_t   *pbodypart;
 
-	if (bodypart > pStudioHdr->numbodyparts)
+	// Use version-safe accessor for v37/v44+ compatibility
+	int numBodyParts = StudioHdr_GetNumBodyparts(pStudioHdr);
+	if (bodypart > numBodyParts)
 	{
 		Con_DPrintf ("R_StudioSetupModel: no such bodypart %d\n", bodypart);
 		bodypart = 0;
 	}
 
-	pbodypart = pStudioHdr->pBodypart( bodypart );
+	pbodypart = StudioHdr_GetBodypart(pStudioHdr, bodypart);
 
 	index = entity_body / pbodypart->base;
 	index = index % pbodypart->nummodels;
 
 	Assert( ppSubModel );
-	*ppSubModel = pbodypart->pModel( index );
+	// For v44+, use the correct model accessor - caller receives mstudiomodel_t* cast
+	if (pStudioHdr->version >= STUDIO_VERSION_44)
+		*ppSubModel = (mstudiomodel_t*)pbodypart->pModel_v44( index );
+	else
+		*ppSubModel = pbodypart->pModel( index );
 	return index;
 }
 

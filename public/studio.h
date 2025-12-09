@@ -2559,4 +2559,7 @@ inline bool Studio_IsValidModelVersion( int version )
 	return version >= STUDIO_VERSION_MIN && version <= STUDIO_VERSION_MAX;
 }
 
+// Include the v44+ header struct definition after all dependencies are defined
+#include "studiohdr_v44.h"
+
 #endif // STUDIO_H

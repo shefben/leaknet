@@ -933,7 +933,7 @@ void CStudioRender::AddDecal( StudioDecalHandle_t handle, studiohdr_t *pStudioHd
 		int prevIndexCount = buildInfo.m_pDecalMaterial->m_Indices.Count();
 
 		// Step over all body parts + add decals to em all!
-		for ( int k=0 ; k < m_pStudioHdr->numbodyparts ; k++) 
+		for ( int k=0 ; k < StudioHdr_GetNumBodyparts(m_pStudioHdr) ; k++) 
 		{
 			// Grab the model for this body part
 			int model = R_StudioSetupModel( k, body, &m_pSubModel, m_pStudioHdr );

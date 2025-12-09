@@ -358,7 +358,7 @@ int CStudioRender::R_StudioRenderFinal(
 
 	if( m_Config.drawEntities == 1 )
 	{
-		for (i=0 ; i < m_pStudioHdr->numbodyparts ; i++) 
+		for (i=0 ; i < StudioHdr_GetNumBodyparts(m_pStudioHdr) ; i++) 
 		{
 			int model = R_StudioSetupModel( i, body, &m_pSubModel, m_pStudioHdr );
 

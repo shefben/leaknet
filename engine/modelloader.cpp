@@ -3678,10 +3678,12 @@ static void Studio_SetupVvdVertexPointers( studiohdr_t *pStudioHdr, vertexFileHe
 	bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
 
 	// Iterate through all bodyparts and models to patch vertex indices
+	// Use version-safe accessors for v37/v44+ compatibility
+	int numBodyParts = StudioHdr_GetNumBodyparts(pStudioHdr);
 	int vertexOffset = 0;
-	for (int bodyPartID = 0; bodyPartID < pStudioHdr->numbodyparts; bodyPartID++)
+	for (int bodyPartID = 0; bodyPartID < numBodyParts; bodyPartID++)
 	{
-		mstudiobodyparts_t *pBodyPart = pStudioHdr->pBodypart(bodyPartID);
+		mstudiobodyparts_t *pBodyPart = StudioHdr_GetBodypart(pStudioHdr, bodyPartID);
 		for (int modelID = 0; modelID < pBodyPart->nummodels; modelID++)
 		{
 			// Use runtime version check to get correct struct
