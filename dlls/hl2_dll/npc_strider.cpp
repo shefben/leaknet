@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: Giant walking strider thing!
 //
@@ -1944,7 +1944,7 @@ static Vector GetAttachmentPositionInSpaceOfBone( studiohdr_t *pStudioHdr, const
 	int attachment = Studio_FindAttachment( pStudioHdr, pAttachmentName );
 
 	Vector localAttach;
-	mstudioattachment_t *pAttachment = pStudioHdr->pAttachment(attachment);
+	mstudioattachment_t *pAttachment = StudioHdr_GetAttachment(pStudioHdr, attachment);
 	MatrixGetColumn( pAttachment->local, 3, localAttach );
 
 	matrix3x4_t inputToOutputBone;

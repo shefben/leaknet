@@ -7,16 +7,40 @@
 #include "cbase.h"
 #include "usermessages.h"
 
-// Forward declaration - implemented in game-specific code
+// Forward declarations - implemented in game-specific code
+#if defined( BMOD_DLL )
+void RegisterBModUserMessages( void );
+#elif defined( HL1_DLL )
+void RegisterHL1UserMessages( void );
+#elif defined( CSTRIKE_DLL )
+void RegisterCSUserMessages( void );
+#elif defined( HL2_DLL )
+void RegisterHL2UserMessages( void );
+#elif defined( TF_DLL )
+void RegisterTFUserMessages( void );
+#else
+// Default implementation
 void RegisterUserMessages( void );
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Force registration on .dll load
 //-----------------------------------------------------------------------------
 CUserMessages::CUserMessages()
 {
-	// Game specific registration function
+#if defined( BMOD_DLL )
+	RegisterBModUserMessages();
+#elif defined( HL1_DLL )
+	RegisterHL1UserMessages();
+#elif defined( CSTRIKE_DLL )
+	RegisterCSUserMessages();
+#elif defined( HL2_DLL )
+	RegisterHL2UserMessages();
+#elif defined( TF_DLL )
+	RegisterTFUserMessages();
+#else
 	RegisterUserMessages();
+#endif
 }
 
 //-----------------------------------------------------------------------------

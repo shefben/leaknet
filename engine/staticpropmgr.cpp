@@ -1218,9 +1218,9 @@ void CStaticPropMgr::OutputLevelStats( void )
 		bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
 
 		int bodyPart;
-		for( bodyPart = 0; bodyPart < pStudioHdr->numbodyparts; bodyPart++ )
+		for( bodyPart = 0; bodyPart < StudioHdr_GetNumBodyparts(pStudioHdr); bodyPart++ )
 		{
-			mstudiobodyparts_t *pBodyPart = pStudioHdr->pBodypart( bodyPart );
+			mstudiobodyparts_t *pBodyPart = StudioHdr_GetBodypart(pStudioHdr, bodyPart);
 			int model;
 			for( model = 0; model < pBodyPart->nummodels; model++ )
 			{

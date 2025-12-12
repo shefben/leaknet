@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -321,13 +321,14 @@ void CRagdollProp::SetupBones( matrix3x4_t *pBoneToWorld, int boneMask )
 		}
 	}
 
-	mstudiobone_t *pbones = pStudioHdr->pBone( 0 );
+	// Use version-aware accessor for v37/v44+ bone structure compatibility
 	for ( i = 0; i < pStudioHdr->numbones; i++ )
 	{
 		if ( sim[i] )
 			continue;
 
-		MatrixCopy( pBoneToWorld[pbones[i].parent], pBoneToWorld[ i ] );
+		int parentBone = pStudioHdr->GetBoneParent( i );
+		MatrixCopy( pBoneToWorld[parentBone], pBoneToWorld[ i ] );
 	}
 }
 
@@ -628,8 +629,8 @@ void CRagdollPropAttached::InitRagdollAttached( IPhysicsObject *pAttached, const
 	if ( parentBoneAttach > 0 )
 	{
 		studiohdr_t *pStudioHdr = GetModelPtr();
-		mstudiobone_t *pBone = pStudioHdr->pBone( parentBoneAttach );
-		ragdollAttachedIndex = pBone->physicsbone;
+		// Use version-aware accessor for v37/v44+ bone structure compatibility
+		ragdollAttachedIndex = pStudioHdr->GetBonePhysicsbone( parentBoneAttach );
 	}
 
 	InitRagdoll( forceVector, forceBone, vec3_origin, pPrevBones, pBoneToWorld, dt, collisionGroup, false );

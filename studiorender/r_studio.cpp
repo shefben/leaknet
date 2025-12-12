@@ -14,6 +14,7 @@
 // r_studio.c: routines for setting up to draw 3DStudio models 
 #include "studio.h"
 #include "studio_v37_compat.h"
+#include "studiohdr_v44.h"
 #include "optimize.h"
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imaterialvar.h"
@@ -112,12 +113,15 @@ static const char *GetTextureName( studiohdr_t *phdr, OptimizedModel::FileHeader
 			return str;
 		}
 	}
-	// v37 texture structures are 32 bytes, v48+ are 64 bytes
-	if ( phdr->IsV37() )
+	// Use version-safe accessor for texture data
+	// v44+ has different header layout, so we need to use the helper function
+	// v37 texture structures are 32 bytes (mstudiotexture_v37_t), v48+ are 64 bytes (mstudiotexture_t)
+	mstudiotexture_t* pTexture = StudioHdr_GetTexture( phdr, inMaterialID );
+	if ( pTexture )
 	{
-		return phdr->pTexture_V37( inMaterialID )->pszName();
+		return pTexture->pszName();
 	}
-	return phdr->pTexture( inMaterialID )->pszName();
+	return "";
 }
 
 /*
@@ -129,7 +133,11 @@ typedef IMaterial *IMaterialPtr;
 void CStudioRender::LoadMaterials( studiohdr_t *phdr, OptimizedModel::FileHeader_t *pVtxHeader,
 								   studioloddata_t &lodData, int lodID )
 {
-	lodData.numMaterials = phdr->numtextures;
+	// Use version-safe accessors for texture counts - v44 has different header layout
+	int numTextures = StudioHdr_GetNumTextures(phdr);
+	int numCdTextures = StudioHdr_GetNumCdTextures(phdr);
+
+	lodData.numMaterials = numTextures;
 	if( lodData.numMaterials == 0 )
 	{
 		lodData.ppMaterials = NULL;
@@ -152,17 +160,17 @@ void CStudioRender::LoadMaterials( studiohdr_t *phdr, OptimizedModel::FileHeader
 	phdr->flags &= ~STUDIOHDR_FLAGS_USES_FB_TEXTURE;
 	phdr->flags &= ~STUDIOHDR_FLAGS_USES_BUMPMAPPING;
 	// get index of each material
-	if( phdr->textureindex != 0 )
+	if( numTextures > 0 )
 	{
-		for( i = 0; i < phdr->numtextures; i++ )
+		for( i = 0; i < numTextures; i++ )
 		{
 			char szPath[256];
 			IMaterial *pMaterial = NULL;
 			bool found = false;
 			// search through all specified directories until a valid material is found
-			for( j = 0; j < phdr->numcdtextures && !found; j++ )
+			for( j = 0; j < numCdTextures && !found; j++ )
 			{
-				Q_strncpy( szPath, phdr->pCdtexture( j ), sizeof(szPath) );
+				Q_strncpy( szPath, StudioHdr_GetCdTexture( phdr, j ), sizeof(szPath) );
 				const char *textureName = GetTextureName( phdr, pVtxHeader, lodID, i );
 				Q_strncat( szPath, textureName, sizeof(szPath) );
 
@@ -172,9 +180,9 @@ void CStudioRender::LoadMaterials( studiohdr_t *phdr, OptimizedModel::FileHeader
 			{
 				// hack - if it isn't found, go through the motions of looking for it again
 				// so that the materialsystem will give an error.
-				for( j = 0; j < phdr->numcdtextures; j++ )
+				for( j = 0; j < numCdTextures; j++ )
 				{
-					Q_strncpy( szPath, phdr->pCdtexture( j ), sizeof(szPath) );
+					Q_strncpy( szPath, StudioHdr_GetCdTexture( phdr, j ), sizeof(szPath) );
 					const char *textureName = GetTextureName( phdr, pVtxHeader, lodID, i );
 					Q_strncat( szPath, textureName, sizeof(szPath) );
 					m_pMaterialSystem->FindMaterial( szPath, NULL, true );
@@ -245,9 +253,23 @@ bool CStudioRender::R_AddVertexToMesh_V37( CMeshBuilder& meshBuilder,
 	meshBuilder.Normal3fv( pVert37->m_vecNormal.Base() );
 	meshBuilder.TexCoord2fv( 0, pVert37->m_vecTexCoord.Base() );
 
-	// v37 models don't have tangent data, use a default
-	Vector4D defaultTangent( 1.0f, 0.0f, 0.0f, 1.0f );
-	meshBuilder.UserData( defaultTangent.Base() );
+	// v37 models don't have tangent data, compute from normal
+	// Use Gram-Schmidt orthonormalization to get a tangent perpendicular to normal
+	Vector4D computedTangent;
+	const Vector& normal = pVert37->m_vecNormal;
+	Vector tangent;
+	// Choose an axis that isn't parallel to the normal
+	if ( fabs(normal.z) < 0.999f )
+	{
+		tangent = CrossProduct( Vector(0, 0, 1), normal );
+	}
+	else
+	{
+		tangent = CrossProduct( Vector(1, 0, 0), normal );
+	}
+	VectorNormalize( tangent );
+	computedTangent.Init( tangent.x, tangent.y, tangent.z, 1.0f );
+	meshBuilder.UserData( computedTangent.Base() );
 
 	// Just in case we get hooked to a material that wants per-vertex color
 	meshBuilder.Color4ub( 255, 255, 255, 255 );
@@ -322,10 +344,10 @@ bool CStudioRender::R_AddVertexToMesh_V37( CMeshBuilder& meshBuilder,
 }
 
 //-----------------------------------------------------------------------------
-// Adds a vertex to the meshbuilder for v48+ models
-// v48 VTX files use Vertex_t (9 bytes) with:
+// Adds a vertex to the meshbuilder for v44+ models
+// v44+ VTX files use Vertex_t (9 bytes) with:
 // - boneWeightIndex[3], boneID[3] as chars, origMeshVertID as unsigned short
-// v48 MDL files use external VVD with mstudiovertex_t (48 bytes)
+// v44+ MDL files use external VVD with mstudiovertex_t (48 bytes)
 //-----------------------------------------------------------------------------
 bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 	OptimizedModel::Vertex_t* pVertex, mstudiomesh_t* pMesh, bool hwSkin,
@@ -337,27 +359,46 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 	// Get model for vertex offset calculation
 	mstudiomodel_t* pModel = pMesh->pModel();
 
-	// v44+ models use standard 48-byte vertices from external VVD
-	mstudiovertex_t &vert = *pMesh->Vertex(idx);
+	// Use version-aware vertex access for v44+ models with external VVD data
+	mstudiovertex_t* pVert = Studio_GetVertex_VersionAware( pStudioHdr, pMesh, idx );
+	if ( !pVert )
+	{
+		// Fallback to standard accessor (may not work for v44+)
+		pVert = pMesh->Vertex(idx);
+	}
 
-	meshBuilder.Position3fv( vert.m_vecPosition.Base() );
-	meshBuilder.Normal3fv( vert.m_vecNormal.Base() );
-	meshBuilder.TexCoord2fv( 0, vert.m_vecTexCoord.Base() );
+	meshBuilder.Position3fv( pVert->m_vecPosition.Base() );
+	meshBuilder.Normal3fv( pVert->m_vecNormal.Base() );
+	meshBuilder.TexCoord2fv( 0, pVert->m_vecTexCoord.Base() );
 
 #ifdef _DEBUG
 //	float w = pMesh->TangentS( idx )->w;
 //	Assert( w == 1.0f || w == -1.0f );
 #endif
 	// send down tangent S as a 4D userdata vect.
-	if ( pModel->tangentsindex > 0 )
+	// Use version-aware tangent access for v44+ models with external VVD data
+	Vector4D* pTangent = Studio_GetTangentS_VersionAware( pStudioHdr, pMesh, idx );
+	if ( pTangent )
 	{
-		meshBuilder.UserData( (*pMesh->TangentS(idx)).Base() );
+		meshBuilder.UserData( pTangent->Base() );
 	}
 	else
 	{
-		// No tangent data available, use a default
-		Vector4D defaultTangent( 1.0f, 0.0f, 0.0f, 1.0f );
-		meshBuilder.UserData( defaultTangent.Base() );
+		// No tangent data available, compute from normal
+		Vector4D computedTangent;
+		const Vector& normal = pVert->m_vecNormal;
+		Vector tangent;
+		if ( fabs(normal.z) < 0.999f )
+		{
+			tangent = CrossProduct( Vector(0, 0, 1), normal );
+		}
+		else
+		{
+			tangent = CrossProduct( Vector(1, 0, 0), normal );
+		}
+		VectorNormalize( tangent );
+		computedTangent.Init( tangent.x, tangent.y, tangent.z, 1.0f );
+		meshBuilder.UserData( computedTangent.Base() );
 	}
 
 	// Just in case we get hooked to a material that wants per-vertex color
@@ -367,7 +408,11 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 	{
 		// sum up weights..
 		int i;
-		mstudioboneweight_t *pBoneWeight = pMesh->BoneWeights(idx);
+
+		// Use version-aware bone weight access
+		mstudioboneweight_t boneWeight;
+		Studio_GetBoneWeight_V37Aware( pStudioHdr, pMesh, idx, boneWeight );
+		mstudioboneweight_t *pBoneWeight = &boneWeight;
 
 		int numDesiredBones = pBoneWeight->numbones;
 		float totalWeight = 0;
@@ -391,6 +436,21 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 		// and more than 1 *actual* bone (we can have 0 vertex bones in the case of static props)
 		if ( (pVertex->numBones > 0) && (numDesiredBones <= 3) && fabs(totalWeight - 1.0f) > 0.01f )
 		{
+			// Debug output for bad bone weights - limit to first 5 occurrences
+			static int s_nDebugCount = 0;
+			if (s_nDebugCount < 5)
+			{
+				s_nDebugCount++;
+				mstudiomodel_t* pModel = pMesh->pModel();
+				mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pModel;
+				const void* pVertData = (pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44) ? pModel44->vertexdata.pVertexData : NULL;
+				DevMsg("Bad bone weight debug (%d/5):\n", s_nDebugCount);
+				DevMsg("  MDL version: %d, idx: %d, vertexoffset: %d\n", pStudioHdr ? pStudioHdr->version : -1, idx, pMesh->vertexoffset);
+				DevMsg("  pModel: %p, pVertexData: %p\n", pModel, pVertData);
+				DevMsg("  totalWeight: %.4f, numDesiredBones: %d, pVertex->numBones: %d\n", totalWeight, numDesiredBones, pVertex->numBones);
+				DevMsg("  weights[]: %.4f, %.4f, %.4f\n", pBoneWeight->weight[0], pBoneWeight->weight[1], pBoneWeight->weight[2]);
+				DevMsg("  boneWeightIndex[]: %d, %d, %d\n", pVertex->boneWeightIndex[0], pVertex->boneWeightIndex[1], pVertex->boneWeightIndex[2]);
+			}
 			ok = false;
 			totalWeight = 1.0f;
 		}

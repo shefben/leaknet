@@ -18,6 +18,7 @@
 #include "vgui/ISurface.h"
 #include "vgui/IPanel.h"
 #include <vgui_controls/AnimationController.h>
+#include "bitbuf.h"
 #include "vgui_scorepanel.h"
 #include "vgui_vprofpanel.h"
 #include "ivmodemanager.h"
@@ -53,7 +54,7 @@ public:
 static CCSModeManager g_ModeManager;
 IVModeManager *modemanager = ( IVModeManager * )&g_ModeManager;
 
-static void __MsgFunc_VGUIMenu( bf_read &msg )
+static void MsgFunc_VGUIMenu_New( bf_read &msg )
 {
 	char menuName[256];
 	msg.ReadString( menuName, sizeof(menuName) );
@@ -62,6 +63,14 @@ static void __MsgFunc_VGUIMenu( bf_read &msg )
 		GetClientModeCSNormal()->m_pBuyMenu = new CBuyMenu( GetClientModeCSNormal()->GetViewport() );
 		GetClientModeCSNormal()->m_pBuyMenu->ActivateBuyMenu();
 	}
+}
+
+// 2003 protocol wrapper for VGUIMenu message
+static void __MsgFunc_VGUIMenu( const char *pszName, int iSize, void *pbuf )
+{
+	bf_read msg;
+	msg.StartReading( pbuf, iSize );
+	MsgFunc_VGUIMenu_New( msg );
 }
 
 

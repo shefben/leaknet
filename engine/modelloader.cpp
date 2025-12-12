@@ -3654,8 +3654,10 @@ static void ComputeFlags( model_t* mod )
 
 
 //-----------------------------------------------------------------------------
-// v48: Setup vertex data pointers in studiohdr from VVD data
-// This patches the model's vertex indices to point to VVD vertex data
+// v44+: Setup vertex data pointers in studiohdr from VVD data
+// For v44+ models, we set the pVertexData/pTangentData pointers in the
+// mstudio_modelvertexdata_t embedded structure, NOT the vertexindex offset.
+// The vertexindex field is only valid for v37 models with embedded vertices.
 //-----------------------------------------------------------------------------
 static void Studio_SetupVvdVertexPointers( studiohdr_t *pStudioHdr, vertexFileHeader_t *pVvdHdr )
 {
@@ -3675,10 +3677,21 @@ static void Studio_SetupVvdVertexPointers( studiohdr_t *pStudioHdr, vertexFileHe
 	DevMsg("Setting up VVD vertex pointers for %s (v%d)\n", pStudioHdr->name, pStudioHdr->version);
 
 	// Runtime version check - engine must support all model versions
+	// Only v44+ models have external VVD data and mstudio_modelvertexdata_t
 	bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
 
-	// Iterate through all bodyparts and models to patch vertex indices
-	// Use version-safe accessors for v37/v44+ compatibility
+	if (!bIsV44Plus)
+	{
+		// v37 models don't use VVD files - they have embedded vertex data
+		DevWarning("Studio_SetupVvdVertexPointers: v37 model shouldn't have VVD file: %s\n", pStudioHdr->name);
+		return;
+	}
+
+	// Set the base vertex pointer in studiohdr for global access
+	pStudioHdr->pVertexBase = (void *)pVertexData;
+	pStudioHdr->pIndexBase = NULL; // Index data is in VTX, not VVD
+
+	// Iterate through all bodyparts and models to set vertex data pointers
 	int numBodyParts = StudioHdr_GetNumBodyparts(pStudioHdr);
 	int vertexOffset = 0;
 	for (int bodyPartID = 0; bodyPartID < numBodyParts; bodyPartID++)
@@ -3686,51 +3699,34 @@ static void Studio_SetupVvdVertexPointers( studiohdr_t *pStudioHdr, vertexFileHe
 		mstudiobodyparts_t *pBodyPart = StudioHdr_GetBodypart(pStudioHdr, bodyPartID);
 		for (int modelID = 0; modelID < pBodyPart->nummodels; modelID++)
 		{
-			// Use runtime version check to get correct struct
-			int numvertices;
-			char *modelName;
-			int *pVertexIndex;
-			int *pTangentsIndex;
+			mstudiomodel_v44_t *pModel44 = pBodyPart->pModel_v44(modelID);
+			int numvertices = pModel44->numvertices;
 
-			if (bIsV44Plus)
+			// Set the vertex data pointers in the embedded mstudio_modelvertexdata_t
+			// These are direct pointers to the VVD vertex data for this model
+			const mstudiovertex_t *pModelVertexData = (const mstudiovertex_t *)(pVertexData + vertexOffset * sizeof(mstudiovertex_t));
+			pModel44->vertexdata.pVertexData = pModelVertexData;
+
+			if (pTangentData)
 			{
-				mstudiomodel_v44_t *pModel44 = pBodyPart->pModel_v44(modelID);
-				numvertices = pModel44->numvertices;
-				modelName = pModel44->name;
-				pVertexIndex = &pModel44->vertexindex;
-				pTangentsIndex = &pModel44->tangentsindex;
-
-				// Calculate offset from pModel to vertex data in VVD
-				ptrdiff_t vertexDataOffset = (ptrdiff_t)(pVertexData + vertexOffset * sizeof(mstudiovertex_t)) - (ptrdiff_t)pModel44;
-				*pVertexIndex = (int)vertexDataOffset;
-
-				if (pTangentData)
-				{
-					ptrdiff_t tangentDataOffset = (ptrdiff_t)(pTangentData + vertexOffset * sizeof(Vector4D)) - (ptrdiff_t)pModel44;
-					*pTangentsIndex = (int)tangentDataOffset;
-				}
+				const Vector4D *pModelTangentData = (const Vector4D *)(pTangentData + vertexOffset * sizeof(Vector4D));
+				pModel44->vertexdata.pTangentData = pModelTangentData;
 			}
 			else
 			{
-				mstudiomodel_t *pModel37 = pBodyPart->pModel(modelID);
-				numvertices = pModel37->numvertices;
-				modelName = pModel37->name;
-				pVertexIndex = &pModel37->vertexindex;
-				pTangentsIndex = &pModel37->tangentsindex;
-
-				// Calculate offset from pModel to vertex data in VVD
-				ptrdiff_t vertexDataOffset = (ptrdiff_t)(pVertexData + vertexOffset * sizeof(mstudiovertex_t)) - (ptrdiff_t)pModel37;
-				*pVertexIndex = (int)vertexDataOffset;
-
-				if (pTangentData)
-				{
-					ptrdiff_t tangentDataOffset = (ptrdiff_t)(pTangentData + vertexOffset * sizeof(Vector4D)) - (ptrdiff_t)pModel37;
-					*pTangentsIndex = (int)tangentDataOffset;
-				}
+				pModel44->vertexdata.pTangentData = NULL;
 			}
 
-			DevMsg("  Model %s: %d verts, vertexindex patched to offset %d\n",
-				modelName, numvertices, *pVertexIndex);
+			DevMsg("  Model %s: %d verts, vertex data at %p\n",
+				pModel44->name, numvertices, pModel44->vertexdata.pVertexData);
+
+			// Also setup mesh vertex data pointers
+			for (int meshID = 0; meshID < pModel44->nummeshes; meshID++)
+			{
+				mstudiomesh_v44_t *pMesh = pModel44->pMesh(meshID);
+				// Point mesh's modelvertexdata to the parent model's vertexdata
+				pMesh->vertexdata.modelvertexdata = &pModel44->vertexdata;
+			}
 
 			vertexOffset += numvertices;
 		}
@@ -3824,6 +3820,11 @@ void CModelLoader::Studio_LoadStaticMeshes( model_t* mod )
 			if( !g_pStudioRender->LoadModelWithVertexData( pStudioHdr, tmpVtxMem.Base(),
 				pVvdData, &mod->studio.hardwareData ) )
 			{
+				if ( cls.state != ca_dedicated )
+				{
+					Con_DPrintf( "--ERROR-- : StudioRender->LoadModelWithVertexData failed for v%d model: %s\n",
+						pStudioHdr->version, pStudioHdr->name );
+				}
 				mod->studio.studiomeshLoaded = false;
 				// Free VVD data on failure
 				if (mod->studio.pVvdData)
@@ -3841,6 +3842,11 @@ void CModelLoader::Studio_LoadStaticMeshes( model_t* mod )
 			if( !g_pStudioRender->LoadModel( pStudioHdr, tmpVtxMem.Base(),
 				&mod->studio.hardwareData ) )
 			{
+				if ( cls.state != ca_dedicated )
+				{
+					Con_DPrintf( "--ERROR-- : StudioRender->LoadModel failed for v%d model: %s\n",
+						pStudioHdr->version, pStudioHdr->name );
+				}
 				mod->studio.studiomeshLoaded = false;
 				return;
 			}

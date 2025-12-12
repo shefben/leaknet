@@ -54,9 +54,8 @@ bool CBoneFollowerManager::CreatePhysicsFollower( physfollower_t &follow, const 
 
 	if ( boneIndex >= 0 )
 	{
-		mstudiobone_t *pBone = pStudioHdr->pBone( boneIndex );
-
-		int physicsBone = pBone->physicsbone;
+		// Use version-aware accessor for v37/v44+ bone structure compatibility
+		int physicsBone = pStudioHdr->GetBonePhysicsbone( boneIndex );
 		if ( !PhysModelParseSolidByIndex( solid, m_hOuter, m_hOuter->GetModelIndex(), physicsBone ) )
 			return false;
 
@@ -287,8 +286,8 @@ void CBoneFollower::UpdateFollower( const Vector &position, const QAngle &orient
 	for ( int i = 0; i < pStudioHdr->iHitboxCount(0); i++ )
 	{
 		mstudiobbox_t *pbox = pStudioHdr->pHitbox( i, 0 );
-		mstudiobone_t *pBone = pStudioHdr->pBone( pbox->bone );
-		if ( pBone->physicsbone == m_solidIndex )
+		// Use version-aware accessor for v37/v44+ compatibility
+		if ( pStudioHdr->GetBonePhysicsbone( pbox->bone ) == m_solidIndex )
 		{
 			NDebugOverlay::BoxAngles( position, pbox->bbmin, pbox->bbmax, orientation, 0, 0, 255, 0 ,0.1);
 		}

@@ -603,7 +603,7 @@ void GetAttachmentLocalSpace( studiohdr_t *pstudiohdr, int attachIndex, matrix3x
 {
 	if ( attachIndex >= 0 )
 	{
-		mstudioattachment_t *pAttachment = pstudiohdr->pAttachment(attachIndex);
+		mstudioattachment_t *pAttachment = StudioHdr_GetAttachment(pstudiohdr, attachIndex);
 		MatrixCopy( pAttachment->local, pLocalToWorld );
 	}
 }

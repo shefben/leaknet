@@ -219,3 +219,6 @@ Master server functionality is included in "everything" builds but commented out
 - the location of the game and engine directory is: C:\anon-hl2\  with bmod located within C:\anon-hl2\bmod
 - only use runtime mdl version checking, never compile time.  the engine must support all model versions during gameplay.
 - only build as debug!
+- the working directory for the game is C:\anon-hl2\ and the bmod directory is C:\anon-hl2\bmod\
+- C:\anon-hl2\bmod\console.log
+- when implementing v44+ mdl support, remember to keep the code seperatre ted from v37 mdl code so the engine can load both types of models at the same time during runtime.  never use compile-time defines/if statements whewhen coding v44+ support

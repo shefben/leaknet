@@ -208,6 +208,29 @@ bool Mod_LoadStudioModel (model_t *mod, void *buffer, bool zerostructure )
 	// All versions in supported range (v37-v48) should load successfully
 	// force the collision to load
 	Mod_VCollide( mod );
+
+	// Initialize virtual model for v44+ models with include models
+	// Get the cached studiohdr_t which is the one we should work with
+	studiohdr_t *pCachedHdr = (studiohdr_t *)pout;
+	if (pCachedHdr->version >= STUDIO_VERSION_44)
+	{
+		// Cast to v44 header to access v44-specific fields
+		// CRITICAL: Must use studiohdr_v44_t to access virtualModel at correct offset
+		studiohdr_v44_t *pHdr44 = (studiohdr_v44_t *)pCachedHdr;
+
+		// Initialize the virtual model pointer to NULL (use v44 struct for correct offset)
+		// The virtual model will be created on-demand when GetVirtualModel is called
+		pHdr44->virtualModel = NULL;
+
+		// If this model has include models, we can optionally pre-load the virtual model
+		// For now, we just ensure the pointer is NULL and let it be created on demand
+		if (pHdr44->numincludemodels > 0)
+		{
+			DevMsg("Model %s has %d include models, virtual model will be created on demand\n",
+				mod->name, pHdr44->numincludemodels);
+		}
+	}
+
 	return true;
 }
 
@@ -235,6 +258,31 @@ static void Mod_FreeVCollide( model_t *pModel )
 	physcollision->VCollideUnload( pCollide );
 }
 
+//-----------------------------------------------------------------------------
+// Engine-local implementation of Studio_DestroyVirtualModel
+// The full implementation is in game_shared/studio_virtualmodel.cpp for client/server
+// This is a simplified version for engine cleanup only
+// NOTE: Must use studiohdr_v44_t for v44+ models to access virtualModel at correct offset
+//-----------------------------------------------------------------------------
+static void Engine_DestroyVirtualModel( studiohdr_t *pStudioHdr )
+{
+	if ( !pStudioHdr )
+		return;
+
+	// Only v44+ models have virtual models
+	if ( pStudioHdr->version < STUDIO_VERSION_44 )
+		return;
+
+	// Cast to v44 header for proper field access
+	studiohdr_v44_t *pHdr44 = (studiohdr_v44_t *)pStudioHdr;
+
+	if ( !pHdr44->virtualModel )
+		return;
+
+	delete (virtualmodel_t *)pHdr44->virtualModel;
+	pHdr44->virtualModel = NULL;
+}
+
 // Call destructors on certain things in the map.
 void Mod_UnloadStudioModel(model_t *mod)
 {
@@ -245,8 +293,20 @@ void Mod_UnloadStudioModel(model_t *mod)
 		mod->studio.studiomeshLoaded = false;
 	}
 	Mod_FreeVCollide( mod );
+
+	// Destroy virtual model if present (only for v44+ models)
 	if( Cache_Check( &mod->cache ) )
 	{
+		studiohdr_t *pStudioHdr = (studiohdr_t *)mod->cache.data;
+		if (pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44)
+		{
+			// Use v44 struct to access virtualModel at correct offset
+			studiohdr_v44_t *pHdr44 = (studiohdr_v44_t *)pStudioHdr;
+			if (pHdr44->virtualModel)
+			{
+				Engine_DestroyVirtualModel(pStudioHdr);
+			}
+		}
 		Cache_Free( &mod->cache );
 	}
 }
@@ -1487,7 +1547,7 @@ void CModelRender::SetupModelState( IClientRenderable *pRenderable )
 		return;
 
 	studiohdr_t *pStudioHdr = modelinfo->GetStudiomodel( const_cast<model_t*>(pModel) );
-	if (pStudioHdr->numbodyparts == 0)
+	if (StudioHdr_GetNumBodyparts(pStudioHdr) == 0)
 		return;
 
 #ifndef SWDS
@@ -1602,7 +1662,7 @@ void CModelRender::RenderModel( DrawModelState_t& state, model_t const *pModel,
 		CDebugOverlay::AddTextOverlay( origin, lineOffset++, duration, alpha, buf );
 		Q_snprintf( buf, 1023, "bones: %d\n",  info.m_pStudioHdr->numbones );
 		CDebugOverlay::AddTextOverlay( origin, lineOffset++, duration, alpha, buf );		
-		Q_snprintf( buf, 1023, "textures: %d (%d bytes)\n", info.m_pStudioHdr->numtextures, info.m_TextureMemoryBytes );
+		Q_snprintf( buf, 1023, "textures: %d (%d bytes)\n", StudioHdr_GetNumTextures(info.m_pStudioHdr), info.m_TextureMemoryBytes );
 		CDebugOverlay::AddTextOverlay( origin, lineOffset++, duration, alpha, buf );		
 		Q_snprintf( buf, 1023, "Render Time: %0.1f ms\n", info.m_RenderTime.GetDuration().GetMillisecondsF());
 		CDebugOverlay::AddTextOverlay( origin, lineOffset++, duration, alpha, buf );
@@ -1647,7 +1707,7 @@ int CModelRender::DrawModel(
 	state.m_BBoxMaxs = bboxMaxs;
 
 	// quick exit
-	if (state.m_pStudioHdr->numbodyparts == 0)
+	if (StudioHdr_GetNumBodyparts(state.m_pStudioHdr) == 0)
 		return 1;
 
 	matrix3x4_t tmpmat;
@@ -1776,7 +1836,7 @@ void CModelRender::DrawModelShadow( IClientRenderable *pRenderable, int body )
 	info.m_ppColorMeshes = NULL;
 
 	// quick exit
-	if (info.m_pStudioHdr->numbodyparts == 0)
+	if (StudioHdr_GetNumBodyparts(info.m_pStudioHdr) == 0)
 		return;
 
 	Assert ( pRenderable );
@@ -2172,9 +2232,9 @@ void CModelRender::UpdateStaticPropColorData( IHandleEntity *pProp, ModelInstanc
 		int	bodyPartID, modelID, meshID, stripGroupID;
 
 		// Iterate over every body part...
-		for ( bodyPartID = 0; bodyPartID < pStudioHdr->numbodyparts; bodyPartID++ )
+		for ( bodyPartID = 0; bodyPartID < StudioHdr_GetNumBodyparts(pStudioHdr); bodyPartID++ )
 		{
-			mstudiobodyparts_t* pBodyPart = pStudioHdr->pBodypart(bodyPartID);
+			mstudiobodyparts_t* pBodyPart = StudioHdr_GetBodypart(pStudioHdr, bodyPartID);
 			OptimizedModel::BodyPartHeader_t* pVtxBodyPart = pVtxHdr->pBodyPart(bodyPartID);
 
 			// Iterate over every submodel...

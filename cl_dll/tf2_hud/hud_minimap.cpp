@@ -12,6 +12,7 @@
 //=============================================================================
 #include "cbase.h"
 #include "hud_minimap.h"
+#include "bitbuf.h"
 #include <vgui_controls/Controls.h>
 #include <vgui/ISurface.h>
 #include <vgui/IVGui.h>
@@ -46,7 +47,9 @@ static ConVar current_team( "current_team", "-1", 0 );
 // Start out new maps at this zoom level
 #define DEFAULT_ZOOM_LEVEL	0
 
-void __MsgFunc_MinimapPulse( bf_read &msg );
+void MsgFunc_MinimapPulse_New( bf_read &msg );
+// 2003 protocol wrapper
+void __MsgFunc_MinimapPulse( const char *pszName, int iSize, void *pbuf );
 
 using namespace vgui;
 
@@ -1360,7 +1363,7 @@ static ConCommand zoom_minimap( "zoom_minimap", CMinimapPanel::Zoom_Minimap_f, "
 //-----------------------------------------------------------------------------
 // Purpose: Play a pulse on the minimap (2007 protocol)
 //-----------------------------------------------------------------------------
-void __MsgFunc_MinimapPulse( bf_read &msg )
+void MsgFunc_MinimapPulse_New( bf_read &msg )
 {
 	BEGIN_READ( msg );
 
@@ -1371,6 +1374,16 @@ void __MsgFunc_MinimapPulse( bf_read &msg )
 	{
 		pTeam->NotifyBaseUnderAttack( vecPosition, false );
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 2003 protocol wrapper for MinimapPulse message
+//-----------------------------------------------------------------------------
+void __MsgFunc_MinimapPulse( const char *pszName, int iSize, void *pbuf )
+{
+	bf_read msg;
+	msg.StartReading( pbuf, iSize );
+	MsgFunc_MinimapPulse_New( msg );
 }
 
 

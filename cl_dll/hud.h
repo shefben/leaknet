@@ -155,6 +155,7 @@ public:
 	void						MsgFunc_ResetHUD( const char *pszName, int iSize, void *pbuf );
 	void						MsgFunc_InitHUD( const char *pszName, int iSize, void *pbuf );
 	void						MsgFunc_TeamChange( const char *pszName, int iSize, void *pbuf );
+	void						MsgFunc_MOTD( const char *pszName, int iSize, void *pbuf );
 
 public:
 

@@ -64,3 +64,57 @@ void GetBumpNormals( const Vector& sVect, const Vector& tVect, const Vector& fla
 		VectorIRotate( g_localBumpBasis[i], smoothBasis, bumpNormals[i] );
 	}
 }
+
+//-----------------------------------------------------------------------------
+// Version-aware bump normal calculation for v37/v48+ model compatibility
+//-----------------------------------------------------------------------------
+void GetBumpNormals_VersionAware( const Vector& sVect, const Vector& tVect, const Vector& flatNormal,
+								  const Vector& phongNormal, Vector bumpNormals[NUM_BUMP_VECTS], int modelVersion )
+{
+	Vector tmpNormal;
+	bool leftHanded;
+	int i;
+
+	assert( NUM_BUMP_VECTS == 3 );
+
+	// Are we left or right handed?
+	CrossProduct( sVect, tVect, tmpNormal );
+	if( DotProduct( flatNormal, tmpNormal ) < 0.0f )
+	{
+		leftHanded = true;
+	}
+	else
+	{
+		leftHanded = false;
+	}
+
+	// Build a basis for the face around the phong normal
+	matrix3x4_t smoothBasis;
+	CrossProduct( phongNormal.Base(), sVect.Base(), smoothBasis[1] );
+	VectorNormalize( smoothBasis[1] );
+	CrossProduct( smoothBasis[1], phongNormal.Base(), smoothBasis[0] );
+	VectorNormalize( smoothBasis[0] );
+	VectorCopy( phongNormal.Base(), smoothBasis[2] );
+
+	if( leftHanded )
+	{
+		VectorNegate( smoothBasis[1] );
+	}
+
+	// Select appropriate bump basis based on model version
+	const Vector* bumpBasis;
+	if( modelVersion == 37 )
+	{
+		bumpBasis = g_localBumpBasis;      // Use v37 compatible bump vectors (now default)
+	}
+	else
+	{
+		bumpBasis = g_localBumpBasis_v48;  // Use v48+ bump vectors for newer models
+	}
+
+	// move the selected bump basis into world space to create bumpNormals
+	for( i = 0; i < 3; i++ )
+	{
+		VectorIRotate( bumpBasis[i], smoothBasis, bumpNormals[i] );
+	}
+}

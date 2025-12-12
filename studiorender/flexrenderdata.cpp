@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -6,6 +6,7 @@
 //=============================================================================
 
 #include "flexrenderdata.h"
+#include "studiohdr_v44.h"
 
 
 //-----------------------------------------------------------------------------
@@ -112,7 +113,7 @@ bool CCachedRenderData::IsFlexComputationDone( ) const
 // Used to set up a computation	(modifies vertex data)
 //-----------------------------------------------------------------------------
 
-void CCachedRenderData::SetupComputation( mstudiomesh_t *pMesh, bool flexComputation )
+void CCachedRenderData::SetupComputation( mstudiomesh_t *pMesh, const studiohdr_t* pStudioHdr, bool flexComputation )
 {
 	assert((m_Model >= 0) && (m_Body >= 0) && (m_Mesh >= 0));
 //	assert( !m_pFirstIndex );
@@ -123,7 +124,7 @@ void CCachedRenderData::SetupComputation( mstudiomesh_t *pMesh, bool flexComputa
 	if (dict.m_Tag != m_CurrentTag)
 	{
 		dict.m_FirstIndex = m_IndexCount;
-		dict.m_IndexCount = pMesh->numvertices;
+		dict.m_IndexCount = pStudioHdr ? StudioMesh_GetNumVertices(pStudioHdr, pMesh) : pMesh->numvertices;
 		dict.m_Tag = m_CurrentTag;
 		m_IndexCount += dict.m_IndexCount;
 	}

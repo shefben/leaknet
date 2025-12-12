@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -9,7 +9,7 @@
 #include "shake.h"
 #include "voice_gamemgr.h"
 
-void RegisterUserMessages( void )
+void RegisterHL2UserMessages( void )
 {
 	usermessages->Register( "Geiger", 1 );
 	usermessages->Register( "Train", 1 );

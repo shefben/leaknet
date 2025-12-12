@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -6,6 +6,7 @@
 //=============================================================================
 
 #include "cbase.h"
+#include "studiohdr_v44.h"
 
 #if 0
 
@@ -92,7 +93,9 @@ void C_AI_BaseHumanoid::StandardBlendingRules( Vector pos[], Quaternion q[], flo
 	}
 
 	// interpolate pose parameters
-	for (int i = 0; i < hdr->numposeparameters; i++)
+	// Use version-aware helper for v37/v44+ compatibility
+	int numPoseParams = StudioHdr_GetNumPoseParameters(hdr);
+	for (int i = 0; i < numPoseParams; i++)
 	{
 		poseparam[ i ] = m_flPoseParameter[i];
 	}

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -1214,6 +1214,13 @@ CPhysicsObject *CreatePhysicsObject( CPhysicsEnvironment *pEnvironment, const CP
 
 	CPhysicsObject *pObject = new CPhysicsObject();
 	IVP_SurfaceManager *pSurman = CreateSurfaceManager( pCollisionModel, pObject->m_collideType );
+
+	// Handle case where surface manager creation failed (e.g., unsupported MOPP format from v44+ models)
+	if ( !pSurman )
+	{
+		delete pObject;
+		return NULL;
+	}
 
 	BEGIN_IVP_ALLOCATION();
 

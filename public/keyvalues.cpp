@@ -224,7 +224,8 @@ const char * KeyValues::ReadToken( char **buffer, bool &wasQuoted )
 	
  	static char buf[KEYVALUES_TOKEN_SIZE];
 
-	if ( (*buffer) == NULL  || (**buffer) == 0)
+	// First check if the buffer pointer itself is valid
+	if ( buffer == NULL || (*buffer) == NULL  || (**buffer) == 0)
 		return NULL;  // read at least 1 character
 
 	int bufC = 0;

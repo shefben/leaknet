@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose:		Player for HL2.
 //
@@ -482,7 +482,35 @@ void CHL2_Player::Spawn(void)
 
 	InitSprinting();
 
+	// BMod: Always equip the suit on spawn so HUD elements are visible
+	// HUD elements like health, ammo, battery have HIDEHUD_NEEDSUIT flag
+	EquipSuit();
+
 	SuitPower_SetCharge( 100 );
+
+	// BMod/GMod: Give default weapon loadout unless overridden by gamemode
+	// Standard GMod loadout: physgun, gravity gun, crowbar, pistol, etc.
+	GiveNamedItem( "weapon_physgun" );		// BMod/GMod physics gun
+	GiveNamedItem( "weapon_physcannon" );	// Gravity gun
+	GiveNamedItem( "weapon_crowbar" );		// Crowbar
+	GiveNamedItem( "weapon_pistol" );		// Pistol
+	GiveNamedItem( "weapon_357" );			// Revolver
+	GiveNamedItem( "weapon_smg1" );			// SMG
+	GiveNamedItem( "weapon_shotgun" );		// Shotgun
+	GiveNamedItem( "weapon_crossbow" );		// Crossbow
+	GiveNamedItem( "weapon_frag" );			// Grenades
+	GiveNamedItem( "weapon_slam" );			// SLAMs
+	GiveNamedItem( "weapon_rpg" );			// Rocket launcher
+
+	// Give appropriate ammo
+	GiveAmmo( 150, "Pistol" );
+	GiveAmmo( 12, "357" );
+	GiveAmmo( 225, "SMG1" );
+	GiveAmmo( 32, "Buckshot" );
+	GiveAmmo( 10, "XBowBolt" );
+	GiveAmmo( 5, "Grenade" );
+	GiveAmmo( 3, "slam" );
+	GiveAmmo( 3, "RPG_Round" );
 
 	m_iNumSelectedNPCs = 0;
 }

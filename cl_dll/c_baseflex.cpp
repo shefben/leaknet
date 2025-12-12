@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -274,9 +274,9 @@ void C_BaseFlex::SetViewTarget( void )
 	if (m_iEyeAttachment == -1)
 	{
 		m_iEyeAttachment = -2;
-		for (int i = 0; i < hdr->numattachments; i++)
+		for (int i = 0; i < StudioHdr_GetNumAttachments(hdr); i++)
 		{
-			if (_stricmp( hdr->pAttachment( i )->pszName(), "eyes" ) == 0)
+			if (_stricmp( StudioHdr_GetAttachment(hdr, i )->pszName(), "eyes" ) == 0)
 			{
 				m_iEyeAttachment = i;
 				break;
@@ -288,7 +288,7 @@ void C_BaseFlex::SetViewTarget( void )
 	{
 		Vector local;
 
-		mstudioattachment_t *patt = hdr->pAttachment( m_iEyeAttachment );
+		mstudioattachment_t *patt = StudioHdr_GetAttachment(hdr, m_iEyeAttachment );
 
 		matrix3x4_t attToWorld;
 

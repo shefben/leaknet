@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -189,9 +189,9 @@ studiohdr_t *C_BaseAnimating::OnNewModel()
 	}
 
 	// Don't reallocate unless a different size. 
-	if ( m_Attachments.Count() != hdr->numattachments)
+	if ( m_Attachments.Count() != StudioHdr_GetNumAttachments(hdr))
 	{
-		m_Attachments.SetSize( hdr->numattachments );
+		m_Attachments.SetSize( StudioHdr_GetNumAttachments(hdr) );
 
 #ifdef _DEBUG
 		// This is to make sure we don't use the attachment before its been set up
@@ -206,15 +206,17 @@ studiohdr_t *C_BaseAnimating::OnNewModel()
 
 	}
 
-	Assert( hdr->numposeparameters <= ARRAYSIZE( m_flPoseParameter ) );
+	// Use version-aware helper for v37/v44+ compatibility
+	int numPoseParams = StudioHdr_GetNumPoseParameters(hdr);
+	Assert( numPoseParams <= ARRAYSIZE( m_flPoseParameter ) );
 
-	m_iv_flPoseParameter.SetMaxCount( hdr->numposeparameters );
-	
+	m_iv_flPoseParameter.SetMaxCount( numPoseParams );
+
 	int i;
-	for ( i = 0; i < hdr->numposeparameters ; i++ )
+	for ( i = 0; i < numPoseParams ; i++ )
 	{
-		mstudioposeparamdesc_t *pPose = hdr->pPoseParameter( i );
-		m_iv_flPoseParameter.SetLooping( i, pPose->loop != 0.0f );
+		mstudioposeparamdesc_t *pPose = StudioHdr_GetPoseParameter(hdr, i);
+		m_iv_flPoseParameter.SetLooping( i, pPose ? pPose->loop != 0.0f : false );
 	}
 
 	int boneControllerCount = min( hdr->numbonecontrollers, ARRAYSIZE( m_flEncodedController ) );
@@ -300,9 +302,10 @@ void C_BaseAnimating::GetPoseParameters( float poseParameter[MAXSTUDIOPOSEPARAM]
 		return;
 	}
 
-	// interpolate pose parameters
+	// interpolate pose parameters (use version-aware helper)
 	int i;
-	for( i=0; i < hdr->numposeparameters; i++)
+	int numPoseParams = StudioHdr_GetNumPoseParameters(hdr);
+	for( i=0; i < numPoseParams; i++)
 	{
 		poseParameter[i] = m_flPoseParameter[i];
 	}
@@ -376,11 +379,10 @@ void C_BaseAnimating::BuildTransformations( Vector *pos, Quaternion *q, const ma
 			if ( fhdr )
 			{
 				int j;
-				mstudiobone_t *pfbones = fhdr->pBone( 0 );
-
+				// Use version-aware bone name accessor for v37/v44+ compatibility
 				for (j = 0; j < fhdr->numbones; j++)
 				{
-					if ( _stricmp(pbones[i].pszName(), pfbones[j].pszName() ) == 0 )
+					if ( _stricmp(hdr->GetBoneName(i), fhdr->GetBoneName(j) ) == 0 )
 					{
 						MatrixCopy( follow->m_CachedBones[ j ], m_CachedBones[ i ] );
 						break;
@@ -408,16 +410,18 @@ void C_BaseAnimating::BuildTransformations( Vector *pos, Quaternion *q, const ma
 			bonematrix[1][3] = pos[i][1];
 			bonematrix[2][3] = pos[i][2];
 
-			if (pbones[i].parent == -1) 
+			// Use version-safe bone accessor - v44+ bones have different stride than v37
+			int parentBone = StudioBone_GetParent(hdr, i);
+			if (parentBone == -1)
 			{
 				ConcatTransforms( cameraTransform, bonematrix, m_CachedBones[i] );
 
 				// Apply client-side effects to the transformation matrix
 				// CL_FxTransform( this,pBoneToWorld[i] );
-			} 
-			else 
+			}
+			else
 			{
-				ConcatTransforms( m_CachedBones[pbones[i].parent], bonematrix, m_CachedBones[i] );
+				ConcatTransforms( m_CachedBones[parentBone], bonematrix, m_CachedBones[i] );
 			}
 		}
 	}
@@ -443,8 +447,7 @@ void C_BaseAnimating::SaveRagdollInfo( int numbones, const matrix3x4_t &cameraTr
 		memset( m_pRagdollInfo, 0, sizeof( *m_pRagdollInfo ) );
 	}
 
-	mstudiobone_t *pbones = hdr->pBone( 0 );
-
+	// Use version-aware bone accessor for v37/v44+ compatibility
 	m_pRagdollInfo->m_bActive = true;
 	m_pRagdollInfo->m_flSaveTime = gpGlobals->curtime;
 	m_pRagdollInfo->m_nNumBones = numbones;
@@ -454,14 +457,15 @@ void C_BaseAnimating::SaveRagdollInfo( int numbones, const matrix3x4_t &cameraTr
 		matrix3x4_t inverted;
 		matrix3x4_t output;
 
-		if ( pbones[i].parent == -1 )
+		int parentBone = hdr->GetBoneParent( i );
+		if ( parentBone == -1 )
 		{
 			// Decompose into parent space
 			MatrixInvert( cameraTransform, inverted );
 		}
 		else
 		{
-			MatrixInvert( pBoneToWorld[ pbones[ i ].parent ], inverted );
+			MatrixInvert( pBoneToWorld[ parentBone ], inverted );
 		}
 
 		ConcatTransforms( inverted, pBoneToWorld[ i ], output );
@@ -688,11 +692,26 @@ void C_BaseAnimating::SetupBones_AttachmentHelper()
 	}
 
 	// calculate attachment points
-	mstudioattachment_t *pattachment = hdr->pAttachment( 0 );
+	// NOTE: We must call StudioHdr_GetAttachment for each attachment individually because
+	// v44+ attachments use mstudioattachment_v48_t (92 bytes) while v37 uses mstudioattachment_t (60 bytes).
+	// Using array indexing with pattachment[i] would use the wrong stride for v44+ models.
 	matrix3x4_t world;
-	for (int i = 0; i < hdr->numattachments; i++)
+	int numBones = StudioHdr_GetNumBones(hdr);
+	for (int i = 0; i < StudioHdr_GetNumAttachments(hdr); i++)
 	{
-		ConcatTransforms( m_CachedBones[ pattachment[i].bone ], pattachment[i].local, world ); 
+		mstudioattachment_t *pattachment = StudioHdr_GetAttachment(hdr, i);
+		if ( !pattachment )
+			continue;
+
+		// Validate bone index to prevent crashes from bad model data
+		if ( pattachment->bone < 0 || pattachment->bone >= numBones )
+		{
+			Warning( "C_BaseAnimating::SetupBones_AttachmentHelper: Invalid bone index %d for attachment %d (max: %d)\n",
+					 pattachment->bone, i, numBones );
+			continue;
+		}
+
+		ConcatTransforms( m_CachedBones[ pattachment->bone ], pattachment->local, world );
 
 		// FIXME: this shouldn't be here, it should client side on-demand only and hooked into the bone cache!!
 		QAngle angles;
@@ -871,11 +890,13 @@ mstudioposeparamdesc_t *C_BaseAnimating::GetPoseParameterPtr( const char *pName 
 	if ( !pstudiohdr )
 		  return NULL;
 
-	for (int i = 0; i < pstudiohdr->numposeparameters; i++)
+	// Use version-aware helper for v37/v44+ compatibility
+	int numPoseParams = StudioHdr_GetNumPoseParameters(pstudiohdr);
+	for (int i = 0; i < numPoseParams; i++)
 	{
-		mstudioposeparamdesc_t *pPose = pstudiohdr->pPoseParameter( i );
-		
-		if ( pPose && ( _stricmp( pstudiohdr->pPoseParameter( i )->pszName(), pName ) == 0 ) )
+		mstudioposeparamdesc_t *pPose = StudioHdr_GetPoseParameter(pstudiohdr, i);
+
+		if ( pPose && ( _stricmp( pPose->pszName(), pName ) == 0 ) )
 		{
 			return pPose;
 		}
@@ -2085,10 +2106,10 @@ bool C_BaseAnimating::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask
 	if ( TraceToStudio( ray, pStudioHdr, set, hitboxbones, fContentsMask, tr ) )
 	{
 		mstudiobbox_t *pbox = set->pHitbox( tr.hitbox );
-		mstudiobone_t *pBone = pStudioHdr->pBone(pbox->bone);
+		// Use version-aware accessor for v37/v44+ bone structure compatibility
 		tr.surface.name = "**studio**";
 		tr.surface.flags = SURF_HITBOX;
-		tr.surface.surfaceProps = physprops->GetSurfaceIndex( pBone->pszSurfaceProp() );
+		tr.surface.surfaceProps = physprops->GetSurfaceIndex( pStudioHdr->GetBoneSurfaceProp(pbox->bone) );
 		m_lastPhysicsBone = tr.physicsbone;
 	}
 
@@ -2524,9 +2545,12 @@ int C_BaseAnimating::LookupPoseParameter( const char *szName )
 		return 0;
 	}
 
-	for (int i = 0; i < pstudiohdr->numposeparameters; i++)
+	// Use version-aware helper for v37/v44+ compatibility
+	int numPoseParams = StudioHdr_GetNumPoseParameters(pstudiohdr);
+	for (int i = 0; i < numPoseParams; i++)
 	{
-		if (_stricmp( pstudiohdr->pPoseParameter( i )->pszName(), szName ) == 0)
+		mstudioposeparamdesc_t *pPose = StudioHdr_GetPoseParameter(pstudiohdr, i);
+		if (pPose && _stricmp( pPose->pszName(), szName ) == 0)
 		{
 			return i;
 		}

@@ -44,6 +44,7 @@
 #include "utlbuffer.h"
 #include "vtf/vtf.h"
 #include "imageloader.h"
+#include "cmd.h"
 
 #ifdef _WIN32
 #include "procinfo.h"
@@ -52,6 +53,7 @@
 void Linefile_Read_f(void);
 
 ConVar building_cubemaps( "building_cubemaps", "0" );
+ConVar r_buildcubemaps_auto( "r_buildcubemaps_auto", "1", 0, "Automatically build cubemaps if map needs them" );
 
 void VID_TakeSnapshotRect( const char *pFilename, int x, int y, int w, int h, int resampleWidth, int resampleHeight );
 
@@ -784,6 +786,43 @@ void R_ResetLightStyles( void )
 	}
 }
 
+#if !defined( SWDS )
+/*
+===============
+R_CheckCubemapsNeedRebuild
+
+Returns true if the map has env_cubemap entities but is using the default
+engine cubemap, indicating cubemaps have not been built for this map.
+===============
+*/
+static bool R_CheckCubemapsNeedRebuild( void )
+{
+	if ( !host_state.worldmodel )
+		return false;
+
+	// Check if map has cubemap samples
+	int numCubemaps = host_state.worldmodel->brush.m_nCubemapSamples;
+	if ( numCubemaps <= 0 )
+		return false;
+
+	// Check if any cubemap is using the default engine cubemap
+	mcubemapsample_t *pSamples = host_state.worldmodel->brush.m_pCubemapSamples;
+	for ( int i = 0; i < numCubemaps; i++ )
+	{
+		if ( pSamples[i].pTexture )
+		{
+			const char *texName = pSamples[i].pTexture->GetName();
+			if ( texName && Q_stristr( texName, "engine/defaultcubemap" ) )
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+#endif
+
 /*
 ===============
 R_NewMap
@@ -875,9 +914,18 @@ void R_NewMap (void)
 
 	// make sure and rebuild lightmaps when the level gets started.
 	GL_RebuildLightmaps();
-	
+
 	// Build the overlay fragments.
 	OverlayMgr()->CreateFragments();
+
+#if !defined( SWDS )
+	// Check if cubemaps need to be rebuilt automatically
+	if ( r_buildcubemaps_auto.GetBool() && R_CheckCubemapsNeedRebuild() )
+	{
+		Con_Printf( "Map has env_cubemap entities but cubemaps not built. Queuing 'buildcubemaps' command...\n" );
+		Cbuf_AddText( "buildcubemaps\n" );
+	}
+#endif
 }
 
 

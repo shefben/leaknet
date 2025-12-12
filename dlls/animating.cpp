@@ -660,9 +660,12 @@ int CBaseAnimating::LookupPoseParameter( const char *szName )
 		return 0;
 	}
 
-	for (int i = 0; i < pstudiohdr->numposeparameters; i++)
+	// Use version-aware helper for v37/v44+ compatibility
+	int numPoseParams = StudioHdr_GetNumPoseParameters(pstudiohdr);
+	for (int i = 0; i < numPoseParams; i++)
 	{
-		if (_stricmp( pstudiohdr->pPoseParameter( i )->pszName(), szName ) == 0)
+		mstudioposeparamdesc_t *pParam = StudioHdr_GetPoseParameter(pstudiohdr, i);
+		if (pParam && _stricmp( pParam->pszName(), szName ) == 0)
 		{
 			return i;
 		}
@@ -930,13 +933,13 @@ bool CBaseAnimating::GetAttachment ( int iAttachment, matrix3x4_t &attachmentToW
 		return false;
 	}
 
-	if(iAttachment < 1 || iAttachment > pStudioHdr->numattachments)
+	if(iAttachment < 1 || iAttachment > StudioHdr_GetNumAttachments(pStudioHdr))
 	{
 //		Assert(!"CBaseAnimating::GetAttachment: invalid attachment index");
 		return false;
 	}
 
-	mstudioattachment_t *pattachment = pStudioHdr->pAttachment( iAttachment-1 );
+	mstudioattachment_t *pattachment = StudioHdr_GetAttachment(pStudioHdr, iAttachment-1 );
 
 	matrix3x4_t bonetoworld;
 	GetBoneTransform( pattachment->bone, bonetoworld );
@@ -1553,10 +1556,10 @@ bool CBaseAnimating::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask,
 	if ( TraceToStudio( ray, pStudioHdr, set, hitboxbones, fContentsMask, tr ) )
 	{
 		mstudiobbox_t *pbox = set->pHitbox( tr.hitbox );
-		mstudiobone_t *pBone = pStudioHdr->pBone(pbox->bone);
+		// Use version-aware accessor for v37/v44+ bone structure compatibility
 		tr.surface.name = "**studio**";
 		tr.surface.flags = SURF_HITBOX;
-		tr.surface.surfaceProps = physprops->GetSurfaceIndex( pBone->pszSurfaceProp() );
+		tr.surface.surfaceProps = physprops->GetSurfaceIndex( pStudioHdr->GetBoneSurfaceProp(pbox->bone) );
 	}
 	return true;
 }
@@ -1574,7 +1577,9 @@ void CBaseAnimating::InitBoneControllers ( void ) // FIXME: rename
 		SetBoneController( i, 0.0 );
 	}
 
-	for (i = 0; i < pStudioHdr->numposeparameters; i++)
+	// Use version-aware helper for v37/v44+ compatibility
+	int numPoseParams = StudioHdr_GetNumPoseParameters(pStudioHdr);
+	for (i = 0; i < numPoseParams; i++)
 	{
 		SetPoseParameter( i, 0.0 );
 	}
@@ -1879,7 +1884,7 @@ int CBaseAnimating::GetPhysicsBone( int boneIndex )
 	if ( pStudioHdr )
 	{
 		if ( boneIndex >= 0 && boneIndex < pStudioHdr->numbones )
-			return pStudioHdr->pBone( boneIndex )->physicsbone;
+			return pStudioHdr->GetBonePhysicsbone( boneIndex );  // Version-aware accessor
 	}
 	return 0;
 }

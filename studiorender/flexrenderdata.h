@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -14,6 +14,7 @@
 #include "vector.h"
 #include "utlvector.h"
 #include "studio.h"
+#include "studiohdr_v44.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -63,7 +64,7 @@ public:
 	bool IsFlexComputationDone( ) const;
 
 	// Used to set up a computation (for world or flex data)
-	void SetupComputation( mstudiomesh_t *pMesh, bool flexComputation = false );
+	void SetupComputation( mstudiomesh_t *pMesh, const studiohdr_t* pStudioHdr = NULL, bool flexComputation = false );
 
 	// Is a particular vertex flexed?
 	bool IsVertexFlexed( int vertex ) const;

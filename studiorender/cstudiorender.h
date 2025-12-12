@@ -97,9 +97,10 @@ struct DecalVertex_t
 			return NULL;
 		}
 
-		mstudiobodyparts_t *pBody = pHdr->pBodypart( m_Body );
+		// Use version-safe accessors for v44+ model compatibility
+		mstudiobodyparts_t *pBody = StudioHdr_GetBodypart( pHdr, m_Body );
 		mstudiomodel_t *pModel = pBody->pModel( m_Model );
-		return pModel->pMesh( m_Mesh );
+		return StudioModel_GetMesh( pHdr, pModel, m_Mesh );
 	}
 
 	Vector m_Position;
@@ -217,6 +218,9 @@ public:
 	inline bool GetSupportsHardwareLighting()	   { return m_bSupportsHardwareLighting; }
 	inline bool GetSupportsVertexAndPixelShaders() { return m_bSupportsVertexAndPixelShaders; }
 	inline bool GetSupportsOverbright()			   { return m_bSupportsOverbright; }
+
+	// Get current studiohdr for version-aware vertex access
+	inline studiohdr_t* GetStudioHdr() const { return m_pStudioHdr; }
 
 	void R_MouthComputeLightingValues( float& fIllum, Vector& forward );
 	void R_MouthLighting( float fIllum, const Vector& normal, const Vector& forward, Vector& light );

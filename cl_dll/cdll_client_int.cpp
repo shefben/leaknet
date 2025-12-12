@@ -381,22 +381,16 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 	modemanager->Init( );
 	DevMsg("CHLClient::Init - modemanager initialized\n");
 
-	// CRITICAL: Enable the viewport BEFORE creating HUD elements
-	// HUD elements parent themselves to g_pClientMode->GetViewport() during creation.
-	// The viewport must be attached to the root panel and visible BEFORE HUD elements
-	// try to attach to it, otherwise they'll be orphaned and invisible.
+	gHUD.Init();
+
 	g_pClientMode->Init();
 	DevMsg("CHLClient::Init - g_pClientMode->Init() complete, viewport=%p\n", g_pClientMode->GetViewport());
-	g_pClientMode->Enable();
-	DevMsg("CHLClient::Init - g_pClientMode->Enable() complete\n");
-
-	// Now create HUD elements - viewport is ready to receive them
-	DevMsg("CHLClient::Init - calling gHUD.Init()\n");
-	gHUD.Init();
-	DevMsg("CHLClient::Init - gHUD.Init() complete\n");
 
 	if( !IGameSystem::InitAllSystems() )
 		return false;
+
+	g_pClientMode->Enable();
+	DevMsg("CHLClient::Init - g_pClientMode->Enable() complete\n");
 
 	view->Init();
 	vieweffects->Init();

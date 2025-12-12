@@ -13,6 +13,7 @@
 //=============================================================================
 
 #include "studio.h"
+#include "studio_v37_compat.h"
 #include "imageloader.h"
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imaterial.h"
@@ -193,13 +194,50 @@ void CStudioRender::R_StudioFlexVerts( mstudiomesh_t *pmesh )
 	if (m_VertexCache.IsFlexComputationDone())
 		return;
 
-	// get pointers to geometry
-	mstudiovertex_t *pVertices	= pmesh->Vertex(0);
-	Vector4D *pstudiotangentS	= pmesh->TangentS( 0 );
+	// get pointers to geometry - version-safe for v44+ models
+	mstudiovertex_t *pVertices = NULL;
+	Vector4D *pstudiotangentS = NULL;
+	if (m_pStudioHdr->IsV37())
+	{
+		// v37 models have embedded vertex data
+		pVertices = pmesh->Vertex(0);
+		pstudiotangentS = pmesh->TangentS( 0 );
+	}
+	else if (m_pStudioHdr->version >= STUDIO_VERSION_44)
+	{
+		// v44+ models use external VVD data
+		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pmesh->pModel();
+		if (pModel44)
+		{
+			if (pModel44->vertexdata.pVertexData)
+			{
+				pVertices = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + pmesh->vertexoffset;
+			}
+			else
+			{
+				DevWarning("v44+ model has NULL vertex data (flex): %s (model: %s)\n", m_pStudioHdr->name, pModel44->name);
+			}
+
+			if (pModel44->vertexdata.pTangentData)
+			{
+				pstudiotangentS = (Vector4D*)pModel44->vertexdata.pTangentData + pmesh->vertexoffset;
+			}
+		}
+		else
+		{
+			DevWarning("v44+ model has NULL pModel44 (flex): %s\n", m_pStudioHdr->name);
+		}
+	}
+	else
+	{
+		// Fallback for other versions
+		pVertices = pmesh->Vertex(0);
+		pstudiotangentS = pmesh->TangentS( 0 );
+	}
 
 	mstudioflex_t	*pflex = pmesh->pFlex( 0 );
 	
-	m_VertexCache.SetupComputation( pmesh, true );
+	m_VertexCache.SetupComputation( pmesh, m_pStudioHdr, true );
 
 	// apply flex weights
 	int i, j, n;

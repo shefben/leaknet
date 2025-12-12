@@ -26,7 +26,7 @@
 
 #include "tier0/vprof.h"
 
-typedef void (*SoftwareProcessMeshDX6Func_t)( mstudiomesh_t* pmesh, matrix3x4_t *pPoseToWorld,
+typedef void (*SoftwareProcessMeshDX6Func_t)( mstudiomesh_t* pmesh, const studiohdr_t* pStudioHdr, matrix3x4_t *pPoseToWorld,
 	CCachedRenderData &vertexCache, CMeshBuilder& meshBuilder, int numVertices, unsigned short* pGroupToMesh, float r_blend );
 
 //-----------------------------------------------------------------------------
@@ -147,10 +147,7 @@ void CStudioRender::R_StudioAbsBB ( int sequence, Vector& origin )
 	float		lv;
 	Vector		tmp;
 	Vector		p[8];
-	mstudiobone_t		*pbones;
 	mstudioseqdesc_t	*pseqdesc;
-
-	pbones		= m_pStudioHdr->pBone( 0 );
 
 	if ( sequence >= m_pStudioHdr->numseq )
 	{
@@ -209,17 +206,16 @@ void CStudioRender::R_StudioDrawBones (void)
 	Vector		p[8];
 	Vector		up, right, forward;
 	Vector		a1;
-	mstudiobone_t		*pbones;
 	Vector		positionArray[4];
-
-	pbones		= m_pStudioHdr->pBone( 0 );
 
 	for (i = 0; i < m_pStudioHdr->numbones; i++)
 	{
-		if (pbones[i].parent == -1)
+		// Use version-safe bone accessor - v44+ bones have different stride than v37
+		int parentBone = StudioBone_GetParent(m_pStudioHdr, i);
+		if (parentBone == -1)
 			continue;
 
-		k = pbones[i].parent;
+		k = parentBone;
 
 		a1[0] = a1[1] = a1[2] = 1.0;
 		up[0] = m_BoneToWorld[i][0][3] - m_BoneToWorld[k][0][3];
@@ -853,7 +849,7 @@ public:
 		}
 	}
 
-	static void R_StudioSoftwareProcessMesh( mstudiomesh_t* pmesh, matrix3x4_t *pPoseToWorld,
+	static void R_StudioSoftwareProcessMesh( mstudiomesh_t* pmesh, const studiohdr_t* pStudioHdr, matrix3x4_t *pPoseToWorld,
 		CCachedRenderData &vertexCache, CMeshBuilder& meshBuilder, int numVertices, unsigned short* pGroupToMesh, float r_blend )
 	{
 		Vector color;
@@ -874,12 +870,62 @@ public:
 
 		Assert( numVertices > 0 );
 
-		// Gets at the vertex data
-		mstudiovertex_t *pVertices = pmesh->Vertex(0);
+		// Gets at the vertex data - version-safe for v44+ models
+		mstudiovertex_t *pVertices = NULL;
+		if (pStudioHdr->IsV37())
+		{
+			// v37 models have embedded vertex data
+			pVertices = pmesh->Vertex(0);
+		}
+		else if (pStudioHdr->version >= STUDIO_VERSION_44)
+		{
+			// v44+ models use external VVD data
+			mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pmesh->pModel();
+			if (pModel44)
+			{
+				if (pModel44->vertexdata.pVertexData)
+				{
+					pVertices = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + pmesh->vertexoffset;
+					DevMsg("v44+ vertex data found for model: %s, vertices: %p\n", pStudioHdr->name, pVertices);
+				}
+				else
+				{
+					DevWarning("v44+ model has NULL vertex data: %s (model: %s)\n", pStudioHdr->name, pModel44->name);
+				}
+			}
+			else
+			{
+				DevWarning("v44+ model has NULL pModel44: %s\n", pStudioHdr->name);
+			}
+		}
+		else
+		{
+			// Fallback for other versions
+			pVertices = pmesh->Vertex(0);
+		}
+
 		if (nHasTangentSpace)
 		{
-			pStudioTangentS = pmesh->TangentS( 0 );
-			Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
+			if (pStudioHdr->IsV37())
+			{
+				pStudioTangentS = pmesh->TangentS( 0 );
+				if (pStudioTangentS) Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
+			}
+			else if (pStudioHdr->version >= STUDIO_VERSION_44)
+			{
+				// For v44+, get tangent base pointer if available
+				mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pmesh->pModel();
+				if (pModel44 && pModel44->vertexdata.pTangentData)
+				{
+					pStudioTangentS = (Vector4D*)pModel44->vertexdata.pTangentData + pmesh->vertexoffset;
+					if (pStudioTangentS) Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
+				}
+			}
+			else
+			{
+				pStudioTangentS = pmesh->TangentS( 0 );
+				if (pStudioTangentS) Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
+			}
 		}
 
 		// Mouth related stuff...
@@ -1091,7 +1137,7 @@ void CStudioRender::R_StudioSoftwareProcessMesh( mstudiomesh_t* pmesh, CMeshBuil
 {
 	// FIXME: Use function pointers to simplify this?!?
 	int idx	= bNeedsTangentSpace * 12 + doFlex * 6 + MathLib_SSEEnabled() * 3 + lighting;
-	g_SoftwareProcessFunc[idx](pmesh, m_PoseToWorld, m_VertexCache, meshBuilder, numVertices, pGroupToMesh, r_blend ); 
+	g_SoftwareProcessFunc[idx](pmesh, m_pStudioHdr, m_PoseToWorld, m_VertexCache, meshBuilder, numVertices, pGroupToMesh, r_blend ); 
 }
 
 static void R_SlowTransformVert( const Vector *pSrcPos, const Vector *pSrcNorm, const Vector4D *pSrcTangentS,
@@ -1130,10 +1176,48 @@ void CStudioRender::R_StudioSoftwareProcessMesh_Normals( mstudiomesh_t* pmesh, C
 	VectorAligned norm, pos;
 	Vector4DAligned tangentS;
 
-	// Gets at the vertex data
-	mstudiovertex_t *pVertices = pmesh->Vertex(0);
-	pStudioTangentS = pmesh->TangentS( 0 );
-	Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
+	// Gets at the vertex data - version-safe for v44+ models
+	mstudiovertex_t *pVertices = NULL;
+	if (m_pStudioHdr->IsV37())
+	{
+		// v37 models have embedded vertex data
+		pVertices = pmesh->Vertex(0);
+		pStudioTangentS = pmesh->TangentS( 0 );
+		if (pStudioTangentS) Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
+	}
+	else if (m_pStudioHdr->version >= STUDIO_VERSION_44)
+	{
+		// v44+ models use external VVD data
+		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pmesh->pModel();
+		if (pModel44)
+		{
+			if (pModel44->vertexdata.pVertexData)
+			{
+				pVertices = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + pmesh->vertexoffset;
+			}
+			else
+			{
+				DevWarning("v44+ model has NULL vertex data (tangent): %s (model: %s)\n", m_pStudioHdr->name, pModel44->name);
+			}
+
+			if (pModel44->vertexdata.pTangentData)
+			{
+				pStudioTangentS = (Vector4D*)pModel44->vertexdata.pTangentData + pmesh->vertexoffset;
+				if (pStudioTangentS) Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
+			}
+		}
+		else
+		{
+			DevWarning("v44+ model has NULL pModel44 (tangent): %s\n", m_pStudioHdr->name);
+		}
+	}
+	else
+	{
+		// Fallback for other versions
+		pVertices = pmesh->Vertex(0);
+		pStudioTangentS = pmesh->TangentS( 0 );
+		if (pStudioTangentS) Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
+	}
 
 	for ( int j=0; j < numVertices; j++ )
 	{
@@ -1202,9 +1286,49 @@ void CStudioRender::R_StudioSoftwareProcessMesh_Normals( mstudiomesh_t* pmesh, C
 void CStudioRender::R_StudioProcessFlexedMesh( mstudiomesh_t* pmesh, CMeshBuilder& meshBuilder, 
 							int numVertices, unsigned short* pGroupToMesh )
 {
-	mstudiovertex_t *pVertices	= pmesh->Vertex(0);
-	Vector4D *pstudiotangentS	= pmesh->TangentS( 0 );
-	Assert( pstudiotangentS->w == -1.0f || pstudiotangentS->w == 1.0f );
+	// Gets at the vertex data - version-safe for v44+ models
+	mstudiovertex_t *pVertices = NULL;
+	Vector4D *pstudiotangentS = NULL;
+	if (m_pStudioHdr->IsV37())
+	{
+		// v37 models have embedded vertex data
+		pVertices = pmesh->Vertex(0);
+		pstudiotangentS = pmesh->TangentS( 0 );
+		if (pstudiotangentS) Assert( pstudiotangentS->w == -1.0f || pstudiotangentS->w == 1.0f );
+	}
+	else if (m_pStudioHdr->version >= STUDIO_VERSION_44)
+	{
+		// v44+ models use external VVD data
+		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pmesh->pModel();
+		if (pModel44)
+		{
+			if (pModel44->vertexdata.pVertexData)
+			{
+				pVertices = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + pmesh->vertexoffset;
+			}
+			else
+			{
+				DevWarning("v44+ model has NULL vertex data (3rd): %s (model: %s)\n", m_pStudioHdr->name, pModel44->name);
+			}
+
+			if (pModel44->vertexdata.pTangentData)
+			{
+				pstudiotangentS = (Vector4D*)pModel44->vertexdata.pTangentData + pmesh->vertexoffset;
+				if (pstudiotangentS) Assert( pstudiotangentS->w == -1.0f || pstudiotangentS->w == 1.0f );
+			}
+		}
+		else
+		{
+			DevWarning("v44+ model has NULL pModel44 (3rd): %s\n", m_pStudioHdr->name);
+		}
+	}
+	else
+	{
+		// Fallback for other versions
+		pVertices = pmesh->Vertex(0);
+		pstudiotangentS = pmesh->TangentS( 0 );
+		if (pstudiotangentS) Assert( pstudiotangentS->w == -1.0f || pstudiotangentS->w == 1.0f );
+	}
 
 	for ( int j=0; j < numVertices ; j++)
 	{
@@ -1252,8 +1376,46 @@ void CStudioRender::R_StudioProcessFlexedMesh( mstudiomesh_t* pmesh, CMeshBuilde
 void CStudioRender::R_StudioRestoreMesh( mstudiomesh_t* pmesh, 
 									studiomeshgroup_t* pMeshData )
 {
-	mstudiovertex_t *pVertices	= pmesh->Vertex(0);
-	Vector4D *pstudiotangentS	= pmesh->TangentS( 0 );
+	// Gets at the vertex data - version-safe for v44+ models
+	mstudiovertex_t *pVertices = NULL;
+	Vector4D *pstudiotangentS = NULL;
+	if (m_pStudioHdr->IsV37())
+	{
+		// v37 models have embedded vertex data
+		pVertices = pmesh->Vertex(0);
+		pstudiotangentS = pmesh->TangentS( 0 );
+	}
+	else if (m_pStudioHdr->version >= STUDIO_VERSION_44)
+	{
+		// v44+ models use external VVD data
+		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pmesh->pModel();
+		if (pModel44)
+		{
+			if (pModel44->vertexdata.pVertexData)
+			{
+				pVertices = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + pmesh->vertexoffset;
+			}
+			else
+			{
+				DevWarning("v44+ model has NULL vertex data (4th): %s (model: %s)\n", m_pStudioHdr->name, pModel44->name);
+			}
+
+			if (pModel44->vertexdata.pTangentData)
+			{
+				pstudiotangentS = (Vector4D*)pModel44->vertexdata.pTangentData + pmesh->vertexoffset;
+			}
+		}
+		else
+		{
+			DevWarning("v44+ model has NULL pModel44 (4th): %s\n", m_pStudioHdr->name);
+		}
+	}
+	else
+	{
+		// Fallback for other versions
+		pVertices = pmesh->Vertex(0);
+		pstudiotangentS = pmesh->TangentS( 0 );
+	}
 
 	CMeshBuilder meshBuilder;
 	meshBuilder.BeginModify( pMeshData->m_pMesh );
@@ -1627,14 +1789,47 @@ int CStudioRender::R_StudioDrawEyeball( mstudiomesh_t* pmesh, studiomeshdata_t* 
 	
 	// FIXME: We could compile a static vertex buffer in this case
 	// if there's no flexed verts.
-	mstudiovertex_t *pVertices = pmesh->Vertex(0);
+	// Gets at the vertex data - version-safe for v44+ models
+	mstudiovertex_t *pVertices = NULL;
+	if (m_pStudioHdr->IsV37())
+	{
+		// v37 models have embedded vertex data
+		pVertices = pmesh->Vertex(0);
+	}
+	else if (m_pStudioHdr->version >= STUDIO_VERSION_44)
+	{
+		// v44+ models use external VVD data
+		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pmesh->pModel();
+		if (pModel44)
+		{
+			if (pModel44->vertexdata.pVertexData)
+			{
+				pVertices = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + pmesh->vertexoffset;
+			}
+			else
+			{
+				DevWarning("v44+ model has NULL vertex data (5th): %s (model: %s)\n", m_pStudioHdr->name, pModel44->name);
+			}
+		}
+		else
+		{
+			DevWarning("v44+ model has NULL pModel44 (5th): %s\n", m_pStudioHdr->name);
+		}
+	}
+	else
+	{
+		// Fallback for other versions
+		pVertices = pmesh->Vertex(0);
+	}
 
 	R_StudioFlexVerts( pmesh );
 
 	m_pMaterialSystem->SetNumBoneWeights( 0 );
 
-	mstudioeyeball_t *peyeball = m_pSubModel->pEyeball(pmesh->materialparam);
-	
+	// Use version-safe accessor for eyeball and materialparam
+	int materialParam = StudioMesh_GetMaterialParam(m_pStudioHdr, pmesh);
+	mstudioeyeball_t *peyeball = StudioModel_GetEyeball(m_pStudioHdr, m_pSubModel, materialParam);
+
 	if( !m_Config.bWireframe )
 	{
 		// Compute the glint procedural texture
@@ -1642,7 +1837,7 @@ int CStudioRender::R_StudioDrawEyeball( mstudiomesh_t* pmesh, studiomeshdata_t* 
 		IMaterialVar* pGlintVar = pMaterial->FindVar( "$glint", &found, false );
 		if (found)
 		{
-			R_StudioEyeballGlint( &m_EyeballState[pmesh->materialparam], pGlintVar, 
+			R_StudioEyeballGlint( &m_EyeballState[materialParam], pGlintVar,
 				m_ViewRight, m_ViewUp, m_ViewOrigin );
 		}
 	}
@@ -1676,7 +1871,7 @@ int CStudioRender::R_StudioDrawEyeball( mstudiomesh_t* pmesh, studiomeshdata_t* 
 	if( !m_Config.bWireframe )
 		SetEyeMaterialVars( pMaterial, peyeball, org, m_EyeballState[pmesh->materialparam].mat, glintMat );
 
-	m_VertexCache.SetupComputation( pmesh );
+	m_VertexCache.SetupComputation( pmesh, m_pStudioHdr );
 
 	Vector	ambientvalues;
 	static lightpos_t lightpos[MAXLOCALLIGHTS];
@@ -1872,19 +2067,22 @@ void InsertRenderable( int mesh, T val, int count, int* pIndices, T* pValList )
 // Sorts the meshes
 //-----------------------------------------------------------------------------
 
-int CStudioRender::SortMeshes( int* pIndices, IMaterial **ppMaterials, 
+int CStudioRender::SortMeshes( int* pIndices, IMaterial **ppMaterials,
 	short* pskinref, Vector const& vforward, Vector const& r_origin )
 {
 	int numMeshes = 0;
+	// Use version-safe accessor for mesh count
+	int totalMeshes = StudioModel_GetNumMeshes(m_pStudioHdr, m_pSubModel);
+
 	if (m_bDrawTranslucentSubModels)
 	{
-//		float* pDist = (float*)_alloca( m_pSubModel->nummeshes * sizeof(float) );
+//		float* pDist = (float*)_alloca( totalMeshes * sizeof(float) );
 
 		// Sort each model piece by it's center, if it's translucent
-		for (int i = 0; i < m_pSubModel->nummeshes; ++i)
+		for (int i = 0; i < totalMeshes; ++i)
 		{
-			// Don't add opaque materials
-			mstudiomesh_t*	pmesh = m_pSubModel->pMesh(i);
+			// Don't add opaque materials - use version-safe mesh accessor
+			mstudiomesh_t*	pmesh = StudioModel_GetMesh(m_pStudioHdr, m_pSubModel, i);
 			IMaterial *pMaterial = ppMaterials[pskinref[pmesh->material]];
 			if( !pMaterial || !pMaterial->IsTranslucent() )
 				continue;
@@ -1903,12 +2101,12 @@ int CStudioRender::SortMeshes( int* pIndices, IMaterial **ppMaterials,
 	}
 	else
 	{
-		IMaterial** ppMat = (IMaterial**)_alloca( m_pSubModel->nummeshes * sizeof(IMaterial*) );
+		IMaterial** ppMat = (IMaterial**)_alloca( totalMeshes * sizeof(IMaterial*) );
 
-		// Sort by material type
-		for (int i = 0; i < m_pSubModel->nummeshes; ++i)
+		// Sort by material type - use version-safe mesh accessor
+		for (int i = 0; i < totalMeshes; ++i)
 		{
-			mstudiomesh_t*	pmesh = m_pSubModel->pMesh(i);
+			mstudiomesh_t*	pmesh = StudioModel_GetMesh(m_pStudioHdr, m_pSubModel, i);
 			IMaterial *pMaterial = ppMaterials[pskinref[pmesh->material]];
 			if( !pMaterial )
 				continue;
@@ -1969,15 +2167,15 @@ int CStudioRender::R_StudioDrawPoints( int skin, void /*IClientEntity*/ *pClient
 	if (m_Config.skin)
 	{
 		skin = m_Config.skin;
-		if (skin >= m_pStudioHdr->numskinfamilies)
+		if (skin >= StudioHdr_GetNumSkinFamilies(m_pStudioHdr))
 			skin = 0;
 	}
 
-	// get skinref array
-	short *pskinref	= m_pStudioHdr->pSkinref( 0 );
-	if ( skin > 0 && skin < m_pStudioHdr->numskinfamilies )
+	// get skinref array - use version-safe accessor for v44+ models
+	short *pskinref	= StudioHdr_GetSkinRef( m_pStudioHdr, 0 );
+	if ( skin > 0 && skin < StudioHdr_GetNumSkinFamilies(m_pStudioHdr) )
 	{
-		pskinref += ( skin * m_pStudioHdr->numskinref );
+		pskinref += ( skin * StudioHdr_GetNumSkinRef(m_pStudioHdr) );
 	}
 
 	// Compute all the bone matrices the way the material system wants it
@@ -1987,20 +2185,23 @@ int CStudioRender::R_StudioDrawPoints( int skin, void /*IClientEntity*/ *pClient
 	}
 
 	// this has to run here becuase it effects flex targets
-	for ( i = 0; i < m_pSubModel->numeyeballs; i++)
+	// Use version-safe accessors for v44+ model compatibility
+	int numEyeballs = StudioModel_GetNumEyeballs(m_pStudioHdr, m_pSubModel);
+	for ( i = 0; i < numEyeballs; i++)
 	{
-		R_StudioEyeballPosition( m_pSubModel->pEyeball(i), &m_EyeballState[i] );
+		R_StudioEyeballPosition( StudioModel_GetEyeball(m_pStudioHdr, m_pSubModel, i), &m_EyeballState[i] );
 	}
 
 	// FIXME: Activate sorting on a mesh level
-//	int* pIndices = (int*)_alloca( m_pSubModel->nummeshes * sizeof(int) ); 
+//	int* pIndices = (int*)_alloca( StudioModel_GetNumMeshes(m_pStudioHdr, m_pSubModel) * sizeof(int) );
 //	int numMeshes = SortMeshes( pIndices, ppMaterials, pskinref, vforward, r_origin );
 
-	// draw each mesh
-	for ( i = 0; i < m_pSubModel->nummeshes; ++i)
+	// draw each mesh - use version-safe accessors for v44+ model compatibility
+	int numMeshes = StudioModel_GetNumMeshes(m_pStudioHdr, m_pSubModel);
+	for ( i = 0; i < numMeshes; ++i)
 	{
-		mstudiomesh_t	*pmesh		= m_pSubModel->pMesh(i);
-		studiomeshdata_t *pMeshData = &m_pStudioMeshes[pmesh->meshid];
+		mstudiomesh_t	*pmesh		= StudioModel_GetMesh(m_pStudioHdr, m_pSubModel, i);
+		studiomeshdata_t *pMeshData = &m_pStudioMeshes[StudioMesh_GetMeshId(m_pStudioHdr, pmesh)];
 		Assert(pMeshData);
 
 		IMaterial* pMaterial = R_StudioSetupSkin( pskinref[ pmesh->material ], ppMaterials, pClientEntity );
@@ -2032,7 +2233,8 @@ int CStudioRender::R_StudioDrawPoints( int skin, void /*IClientEntity*/ *pClient
 
 		// The following are special cases that can't be covered with
 		// the normal static/dynamic methods due to optimization reasons
-		switch (pmesh->materialtype)
+		// Use version-safe accessor for materialtype (different offset in v44+)
+		switch (StudioMesh_GetMaterialType(m_pStudioHdr, pmesh))
 		{
 		case 1:	// eyeballs
 			if( m_bDrawTranslucentSubModels )

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -307,7 +307,7 @@ public:
 
 		// no bones have been simulated
 		memset( boneSimulated, 0, sizeof(boneSimulated) );
-		mstudiobone_t *pbones = hdr->pBone( 0 );
+		// Use version-aware bone accessors for v37/v44+ compatibility
 		int i;
 
 		for ( i = 0; i < m_elementCount; i++ )
@@ -341,7 +341,8 @@ public:
 				bonematrix[1][3] = pos[i][1];
 				bonematrix[2][3] = pos[i][2];
 
-				if (pbones[i].parent == -1) 
+				int parentBone = hdr->GetBoneParent( i );
+				if (parentBone == -1) 
 				{
 					ConcatTransforms( cameraTransform, bonematrix, m_CachedBones[i] );
 
@@ -350,7 +351,7 @@ public:
 				} 
 				else 
 				{
-					ConcatTransforms( m_CachedBones[pbones[i].parent], bonematrix, m_CachedBones[i] );
+					ConcatTransforms( m_CachedBones[parentBone], bonematrix, m_CachedBones[i] );
 				}
 			}
 		}

@@ -468,8 +468,8 @@ void CNPC_Barnacle::LiftPrey( void )
 
 			// Get the velocity of the bone we've grabbed, and only bite when it's not moving much
 			studiohdr_t *pStudioHdr = m_hRagdoll->GetModelPtr();
-			mstudiobone_t *pBone = pStudioHdr->pBone( m_iGrabbedBoneIndex );
-			int iBoneIndex = pBone->physicsbone;
+			// Use version-aware accessor for v37/v44+ bone structure compatibility
+			int iBoneIndex = pStudioHdr->GetBonePhysicsbone( m_iGrabbedBoneIndex );
 			ragdoll_t *pRagdoll = m_hRagdoll->GetRagdoll();
 			IPhysicsObject *pRagdollPhys = pRagdoll->list[iBoneIndex].pObject;
 			pRagdollPhys->GetVelocity( &vecVelocity, &angVel );

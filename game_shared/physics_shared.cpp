@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: Game & Client shared functions moved from physics.cpp
 //
@@ -476,17 +476,34 @@ IPhysicsObject *PhysCreateWorld_Shared( CBaseEntity *pWorld, vcollide_t *pWorldC
 	solid_t solid;
 	fluid_t fluid;
 
+	// Validate world collision data
+	if ( !pWorldCollide || pWorldCollide->solidCount == 0 || !pWorldCollide->solids[0] )
+	{
+		Warning("PhysCreateWorld_Shared: Invalid world collision data - physics disabled for world\n");
+		return NULL;
+	}
+
 	int surfaceData = physprops->GetSurfaceIndex( "default" );
 
 	objectparams_t params = defaultParams;
 	params.pGameData = static_cast<void *>(pWorld);
 	params.pName = "world";
 
-	IPhysicsObject *pWorldPhysics = physenv->CreatePolyObjectStatic( 
+	IPhysicsObject *pWorldPhysics = physenv->CreatePolyObjectStatic(
 		pWorldCollide->solids[0], surfaceData, vec3_origin, vec3_angle, &params );
 
-	// hint - saves vphysics some work
-	pWorldPhysics->SetCallbackFlags( pWorldPhysics->GetCallbackFlags() | CALLBACK_NEVER_DELETED );
+	// Check if world physics object was created successfully
+	// This can fail if the collision model is in an unsupported format (e.g., MOPP from v44+ maps)
+	if ( !pWorldPhysics )
+	{
+		Warning("PhysCreateWorld_Shared: Failed to create world physics object - collision model may be in unsupported format\n");
+		// Continue to parse other solids/fluids, maybe one of them will work
+	}
+	else
+	{
+		// hint - saves vphysics some work
+		pWorldPhysics->SetCallbackFlags( pWorldPhysics->GetCallbackFlags() | CALLBACK_NEVER_DELETED );
+	}
 
 	//PhysCheckAdd( world, "World" );
 	// walk the world keys in case there are some fluid volumes to create
@@ -504,16 +521,33 @@ IPhysicsObject *PhysCreateWorld_Shared( CBaseEntity *pWorld, vcollide_t *pWorldC
 			solid.params.pGameData = static_cast<void *>(pWorld);
 			solid.params.pName = "world";
 			int surfaceData = physprops->GetSurfaceIndex( "default" );
-			// create this as part of the world
-			IPhysicsObject *pObject = physenv->CreatePolyObjectStatic( pWorldCollide->solids[solid.index], 
-				surfaceData, vec3_origin, vec3_angle, &solid.params );
-			pObject->SetCallbackFlags( pObject->GetCallbackFlags() | CALLBACK_NEVER_DELETED );
-			Assert( g_SolidSetup.GetContentsMask() != 0 );
-			pObject->SetContents( g_SolidSetup.GetContentsMask() );
 
-			if ( !pWorldPhysics )
+			// Validate solid index
+			if ( solid.index < 0 || solid.index >= pWorldCollide->solidCount || !pWorldCollide->solids[solid.index] )
 			{
-				pWorldPhysics = pObject;
+				Warning("PhysCreateWorld_Shared: Invalid solid index %d (solidCount=%d) - skipping\n", solid.index, pWorldCollide->solidCount);
+			}
+			else
+			{
+				// create this as part of the world
+				IPhysicsObject *pObject = physenv->CreatePolyObjectStatic( pWorldCollide->solids[solid.index],
+					surfaceData, vec3_origin, vec3_angle, &solid.params );
+
+				if ( pObject )
+				{
+					pObject->SetCallbackFlags( pObject->GetCallbackFlags() | CALLBACK_NEVER_DELETED );
+					Assert( g_SolidSetup.GetContentsMask() != 0 );
+					pObject->SetContents( g_SolidSetup.GetContentsMask() );
+
+					if ( !pWorldPhysics )
+					{
+						pWorldPhysics = pObject;
+					}
+				}
+				else
+				{
+					Warning("PhysCreateWorld_Shared: Failed to create physics for solid %d\n", solid.index);
+				}
 			}
 		}
 		else if ( !Q_stricmp( pBlock, "fluid" ) )
@@ -521,7 +555,7 @@ IPhysicsObject *PhysCreateWorld_Shared( CBaseEntity *pWorld, vcollide_t *pWorldC
 			pParse->ParseFluid( &fluid, NULL );
 
 			// create a fluid for floating
-			if ( fluid.index > 0 )
+			if ( fluid.index > 0 && fluid.index < pWorldCollide->solidCount && pWorldCollide->solids[fluid.index] )
 			{
 				solid.params = defaultParams;	// copy world's params
 				solid.params.enableCollisions = true;
@@ -530,11 +564,18 @@ IPhysicsObject *PhysCreateWorld_Shared( CBaseEntity *pWorld, vcollide_t *pWorldC
 				fluid.params.pGameData = static_cast<void *>(pWorld);
 				int surfaceData = physprops->GetSurfaceIndex( "water" );
 				// create this as part of the world
-				IPhysicsObject *pWater = physenv->CreatePolyObjectStatic( pWorldCollide->solids[fluid.index], 
+				IPhysicsObject *pWater = physenv->CreatePolyObjectStatic( pWorldCollide->solids[fluid.index],
 					surfaceData, vec3_origin, vec3_angle, &solid.params );
 
-				pWater->SetCallbackFlags( pWater->GetCallbackFlags() | CALLBACK_NEVER_DELETED );
-				physenv->CreateFluidController( pWater, &fluid.params );
+				if ( pWater )
+				{
+					pWater->SetCallbackFlags( pWater->GetCallbackFlags() | CALLBACK_NEVER_DELETED );
+					physenv->CreateFluidController( pWater, &fluid.params );
+				}
+				else
+				{
+					Warning("PhysCreateWorld_Shared: Failed to create physics for fluid %d\n", fluid.index);
+				}
 			}
 		}
 		else if ( !Q_stricmp( pBlock, "materialtable" ) )

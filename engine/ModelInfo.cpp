@@ -22,6 +22,7 @@
 #include "materialsystem/imaterial.h"
 #include "lightcache.h"
 #include "istudiorender.h"
+#include "studiohdr_v44.h"
 
 
 //-----------------------------------------------------------------------------
@@ -45,11 +46,11 @@ static int R_StudioBodyVariations( studiohdr_t *pstudiohdr )
 		return 0;
 
 	count = 1;
-	pbodypart = pstudiohdr->pBodypart( 0 );
+	pbodypart = StudioHdr_GetBodypart(pstudiohdr, 0);
 
 	// Each body part has nummodels variations so there are as many total variations as there
 	// are in a matrix of each part by each other part
-	for ( i = 0; i < pstudiohdr->numbodyparts; i++ )
+	for ( i = 0; i < StudioHdr_GetNumBodyparts(pstudiohdr); i++ )
 	{
 		count = count * pbodypart[i].nummodels;
 	}
@@ -317,7 +318,7 @@ const char *CModelInfo::GetModelKeyValueText( const model_t *model )
 	if (!pStudioHdr)
 		return NULL;
 
-	return pStudioHdr->KeyValueText();
+	return StudioHdr_GetKeyValueText(pStudioHdr);
 }
 
 //-----------------------------------------------------------------------------

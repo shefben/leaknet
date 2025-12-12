@@ -26,9 +26,17 @@
 //-----------------------------------------------------------------------------
 
 CStudioRender g_StudioRender;
-EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CStudioRender, IStudioRender, 
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CStudioRender, IStudioRender,
 						STUDIO_RENDER_INTERFACE_VERSION, g_StudioRender );
 
+//-----------------------------------------------------------------------------
+// Helper to get the current studiohdr from the global studiorender context
+// Used by version-aware vertex access functions in studio_v37_compat.h
+//-----------------------------------------------------------------------------
+studiohdr_t* Studio_GetCurrentStudioHdr()
+{
+	return g_StudioRender.GetStudioHdr();
+}
 
 //-----------------------------------------------------------------------------
 // Constructor
@@ -919,11 +927,11 @@ void CStudioRender::GetPerfStats( DrawModelInfo_t &info, CUtlBuffer *pSpewBuf ) 
 	// Iterate over every submodel...
 	IMaterial **ppMaterials = info.m_pHardwareData->m_pLODs[info.m_Lod].ppMaterials;
 	
-	if ( info.m_Skin >= info.m_pStudioHdr->numskinfamilies )
+	if ( info.m_Skin >= StudioHdr_GetNumSkinFamilies(info.m_pStudioHdr) )
 	{
 		info.m_Skin = 0;
 	}
-	short *pSkinRef	= info.m_pStudioHdr->pSkinref( info.m_Skin * info.m_pStudioHdr->numskinref );
+	short *pSkinRef	= StudioHdr_GetSkinRef(info.m_pStudioHdr, info.m_Skin * StudioHdr_GetNumSkinRef(info.m_pStudioHdr) );
 	
 	int i;
 	for (i=0 ; i < StudioHdr_GetNumBodyparts(info.m_pStudioHdr) ; i++) 
@@ -932,11 +940,13 @@ void CStudioRender::GetPerfStats( DrawModelInfo_t &info, CUtlBuffer *pSpewBuf ) 
 		R_StudioSetupModel( i, info.m_Body, &pModel, info.m_pStudioHdr );
 		
 		// Iterate over all the meshes.... each mesh is a new material
+		// Use version-safe accessors for v44+ model compatibility
+		int numMeshes = StudioModel_GetNumMeshes(info.m_pStudioHdr, pModel);
 		int k;
-		for( k = 0; k < pModel->nummeshes; ++k )
+		for( k = 0; k < numMeshes; ++k )
 		{
 			numMaterialStateChanges++;
-			mstudiomesh_t *pMesh = pModel->pMesh(k);
+			mstudiomesh_t *pMesh = StudioModel_GetMesh(info.m_pStudioHdr, pModel, k);
 			IMaterial *pMaterial = ppMaterials[pSkinRef[pMesh->material]];
 			Assert( pMaterial );
 			if( pSpewBuf )
@@ -954,7 +964,7 @@ void CStudioRender::GetPerfStats( DrawModelInfo_t &info, CUtlBuffer *pSpewBuf ) 
 			{
 				pSpewBuf->Printf( "\t\ttexture memory: %d\n", bytes );
 			}
-			studiomeshdata_t *pMeshData = &pStudioMeshes[pMesh->meshid];
+			studiomeshdata_t *pMeshData = &pStudioMeshes[StudioMesh_GetMeshId(info.m_pStudioHdr, pMesh)];
 			
 			// Iterate over all stripgroups
 			int stripGroupID;

@@ -23,7 +23,7 @@ BEGIN_SRC( SERVER_BMOD_SOURCE_FILES "Source Files" )
 			"hl2_dll/hl2_playerlocaldata.h"
 			"${SRCDIR}/game_shared/hl2/hl2_gamerules.cpp"
 			"${SRCDIR}/game_shared/hl2/hl2_gamerules.h"
-			# "${SRCDIR}/game_shared/bmod/bmod_usermessages.cpp" # Commented out due to multiple definition conflicts
+			"${SRCDIR}/game_shared/bmod/bmod_usermessages.cpp" # Now safe with preprocessor conditionals
 			"hl2_dll/hl2_client.cpp"
 
 			# Physics cannon needed for GMod tools

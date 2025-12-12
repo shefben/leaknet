@@ -789,7 +789,8 @@ struct mstudioanimdesc_v48_t
 	int					numikrules;
 	int					ikruleindex;		// IK rule data (inline in MDL)
 	int					animblockikruleindex;	// IK rules in animation block file
-	inline mstudioikrule_t *pIKRule( int i ) const { return (mstudioikrule_t *)(((byte *)this) + ikruleindex) + i; };
+	// v48: Return v48 IK rule struct which is 100 bytes (vs v37's 108 bytes)
+	inline mstudioikrule_v48_t *pIKRule( int i ) const { return (mstudioikrule_v48_t *)(((byte *)this) + ikruleindex) + i; };
 
 	// Local hierarchy overrides
 	int					numlocalhierarchy;
@@ -842,6 +843,15 @@ struct mstudioautolayer_v48_t
 
 
 // sequence descriptions
+// NOTE: v37 and v44+ have different structures!
+// v37: No baseptr field, structure size = 188 bytes
+// v44+: Has baseptr field at offset 0, structure size = 196 bytes (aligned to 200)
+// The accessor functions use relative offsets from 'this', so we need separate structures.
+
+//-----------------------------------------------------------------------------
+// v37 sequence description (HL2 Beta 2003)
+// This is the default structure used throughout the codebase
+//-----------------------------------------------------------------------------
 struct mstudioseqdesc_t
 {
 	int					szlabelindex;
@@ -927,8 +937,14 @@ struct mstudioseqdesc_t
 	inline mstudioautolayer_t *pAutolayer( int i ) const { return (mstudioautolayer_t *)(((byte *)this) + autolayerindex) + i; };
 
 	int					weightlistindex;
-	float				*pBoneweight( int i ) const { return ((float *)(((byte *)this) + weightlistindex) + i); };
-	float				weight( int i ) const { return *(pBoneweight( i)); };
+	float				*pBoneweight( int i ) const {
+		if (weightlistindex == 0) return nullptr;
+		return ((float *)(((byte *)this) + weightlistindex) + i);
+	};
+	float				weight( int i ) const {
+		float *pWeight = pBoneweight( i );
+		return pWeight ? *pWeight : 0.0f;
+	};
 
 	int					posekeyindex;
 	float				*pPoseKey( int iParam, int iAnim ) const { return (float *)(((byte *)this) + posekeyindex) + iParam * groupsize[0] + iAnim; }
@@ -947,6 +963,100 @@ struct mstudioseqdesc_t
 	int					cycleposeindex;		// index of pose parameter to use as cycle index
 
 	int					unused[7];		// remove/add as appropriate (grow back to 8 ints on version change!)
+};
+
+//-----------------------------------------------------------------------------
+// v48 sequence description (Source 2007)
+// CRITICAL: This structure has baseptr as FIRST field!
+// All offset fields (szlabelindex, etc) are relative to start of this struct (including baseptr)
+//-----------------------------------------------------------------------------
+struct studiohdr_t;  // Forward declaration for pStudiohdr()
+
+struct mstudioseqdesc_v48_t
+{
+	int					baseptr;		// v48: offset back to studiohdr_t
+	inline studiohdr_t	*pStudiohdr( void ) const { return (studiohdr_t *)(((byte *)this) + baseptr); }
+
+	int					szlabelindex;
+	inline char * const pszLabel( void ) const { return ((char *)this) + szlabelindex; }
+
+	int					szactivitynameindex;
+	inline char * const pszActivityName( void ) const { return ((char *)this) + szactivitynameindex; }
+
+	int					flags;		// looping/non-looping flags
+
+	int					activity;	// initialized at loadtime to game DLL values
+	int					actweight;
+
+	int					numevents;
+	int					eventindex;
+	inline mstudioevent_t *pEvent( int i ) const { return (mstudioevent_t *)(((byte *)this) + eventindex) + i; };
+
+	Vector				bbmin;		// per sequence bounding box
+	Vector				bbmax;
+
+	int					numblends;
+
+	int					animindexindex;
+
+	inline int			anim( int x, int y ) const
+	{
+		if ( x >= groupsize[0] )
+			x = groupsize[0] - 1;
+		if ( y >= groupsize[1] )
+			y = groupsize[ 1 ] - 1;
+		int offset = y * groupsize[0] + x;
+		short *blends = (short *)(((byte *)this) + animindexindex);
+		return (int)blends[ offset ];
+	}
+
+	int					movementindex;
+	int					groupsize[2];
+	int					paramindex[2];
+	float				paramstart[2];
+	float				paramend[2];
+	int					paramparent;
+
+	float				fadeintime;
+	float				fadeouttime;
+
+	int					localentrynode;		// v48 name: localentrynode (vs v37 entrynode)
+	int					localexitnode;		// v48 name: localexitnode (vs v37 exitnode)
+	int					nodeflags;
+
+	float				entryphase;
+	float				exitphase;
+
+	float				lastframe;
+
+	int					nextseq;
+	int					pose;
+
+	int					numikrules;
+
+	int					numautolayers;
+	int					autolayerindex;
+	inline mstudioautolayer_t *pAutolayer( int i ) const { return (mstudioautolayer_t *)(((byte *)this) + autolayerindex) + i; };
+
+	int					weightlistindex;
+	inline float		*pBoneweight( int i ) const { return ((float *)(((byte *)this) + weightlistindex) + i); };
+	inline float		weight( int i ) const { return *(pBoneweight( i )); };
+
+	int					posekeyindex;
+	float				*pPoseKey( int iParam, int iAnim ) const { return (float *)(((byte *)this) + posekeyindex) + iParam * groupsize[0] + iAnim; }
+	float				poseKey( int iParam, int iAnim ) const { return *(pPoseKey( iParam, iAnim )); }
+
+	int					numiklocks;
+	int					iklockindex;
+	inline mstudioiklock_t *pIKLock( int i ) const { return (mstudioiklock_t *)(((byte *)this) + iklockindex) + i; };
+
+	int					keyvalueindex;
+	int					keyvaluesize;
+	inline const char * KeyValueText( void ) const { return keyvaluesize != 0 ? ((char *)this) + keyvalueindex : NULL; }
+
+	int					cycleposeindex;
+
+	int					unused[7];
 };
 
 
@@ -1719,6 +1829,13 @@ struct virtualmodel_t
 	CUtlVector< unsigned short > m_autoplaySequences;
 };
 
+//-----------------------------------------------------------------------------
+// Virtual model creation/destruction functions
+// Implemented in game_shared/studio_virtualmodel.cpp
+//-----------------------------------------------------------------------------
+virtualmodel_t *Studio_CreateVirtualModel( studiohdr_t *pStudioHdr );
+void Studio_DestroyVirtualModel( studiohdr_t *pStudioHdr );
+
 
 //-----------------------------------------------------------------------------
 // v48: Flex controller UI
@@ -1864,6 +1981,91 @@ struct studiohdr_t
 	// v48: Returns v48 bone structure (pos/quat/rot/posscale/rotscale format)
 	inline mstudiobone_v48_t *pBone_v48( int i ) const { return (mstudiobone_v48_t *)(((byte *)this) + boneindex) + i; };
 
+	//-----------------------------------------------------------------------------
+	// Version-aware bone accessors for v37/v44+ compatibility
+	// These handle the different bone structure sizes (192 bytes v37 vs 216 bytes v48)
+	//-----------------------------------------------------------------------------
+
+	// Get bone physicsbone field (version-aware)
+	inline int GetBonePhysicsbone( int i ) const {
+		if ( version >= STUDIO_VERSION_44 ) {
+			return pBone_v48( i )->physicsbone;
+		}
+		return pBone( i )->physicsbone;
+	}
+
+	// Get bone flags field (version-aware)
+	inline int GetBoneFlags( int i ) const {
+		if ( version >= STUDIO_VERSION_44 ) {
+			return pBone_v48( i )->flags;
+		}
+		return pBone( i )->flags;
+	}
+
+	// Get bone surface property string (version-aware)
+	inline const char* GetBoneSurfaceProp( int i ) const {
+		if ( version >= STUDIO_VERSION_44 ) {
+			return pBone_v48( i )->pszSurfaceProp();
+		}
+		return pBone( i )->pszSurfaceProp();
+	}
+
+	// Get bone name (version-aware)
+	inline const char* GetBoneName( int i ) const {
+		if ( version >= STUDIO_VERSION_44 ) {
+			return pBone_v48( i )->pszName();
+		}
+		return pBone( i )->pszName();
+	}
+
+	// Get bone parent index (version-aware)
+	inline int GetBoneParent( int i ) const {
+		if ( version >= STUDIO_VERSION_44 ) {
+			return pBone_v48( i )->parent;
+		}
+		return pBone( i )->parent;
+	}
+
+	// Get bone contents (version-aware)
+	inline int GetBoneContents( int i ) const {
+		if ( version >= STUDIO_VERSION_44 ) {
+			return pBone_v48( i )->contents;
+		}
+		return pBone( i )->contents;
+	}
+
+	// Get bone procedure (version-aware)
+	inline void* GetBoneProcedure( int i ) const {
+		if ( version >= STUDIO_VERSION_44 ) {
+			return pBone_v48( i )->pProcedure();
+		}
+		return pBone( i )->pProcedure();
+	}
+
+	// Get bone proctype (version-aware)
+	inline int GetBoneProctype( int i ) const {
+		if ( version >= STUDIO_VERSION_44 ) {
+			return pBone_v48( i )->proctype;
+		}
+		return pBone( i )->proctype;
+	}
+
+	// Get bone qAlignment (version-aware)
+	inline Quaternion GetBoneQAlignment( int i ) const {
+		if ( version >= STUDIO_VERSION_44 ) {
+			return pBone_v48( i )->qAlignment;
+		}
+		return pBone( i )->qAlignment;
+	}
+
+	// Get bone poseToBone matrix (version-aware)
+	inline const matrix3x4_t& GetBonePoseToBone( int i ) const {
+		if ( version >= STUDIO_VERSION_44 ) {
+			return pBone_v48( i )->poseToBone;
+		}
+		return pBone( i )->poseToBone;
+	}
+
 	int					numbonecontrollers;		// bone controllers
 	int					bonecontrollerindex;
 	inline mstudiobonecontroller_t *pBonecontroller( int i ) const { return (mstudiobonecontroller_t *)(((byte *)this) + bonecontrollerindex) + i; };
@@ -1905,17 +2107,17 @@ struct studiohdr_t
 	inline mstudiobbox_t *pHitbox( int i ) const { return (mstudiobbox_t *)(((byte *)this) + hitboxindex) + i; };
 	*/
 	
-	// Animation data - field names differ between v37 and v48
-	// v37: numanim/animdescindex, v48: numlocalanim/localanimindex (but same offsets)
-	int					numanim;			// v37: animations/poses, v48: use numlocalanim alias
-	int					animdescindex;		// v37: animation descriptions, v48: use localanimindex alias
-	// v37: Returns v37 animation description structure
-	inline mstudioanimdesc_t *pAnimdesc( int i ) const { return (mstudioanimdesc_t *)(((byte *)this) + animdescindex) + i; };
-	// v48: Returns v48 animation description structure (with animation blocks, sections, etc.)
-	inline mstudioanimdesc_v48_t *pAnimdesc_v48( int i ) const { return (mstudioanimdesc_v48_t *)(((byte *)this) + animdescindex) + i; };
-	// v48 aliases for virtual model compatibility
-	inline int GetNumLocalAnim() const { return numanim; }
-	inline int numlocalanim() const { return numanim; }
+	// Animation data - field names differ between v37 and v44+
+	// v37: numanim/animdescindex at these offsets
+	// v44+: numlocalanim/localanimindex at DIFFERENT offsets in studiohdr_v44_t!
+	int					numanim;			// v37 only: animations/poses
+	int					animdescindex;		// v37 only: animation descriptions
+	// NOTE: For v44+, these accessors cast to studiohdr_v44_t for correct offsets
+	// Implementations are defined after studiohdr_v44.h include
+	inline mstudioanimdesc_t *pAnimdesc( int i ) const;       // Defined after studiohdr_v44.h
+	inline mstudioanimdesc_v48_t *pAnimdesc_v48( int i ) const; // Defined after studiohdr_v44.h
+	inline int GetNumLocalAnim() const;                        // Defined after studiohdr_v44.h
+	inline int numlocalanim() const;                           // Defined after studiohdr_v44.h
 	inline mstudioanimdesc_t *pLocalAnimdesc( int i ) const { return pAnimdesc(i); }
 	inline mstudioanimdesc_v48_t *pLocalAnimdesc_v48( int i ) const { return pAnimdesc_v48(i); }
 
@@ -1975,25 +2177,16 @@ struct studiohdr_t
 	// Note: v37 does NOT have baseptr, cycleposeindex, or seqgroup fields
 	static const int SEQDESC_V37_SIZE = 188;
 
-	inline mstudioseqdesc_t *pSeqdesc( int i ) const
-	{
-		if (i < 0 || i >= numseq) i = 0;
-
-		if (version <= STUDIO_VERSION_37)
-		{
-			// v37: Use correct binary struct size for pointer arithmetic
-			return (mstudioseqdesc_t *)(((byte *)this) + seqindex + i * SEQDESC_V37_SIZE);
-		}
-		else
-		{
-			// v48: Normal pointer arithmetic with compiled struct size
-			return (mstudioseqdesc_t *)(((byte *)this) + seqindex) + i;
-		}
-	}
+	// NOTE: For v44+, this function casts to studiohdr_v44_t to get correct offsets
+	// The implementation is in studiohdr_v44.h as StudioHdr_GetSeqdesc()
+	// This inline version only handles v37 correctly
+	inline mstudioseqdesc_t *pSeqdesc( int i ) const;  // Defined after studiohdr_v44.h include
+	inline mstudioseqdesc_v48_t *pSeqdesc_v48( int i ) const;  // v48 seqdesc with baseptr - use for v44+ models!
 
 	// v48 aliases for virtual model compatibility
-	inline int GetNumLocalSeq() const { return numseq; }
-	inline int numlocalseq() const { return numseq; }
+	// NOTE: These are version-aware and defined after studiohdr_v44.h include
+	inline int GetNumLocalSeq() const;  // Defined after studiohdr_v44.h include
+	inline int numlocalseq() const;     // Defined after studiohdr_v44.h include
 	inline mstudioseqdesc_t *pLocalSeqdesc( int i ) const { return pSeqdesc(i); }
 
 	int					sequencesindexed;	// v37: initialization flag, v48: unused
@@ -2110,11 +2303,13 @@ struct studiohdr_t
 	const studiohdr_t *FindModel( void **ppCache, const char *pModelName ) const;
 
 	// v48: Virtual model pointer (runtime, not serialized)
+	// WARNING: This field is only valid for v44+ models! For v37, this offset contains other data.
 	mutable virtualmodel_t	*virtualModel;
-	// v48: Get virtual model - NULL for v37
-	inline virtualmodel_t *GetVirtualModel( void ) const { return (version >= STUDIO_VERSION_44) ? virtualModel : NULL; };
+	// v48: Get virtual model - creates on-demand if needed, NULL for v37
+	// NOTE: For v44+ models, use studiohdr_v44_t::GetVirtualModel() which is version-safe
+	inline virtualmodel_t *GetVirtualModel( void ) const;  // Defined after studiohdr_v44_t
 	// v48: Set virtual model
-	inline void SetVirtualModel( virtualmodel_t *pVModel ) const { virtualModel = pVModel; };
+	inline void SetVirtualModel( virtualmodel_t *pVModel ) const;  // Defined after studiohdr_v44_t
 
 	// v48: Animation block name for demand loading
 	int					szanimblocknameindex;
@@ -2561,5 +2756,114 @@ inline bool Studio_IsValidModelVersion( int version )
 
 // Include the v44+ header struct definition after all dependencies are defined
 #include "studiohdr_v44.h"
+
+//-----------------------------------------------------------------------------
+// Deferred inline implementations that depend on studiohdr_v44.h
+//-----------------------------------------------------------------------------
+
+// Version-aware animation count accessor
+inline int studiohdr_t::GetNumLocalAnim() const
+{
+	if (version >= STUDIO_VERSION_44)
+		return ((const studiohdr_v44_t*)this)->numlocalanim;
+	return numanim;
+}
+
+inline int studiohdr_t::numlocalanim() const
+{
+	return GetNumLocalAnim();
+}
+
+// Version-aware animation descriptor accessor (v37 format)
+// WARNING: v48 animdesc has different field layout after first 24 bytes!
+// Fields sznameindex through movementindex (offset 0-23) align correctly.
+// Fields like bbmin/bbmax and animindex are at different offsets in v48!
+inline mstudioanimdesc_t *studiohdr_t::pAnimdesc( int i ) const
+{
+	if (version >= STUDIO_VERSION_44)
+	{
+		// v44+: Use correct stride and skip baseptr so first fields align
+		// v48 animdesc stride = sizeof(mstudioanimdesc_v48_t) (includes baseptr)
+		const studiohdr_v44_t* pHdr44 = (const studiohdr_v44_t*)this;
+		if (i < 0 || i >= pHdr44->numlocalanim) i = 0;
+		int v48_stride = sizeof(mstudioanimdesc_v48_t);
+		byte* pBase = ((byte *)this) + pHdr44->localanimindex;
+		return (mstudioanimdesc_t*)(pBase + i * v48_stride + 4);  // +4 to skip baseptr
+	}
+	// v37: Use pointer arithmetic - compiler uses correct sizeof(mstudioanimdesc_t)
+	if (i < 0 || i >= numanim) i = 0;
+	return (mstudioanimdesc_t *)(((byte *)this) + animdescindex) + i;
+}
+
+// Version-aware animation descriptor accessor (v48 format)
+// Use this for v44+ models to access full v48 structure with correct field offsets
+inline mstudioanimdesc_v48_t *studiohdr_t::pAnimdesc_v48( int i ) const
+{
+	if (version >= STUDIO_VERSION_44)
+	{
+		const studiohdr_v44_t* pHdr44 = (const studiohdr_v44_t*)this;
+		if (i < 0 || i >= pHdr44->numlocalanim) i = 0;
+		return (mstudioanimdesc_v48_t *)(((byte *)this) + pHdr44->localanimindex) + i;
+	}
+	// v37: Return v37 animdesc cast to v48 - caller must handle differences!
+	// The structures are NOT compatible beyond the first few fields!
+	if (i < 0 || i >= numanim) i = 0;
+	return (mstudioanimdesc_v48_t *)(((byte *)this) + animdescindex) + i;
+}
+
+// Version-aware sequence count accessor
+inline int studiohdr_t::GetNumLocalSeq() const
+{
+	if (version >= STUDIO_VERSION_44)
+		return ((const studiohdr_v44_t*)this)->numlocalseq;
+	return numseq;
+}
+
+inline int studiohdr_t::numlocalseq() const
+{
+	return GetNumLocalSeq();
+}
+
+// Version-aware sequence descriptor accessor
+// Must be defined after studiohdr_v44.h because it needs to cast to studiohdr_v44_t
+inline mstudioseqdesc_t *studiohdr_t::pSeqdesc( int i ) const
+{
+	if (version >= STUDIO_VERSION_44)
+	{
+		// v44+: Return v48 seqdesc cast to v37 type
+		// WARNING: This is for compatibility only - caller should use pSeqdesc_v48 for v44+ models!
+		// The v48 struct has baseptr at offset 0, so relative offsets are off by 4 bytes
+		// when accessed through v37 struct layout. USE pSeqdesc_v48() INSTEAD!
+		const studiohdr_v44_t* pHdr44 = (const studiohdr_v44_t*)this;
+		if (i < 0 || i >= pHdr44->numlocalseq) i = 0;
+		byte* pBase = ((byte *)this) + pHdr44->localseqindex;
+		// Point to the start of the v48 seqdesc (including baseptr)
+		// Cast to v37 but SKIP baseptr (+4) so szlabelindex lines up
+		return (mstudioseqdesc_t *)(pBase + i * sizeof(mstudioseqdesc_v48_t) + 4);
+	}
+
+	// v37: Use explicit stride of 188 bytes (SEQDESC_V37_SIZE)
+	// CRITICAL: sizeof(mstudioseqdesc_t) is larger than 188 because the struct
+	// includes v48 fields (cycleposeindex, unused[7]) that don't exist in v37 binary!
+	if (i < 0 || i >= numseq) i = 0;
+	byte* pBase = ((byte *)this) + seqindex;
+	return (mstudioseqdesc_t *)(pBase + i * SEQDESC_V37_SIZE);
+}
+
+// v48 sequence descriptor accessor - use this for v44+ models!
+inline mstudioseqdesc_v48_t *studiohdr_t::pSeqdesc_v48( int i ) const
+{
+	if (version >= STUDIO_VERSION_44)
+	{
+		// v44+: Return the actual v48 seqdesc (with baseptr)
+		const studiohdr_v44_t* pHdr44 = (const studiohdr_v44_t*)this;
+		if (i < 0 || i >= pHdr44->numlocalseq) i = 0;
+		byte* pBase = ((byte *)this) + pHdr44->localseqindex;
+		return (mstudioseqdesc_v48_t *)(pBase + i * sizeof(mstudioseqdesc_v48_t));
+	}
+
+	// v37: Cannot return v48 seqdesc - return NULL and let caller handle it
+	return NULL;
+}
 
 #endif // STUDIO_H

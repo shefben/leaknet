@@ -1097,19 +1097,23 @@ void Cache_Print_Models_And_Totals (void)
 	g_pFileSystem->FPrintf(file,"\nCACHED MODELS:\n");
 
 	
-	//now process the sorted list.  
+	//now process the sorted list.
 	for (j=0;j<i;j++)
 	{
 		int k;
-		mstudiotexture_t	*ptexture;
 		studiohdr_t			*phdr=(studiohdr_t*)sortarray[j]->user->data;
 
 
-		ptexture = (mstudiotexture_t *)( ((char*)phdr) + phdr->textureindex);
-
+		// Use version-safe accessor for texture data
+		// This code calculates memory usage from texture dimensions - use 0 for v44+ as they don't store textures inline
+		int numTextures = StudioHdr_GetNumTextures(phdr);
 		subtot=0;
-		for (k = 0; k < phdr->numtextures; k++)
-			subtot+=ptexture[k].width * ptexture[k].height+768; // (256*3 for the palette)
+		for (k = 0; k < numTextures; k++)
+		{
+			mstudiotexture_t* pTex = StudioHdr_GetTexture(phdr, k);
+			if (pTex)
+				subtot += pTex->width * pTex->height + 768; // (256*3 for the palette)
+		}
 
 		g_pFileSystem->FPrintf(file, "\t%16.16s : %s\n", Q_pretifymem(sortarray[j]->size,buf),sortarray[j]->name);
 		totalbytes+=sortarray[j]->size;

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -10,6 +10,7 @@
 #include "engine/ivdebugoverlay.h"
 #include "tier0/vprof.h"
 #include "soundinfo.h"
+#include "studiohdr_v44.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -174,7 +175,9 @@ void  C_NPC_Hydra::StandardBlendingRules( Vector pos[], Quaternion q[], float cu
 
 		// build root animation
 		float	poseparam[MAXSTUDIOPOSEPARAM];
-		for (i = 0; i < hdr->numposeparameters; i++)
+		// Use version-aware helper for v37/v44+ compatibility
+		int numPoseParams = StudioHdr_GetNumPoseParameters(hdr);
+		for (i = 0; i < numPoseParams; i++)
 		{
 			poseparam[i] = 0;
 		}

@@ -172,6 +172,7 @@ DECLARE_MESSAGE(gHUD, ResetHUD);
 DECLARE_MESSAGE(gHUD, InitHUD);
 DECLARE_MESSAGE(gHUD, GameMode);
 DECLARE_MESSAGE(gHUD, TeamChange);
+DECLARE_MESSAGE(gHUD, MOTD);
 
 CHud::CHud()
 {
@@ -188,6 +189,7 @@ void CHud::Init( void )
 	HOOK_MESSAGE( GameMode );
 	HOOK_MESSAGE( InitHUD );
 	HOOK_MESSAGE( TeamChange );
+	HOOK_MESSAGE( MOTD );
 	// HOOK_MESSAGE( ClearDecals ); // ClearDecals function not available in client build
 
 	InitFonts();

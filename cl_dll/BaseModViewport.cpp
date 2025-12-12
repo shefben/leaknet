@@ -74,7 +74,7 @@ static CClientMOTD *GetStandaloneMOTDPanel()
 // Purpose: Handle MOTD user message (2003 protocol)
 //         Works standalone without requiring TeamFortressViewport
 //-----------------------------------------------------------------------------
-void __MsgFunc_MOTD( const char *pszName, int iSize, void *pbuf )
+void __MsgFunc_MOTD_Standalone( const char *pszName, int iSize, void *pbuf )
 {
 	// If TeamFortressViewport is available, use it
 	if (gViewPortMsgs)
@@ -130,7 +130,8 @@ void __MsgFunc_MOTD( const char *pszName, int iSize, void *pbuf )
 		}
 	}
 }
-USER_MESSAGE_REGISTER( MOTD );
+// MOTD is now registered via DECLARE_MESSAGE/HOOK_MESSAGE system in hud.cpp
+// USER_MESSAGE_REGISTER( MOTD ); // Removed - using CHud member function instead
 
 
 void __MsgFunc_VGUIMenu( const char *pszName, int iSize, void *pbuf )

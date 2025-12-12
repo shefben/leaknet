@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -285,13 +285,13 @@ float downDist = -400;
 bool CWalkerStrider::GetAttachment( int iAttachment, matrix3x4_t &attachmentToWorld )
 {
 	studiohdr_t *pStudioHdr = GetModelPtr( );
-	if ( !pStudioHdr || iAttachment < 1 || iAttachment > pStudioHdr->numattachments )
+	if ( !pStudioHdr || iAttachment < 1 || iAttachment > StudioHdr_GetNumAttachments(pStudioHdr) )
 	{
 		return false;
 	}
 
 	Vector vLocalPos( 0, 0, 0 );
-	mstudioattachment_t *pAttachment = pStudioHdr->pAttachment( iAttachment-1 );
+	mstudioattachment_t *pAttachment = StudioHdr_GetAttachment(pStudioHdr, iAttachment-1 );
 	if ( _stricmp( pAttachment->pszName(), "build_point_left_gun" ) == 0 )
 	{
 		vLocalPos.y = sideDist;

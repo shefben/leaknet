@@ -617,7 +617,7 @@ void CStudioRender::AddDecalToMesh( DecalBuildInfo_t& build )
 	// Don't add to the mesh if the mesh has a translucent material
 	if (build.m_SuppressTlucDecal)
 	{
-		short *pSkinRef	= m_pStudioHdr->pSkinref( 0 );
+		short *pSkinRef	= StudioHdr_GetSkinRef( m_pStudioHdr, 0 );
 		IMaterial *pMaterial = build.m_ppMaterials[pSkinRef[build.m_pMesh->material]];
 		if (pMaterial->IsTranslucent())
 			return;
@@ -683,11 +683,13 @@ void CStudioRender::AddDecalToModel( DecalBuildInfo_t& buildInfo )
 	// we need to know the center of each mesh, could also store a
 	// bounding radius for each mesh and test the ray against each sphere.
 
-	for ( int i = 0; i < m_pSubModel->nummeshes; ++i)
+	// Use version-safe accessors for v44+ model compatibility
+	int numMeshes = StudioModel_GetNumMeshes(m_pStudioHdr, m_pSubModel);
+	for ( int i = 0; i < numMeshes; ++i)
 	{
 		buildInfo.m_Mesh = i;
-		buildInfo.m_pMesh = m_pSubModel->pMesh(i);
-		buildInfo.m_pMeshData = &m_pStudioMeshes[buildInfo.m_pMesh->meshid];
+		buildInfo.m_pMesh = StudioModel_GetMesh(m_pStudioHdr, m_pSubModel, i);
+		buildInfo.m_pMeshData = &m_pStudioMeshes[StudioMesh_GetMeshId(m_pStudioHdr, buildInfo.m_pMesh)];
 		Assert(buildInfo.m_pMeshData);
 
 		AddDecalToMesh( buildInfo );
@@ -1089,7 +1091,7 @@ void CStudioRender::DrawMultiBoneDecals( CMeshBuilder& meshBuilder, DecalMateria
 		else
 		{
 			// Prevent the computation of this again....
-			m_VertexCache.SetupComputation(pMesh);
+			m_VertexCache.SetupComputation(pMesh, m_pStudioHdr);
 			CachedVertex_t* pCachedVert = m_VertexCache.CreateWorldVertex( n );
 
 			// Use version-aware vertex access for v37 model compatibility
@@ -1158,7 +1160,7 @@ void CStudioRender::DrawMultiBoneFlexedDecals( CMeshBuilder& meshBuilder, DecalM
 		else
 		{
 			// Prevent the computation of this again....
-			m_VertexCache.SetupComputation(pMesh);
+			m_VertexCache.SetupComputation(pMesh, m_pStudioHdr);
 			CachedVertex_t* pCachedVert = m_VertexCache.CreateWorldVertex( n );
 
 			if (m_VertexCache.IsVertexFlexed( n ))

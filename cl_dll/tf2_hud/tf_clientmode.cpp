@@ -18,6 +18,7 @@
 #include "ivmodemanager.h"
 #include "parsemsg.h"
 #include "hud_timer.h"
+#include "bitbuf.h"
 #include "hud_technologytreedoc.h"
 #include "commanderoverlay.h"
 #include "c_tf2rootpanel.h"
@@ -57,8 +58,12 @@ DECLARE_COMMAND( g_ModeManager, Normal );
 HOOK_COMMAND( commander, Commander );
 HOOK_COMMAND( normal, Normal );
 
-void __MsgFunc_ActBegin( bf_read &msg );
-void __MsgFunc_ActEnd( bf_read &msg );
+void MsgFunc_ActBegin_New( bf_read &msg );
+void MsgFunc_ActEnd_New( bf_read &msg );
+
+// 2003 protocol wrappers
+void __MsgFunc_ActBegin( const char *pszName, int iSize, void *pbuf );
+void __MsgFunc_ActEnd( const char *pszName, int iSize, void *pbuf );
 
 #define MINIMAP_FILE	"scripts/minimap_overlays.txt"
 #define SCREEN_FILE		"scripts/vgui_screens.txt"
@@ -171,7 +176,7 @@ void CTFModeManager::LevelShutdown( void )
 //-----------------------------------------------------------------------------
 // Purpose: A new act has just begun (2007 protocol)
 //-----------------------------------------------------------------------------
-void __MsgFunc_ActBegin( bf_read &msg )
+void MsgFunc_ActBegin_New( bf_read &msg )
 {
 	BEGIN_READ( msg );
 
@@ -184,7 +189,7 @@ void __MsgFunc_ActBegin( bf_read &msg )
 //-----------------------------------------------------------------------------
 // Purpose: An act has just ended (2007 protocol)
 //-----------------------------------------------------------------------------
-void __MsgFunc_ActEnd( bf_read &msg )
+void MsgFunc_ActEnd_New( bf_read &msg )
 {
 	BEGIN_READ( msg );
 
@@ -193,4 +198,24 @@ void __MsgFunc_ActEnd( bf_read &msg )
 	{
 		timer->SetNoFixedTimer( 0.0f );
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 2003 protocol wrapper for ActBegin message
+//-----------------------------------------------------------------------------
+void __MsgFunc_ActBegin( const char *pszName, int iSize, void *pbuf )
+{
+	bf_read msg;
+	msg.StartReading( pbuf, iSize );
+	MsgFunc_ActBegin_New( msg );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 2003 protocol wrapper for ActEnd message
+//-----------------------------------------------------------------------------
+void __MsgFunc_ActEnd( const char *pszName, int iSize, void *pbuf )
+{
+	bf_read msg;
+	msg.StartReading( pbuf, iSize );
+	MsgFunc_ActEnd_New( msg );
 }

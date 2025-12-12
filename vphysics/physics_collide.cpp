@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "interface.h"
 #include "vphysics_interface.h"
+#include "tier0/dbg.h"
 
 #include "ivp_physics.hxx"
 #include "ivp_surbuild_pointsoup.hxx"
@@ -175,6 +176,13 @@ IVP_SurfaceManager *CreateSurfaceManager( const CPhysCollide *pCollisionModel, s
 #endif
 	{
 		const IVP_Compact_Surface *pSurface = ConvertPhysCollideToCompactSurface( pCollisionModel );
+		if ( !pSurface )
+		{
+			// Collision model is MOPP but MOPP support is not enabled - return NULL
+			Warning("vphysics: Collision model uses MOPP format but MOPP support not available\n");
+			collideType = COLLIDE_POLY;
+			return NULL;
+		}
 		collideType = COLLIDE_POLY;
 		return new IVP_SurfaceManager_Polygon( pSurface );
 	}
@@ -802,7 +810,14 @@ float CPhysicsCollision::CollideSurfaceArea( CPhysCollide *pCollide )
 }
 
 
+// VPHY header magic number for v44+ PHY files
+// v44+ PHY files have a 32-byte "swapcompactsurfaceheader_t" wrapper before IVP_Compact_Surface data:
+//   int size (4), int vphysicsID='VPHY' (4), short version (2), short modelType (2),
+//   int surfaceSize (4), Vector dragAxisAreas (12), int axisMapSize (4) = 32 bytes total
+#define VPHY_HEADER_ID		MAKEID('V','P','H','Y')
+
 // loads a set of solids into a vcollide_t
+// Supports both legacy format (raw IVP_Compact_Surface) and v44+ format (VPHY header wrapper)
 void CPhysicsCollision::VCollideLoad( vcollide_t *pOutput, int solidCount, const char *pBuffer, int bufferSize )
 {
 	memset( pOutput, 0, sizeof(*pOutput) );
@@ -819,9 +834,72 @@ void CPhysicsCollision::VCollideLoad( vcollide_t *pOutput, int solidCount, const
 		memcpy( &size, pBuffer + position, sizeof(int) );
 		position += sizeof(int);
 
-		pOutput->solids[i] = (CPhysCollide *)ivp_malloc_aligned( size, 32 );
-		memcpy( pOutput->solids[i], pBuffer + position, size );
-		position += size;
+		// Check if this solid has a VPHY header (v44+ format)
+		// After reading the size, position points to the blob data.
+		// In new format: blob starts with VPHY magic directly (the 'size' we just read
+		// is part of swapcompactsurfaceheader_t in the 2007 format)
+		// In old format: blob starts with IVP_Compact_Surface data (floats, not 'VPHY')
+		int vphyMagic = 0;
+		if ( size >= 4 )
+		{
+			// Check first 4 bytes of blob for 'VPHY' magic
+			memcpy( &vphyMagic, pBuffer + position, sizeof(int) );
+		}
+
+		if ( vphyMagic == VPHY_HEADER_ID )
+		{
+			// v44+ format: VPHY header wrapper around IVP_Compact_Surface
+			// The header is 28 bytes (not including the 'size' we already read):
+			// - vphysicsID (4), version (2), modelType (2), surfaceSize (4), dragAxisAreas (12), axisMapSize (4)
+			// Total header after 'size': 28 bytes
+
+			// Read surfaceSize at offset 8 from current position
+			// (vphysicsID=4, version=2, modelType=2, then surfaceSize)
+			int surfaceSize;
+			memcpy( &surfaceSize, pBuffer + position + 8, sizeof(int) );
+
+			// Validate surfaceSize is reasonable
+			if ( surfaceSize <= 0 || surfaceSize > size )
+			{
+				Warning( "VCollideLoad: Invalid surfaceSize %d (blob size %d) in VPHY solid %d\n", surfaceSize, size, i );
+				pOutput->solids[i] = NULL;
+				position += size;
+				continue;
+			}
+
+			// The actual IVP_Compact_Surface data starts 28 bytes after current position
+			// (after vphysicsID + version + modelType + surfaceSize + dragAxisAreas + axisMapSize)
+			const int vphyHeaderSizeAfterBlobSize = 28;  // 4+2+2+4+12+4
+			const char *pSurfaceData = pBuffer + position + vphyHeaderSizeAfterBlobSize;
+
+			// Verify we have enough data
+			if ( vphyHeaderSizeAfterBlobSize + surfaceSize > size )
+			{
+				Warning( "VCollideLoad: VPHY header claims surfaceSize %d but only %d bytes in blob after header\n",
+					surfaceSize, size - vphyHeaderSizeAfterBlobSize );
+				pOutput->solids[i] = NULL;
+				position += size;
+				continue;
+			}
+
+			// Allocate and copy only the IVP_Compact_Surface data
+			pOutput->solids[i] = (CPhysCollide *)ivp_malloc_aligned( surfaceSize, 32 );
+			memcpy( pOutput->solids[i], pSurfaceData, surfaceSize );
+
+			DevMsg( "VCollideLoad: Loaded v44+ VPHY solid %d: blobSize=%d, surfaceSize=%d\n", i, size, surfaceSize );
+
+			// Skip past the entire solid blob
+			// 'size' is the total blob size (not including the 4-byte size field itself)
+			// We're currently positioned at the start of the blob, so skip 'size' bytes
+			position += size;
+		}
+		else
+		{
+			// Legacy format: raw IVP_Compact_Surface data
+			pOutput->solids[i] = (CPhysCollide *)ivp_malloc_aligned( size, 32 );
+			memcpy( pOutput->solids[i], pBuffer + position, size );
+			position += size;
+		}
 	}
 
 	END_IVP_ALLOCATION();

@@ -11,6 +11,9 @@
 // Include shared model loader for v37 animation groups
 #include "engine/ISharedModelLoader.h"
 
+// Version-aware bone accessors for v44+ MDL support
+#include "studiohdr_v44.h"
+
 void BuildBoneChain(
 	const studiohdr_t *pStudioHdr,
 	matrix3x4_t &rootxform,
@@ -602,13 +605,14 @@ static void CalcDecompressedAnimation( const mstudiocompressedikerror_t *pCompre
 //-----------------------------------------------------------------------------
 // Purpose: Calculate local hierarchy animation overrides (v48)
 // Allows bones to be temporarily reparented during an animation
+// NOTE: This function is v48-specific and uses pBone_v48() for correct struct offsets
 //-----------------------------------------------------------------------------
 static void CalcLocalHierarchyAnimation(
 	const studiohdr_t *pStudioHdr,
 	matrix3x4_t *boneToWorld,
 	Vector *pos,
 	Quaternion *q,
-	const mstudiobone_t *pbone,
+	const mstudiobone_t *pbone,  // Legacy parameter, use pStudioHdr->pBone_v48() instead
 	mstudiolocalhierarchy_t *pHierarchy,
 	int iBone,
 	int iNewParent,
@@ -665,7 +669,8 @@ static void CalcLocalHierarchyAnimation(
 	// back solve
 	Vector p1;
 	Quaternion q1;
-	int n = pbone[iBone].parent;
+	// Use v48 bone accessor for correct struct size in array indexing
+	int n = pStudioHdr->pBone_v48(iBone)->parent;
 	if (n == -1)
 	{
 		if (weight == 1.0f)
@@ -721,7 +726,8 @@ static void CalcRotations_v37( const studiohdr_t *pStudioHdr, Vector *pos, Quate
 
 	for (i = 0; i < pStudioHdr->numbones; i++, pbone++, panim++)
 	{
-		if (pseqdesc->weight(i) > 0 && (pbone->flags & boneMask))
+		// Use version-safe weight accessor for v44+ seqdesc baseptr compatibility
+		if (StudioSeqdesc_GetWeightFromPtr(pStudioHdr, pseqdesc, i) > 0 && (pbone->flags & boneMask))
 		{
 			CalcBoneQuaternion( pStudioHdr, iFrame, s, pbone, panim, q[i] );
 			CalcBonePosition  ( pStudioHdr, iFrame, s, pbone, panim, pos[i] );
@@ -750,7 +756,8 @@ static void CalcRotations_v48_internal( const studiohdr_t *pStudioHdr, Vector *p
 	for (int i = 0; i < pStudioHdr->numbones; i++)
 	{
 		mstudiobone_v48_t *pbone = pStudioHdr->pBone_v48( i );
-		if (pseqdesc->weight(i) > 0 && (pbone->flags & boneMask))
+		// Use version-safe weight accessor for v44+ seqdesc baseptr compatibility
+		if (StudioSeqdesc_GetWeightFromPtr(pStudioHdr, pseqdesc, i) > 0 && (pbone->flags & boneMask))
 		{
 			// Default pose from bone data
 			pos[i] = pbone->pos;
@@ -770,7 +777,8 @@ static void CalcRotations_v48_internal( const studiohdr_t *pStudioHdr, Vector *p
 		{
 			mstudiobone_v48_t *pbone = pStudioHdr->pBone_v48( iBone );
 
-			if (pseqdesc->weight(iBone) > 0 && (pbone->flags & boneMask))
+			// Use version-safe weight accessor for v44+ seqdesc baseptr compatibility
+			if (StudioSeqdesc_GetWeightFromPtr(pStudioHdr, pseqdesc, iBone) > 0 && (pbone->flags & boneMask))
 			{
 				CalcBoneQuaternion_v48( pStudioHdr, iFrame, s, pbone, panim, q[iBone] );
 				CalcBonePosition_v48( pStudioHdr, iFrame, s, pbone, panim, pos[iBone] );
@@ -796,6 +804,9 @@ static void CalcRotations_v48_internal( const studiohdr_t *pStudioHdr, Vector *p
 			SetIdentityMatrix( boneToWorld[i] );
 		}
 
+		// NOTE: CalcLocalHierarchyAnimation expects mstudiobone_t* for v37 compatibility
+		// but this v48 code path. We pass pBone(0) but internally use v48 bone accessors
+		// for flag checks to ensure correct field offsets.
 		mstudiobone_t *pbone = pStudioHdr->pBone( 0 );
 
 		// Process each local hierarchy override
@@ -807,11 +818,11 @@ static void CalcRotations_v48_internal( const studiohdr_t *pStudioHdr, Vector *p
 
 			int iBone = pHierarchy->iBone;
 			if (iBone >= 0 && iBone < pStudioHdr->numbones &&
-				(pStudioHdr->pBone(iBone)->flags & boneMask))
+				(pStudioHdr->pBone_v48(iBone)->flags & boneMask))
 			{
 				int iNewParent = pHierarchy->iNewParent;
 				if (iNewParent >= 0 && iNewParent < pStudioHdr->numbones &&
-					(pStudioHdr->pBone(iNewParent)->flags & boneMask))
+					(pStudioHdr->pBone_v48(iNewParent)->flags & boneMask))
 				{
 					CalcLocalHierarchyAnimation( pStudioHdr, boneToWorld, pos, q, pbone,
 						pHierarchy, iBone, iNewParent, cycle, iFrame, s, boneMask );
@@ -914,13 +925,14 @@ void SlerpBones(
 	{
 		for (i = 0; i < pStudioHdr->numbones; i++)
 		{
-			// skip unused bones
-			if (!(pStudioHdr->pBone(i)->flags & boneMask))
+			// skip unused bones - use version-aware flag accessor for v44+ support
+			if (!(StudioBone_GetFlags(pStudioHdr, i) & boneMask))
 			{
 				continue;
 			}
 
-			s2 = s * pseqdesc->weight( i );	// blend in based on this bones weight
+			// Use version-safe weight accessor for v44+ seqdesc baseptr compatibility
+			s2 = s * StudioSeqdesc_GetWeightFromPtr(pStudioHdr, pseqdesc, i);	// blend in based on this bones weight
 			if (s2 > 0.0)
 			{
 				if (pseqdesc->flags & STUDIO_POST)
@@ -948,18 +960,19 @@ void SlerpBones(
 	{
 		for (i = 0; i < pStudioHdr->numbones; i++)
 		{
-			// skip unused bones
-			if (!(pStudioHdr->pBone(i)->flags & boneMask))
+			// skip unused bones - use version-aware flag accessor for v44+ support
+			if (!(StudioBone_GetFlags(pStudioHdr, i) & boneMask))
 			{
 				continue;
 			}
 
-			s2 = s * pseqdesc->weight( i );	// blend in based on this animations weights
+			// Use version-safe weight accessor for v44+ seqdesc baseptr compatibility
+			s2 = s * StudioSeqdesc_GetWeightFromPtr(pStudioHdr, pseqdesc, i);	// blend in based on this animations weights
 			if (s2 > 0.0)
 			{
 				s1 = 1.0 - s2;
 
-				if (pStudioHdr->pBone(i)->flags & BONE_FIXED_ALIGNMENT)
+				if (StudioBone_GetFlags(pStudioHdr, i) & BONE_FIXED_ALIGNMENT)
 				{
 					QuaternionSlerpNoAlign( q2[i], q1[i], s1, q3 );
 				}
@@ -1006,13 +1019,14 @@ void BlendBones(
 	{
 		for (i = 0; i < pStudioHdr->numbones; i++)
 		{
-			// skip unused bones
-			if (!(pStudioHdr->pBone(i)->flags & boneMask))
+			// skip unused bones - use version-aware flag accessor for v44+ support
+			if (!(StudioBone_GetFlags(pStudioHdr, i) & boneMask))
 			{
 				continue;
 			}
 
-			if (pseqdesc->weight( i ) > 0.0)
+			// Use version-safe weight accessor for v44+ seqdesc baseptr compatibility
+			if (StudioSeqdesc_GetWeightFromPtr(pStudioHdr, pseqdesc, i) > 0.0)
 			{
 				q1[i] = q2[i];
 				pos1[i] = pos2[i];
@@ -1026,15 +1040,16 @@ void BlendBones(
 
 	for (i = 0; i < pStudioHdr->numbones; i++)
 	{
-		// skip unused bones
-		if (!(pStudioHdr->pBone(i)->flags & boneMask))
+		// skip unused bones - use version-aware flag accessor for v44+ support
+		if (!(StudioBone_GetFlags(pStudioHdr, i) & boneMask))
 		{
 			continue;
 		}
 
-		if (pseqdesc->weight( i ) > 0.0)
+		// Use version-safe weight accessor for v44+ seqdesc baseptr compatibility
+		if (StudioSeqdesc_GetWeightFromPtr(pStudioHdr, pseqdesc, i) > 0.0)
 		{
-			if (pStudioHdr->pBone(i)->flags & BONE_FIXED_ALIGNMENT)
+			if (StudioBone_GetFlags(pStudioHdr, i) & BONE_FIXED_ALIGNMENT)
 			{
 				QuaternionBlendNoAlign( q2[i], q1[i], s1, q3 );
 			}
@@ -1075,15 +1090,16 @@ void Studio_LocalPoseParameter( const studiohdr_t *pStudioHdr, const float poseP
 		return;
 	}
 
-	// Bounds check against number of pose parameters
-	if (paramIdx < 0 || paramIdx >= pStudioHdr->numposeparameters)
+	// Bounds check against number of pose parameters (use version-aware helper)
+	int numPoseParams = StudioHdr_GetNumPoseParameters(pStudioHdr);
+	if (paramIdx < 0 || paramIdx >= numPoseParams)
 	{
 		flSetting = 0;
 		index = 0;
 		return;
 	}
 
-	mstudioposeparamdesc_t *pPose = pStudioHdr->pPoseParameter( paramIdx );
+	mstudioposeparamdesc_t *pPose = StudioHdr_GetPoseParameter(pStudioHdr, paramIdx);
 
 	float flValue = poseParameter[paramIdx];
 
@@ -1159,11 +1175,19 @@ void Studio_LocalPoseParameter( const studiohdr_t *pStudioHdr, const float poseP
 
 void Studio_CalcBoneToBoneTransform( const studiohdr_t *pStudioHdr, int inputBoneIndex, int outputBoneIndex, matrix3x4_t& matrixOut )
 {
-	mstudiobone_t *pbone = pStudioHdr->pBone( inputBoneIndex );
+	// Use version-aware poseToBone accessor for v44+ support
+	const matrix3x4_t *pInputPoseToBone = StudioBone_GetPoseToBonePtr(pStudioHdr, inputBoneIndex);
+	const matrix3x4_t *pOutputPoseToBone = StudioBone_GetPoseToBonePtr(pStudioHdr, outputBoneIndex);
+
+	if (!pInputPoseToBone || !pOutputPoseToBone)
+	{
+		SetIdentityMatrix(matrixOut);
+		return;
+	}
 
 	matrix3x4_t inputToPose;
-	MatrixInvert( pbone->poseToBone, inputToPose );
-	ConcatTransforms( pStudioHdr->pBone( outputBoneIndex )->poseToBone, inputToPose, matrixOut );
+	MatrixInvert( *pInputPoseToBone, inputToPose );
+	ConcatTransforms( *pOutputPoseToBone, inputToPose, matrixOut );
 }
 
 //-----------------------------------------------------------------------------
@@ -1551,7 +1575,8 @@ void CalcBoneAdj(
 	{
 		k = pbonecontroller[j].bone;
 
-		if (pStudioHdr->pBone( k )->flags & boneMask)
+		// Use version-aware flag accessor for v44+ support
+		if (StudioBone_GetFlags(pStudioHdr, k) & boneMask)
 		{
 			i = pbonecontroller[j].inputfield;
 			value = controllers[i];
@@ -2023,8 +2048,10 @@ bool Studio_IKShouldLatch( mstudioikrule_t &ikRule, float flCycle )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-
-void Studio_IKAnimationError( mstudioikrule_t *pRule, mstudioanimdesc_t *panim, float flCycle, Vector &pos, Quaternion &q, float &flWeight )
+// Purpose: Get IK animation error for v37 models
+// v37 models store IK error as direct array of mstudioikerror_t
+//-----------------------------------------------------------------------------
+void Studio_IKAnimationError_v37( mstudioikrule_t *pRule, mstudioanimdesc_t *panim, float flCycle, Vector &pos, Quaternion &q, float &flWeight )
 {
 	float fraq = (panim->numframes - 1) * flCycle;
 	int iFrame = (int)fraq;
@@ -2055,11 +2082,54 @@ void Studio_IKAnimationError( mstudioikrule_t *pRule, mstudioanimdesc_t *panim, 
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: Get IK animation error for v48 models
+// v48 models store IK error as compressed data using mstudiocompressedikerror_t
+// NOTE: This is a simplified implementation - full v48 uses compressed IK data
+//-----------------------------------------------------------------------------
+void Studio_IKAnimationError_v48( mstudioikrule_v48_t *pRule, mstudioanimdesc_v48_t *panim, float flCycle, Vector &pos, Quaternion &q, float &flWeight )
+{
+	// v48 uses compressed IK error format and different influence system
+	// For now, use the raw pose data from the IK rule
+	flWeight = 1.0f;
+
+	// TODO: Implement proper v48 compressed IK error decompression
+	// v48 uses compressedikerrorindex to point to mstudiocompressedikerror_t data
+	// which contains scale[6] and offset[6] into mstudioanimvalue_t arrays
+
+	// Use the raw pos/q from the IK rule as fallback
+	pos = pRule->pos;
+	q = pRule->q;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Version-aware IK animation error dispatcher
+//-----------------------------------------------------------------------------
+void Studio_IKAnimationError( mstudioikrule_t *pRule, mstudioanimdesc_t *panim, float flCycle, Vector &pos, Quaternion &q, float &flWeight )
+{
+	// NOTE: For v48 models, this function should be called with mstudioikrule_v48_t*
+	// but the signature expects mstudioikrule_t*. In practice, the caller should
+	// check the model version and call the appropriate function directly.
+	// This function is kept for v37 compatibility.
+	Studio_IKAnimationError_v37( pRule, panim, flCycle, pos, q, flWeight );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Calculate IK sequence error for v37 models
+// NOTE: v48 models use a different IK system with drop/top instead of start/peak/tail/end
+// For v48 models, return false to skip v37-style IK processing
 //-----------------------------------------------------------------------------
 
 bool Studio_IKSequenceError( const studiohdr_t *pStudioHdr, int iSequence, float flCycle, int iTarget, const float poseParameter[], mstudioikrule_t &ikRule )
 {
+	// v48 models use different IK rule format - skip v37-style IK processing
+	// v48 IK uses compressedikerrorindex and drop/top fields instead of
+	// start/peak/tail/end and ikerrorindex fields
+	if (pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44)
+	{
+		memset( &ikRule, 0, sizeof(ikRule) );
+		return false;  // Signal that v37 IK processing is not applicable
+	}
+
 	mstudioanimdesc_t *panim[4];
 	float	weight[4];
 
@@ -2138,17 +2208,24 @@ bool Studio_IKSequenceError( const studiohdr_t *pStudioHdr, int iSequence, float
 
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: Estimate IK target position
+// NOTE: v48 models use different IK rule format - skip v37-style IK processing
 //-----------------------------------------------------------------------------
 
-bool CIKContext::Estimate( 
-	int iSequence, 
-	float flCycle, 
-	int iTarget, 
-	const float poseParameter[], 
+bool CIKContext::Estimate(
+	int iSequence,
+	float flCycle,
+	int iTarget,
+	const float poseParameter[],
 	float flWeight
 	)
 {
+	// v48 models use different IK rule format - skip v37-style IK estimation
+	if (m_pStudioHdr && m_pStudioHdr->version >= STUDIO_VERSION_44)
+	{
+		return false;  // Signal that v37 IK processing is not applicable
+	}
+
 	mstudioanimdesc_t *panim[4];
 	float	weight[4];
 
@@ -2326,8 +2403,8 @@ void CIKContext::AddAutoplayLocks( Vector pos[], Quaternion q[] )
 
 	for (i = 0; i < m_pStudioHdr->numikautoplaylocks; i++)
 	{
-		mstudioiklock_t *plock = m_pStudioHdr->pIKAutoplayLock( i );
-		mstudioikchain_t *pchain = m_pStudioHdr->pIKChain( plock->chain );
+		mstudioiklock_t *plock = StudioHdr_GetIKAutoplayLock( m_pStudioHdr, i );
+		mstudioikchain_t *pchain = StudioHdr_GetIKChain( m_pStudioHdr, plock->chain );
 		int bone = pchain->pLink( 2 )->bone;
 
 		mstudioikrule_t ikrule;
@@ -2361,7 +2438,7 @@ void CIKContext::AddSequenceLocks( mstudioseqdesc_t *pSeqDesc, Vector pos[], Qua
 	for (i = 0; i < numIKLocks; i++)
 	{
 		mstudioiklock_t *plock = pSeqDesc->pIKLock( i );
-		mstudioikchain_t *pchain = m_pStudioHdr->pIKChain( plock->chain );
+		mstudioikchain_t *pchain = StudioHdr_GetIKChain( m_pStudioHdr, plock->chain );
 		int bone = pchain->pLink( 2 )->bone;
 
 		mstudioikrule_t ikrule;
@@ -2388,8 +2465,8 @@ void CIKContext::AddSequenceLocks( mstudioseqdesc_t *pSeqDesc, Vector pos[], Qua
 void BuildBoneChain(
 	const studiohdr_t *pStudioHdr,
 	matrix3x4_t &rootxform,
-	Vector pos[], 
-	Quaternion q[], 
+	Vector pos[],
+	Quaternion q[],
 	int	iBone,
 	matrix3x4_t *pBoneToWorld )
 {
@@ -2397,8 +2474,9 @@ void BuildBoneChain(
 
 	QuaternionMatrix( q[iBone], pos[iBone], bonematrix );
 
-	int parent = pStudioHdr->pBone( iBone )->parent;
-	if (parent == -1) 
+	// Use version-aware parent accessor for v44+ MDL support
+	int parent = StudioBone_GetParent(pStudioHdr, iBone);
+	if (parent == -1)
 	{
 		ConcatTransforms( rootxform, bonematrix, pBoneToWorld[iBone] );
 	}
@@ -2414,15 +2492,16 @@ void BuildBoneChain(
 //-----------------------------------------------------------------------------
 // Purpose: turn a specific bones boneToWorld transform into a pos and q in parents bonespace
 //-----------------------------------------------------------------------------
-void SolveBone( 
+void SolveBone(
 	const studiohdr_t *pStudioHdr,
 	int	iBone,
 	matrix3x4_t *pBoneToWorld,
-	Vector pos[], 
+	Vector pos[],
 	Quaternion q[]
 	)
 {
-	int iParent = pStudioHdr->pBone( iBone )->parent;
+	// Use version-aware parent accessor for v44+ MDL support
+	int iParent = StudioBone_GetParent(pStudioHdr, iBone);
 
 	matrix3x4_t worldToBone;
 	MatrixInvert( pBoneToWorld[iParent], worldToBone );
@@ -2451,7 +2530,7 @@ void CIKContext::SolveDependencies(
 	// init chain rules
 	for (i = 0; i < m_pStudioHdr->numikchains; i++)
 	{
-		mstudioikchain_t *pchain = m_pStudioHdr->pIKChain( i );
+		mstudioikchain_t *pchain = StudioHdr_GetIKChain( m_pStudioHdr, i );
 		iktarget_t *pChainRule = &chainRule[ i ];
 		int bone = pchain->pLink( 2 )->bone;
 
@@ -2548,7 +2627,7 @@ void CIKContext::SolveDependencies(
 	for (i = 0; i < m_pStudioHdr->numikchains; i++)
 	{
 		iktarget_t *pChainRule = &chainRule[ i ];
-		mstudioikchain_t *pchain = m_pStudioHdr->pIKChain( i );
+		mstudioikchain_t *pchain = StudioHdr_GetIKChain( m_pStudioHdr, i );
 
 		if (pChainRule->est.flWeight > 0.0)
 		{
@@ -2605,19 +2684,19 @@ void CIKContext::SolveDependencies(
 //-----------------------------------------------------------------------------
 
 void CIKContext::SolveAutoplayLocks(
-	Vector pos[], 
+	Vector pos[],
 	Quaternion q[]
 	)
 {
 	ASSERT_NO_REENTRY();
-	
+
 	static matrix3x4_t boneToWorld[MAXSTUDIOBONES];
 	int i;
 
 	for (i = 0; i < m_ikRule.Count(); i++)
 	{
-		mstudioiklock_t *plock = m_pStudioHdr->pIKAutoplayLock( i );
-		mstudioikchain_t *pchain = m_pStudioHdr->pIKChain( plock->chain );
+		mstudioiklock_t *plock = StudioHdr_GetIKAutoplayLock( m_pStudioHdr, i );
+		mstudioikchain_t *pchain = StudioHdr_GetIKChain( m_pStudioHdr, plock->chain );
 		int bone = pchain->pLink( 2 )->bone;
 
 		// eval current ik'd bone
@@ -2669,7 +2748,7 @@ void CIKContext::SolveSequenceLocks(
 	for (i = 0; i < m_ikRule.Count(); i++)
 	{
 		mstudioiklock_t *plock = pSeqDesc->pIKLock( i );
-		mstudioikchain_t *pchain = m_pStudioHdr->pIKChain( plock->chain );
+		mstudioikchain_t *pchain = StudioHdr_GetIKChain( m_pStudioHdr, plock->chain );
 		int bone = pchain->pLink( 2 )->bone;
 
 		// eval current ik'd bone
@@ -2749,8 +2828,8 @@ void CalcAutoplaySequences(
 //-----------------------------------------------------------------------------
 void Studio_BuildMatrices(
 	const studiohdr_t *pStudioHdr,
-	const QAngle& angles, 
-	const Vector& origin, 
+	const QAngle& angles,
+	const Vector& origin,
 	const Vector pos[],
 	const Quaternion q[],
 	int iBone,
@@ -2763,17 +2842,18 @@ void Studio_BuildMatrices(
 	int					chain[MAXSTUDIOBONES];
 	int					chainlength = 0;
 
-	if (iBone < -1 || iBone >= pStudioHdr->numbones)
-		iBone = 0;
+	// Use version-aware bone count for v44+ support
+	int numBones = StudioHdr_GetNumBones(pStudioHdr);
 
-	mstudiobone_t *pbones		= pStudioHdr->pBone( 0 );
+	if (iBone < -1 || iBone >= numBones)
+		iBone = 0;
 
 	// build list of what bones to use
 	if (iBone == -1)
 	{
 		// all bones
-		chainlength = pStudioHdr->numbones;
-		for (i = 0; i < pStudioHdr->numbones; i++)
+		chainlength = numBones;
+		for (i = 0; i < numBones; i++)
 		{
 			chain[chainlength - i - 1] = i;
 		}
@@ -2781,11 +2861,12 @@ void Studio_BuildMatrices(
 	else
 	{
 		// only the parent bones
+		// Use version-aware parent accessor for correct bone stride
 		i = iBone;
 		while (i != -1)
 		{
 			chain[chainlength++] = i;
-			i = pbones[i].parent;
+			i = StudioBone_GetParent(pStudioHdr, i);
 		}
 	}
 
@@ -2796,17 +2877,19 @@ void Studio_BuildMatrices(
 	for (j = chainlength - 1; j >= 0; j--)
 	{
 		i = chain[j];
-		if (pbones[i].flags & boneMask)
+		// Use version-aware flag accessor for correct bone stride and field offset
+		if (StudioBone_GetFlags(pStudioHdr, i) & boneMask)
 		{
 			QuaternionMatrix( q[i], pos[i], bonematrix );
 
-			if (pbones[i].parent == -1) 
+			int parentBone = StudioBone_GetParent(pStudioHdr, i);
+			if (parentBone == -1)
 			{
 				ConcatTransforms (rotationmatrix, bonematrix, bonetoworld[i]);
-			} 
-			else 
+			}
+			else
 			{
-				ConcatTransforms (bonetoworld[pbones[i].parent], bonematrix, bonetoworld[i]);
+				ConcatTransforms (bonetoworld[parentBone], bonematrix, bonetoworld[i]);
 			}
 		}
 	}
@@ -3125,11 +3208,22 @@ bool CalcProceduralBone(
 	matrix3x4_t *bonetoworld
 	)
 {
-	mstudiobone_t		*pbones = pStudioHdr->pBone( 0 );
-
-	if ( pbones[iBone].flags & BONE_ALWAYS_PROCEDURAL )
+	// Use version-aware flag accessor for v44+ support
+	if ( StudioBone_GetFlags(pStudioHdr, iBone) & BONE_ALWAYS_PROCEDURAL )
 	{
-		switch( pbones[iBone].proctype )
+		// TODO: The Do*Bone functions below still use v37-style bone array indexing
+		// and need to be refactored for full v44+ procedural bone support.
+		// For now, skip procedural bones on v44+ models to avoid crashes.
+		if (pStudioHdr->version >= STUDIO_VERSION_44)
+		{
+			// v44+ procedural bones not yet fully supported
+			return false;
+		}
+
+		mstudiobone_t *pbones = pStudioHdr->pBone( 0 );
+		int proctype = StudioBone_GetProcType(pStudioHdr, iBone);
+
+		switch( proctype )
 		{
 		case STUDIO_PROC_AXISINTERP:
 			DoAxisInterpBone( pbones, iBone, bonetoworld );
@@ -3247,12 +3341,14 @@ float Studio_GetController( const studiohdr_t *pStudioHdr, int iController, floa
 
 float Studio_SetPoseParameter( const studiohdr_t *pStudioHdr, int iParameter, float flValue, float &ctlValue )
 {
-	if (iParameter < 0 || iParameter >= pStudioHdr->numposeparameters)
+	// Use version-aware helper for v37/v44+ compatibility
+	int numPoseParams = StudioHdr_GetNumPoseParameters(pStudioHdr);
+	if (iParameter < 0 || iParameter >= numPoseParams)
 	{
 		return 0;
 	}
 
-	mstudioposeparamdesc_t *pPoseParam = pStudioHdr->pPoseParameter( iParameter );
+	mstudioposeparamdesc_t *pPoseParam = StudioHdr_GetPoseParameter(pStudioHdr, iParameter);
 
 	if (pPoseParam->loop)
 	{
@@ -3278,12 +3374,14 @@ float Studio_SetPoseParameter( const studiohdr_t *pStudioHdr, int iParameter, fl
 
 float Studio_GetPoseParameter( const studiohdr_t *pStudioHdr, int iParameter, float ctlValue )
 {
-	if (iParameter < 0 || iParameter >= pStudioHdr->numposeparameters)
+	// Use version-aware helper for v37/v44+ compatibility
+	int numPoseParams = StudioHdr_GetNumPoseParameters(pStudioHdr);
+	if (iParameter < 0 || iParameter >= numPoseParams)
 	{
 		return 0;
 	}
 
-	mstudioposeparamdesc_t *pPoseParam = pStudioHdr->pPoseParameter( iParameter );
+	mstudioposeparamdesc_t *pPoseParam = StudioHdr_GetPoseParameter(pStudioHdr, iParameter);
 
 	return ctlValue * (pPoseParam->end - pPoseParam->start) + pPoseParam->start;
 }
@@ -3456,10 +3554,11 @@ studiocache_t *CStudioBoneCache::Studio_SetBoneCache( studiohdr_t *pStudioHdr, i
 	for ( int i = 0; i < pStudioHdr->numbones; i++ )
 	{
 		// 
-		if (!(pStudioHdr->pBone(i)->flags & boneMask))
+		// Use version-aware flag accessor for v44+ support
+		if (!(StudioBone_GetFlags(pStudioHdr, i) & boneMask))
 		{
 			// FIXME: temporary hack, if no flags set, assume it's a old version
-			if (pStudioHdr->pBone(0)->flags & BONE_USED_MASK)
+			if (StudioBone_GetFlags(pStudioHdr, 0) & BONE_USED_MASK)
 			{
 				continue;
 			}
@@ -3640,8 +3739,8 @@ bool TraceToStudio( const Ray_t& ray, studiohdr_t *pStudioHdr, mstudiohitboxset_
 	{
 		mstudiobbox_t *pbox = set->pHitbox(i);
 
-		// Filter based on contents mask
-		int fBoneContents = pStudioHdr->pBone( pbox->bone )->contents;
+		// Filter based on contents mask - use version-aware accessor for v44+ support
+		int fBoneContents = StudioBone_GetContents(pStudioHdr, pbox->bone);
 		if ( ( fBoneContents & fContentsMask ) == 0 )
 			continue;
 		
@@ -3661,8 +3760,10 @@ bool TraceToStudio( const Ray_t& ray, studiohdr_t *pStudioHdr, mstudiohitboxset_
 		tr.endpos = ray.m_Start + tr.fraction * ray.m_Delta;
 		tr.hitgroup = set->pHitbox(hitbox)->group;
 		tr.hitbox = hitbox;
-		tr.contents = pStudioHdr->pBone( set->pHitbox(hitbox)->bone )->contents | CONTENTS_HITBOX;
-		tr.physicsbone = pStudioHdr->pBone( set->pHitbox(hitbox)->bone )->physicsbone;
+		// Use version-aware accessors for v44+ support
+		int hitBone = set->pHitbox(hitbox)->bone;
+		tr.contents = StudioBone_GetContents(pStudioHdr, hitBone) | CONTENTS_HITBOX;
+		tr.physicsbone = StudioBone_GetPhysicsBone(pStudioHdr, hitBone);
 		Assert( tr.physicsbone >= 0 );
 
 		matrix3x4_t& matrix = *hitboxbones[hitbox];
@@ -4111,9 +4212,9 @@ int Studio_FindAttachment( const studiohdr_t *pStudioHdr, const char *pAttachmen
 	if ( pStudioHdr )
 	{
 		// Extract the bone index from the name
-		for (int i = 0; i < pStudioHdr->numattachments; i++)
+		for (int i = 0; i < StudioHdr_GetNumAttachments(pStudioHdr); i++)
 		{
-			if (!Q_stricmp(pAttachmentName,pStudioHdr->pAttachment(i)->pszName( )))
+			if (!Q_stricmp(pAttachmentName,StudioHdr_GetAttachment(pStudioHdr, i)->pszName( )))
 			{
 				return i;
 			}
@@ -4135,9 +4236,9 @@ int Studio_FindRandomAttachment( const studiohdr_t *pStudioHdr, const char *pAtt
 		CUtlVector<int> matchingAttachments;
 
 		// Extract the bone index from the name
-		for (int i = 0; i < pStudioHdr->numattachments; i++)
+		for (int i = 0; i < StudioHdr_GetNumAttachments(pStudioHdr); i++)
 		{
-			if ( strstr( pStudioHdr->pAttachment(i)->pszName(), pAttachmentName ) ) 
+			if ( strstr( StudioHdr_GetAttachment(pStudioHdr, i)->pszName(), pAttachmentName ) ) 
 			{
 				matchingAttachments.AddToTail(i);
 			}
@@ -4157,11 +4258,11 @@ int Studio_FindRandomAttachment( const studiohdr_t *pStudioHdr, const char *pAtt
 
 int Studio_BoneIndexByName( const studiohdr_t *pStudioHdr, const char *pName )
 {
-	// Extract the bone index from the name
-	mstudiobone_t *pbones = pStudioHdr->pBone( 0 );
-	for ( int i = 0; i < pStudioHdr->numbones; i++ )
+	// Use version-aware bone name accessor for v44+ support
+	int numBones = StudioHdr_GetNumBones(pStudioHdr);
+	for ( int i = 0; i < numBones; i++ )
 	{
-		if (!Q_stricmp(pName,pbones[i].pszName( )))
+		if (!Q_stricmp(pName, StudioBone_GetName(pStudioHdr, i)))
 			return i;
 	}
 

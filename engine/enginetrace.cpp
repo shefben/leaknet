@@ -413,10 +413,10 @@ bool CEngineTrace::ClipRayToHitboxes( const Ray_t& ray, unsigned int fMask, ICol
 		// Fill out the surfaceprop details from the hitbox. Use the physics bone instead of the hitbox bone
 		const model_t *pModel = pCollideable->GetCollisionModel();
 		studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)pModel );
-		mstudiobone_t *pBone = pStudioHdr->pBone( pTrace->physicsbone );
+		// Use version-aware accessor for v37/v44+ bone structure compatibility
 		pTrace->surface.name = "**studio**";
 		pTrace->surface.flags = SURF_HITBOX;
-		pTrace->surface.surfaceProps = physprop->GetSurfaceIndex( pBone->pszSurfaceProp() );
+		pTrace->surface.surfaceProps = physprop->GetSurfaceIndex( pStudioHdr->GetBoneSurfaceProp( pTrace->physicsbone ) );
 	}
 
 	return true;

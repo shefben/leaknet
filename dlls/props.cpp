@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2003, Valve Corporation, All rights reserved. =======
+//====== Copyright ï¿½ 1996-2003, Valve Corporation, All rights reserved. =======
 //
 // Purpose: static_prop - don't move, don't animate, don't do anything.
 //			physics_prop - move, take damage, but don't animate
@@ -1610,7 +1610,7 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 		}
 
 		int nActualSkin = nSkin;
-		if ( nActualSkin > pStudioHdr->numskinfamilies )
+		if ( nActualSkin > StudioHdr_GetNumSkinFamilies(pStudioHdr) )
 			nActualSkin = 0;
 
 		BreakModelCreateSingle( pOwnerEntity, &list[i], position, params.angles, objectVelocity, params.angularVelocity, nActualSkin, params );

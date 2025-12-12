@@ -58,3 +58,22 @@ void CHud::MsgFunc_TeamChange( const char *pszName, int iSize, void *pbuf )
 		pLocalPlayer->TeamChange( iNewTeam );
 	}
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: MOTD message handler - forwards to standalone MOTD handler
+//-----------------------------------------------------------------------------
+#if !defined( HL1_CLIENT_DLL ) && !defined( HL2_CLIENT_DLL ) && !defined( TF2_CLIENT_DLL )
+// Forward declaration for standalone MOTD handler from BaseModViewport.cpp
+void __MsgFunc_MOTD_Standalone( const char *pszName, int iSize, void *pbuf );
+#endif
+
+void CHud::MsgFunc_MOTD( const char *pszName, int iSize, void *pbuf )
+{
+#if !defined( HL1_CLIENT_DLL ) && !defined( HL2_CLIENT_DLL ) && !defined( TF2_CLIENT_DLL )
+	// Forward to the standalone MOTD handler (when BaseModViewport.cpp is compiled)
+	__MsgFunc_MOTD_Standalone( pszName, iSize, pbuf );
+#else
+	// HL1/HL2/TF2 clients don't include BaseModViewport.cpp, provide simple stub
+	DevMsg("MOTD: Client received MOTD message (size=%d) - no handler available\n", iSize);
+#endif
+}

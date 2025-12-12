@@ -93,7 +93,7 @@ target_compile_definitions(
 	vphysics PRIVATE
 
 	VPHYSICS_EXPORTS
-	"$<${IS_WINDOWS}:ENABLE_IVP_MOPP>"
+	"$<${IS_WINDOWS}:ENABLE_IVP_MOPP=1>"
 	strncpy=use_Q_strncpy_instead
 	_snprintf=use_Q_snprintf_instead
 	HAVANA_CONSTRAINTS
@@ -104,7 +104,7 @@ target_link_libraries(
 	vphysics PRIVATE
 
 	havana_constraints
-	"$<${IS_WINDOWS}:havok_mopp>"
+	"$<${IS_WINDOWS}:${LIBCOMMON}/havok_mopp.lib>"
 	hk_math
 	hk_base
 	ivp_compact_builder

@@ -7,6 +7,8 @@
 #include "cbase.h"
 #include "c_cs_player.h"
 #include "c_user_message_register.h"
+#include "parsemsg.h"
+#include "bitbuf.h"
 
 
 #if defined( CCSPlayer )
@@ -14,7 +16,7 @@
 #endif
 
 
-void __MsgFunc_BarTime( bf_read &msg )
+void MsgFunc_BarTime_New( bf_read &msg )
 {
 	BEGIN_READ( msg );
 	int theTime = READ_BYTE();
@@ -27,6 +29,15 @@ void __MsgFunc_BarTime( bf_read &msg )
 		pPlayer->m_ProgressBarStartTime = engine->Time();
 	}
 }
+
+// 2003 protocol wrapper for BarTime message
+void __MsgFunc_BarTime( const char *pszName, int iSize, void *pbuf )
+{
+	bf_read msg;
+	msg.StartReading( pbuf, iSize );
+	MsgFunc_BarTime_New( msg );
+}
+
 USER_MESSAGE_REGISTER( BarTime );
 
 
