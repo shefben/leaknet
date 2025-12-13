@@ -1435,13 +1435,16 @@ struct mstudiomodel_t
 // These structs have embedded vertexdata members that change the struct size
 //-----------------------------------------------------------------------------
 
+// Forward declarations for v44+ structs
+struct mstudiomodel_v44_t;
+
 // v44+ mesh struct - includes embedded mstudio_meshvertexdata_t
 struct mstudiomesh_v44_t
 {
 	int					material;
 
 	int					modelindex;
-	// Note: pModel() for v44+ must be implemented separately due to struct size differences
+	inline mstudiomodel_v44_t *pModel( void ) const;
 
 	int					numvertices;		// number of unique vertices/normals/texcoords
 	int					vertexoffset;		// vertex mstudiovertex_t
@@ -1461,6 +1464,9 @@ struct mstudiomesh_v44_t
 
 	// v44+: Embedded vertex data for external VVD files
 	mstudio_meshvertexdata_t vertexdata;
+
+	// CRITICAL: GetVertexData method for v44+ meshes
+	inline const mstudio_meshvertexdata_t *GetVertexData( void *pModelData = NULL ) const;
 
 	int					unused[8]; // remove as appropriate
 };
@@ -1494,13 +1500,60 @@ struct mstudiomodel_v44_t
 	mstudio_modelvertexdata_t vertexdata;
 
 	int					unused[8];		// remove as appropriate
+
+	// CRITICAL: GetVertexData method for v44+ models
+	// Populates the vertexdata structure with VVD pointers
+	inline const mstudio_modelvertexdata_t *GetVertexData( void *pModelData = NULL ) const;
 };
+
+// v44+ mesh structure method implementations
+inline mstudiomodel_v44_t *mstudiomesh_v44_t::pModel( void ) const
+{
+	return (mstudiomodel_v44_t *)((byte *)this - modelindex);
+}
+
+// v44+ mesh structure method declarations
+inline const mstudio_meshvertexdata_t *mstudiomesh_v44_t::GetVertexData( void *pModelData ) const
+{
+	// Get the model's vertex data first
+	mstudiomodel_v44_t *pModel44 = (mstudiomodel_v44_t *)pModel();
+	const mstudio_modelvertexdata_t *pModelVertexData = pModel44->GetVertexData( pModelData );
+
+	if ( !pModelVertexData )
+		return NULL;
+
+	// Link mesh vertex data to model vertex data
+	// Note: We need to cast away const to set up the linkage
+	mstudio_meshvertexdata_t *pMeshVertexData = (mstudio_meshvertexdata_t *)&vertexdata;
+	pMeshVertexData->modelvertexdata = pModelVertexData;
+
+	return &vertexdata;
+}
+
+// v44+ model structure method implementation
+inline const mstudio_modelvertexdata_t *mstudiomodel_v44_t::GetVertexData( void *pModelData ) const
+{
+	// For now, check if the vertexdata is already populated from our VVD setup
+	// In a full implementation, this would call CacheVertexData() like the 2007 engine
+
+	if ( !vertexdata.pVertexData )
+	{
+		// If vertex data isn't set up, return NULL
+		// This would normally trigger VVD loading in a complete implementation
+		return NULL;
+	}
+
+	return &vertexdata;
+}
 
 // v48: 2007 Source Engine compatible eyeball format
 
-inline mstudiovertex_t *mstudiomodel_t::Vertex( int i ) const 
-{ 
-	return (mstudiovertex_t *)(((byte *)this) + vertexindex) + i; 
+inline mstudiovertex_t *mstudiomodel_t::Vertex( int i ) const
+{
+	// For compatibility, assume v37 behavior by default
+	// v44+ code should use the proper GetVertexData() methods and vertexdata accessors
+	// This is a fallback for legacy code that directly calls model->Vertex()
+	return (mstudiovertex_t *)(((byte *)this) + vertexindex) + i;
 }
 
 inline Vector *mstudiomodel_t::Position( int i ) const 
@@ -1566,6 +1619,131 @@ inline mstudioboneweight_t *mstudiomesh_t::BoneWeights( int i ) const
 inline mstudiovertex_t *mstudiomesh_t::Vertex( int i ) const
 {
 	return pModel()->Vertex( vertexoffset + i );
+}
+
+//-----------------------------------------------------------------------------
+// CRITICAL: Missing implementations for v44+ vertex data access
+// Based on 2007 Source Engine - these are essential for v44+ model rendering
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// mstudio_modelvertexdata_t implementations
+// Provides proper vertex access for v44+ models using global vertex buffer
+//-----------------------------------------------------------------------------
+inline mstudiovertex_t *mstudio_modelvertexdata_t::Vertex( int i ) const
+{
+	return ((mstudiovertex_t *)pVertexData) + GetGlobalVertexIndex(i);
+}
+
+inline Vector *mstudio_modelvertexdata_t::Position( int i ) const
+{
+	return &Vertex(i)->m_vecPosition;
+}
+
+inline Vector *mstudio_modelvertexdata_t::Normal( int i ) const
+{
+	return &Vertex(i)->m_vecNormal;
+}
+
+inline Vector4D *mstudio_modelvertexdata_t::TangentS( int i ) const
+{
+	// Tangent data is in a separate array
+	if (!HasTangentData())
+		return NULL;
+	return ((Vector4D *)pTangentData) + GetGlobalTangentIndex(i);
+}
+
+inline Vector2D *mstudio_modelvertexdata_t::Texcoord( int i ) const
+{
+	return &Vertex(i)->m_vecTexCoord;
+}
+
+inline mstudioboneweight_t *mstudio_modelvertexdata_t::BoneWeights( int i ) const
+{
+	return &Vertex(i)->m_BoneWeights;
+}
+
+inline bool mstudio_modelvertexdata_t::HasTangentData( void ) const
+{
+	return (pTangentData != NULL);
+}
+
+inline int mstudio_modelvertexdata_t::GetGlobalVertexIndex( int i ) const
+{
+	// Back-calculate the model pointer from the embedded vertexdata structure
+	// For v44+ models, use the correct structure type
+	mstudiomodel_v44_t *pModel = (mstudiomodel_v44_t *)((byte *)this - offsetof(mstudiomodel_v44_t, vertexdata));
+
+	// For v44+ models, vertexindex is a byte offset into the global vertex buffer
+	// Convert it to vertex count and add the local index
+	Assert((pModel->vertexindex % sizeof(mstudiovertex_t)) == 0);
+	return i + (pModel->vertexindex / sizeof(mstudiovertex_t));
+}
+
+inline int mstudio_modelvertexdata_t::GetGlobalTangentIndex( int i ) const
+{
+	// Back-calculate the model pointer from the embedded vertexdata structure
+	// For v44+ models, use the correct structure type
+	mstudiomodel_v44_t *pModel = (mstudiomodel_v44_t *)((byte *)this - offsetof(mstudiomodel_v44_t, vertexdata));
+
+	// For v44+ models, tangentsindex is a byte offset into the global tangent buffer
+	// Convert it to tangent count and add the local index
+	Assert((pModel->tangentsindex % sizeof(Vector4D)) == 0);
+	return i + (pModel->tangentsindex / sizeof(Vector4D));
+}
+
+//-----------------------------------------------------------------------------
+// mstudio_meshvertexdata_t implementations
+// Provides mesh-level vertex access with proper two-level indexing
+//-----------------------------------------------------------------------------
+inline mstudiovertex_t *mstudio_meshvertexdata_t::Vertex( int i ) const
+{
+	return modelvertexdata->Vertex(GetModelVertexIndex(i));
+}
+
+inline Vector *mstudio_meshvertexdata_t::Position( int i ) const
+{
+	return modelvertexdata->Position(GetModelVertexIndex(i));
+}
+
+inline Vector *mstudio_meshvertexdata_t::Normal( int i ) const
+{
+	return modelvertexdata->Normal(GetModelVertexIndex(i));
+}
+
+inline Vector4D *mstudio_meshvertexdata_t::TangentS( int i ) const
+{
+	return modelvertexdata->TangentS(GetModelVertexIndex(i));
+}
+
+inline Vector2D *mstudio_meshvertexdata_t::Texcoord( int i ) const
+{
+	return modelvertexdata->Texcoord(GetModelVertexIndex(i));
+}
+
+inline mstudioboneweight_t *mstudio_meshvertexdata_t::BoneWeights( int i ) const
+{
+	return modelvertexdata->BoneWeights(GetModelVertexIndex(i));
+}
+
+inline bool mstudio_meshvertexdata_t::HasTangentData( void ) const
+{
+	return modelvertexdata ? modelvertexdata->HasTangentData() : false;
+}
+
+inline int mstudio_meshvertexdata_t::GetModelVertexIndex( int i ) const
+{
+	// Back-calculate the mesh pointer from the embedded vertexdata structure
+	// For v44+ meshes, use the correct structure type
+	mstudiomesh_v44_t *pMesh = (mstudiomesh_v44_t *)((byte *)this - offsetof(mstudiomesh_v44_t, vertexdata));
+
+	// Add mesh vertex offset to get model-relative vertex index
+	return pMesh->vertexoffset + i;
+}
+
+inline int mstudio_meshvertexdata_t::GetGlobalVertexIndex( int i ) const
+{
+	return modelvertexdata ? modelvertexdata->GetGlobalVertexIndex(GetModelVertexIndex(i)) : 0;
 }
 
 // a group of studio model data

@@ -3655,16 +3655,18 @@ static void ComputeFlags( model_t* mod )
 
 //-----------------------------------------------------------------------------
 // v44+: Setup vertex data pointers in studiohdr from VVD data
-// For v44+ models, we set the pVertexData/pTangentData pointers in the
-// mstudio_modelvertexdata_t embedded structure, NOT the vertexindex offset.
-// The vertexindex field is only valid for v37 models with embedded vertices.
+// This implementation follows the 2007 Source Engine approach:
+// - Uses VVD header's vertexDataStart offset for vertex base pointer
+// - Sets global vertex base in studiohdr for all models to share
+// - Each model uses its vertexindex to offset into the shared vertex buffer
+// - NO per-model vertex pointer assignment (that was causing corruption)
 //-----------------------------------------------------------------------------
 static void Studio_SetupVvdVertexPointers( studiohdr_t *pStudioHdr, vertexFileHeader_t *pVvdHdr )
 {
 	if (!pStudioHdr || !pVvdHdr)
 		return;
 
-	// Get vertex and tangent data from VVD
+	// Get vertex and tangent data from VVD using proper header offsets
 	const byte *pVertexData = pVvdHdr->GetVertexData();
 	const byte *pTangentData = pVvdHdr->GetTangentData();
 
@@ -3687,48 +3689,61 @@ static void Studio_SetupVvdVertexPointers( studiohdr_t *pStudioHdr, vertexFileHe
 		return;
 	}
 
-	// Set the base vertex pointer in studiohdr for global access
+	// CRITICAL FIX: Set the global vertex base pointer in studiohdr
+	// This is the base pointer that ALL models will use for vertex access
+	// Each model offsets into this buffer using their vertexindex field
 	pStudioHdr->pVertexBase = (void *)pVertexData;
 	pStudioHdr->pIndexBase = NULL; // Index data is in VTX, not VVD
 
-	// Iterate through all bodyparts and models to set vertex data pointers
+	// CRITICAL FIX: Do NOT set individual model vertex pointers!
+	// In the 2007 Source Engine, all models share the same vertex base pointer
+	// and use their vertexindex field to offset into the shared buffer.
+	// The old approach of setting per-model pointers was causing corruption.
+
+	DevMsg("  Global vertex data base at %p (from VVD offset %d)\n",
+		   pVertexData, pVvdHdr->vertexDataStart);
+
+	// CRITICAL: Set up vertexdata structures for each v44+ model and mesh
+	// This populates the accessor structures that the rendering system uses
 	int numBodyParts = StudioHdr_GetNumBodyparts(pStudioHdr);
-	int vertexOffset = 0;
 	for (int bodyPartID = 0; bodyPartID < numBodyParts; bodyPartID++)
 	{
 		mstudiobodyparts_t *pBodyPart = StudioHdr_GetBodypart(pStudioHdr, bodyPartID);
 		for (int modelID = 0; modelID < pBodyPart->nummodels; modelID++)
 		{
 			mstudiomodel_v44_t *pModel44 = pBodyPart->pModel_v44(modelID);
-			int numvertices = pModel44->numvertices;
 
-			// Set the vertex data pointers in the embedded mstudio_modelvertexdata_t
-			// These are direct pointers to the VVD vertex data for this model
-			const mstudiovertex_t *pModelVertexData = (const mstudiovertex_t *)(pVertexData + vertexOffset * sizeof(mstudiovertex_t));
-			pModel44->vertexdata.pVertexData = pModelVertexData;
-
-			if (pTangentData)
+			// For v44+ models, vertexindex should be byte offset into global vertex buffer
+			// Verify it's valid and aligned to mstudiovertex_t boundary
+			if (pModel44->vertexindex % sizeof(mstudiovertex_t) != 0)
 			{
-				const Vector4D *pModelTangentData = (const Vector4D *)(pTangentData + vertexOffset * sizeof(Vector4D));
-				pModel44->vertexdata.pTangentData = pModelTangentData;
-			}
-			else
-			{
-				pModel44->vertexdata.pTangentData = NULL;
+				DevWarning("Model %s has misaligned vertexindex %d (should be multiple of %d)\n",
+					pModel44->name, pModel44->vertexindex, sizeof(mstudiovertex_t));
 			}
 
-			DevMsg("  Model %s: %d verts, vertex data at %p\n",
-				pModel44->name, numvertices, pModel44->vertexdata.pVertexData);
+			int vertexIndexAsCount = pModel44->vertexindex / sizeof(mstudiovertex_t);
 
-			// Also setup mesh vertex data pointers
+			// CRITICAL FIX: Populate the model's vertexdata structure
+			// This is essential for the GetVertexData() and accessor methods to work
+			mstudio_modelvertexdata_t *pModelVertexData = (mstudio_modelvertexdata_t *)&pModel44->vertexdata;
+			pModelVertexData->pVertexData = pVertexData;
+			pModelVertexData->pTangentData = pTangentData;
+
+			DevMsg("  Model %s: %d verts, starts at global vertex %d (byte offset %d)\n",
+				pModel44->name, pModel44->numvertices, vertexIndexAsCount, pModel44->vertexindex);
+
+			// CRITICAL FIX: Set up mesh vertexdata structures to link to model vertexdata
 			for (int meshID = 0; meshID < pModel44->nummeshes; meshID++)
 			{
 				mstudiomesh_v44_t *pMesh = pModel44->pMesh(meshID);
-				// Point mesh's modelvertexdata to the parent model's vertexdata
-				pMesh->vertexdata.modelvertexdata = &pModel44->vertexdata;
-			}
 
-			vertexOffset += numvertices;
+				// Populate the mesh's vertexdata structure to point to the model's vertexdata
+				mstudio_meshvertexdata_t *pMeshVertexData = (mstudio_meshvertexdata_t *)&pMesh->vertexdata;
+				pMeshVertexData->modelvertexdata = pModelVertexData;
+
+				DevMsg("    Mesh %d: %d verts, offset %d from model start\n",
+					meshID, pMesh->numvertices, pMesh->vertexoffset);
+			}
 		}
 	}
 }

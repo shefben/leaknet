@@ -936,4 +936,69 @@ inline int StudioMesh_GetNumVertices(const studiohdr_t* pHdr, const mstudiomesh_
 	return pMesh->numvertices;
 }
 
+//-----------------------------------------------------------------------------
+// 2007-style vertex data access - missing functions that 2007 engine uses
+// These are needed for proper v44+ model rendering compatibility
+//-----------------------------------------------------------------------------
+
+// Forward declaration for vertex file header
+struct vertexFileHeader_t;
+
+// CacheVertexData function - needs to be implemented by application-specific code
+// This should be defined in the engine's model loader
+extern const vertexFileHeader_t* CacheVertexData(void* pModelData);
+
+// Get vertex data for rendering - simplified approach that works with LeakNet's structure
+// Returns true if vertex data is available, false otherwise
+inline bool SetupVertexDataForMesh(mstudiomesh_t* pMesh, const studiohdr_t* pStudioHdr, mstudiovertex_t** ppVertices, Vector4D** ppTangentS)
+{
+	if (!pMesh || !pStudioHdr || !ppVertices) return false;
+
+	*ppVertices = NULL;
+	if (ppTangentS) *ppTangentS = NULL;
+
+	// For v37 models, use the mesh's built-in accessor functions
+	if (pStudioHdr->IsV37())
+	{
+		*ppVertices = pMesh->Vertex(0);
+		if (ppTangentS) *ppTangentS = pMesh->TangentS(0);
+
+		DevMsg("v37 vertex data: %s, vertices: %p\n", pStudioHdr->name, *ppVertices);
+		return (*ppVertices != NULL);
+	}
+
+	// For v44+ models, we need to ensure the vertex data is properly set up
+	if (pStudioHdr->version >= STUDIO_VERSION_44)
+	{
+		// Get the v44+ model
+		const mstudiomodel_v44_t* pModel44 = (const mstudiomodel_v44_t*)pMesh->pModel();
+
+		if (!pModel44)
+		{
+			DevWarning("SetupVertexDataForMesh: NULL pModel44 for %s\n", pStudioHdr->name);
+			return false;
+		}
+
+		// Check if the model has VVD vertex data loaded
+		if (!pModel44->vertexdata.pVertexData)
+		{
+			DevWarning("SetupVertexDataForMesh: v44+ model %s has no VVD vertex data loaded\n", pStudioHdr->name);
+			return false;
+		}
+
+		// Calculate vertex pointers based on mesh offset into model's VVD data
+		*ppVertices = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + pMesh->vertexoffset;
+		if (ppTangentS && pModel44->vertexdata.pTangentData)
+		{
+			*ppTangentS = (Vector4D*)pModel44->vertexdata.pTangentData + pMesh->vertexoffset;
+		}
+
+		DevMsg("v44+ vertex data: %s, vertices: %p, tangents: %p, offset: %d\n",
+			pStudioHdr->name, *ppVertices, ppTangentS ? *ppTangentS : NULL, pMesh->vertexoffset);
+		return (*ppVertices != NULL);
+	}
+
+	return false;
+}
+
 #endif // STUDIOHDR_V44_H

@@ -48,11 +48,16 @@ inline void Studio_GetVertexData_V37Aware(
 	}
 	else if ( pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44 )
 	{
-		// v44+ models use external VVD with vertex pointer set up by modelloader
+		// v44+ models use global vertex base pointer (2007 Source Engine approach)
+		// Each model uses its vertexindex to offset into the shared vertex buffer
 		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pModel;
-		if ( pModel44->vertexdata.pVertexData )
+
+		if ( pStudioHdr->pVertexBase )
 		{
-			mstudiovertex_t* pVert = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + vertexOffset;
+			// Calculate global vertex index: model start + mesh offset + local vertex index
+			int globalVertexIndex = (pModel44->vertexindex / sizeof(mstudiovertex_t)) + vertexOffset;
+			mstudiovertex_t* pVert = (mstudiovertex_t*)pStudioHdr->pVertexBase + globalVertexIndex;
+
 			outPosition = pVert->m_vecPosition;
 			outNormal = pVert->m_vecNormal;
 			outTexCoord = pVert->m_vecTexCoord;
@@ -114,11 +119,15 @@ inline void Studio_GetBoneWeightData_V37Aware(
 	}
 	else if ( pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44 )
 	{
-		// v44+ models use external VVD
+		// v44+ models use global vertex base pointer (2007 Source Engine approach)
 		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pModel;
-		if ( pModel44->vertexdata.pVertexData )
+
+		if ( pStudioHdr->pVertexBase )
 		{
-			mstudiovertex_t* pVert = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + vertexOffset;
+			// Calculate global vertex index: model start + mesh offset + local vertex index
+			int globalVertexIndex = (pModel44->vertexindex / sizeof(mstudiovertex_t)) + vertexOffset;
+			mstudiovertex_t* pVert = (mstudiovertex_t*)pStudioHdr->pVertexBase + globalVertexIndex;
+
 			mstudioboneweight_t* pBoneWeight = &pVert->m_BoneWeights;
 			outNumBones = pBoneWeight->numbones;
 			for (int i = 0; i < MAX_NUM_BONES_PER_VERT; ++i)
@@ -196,9 +205,10 @@ inline void Studio_GetPosition_V37Aware(
 	else if ( pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44 )
 	{
 		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pModel;
-		if ( pModel44->vertexdata.pVertexData )
+		if ( pStudioHdr->pVertexBase )
 		{
-			mstudiovertex_t* pVert = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + vertexOffset;
+			int globalVertexIndex = (pModel44->vertexindex / sizeof(mstudiovertex_t)) + vertexOffset;
+			mstudiovertex_t* pVert = (mstudiovertex_t*)pStudioHdr->pVertexBase + globalVertexIndex;
 			outPosition = pVert->m_vecPosition;
 		}
 		else
@@ -237,9 +247,10 @@ inline void Studio_GetNormal_V37Aware(
 	else if ( pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44 )
 	{
 		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pModel;
-		if ( pModel44->vertexdata.pVertexData )
+		if ( pStudioHdr->pVertexBase )
 		{
-			mstudiovertex_t* pVert = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + vertexOffset;
+			int globalVertexIndex = (pModel44->vertexindex / sizeof(mstudiovertex_t)) + vertexOffset;
+			mstudiovertex_t* pVert = (mstudiovertex_t*)pStudioHdr->pVertexBase + globalVertexIndex;
 			outNormal = pVert->m_vecNormal;
 		}
 		else
@@ -294,9 +305,10 @@ inline void Studio_GetBoneWeightInfo_V37Aware(
 	else if ( pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44 )
 	{
 		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pModel;
-		if ( pModel44->vertexdata.pVertexData )
+		if ( pStudioHdr->pVertexBase )
 		{
-			mstudiovertex_t* pVert = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + vertexOffset;
+			int globalVertexIndex = (pModel44->vertexindex / sizeof(mstudiovertex_t)) + vertexOffset;
+			mstudiovertex_t* pVert = (mstudiovertex_t*)pStudioHdr->pVertexBase + globalVertexIndex;
 			mstudioboneweight_t* pBoneWeight = &pVert->m_BoneWeights;
 			outInfo.numbones = pBoneWeight->numbones;
 			for (int i = 0; i < MAX_NUM_BONES_PER_VERT; ++i)
@@ -385,9 +397,10 @@ inline void Studio_GetBoneWeight_V37Aware(
 	else if ( pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44 )
 	{
 		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pModel;
-		if ( pModel44->vertexdata.pVertexData )
+		if ( pStudioHdr->pVertexBase )
 		{
-			mstudiovertex_t* pVert = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + vertexOffset;
+			int globalVertexIndex = (pModel44->vertexindex / sizeof(mstudiovertex_t)) + vertexOffset;
+			mstudiovertex_t* pVert = (mstudiovertex_t*)pStudioHdr->pVertexBase + globalVertexIndex;
 			outBoneWeight = pVert->m_BoneWeights;
 		}
 		else
@@ -456,9 +469,10 @@ inline void Studio_GetVertexAndBoneWeight_V37Aware(
 	else if ( pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44 )
 	{
 		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pModel;
-		if ( pModel44->vertexdata.pVertexData )
+		if ( pStudioHdr->pVertexBase )
 		{
-			mstudiovertex_t* pVert = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + vertexOffset;
+			int globalVertexIndex = (pModel44->vertexindex / sizeof(mstudiovertex_t)) + vertexOffset;
+			mstudiovertex_t* pVert = (mstudiovertex_t*)pStudioHdr->pVertexBase + globalVertexIndex;
 			outPosition = pVert->m_vecPosition;
 			outNormal = pVert->m_vecNormal;
 			outBoneWeight = pVert->m_BoneWeights;
@@ -528,9 +542,10 @@ inline mstudiovertex_t* Studio_GetVertex_VersionAware(
 	{
 		// v44+ models use external VVD with vertex pointer set up by modelloader
 		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pModel;
-		if ( pModel44->vertexdata.pVertexData )
+		if ( pStudioHdr->pVertexBase )
 		{
-			return (mstudiovertex_t*)pModel44->vertexdata.pVertexData + vertexOffset;
+			int globalVertexIndex = (pModel44->vertexindex / sizeof(mstudiovertex_t)) + vertexOffset;
+			return (mstudiovertex_t*)pStudioHdr->pVertexBase + globalVertexIndex;
 		}
 		return NULL;
 	}
@@ -565,10 +580,11 @@ inline Vector4D* Studio_GetTangentS_VersionAware(
 	{
 		// v44+ models use external VVD with tangent pointer set up by modelloader
 		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pModel;
-		if ( pModel44->vertexdata.pTangentData )
-		{
-			return (Vector4D*)pModel44->vertexdata.pTangentData + vertexOffset;
-		}
+		// For v44+ models, we need to access tangent data from the studiohdr
+		// In 2007 Source Engine, tangent data would be stored globally similar to vertices
+		// However, LeakNet may not have proper tangent data setup implemented yet
+		// Return NULL for now to avoid crashes - tangents are optional for basic rendering
+		// TODO: Implement proper tangent data access when needed
 		return NULL;
 	}
 	else

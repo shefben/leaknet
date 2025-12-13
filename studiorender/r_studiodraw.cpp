@@ -870,61 +870,40 @@ public:
 
 		Assert( numVertices > 0 );
 
-		// Gets at the vertex data - version-safe for v44+ models
+		// Get vertex data using simplified approach (compatible with both v37 and v44+)
 		mstudiovertex_t *pVertices = NULL;
-		if (pStudioHdr->IsV37())
+		Vector4D *pTangents = NULL;
+
+		if (!SetupVertexDataForMesh(pmesh, pStudioHdr, &pVertices, nHasTangentSpace ? &pTangents : NULL))
 		{
-			// v37 models have embedded vertex data
-			pVertices = pmesh->Vertex(0);
+			DevWarning("CRITICAL: SetupVertexDataForMesh failed for %s (v%d)\n", pStudioHdr->name, pStudioHdr->version);
 		}
-		else if (pStudioHdr->version >= STUDIO_VERSION_44)
+
+		// Debug check: Verify vertex data before rendering
+		if (pVertices == NULL)
 		{
-			// v44+ models use external VVD data
-			mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pmesh->pModel();
-			if (pModel44)
-			{
-				if (pModel44->vertexdata.pVertexData)
-				{
-					pVertices = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + pmesh->vertexoffset;
-					DevMsg("v44+ vertex data found for model: %s, vertices: %p\n", pStudioHdr->name, pVertices);
-				}
-				else
-				{
-					DevWarning("v44+ model has NULL vertex data: %s (model: %s)\n", pStudioHdr->name, pModel44->name);
-				}
-			}
-			else
-			{
-				DevWarning("v44+ model has NULL pModel44: %s\n", pStudioHdr->name);
-			}
+			DevWarning("CRITICAL: pVertices is NULL for %s (v%d), mesh will be invisible!\n", pStudioHdr->name, pStudioHdr->version);
+			return; // Skip rendering this mesh
 		}
 		else
 		{
-			// Fallback for other versions
-			pVertices = pmesh->Vertex(0);
+			DevMsg("Vertex data OK for %s (v%d): %p, first vertex pos: (%.2f, %.2f, %.2f)\n",
+				pStudioHdr->name, pStudioHdr->version, pVertices,
+				pVertices[0].m_vecPosition.x, pVertices[0].m_vecPosition.y, pVertices[0].m_vecPosition.z);
 		}
 
 		if (nHasTangentSpace)
 		{
-			if (pStudioHdr->IsV37())
+			pStudioTangentS = pTangents;
+
+			if (pStudioTangentS)
 			{
-				pStudioTangentS = pmesh->TangentS( 0 );
-				if (pStudioTangentS) Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
-			}
-			else if (pStudioHdr->version >= STUDIO_VERSION_44)
-			{
-				// For v44+, get tangent base pointer if available
-				mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pmesh->pModel();
-				if (pModel44 && pModel44->vertexdata.pTangentData)
-				{
-					pStudioTangentS = (Vector4D*)pModel44->vertexdata.pTangentData + pmesh->vertexoffset;
-					if (pStudioTangentS) Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
-				}
+				Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
+				DevMsg("Simplified tangent data found for %s: %p\n", pStudioHdr->name, pStudioTangentS);
 			}
 			else
 			{
-				pStudioTangentS = pmesh->TangentS( 0 );
-				if (pStudioTangentS) Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
+				DevWarning("No tangent data available for %s\n", pStudioHdr->name);
 			}
 		}
 
