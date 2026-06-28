@@ -1568,7 +1568,18 @@ void CL_TakeSnapshotAndSwap()
 		{
 			if( world && world->GetModel() )
 			{
-				COM_FileBase( modelloader->GetName( ( model_t *)world->GetModel() ), base );
+				model_t *pWorldModel = ( model_t *)world->GetModel();
+
+				// Check if this is a v44+ model using independent system
+				if ( pWorldModel && pWorldModel->studio.hardwareData.m_pV44Model != NULL )
+				{
+					Con_DPrintf("Snapshot: Skipping v44+ model %s (handled by independent system)\n", pWorldModel->name);
+					strcpy( base, "Snapshot" );
+				}
+				else
+				{
+					COM_FileBase( modelloader->GetName( pWorldModel ), base );
+				}
 			}
 			else
 			{

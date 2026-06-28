@@ -338,6 +338,8 @@ struct studiodata_t
 	//-----------------------------------------------------------------------------
 	void		*pVvdData;			// External VVD vertex data (NULL for v37 embedded)
 	int			nVvdDataSize;		// Size of VVD data in bytes
+	void		*pAnimBlockData;	// External .ani animation block data (NULL when unused)
+	int			nAnimBlockDataSize;	// Size of .ani data in bytes
 };
 
 

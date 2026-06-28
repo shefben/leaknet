@@ -23,6 +23,7 @@
 #include "gl_model_private.h"
 #include "gl_texture.h"
 #include "studio.h"
+#include "studio_helpers.h"
 #include "gl_cvars.h"
 #include "gl_matsysiface.h"
 #include "phyfile.h"
@@ -124,8 +125,11 @@ bool Mod_LoadStudioModel (model_t *mod, void *buffer, bool zerostructure )
 	// phdr->pSeqgroup(0)->pszName();
 
 #if STUDIO_VERSION == 37
-	phdr->pSeqdesc(0)->anim(0, 0);
-	phdr->pSeqdesc(0)->pBlends();
+	if ( phdr->version <= STUDIO_VERSION_37 )
+	{
+		phdr->pSeqdesc(0)->anim(0, 0);
+		phdr->pSeqdesc(0)->pBlends();
+	}
 	phdr->pAnimgroup(0);
 #endif // STUDIO_VERSION == 37
 #endif // _DEBUG
@@ -153,7 +157,7 @@ bool Mod_LoadStudioModel (model_t *mod, void *buffer, bool zerostructure )
 		int bodyPartID;
 		for( bodyPartID = 0; bodyPartID < phdr44->numbodyparts; bodyPartID++ )
 		{
-			mstudiobodyparts_t *pBodyPart = phdr44->pBodypart( bodyPartID );
+			mstudiobodyparts_v44_t *pBodyPart = phdr44->pBodypart( bodyPartID );
 			if (!pBodyPart)
 				continue;
 
@@ -161,7 +165,7 @@ bool Mod_LoadStudioModel (model_t *mod, void *buffer, bool zerostructure )
 			for( modelID = 0; modelID < pBodyPart->nummodels; modelID++ )
 			{
 				// v44+ uses 148-byte model struct with mstudio_modelvertexdata_t
-				mstudiomodel_v44_t *pModel = pBodyPart->pModel_v44( modelID );
+				mstudiomodel_v44_t *pModel = pBodyPart->pModel( modelID );
 				int numverts = pModel ? pModel->numvertices : 0;
 
 				if( numverts >= MAXSTUDIOVERTS )
@@ -258,6 +262,35 @@ static void Mod_FreeVCollide( model_t *pModel )
 	physcollision->VCollideUnload( pCollide );
 }
 
+static void Mod_FreeStudioExternalData( model_t *pModel )
+{
+	if ( !pModel )
+		return;
+
+	studiohdr_t *pStudioHdr = (studiohdr_t *)Cache_Check( &pModel->cache );
+	if ( pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44 )
+	{
+		studiohdr_v44_t *pHdr44 = (studiohdr_v44_t *)pStudioHdr;
+		pHdr44->animblockModel = NULL;
+		pHdr44->pVertexBase = NULL;
+		pHdr44->pIndexBase = NULL;
+	}
+
+	if ( pModel->studio.pVvdData )
+	{
+		free( pModel->studio.pVvdData );
+		pModel->studio.pVvdData = NULL;
+	}
+	pModel->studio.nVvdDataSize = 0;
+
+	if ( pModel->studio.pAnimBlockData )
+	{
+		free( pModel->studio.pAnimBlockData );
+		pModel->studio.pAnimBlockData = NULL;
+	}
+	pModel->studio.nAnimBlockDataSize = 0;
+}
+
 //-----------------------------------------------------------------------------
 // Engine-local implementation of Studio_DestroyVirtualModel
 // The full implementation is in game_shared/studio_virtualmodel.cpp for client/server
@@ -286,28 +319,48 @@ static void Engine_DestroyVirtualModel( studiohdr_t *pStudioHdr )
 // Call destructors on certain things in the map.
 void Mod_UnloadStudioModel(model_t *mod)
 {
-	if( mod->studio.studiomeshLoaded )
+	// Check if this is a v44+ model using independent system
+	bool bIndependentV44Model = false;
+	if ( mod->studio.hardwareData.m_pV44Model != NULL )
+	{
+		// v44+ models use independent unloading system
+		Con_DPrintf("Mod_UnloadStudioModel: Skipping v44+ model %s (handled by independent system)\n", mod->name);
+		// The independent v44+ system handles its own cleanup
+		// Clear the pointer to indicate the model is unloaded
+		bIndependentV44Model = true;
+		mod->studio.hardwareData.m_pLODs = NULL;
+		mod->studio.hardwareData.m_pV44Model = NULL;
+	}
+
+	// v37 model unloading
+	if( mod->studio.studiomeshLoaded && !bIndependentV44Model )
 	{
 		g_pStudioRender->UnloadModel( &mod->studio.hardwareData );
 		memset( &mod->studio.hardwareData, 0, sizeof( mod->studio.hardwareData ) );
 		mod->studio.studiomeshLoaded = false;
 	}
+	else if ( bIndependentV44Model )
+	{
+		memset( &mod->studio.hardwareData, 0, sizeof( mod->studio.hardwareData ) );
+		mod->studio.studiomeshLoaded = false;
+	}
+
 	Mod_FreeVCollide( mod );
 
-	// Destroy virtual model if present (only for v44+ models)
+	// Destroy virtual model and persistent external buffers before freeing the cached header.
 	if( Cache_Check( &mod->cache ) )
 	{
 		studiohdr_t *pStudioHdr = (studiohdr_t *)mod->cache.data;
-		if (pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44)
+		if (pStudioHdr)
 		{
-			// Use v44 struct to access virtualModel at correct offset
-			studiohdr_v44_t *pHdr44 = (studiohdr_v44_t *)pStudioHdr;
-			if (pHdr44->virtualModel)
-			{
-				Engine_DestroyVirtualModel(pStudioHdr);
-			}
+			Engine_DestroyVirtualModel(pStudioHdr);
 		}
+		Mod_FreeStudioExternalData( mod );
 		Cache_Free( &mod->cache );
+	}
+	else
+	{
+		Mod_FreeStudioExternalData( mod );
 	}
 }
 
@@ -1019,21 +1072,22 @@ void R_ComputeBBox( DrawModelState_t& state, const Vector& origin,
 	}
 
 // construct the base bounding box for this frame
-	if ( sequence >= state.m_pStudioHdr->numseq) 
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	if ( sequence >= state.m_pStudioHdr->GetNumLocalSeq())
 	{
 		sequence = 0;
 	}
 
-	mstudioseqdesc_t* pseqdesc;
-	pseqdesc = state.m_pStudioHdr->pSeqdesc( sequence );
+	Vector seqBBMin = StudioSeqdesc_GetBBMin( state.m_pStudioHdr, sequence );
+	Vector seqBBMax = StudioSeqdesc_GetBBMax( state.m_pStudioHdr, sequence );
 
 // UNDONE: Test this, it should be faster and still 100% accurate
 // VXP: FIXME: Yes, it IS faster (can't say anything meaningful about accuracy though) with -O0:
 // https://onlinegdb.com/XMfsOxZlO or http://cpp.sh/8jgk6 (1-5ms vs 5-40ms)
 // Even with -O3 the second one sometimes gets > 0ms, while the first always stays at 0ms
 #ifdef FASTER_BBOX_COMPUTING
-	Vector localCenter = (pseqdesc->bbmin + pseqdesc->bbmax) * 0.5;
-	Vector localExtents = pseqdesc->bbmax - localCenter;
+	Vector localCenter = (seqBBMin + seqBBMax) * 0.5;
+	Vector localExtents = seqBBMax - localCenter;
 	Vector worldCenter;
 	VectorTransform( localCenter, *state.m_pModelToWorld, worldCenter );
 	Vector worldExtents;
@@ -1048,9 +1102,9 @@ void R_ComputeBBox( DrawModelState_t& state, const Vector& origin,
   	{
   		Vector p1, p2;
    
-  		p1[0] = (i & 1) ? pseqdesc->bbmin[0] : pseqdesc->bbmax[0];
-  		p1[1] = (i & 2) ? pseqdesc->bbmin[1] : pseqdesc->bbmax[1];
-  		p1[2] = (i & 4) ? pseqdesc->bbmin[2] : pseqdesc->bbmax[2];
+  		p1[0] = (i & 1) ? seqBBMin[0] : seqBBMax[0];
+  		p1[1] = (i & 2) ? seqBBMin[1] : seqBBMax[1];
+  		p1[2] = (i & 4) ? seqBBMin[2] : seqBBMax[2];
   
   		VectorTransform( p1, *state.m_pModelToWorld, p2 );
   
@@ -1547,7 +1601,7 @@ void CModelRender::SetupModelState( IClientRenderable *pRenderable )
 		return;
 
 	studiohdr_t *pStudioHdr = modelinfo->GetStudiomodel( const_cast<model_t*>(pModel) );
-	if (StudioHdr_GetNumBodyparts(pStudioHdr) == 0)
+	if (!pStudioHdr || StudioHdr_GetNumBodyparts(pStudioHdr) == 0)
 		return;
 
 #ifndef SWDS
@@ -1660,7 +1714,7 @@ void CModelRender::RenderModel( DrawModelState_t& state, model_t const *pModel,
 		CDebugOverlay::AddTextOverlay( origin, lineOffset++, duration, alpha, buf );
 		Q_snprintf( buf, 1023, "tris: %d\n",  info.m_ActualTriCount );
 		CDebugOverlay::AddTextOverlay( origin, lineOffset++, duration, alpha, buf );
-		Q_snprintf( buf, 1023, "bones: %d\n",  info.m_pStudioHdr->numbones );
+		Q_snprintf( buf, 1023, "bones: %d\n",  StudioHdr_GetNumBones(info.m_pStudioHdr) );
 		CDebugOverlay::AddTextOverlay( origin, lineOffset++, duration, alpha, buf );		
 		Q_snprintf( buf, 1023, "textures: %d (%d bytes)\n", StudioHdr_GetNumTextures(info.m_pStudioHdr), info.m_TextureMemoryBytes );
 		CDebugOverlay::AddTextOverlay( origin, lineOffset++, duration, alpha, buf );		
@@ -1707,7 +1761,7 @@ int CModelRender::DrawModel(
 	state.m_BBoxMaxs = bboxMaxs;
 
 	// quick exit
-	if (StudioHdr_GetNumBodyparts(state.m_pStudioHdr) == 0)
+	if (!state.m_pStudioHdr || StudioHdr_GetNumBodyparts(state.m_pStudioHdr) == 0)
 		return 1;
 
 	matrix3x4_t tmpmat;
@@ -1734,7 +1788,7 @@ int CModelRender::DrawModel(
 	Assert ( pRenderable );
 	if( r_speeds.GetBool() )
 	{
-		if( state.m_pStudioHdr->numbones == 1 )
+		if( StudioHdr_GetNumBones(state.m_pStudioHdr) == 1 )
 		{
 			materialSystemStatsInterface->SetStatGroup( MATERIAL_SYSTEM_STATS_STATIC_PROPS );
 		}
@@ -1836,7 +1890,7 @@ void CModelRender::DrawModelShadow( IClientRenderable *pRenderable, int body )
 	info.m_ppColorMeshes = NULL;
 
 	// quick exit
-	if (StudioHdr_GetNumBodyparts(info.m_pStudioHdr) == 0)
+	if (!info.m_pStudioHdr || StudioHdr_GetNumBodyparts(info.m_pStudioHdr) == 0)
 		return;
 
 	Assert ( pRenderable );
@@ -2191,7 +2245,11 @@ void CModelRender::UpdateStaticPropColorData( IHandleEntity *pProp, ModelInstanc
 
 	studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( inst.m_pModel );
 	studiohwdata_t *pStudioHWData = &inst.m_pModel->studio.hardwareData;
-	Assert( pStudioHdr && pStudioHWData );
+	// v44+ models return NULL from GetExtraData - skip assertion
+	if( !pStudioHdr || !pStudioHWData )
+		return; // v44+ models use independent rendering system
+	if( StudioHdr_IsV44Plus(pStudioHdr) )
+		return; // static prop color baking here assumes embedded v37 vertices
 
 #ifdef _DEBUG
 	// Used below to make sure everything's ok
@@ -2232,9 +2290,9 @@ void CModelRender::UpdateStaticPropColorData( IHandleEntity *pProp, ModelInstanc
 		int	bodyPartID, modelID, meshID, stripGroupID;
 
 		// Iterate over every body part...
-		for ( bodyPartID = 0; bodyPartID < StudioHdr_GetNumBodyparts(pStudioHdr); bodyPartID++ )
+		for ( bodyPartID = 0; bodyPartID < pStudioHdr->numbodyparts; bodyPartID++ )
 		{
-			mstudiobodyparts_t* pBodyPart = StudioHdr_GetBodypart(pStudioHdr, bodyPartID);
+			mstudiobodyparts_t* pBodyPart = pStudioHdr->pBodypart(bodyPartID);
 			OptimizedModel::BodyPartHeader_t* pVtxBodyPart = pVtxHdr->pBodyPart(bodyPartID);
 
 			// Iterate over every submodel...
@@ -2360,7 +2418,7 @@ ModelInstanceHandle_t CModelRender::CreateInstance( IClientRenderable *pRenderab
 
 	studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( m_ModelInstances[handle].m_pModel );
 	studiohwdata_t *pStudioHWData = &m_ModelInstances[handle].m_pModel->studio.hardwareData;
-	Assert( pStudioHdr && pStudioHWData );
+	// v44+ models return NULL from GetExtraData - skip assertion (proper NULL check below)
 	if( !pStudioHdr || !pStudioHWData )
 	{
 		return MODEL_INSTANCE_INVALID;
@@ -2391,7 +2449,7 @@ void CModelRender::RecomputeStaticLighting( IClientRenderable *pRenderable, Mode
 {
 	studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( m_ModelInstances[handle].m_pModel );
 	studiohwdata_t *pStudioHWData = &m_ModelInstances[handle].m_pModel->studio.hardwareData;
-	Assert( pStudioHdr && pStudioHWData );
+	// v44+ models return NULL from GetExtraData - skip assertion (proper NULL check below)
 	if( pStudioHdr && pStudioHWData && pStudioHdr->flags & STUDIOHDR_FLAGS_STATIC_PROP )
 	{
 		if( g_pMaterialSystemHardwareConfig->SupportsVertexAndPixelShaders() )

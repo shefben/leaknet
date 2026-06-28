@@ -84,6 +84,7 @@ CQuakeConsole::CQuakeConsole()
 	m_nTextureId = -1;
 	m_nTextureWidth = 0;
 	m_nTextureHeight = 0;
+	m_bTextureLoadAttempted = false;
 	m_hFont = 0;
 	m_nConsoleHeight = 0;
 	m_nConsoleWidth = 0;
@@ -399,6 +400,13 @@ void CQuakeConsole::Paint()
 	if (!vgui::surface())
 		return;
 
+	// Lazy load texture if it wasn't loaded during init (VGUI might not have been ready)
+	if (m_nTextureId == -1 && !m_bTextureLoadAttempted)
+	{
+		m_bTextureLoadAttempted = true;
+		LoadBackgroundTexture();
+	}
+
 	// Update screen dimensions in case resolution changed
 	if (vid.width > 0 && vid.height > 0)
 	{
@@ -444,13 +452,54 @@ void CQuakeConsole::LoadBackgroundTexture()
 	m_nTextureWidth = 0;
 	m_nTextureHeight = 0;
 
-	// Safety checks - VGUI surface and filesystem must be available
+	// Safety check - VGUI surface must be available
 	if (!vgui::surface())
+	{
+		DevMsg("Console: VGUI surface not ready for texture loading\n");
 		return;
+	}
 
-	if (!g_pFileSystem)
-		return;
+	DevMsg("Console: Attempting to load background texture...\n");
 
+	// Try loading VTF/VMT console background textures
+	// Don't check FileExists first - just try to load directly as the material system
+	// handles search paths properly even when filesystem paths aren't fully initialized
+	const char *vtfPaths[] = {
+		"console/console_background",
+		"VGUI/console/console_background", 
+		"console/console_background_widescreen",
+		"console/background01",
+		NULL
+	};
+
+	for (int i = 0; vtfPaths[i] != NULL; i++)
+	{
+		DevMsg("Console: Trying texture path: %s\n", vtfPaths[i]);
+
+		// Create texture ID and try to load - let the material system find it
+		int testTextureId = vgui::surface()->CreateNewTextureID();
+		vgui::surface()->DrawSetTextureFile(testTextureId, vtfPaths[i], true, false);
+
+		int testWidth = 0, testHeight = 0;
+		vgui::surface()->DrawGetTextureSize(testTextureId, testWidth, testHeight);
+
+		if (testWidth > 0 && testHeight > 0)
+		{
+			m_nTextureId = testTextureId;
+			m_nTextureWidth = testWidth;
+			m_nTextureHeight = testHeight;
+			Msg("Console: Loaded VTF background '%s' (%dx%d)\n", vtfPaths[i], m_nTextureWidth, m_nTextureHeight);
+			return;
+		}
+		else
+		{
+			DevMsg("Console: Failed to load %s (size: %dx%d)\n", vtfPaths[i], testWidth, testHeight);
+		}
+	}
+
+	DevMsg("Console: No VTF textures loaded, trying BMP fallback...\n");
+
+	// Fallback to BMP loading
 	char bmpPath[MAX_PATH];
 	FileHandle_t file = FILESYSTEM_INVALID_HANDLE;
 

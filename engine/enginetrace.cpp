@@ -412,11 +412,27 @@ bool CEngineTrace::ClipRayToHitboxes( const Ray_t& ray, unsigned int fMask, ICol
 
 		// Fill out the surfaceprop details from the hitbox. Use the physics bone instead of the hitbox bone
 		const model_t *pModel = pCollideable->GetCollisionModel();
-		studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)pModel );
-		// Use version-aware accessor for v37/v44+ bone structure compatibility
-		pTrace->surface.name = "**studio**";
-		pTrace->surface.flags = SURF_HITBOX;
-		pTrace->surface.surfaceProps = physprop->GetSurfaceIndex( pStudioHdr->GetBoneSurfaceProp( pTrace->physicsbone ) );
+
+		// Check if this is a v44+ model using independent system
+		if ( pModel && pModel->studio.hardwareData.m_pV44Model != NULL )
+		{
+			// v44+ models use independent collision system
+			pTrace->surface.name = "**studio**";
+			pTrace->surface.flags = SURF_HITBOX;
+			pTrace->surface.surfaceProps = physprop->GetSurfaceIndex( "default" ); // Safe fallback
+			Con_DPrintf("EngineTrace: Using fallback surface properties for v44+ model %s\n", pModel->name);
+		}
+		else
+		{
+			studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)pModel );
+			if (pStudioHdr)
+			{
+				// Use version-aware accessor for v37 bone structure compatibility
+				pTrace->surface.name = "**studio**";
+				pTrace->surface.flags = SURF_HITBOX;
+				pTrace->surface.surfaceProps = physprop->GetSurfaceIndex( pStudioHdr->GetBoneSurfaceProp( pTrace->physicsbone ) );
+			}
+		}
 	}
 
 	return true;
@@ -578,9 +594,22 @@ void CEngineTrace::ClipRayToCollideable( const Ray_t &ray, unsigned int fMask, I
 	// Cull if the collision mask isn't set + we're not testing hitboxes.
 	if ( bIsStudioModel && (( fMask & CONTENTS_HITBOX ) == 0) )
 	{
-		studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)pModel );
-		if ( ( fMask & pStudioHdr->contents ) == 0)
-			return;
+		// Check if this is a v44+ model using independent system
+		if ( pModel->studio.hardwareData.m_pV44Model != NULL )
+		{
+			// v44+ models use independent collision system - assume standard solid contents for now
+			Con_DPrintf("ClipRayToCollideable: Using default collision for v44+ model %s\n", pModel->name);
+			if ( ( fMask & CONTENTS_SOLID ) == 0)
+				return;
+		}
+		else
+		{
+			studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)pModel );
+			if (!pStudioHdr)
+				return;
+			if ( ( fMask & pStudioHdr->contents ) == 0)
+				return;
+		}
 	}
 
 	bool bTraced = false;
@@ -625,12 +654,28 @@ void CEngineTrace::ClipRayToCollideable( const Ray_t &ray, unsigned int fMask, I
 
 	if ( bIsStudioModel && !bTracedHitboxes && pTrace->DidHit() )
 	{
-		studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)pModel );
-		pTrace->contents = pStudioHdr->contents;
-		// use the default surface properties
-		pTrace->surface.name = "**studio**";
-		pTrace->surface.flags = 0;
-		pTrace->surface.surfaceProps = physprop->GetSurfaceIndex( pStudioHdr->pszSurfaceProp() );
+		// Check if this is a v44+ model using independent system
+		if ( pModel->studio.hardwareData.m_pV44Model != NULL )
+		{
+			// v44+ models use independent collision system - use safe defaults
+			pTrace->contents = CONTENTS_SOLID; // Safe default for v44+ models
+			pTrace->surface.name = "**studio**";
+			pTrace->surface.flags = 0;
+			pTrace->surface.surfaceProps = physprop->GetSurfaceIndex( "default" );
+			Con_DPrintf("ClipRayToCollideable: Using default trace properties for v44+ model %s\n", pModel->name);
+		}
+		else
+		{
+			studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)pModel );
+			if (pStudioHdr)
+			{
+				pTrace->contents = pStudioHdr->contents;
+				// use the default surface properties
+				pTrace->surface.name = "**studio**";
+				pTrace->surface.flags = 0;
+				pTrace->surface.surfaceProps = physprop->GetSurfaceIndex( pStudioHdr->pszSurfaceProp() );
+			}
+		}
 	}
 
 	if (pTrace->DidHit())

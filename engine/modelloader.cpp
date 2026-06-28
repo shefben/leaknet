@@ -3448,35 +3448,42 @@ bool Mod_LoadStudioModelVtxFileIntoTempBuffer( model_t *mod, CUtlMemory<unsigned
 	if ( !g_pMaterialSystemHardwareConfig )
 		return false;
 
-	if (g_pMaterialSystemHardwareConfig->SupportsVertexAndPixelShaders() ||
+	const char *vtxExtensions[4];
+	int vtxExtensionCount = 0;
+
+	if (pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44)
+	{
+		vtxExtensions[vtxExtensionCount++] = ".dx90.vtx";
+		vtxExtensions[vtxExtensionCount++] = ".dx80.vtx";
+		vtxExtensions[vtxExtensionCount++] = ".sw.vtx";
+	}
+	else if (g_pMaterialSystemHardwareConfig->SupportsVertexAndPixelShaders() ||
 		g_pMaterialSystemHardwareConfig->GetDXSupportLevel() < 70)
 	{
-		// Check for the default version...
-		Q_strncpy( tempFileName + namelen, ".dx80.vtx", sizeof(tempFileName) - namelen );
+		vtxExtensions[vtxExtensionCount++] = ".dx80.vtx";
+		vtxExtensions[vtxExtensionCount++] = ".dx7_2bone.vtx";
+	}
+	else if( g_pMaterialSystemHardwareConfig->MaxBlendMatrices() > 2 )
+	{
+		vtxExtensions[vtxExtensionCount++] = ".dx7_3bone.vtx";
+		vtxExtensions[vtxExtensionCount++] = ".dx7_2bone.vtx";
 	}
 	else
 	{
-		if( g_pMaterialSystemHardwareConfig->MaxBlendMatrices() > 2 )
-		{
-			// Check for the default version...
-			Q_strncpy( tempFileName + namelen, ".dx7_3bone.vtx", sizeof(tempFileName) - namelen );
-		}
-		else
-		{
-			// Check for the default version...
-			Q_strncpy( tempFileName + namelen, ".dx7_2bone.vtx", sizeof(tempFileName) - namelen );
-		}
+		vtxExtensions[vtxExtensionCount++] = ".dx7_2bone.vtx";
 	}
 
-	fileHandle = g_pFileSystem->Open( tempFileName, "rb" );
-	if( !fileHandle )
+	fileHandle = FILESYSTEM_INVALID_HANDLE;
+	for (int i = 0; i < vtxExtensionCount; ++i)
 	{
-		// Fall back....
-		Q_strncpy( tempFileName + namelen, ".dx7_2bone.vtx", sizeof(tempFileName) - namelen );
+		Q_strncpy( tempFileName + namelen, vtxExtensions[i], sizeof(tempFileName) - namelen );
 		fileHandle = g_pFileSystem->Open( tempFileName, "rb" );
-		if( !fileHandle )
-			return false;
+		if( fileHandle )
+			break;
 	}
+
+	if( !fileHandle )
+		return false;
 
 	fileLength = g_pFileSystem->Size( fileHandle );
 	tmpVtxMem.EnsureCapacity( fileLength );
@@ -3606,6 +3613,160 @@ bool Mod_LoadStudioModelVvdFileIntoTempBuffer( model_t *mod, CUtlMemory<unsigned
 }
 
 //-----------------------------------------------------------------------------
+// v46+: Set the cached studio header's external animation block pointer.
+// The pointer lives inside the relocatable MDL cache, so it must be restored
+// whenever the cache header is reloaded.
+//-----------------------------------------------------------------------------
+static void Studio_SetupAnimBlockPointer( studiohdr_t *pStudioHdr, void *pAnimBlockData )
+{
+	if ( !pStudioHdr || pStudioHdr->version < STUDIO_VERSION_44 )
+		return;
+
+	studiohdr_v44_t *pHdr44 = (studiohdr_v44_t *)pStudioHdr;
+	pHdr44->animblockModel = pAnimBlockData;
+}
+
+static bool Studio_ModelRequiresAnimBlockFile( studiohdr_t *pStudioHdr )
+{
+	if ( !pStudioHdr || pStudioHdr->version < STUDIO_VERSION_46 )
+		return false;
+
+	studiohdr_v44_t *pHdr44 = (studiohdr_v44_t *)pStudioHdr;
+	return pHdr44->numanimblocks > 1;
+}
+
+//-----------------------------------------------------------------------------
+// Loads external animation block data for v46+ models.
+// This mirrors Source's studiohdr_t::GetAnimBlock() expectation: animblockModel
+// points at the loaded .ani file and pAnimBlock(i)->datastart offsets into it.
+// Missing .ani files are non-fatal because some assets declare block tables but
+// carry all used animations inline.
+//-----------------------------------------------------------------------------
+static bool Mod_LoadStudioModelAniFile( model_t *mod, studiohdr_t *pStudioHdr )
+{
+	if ( !mod || !pStudioHdr )
+		return false;
+
+	if ( !Studio_ModelRequiresAnimBlockFile( pStudioHdr ) )
+	{
+		Studio_SetupAnimBlockPointer( pStudioHdr, NULL );
+		return true;
+	}
+
+	if ( mod->studio.pAnimBlockData )
+	{
+		Studio_SetupAnimBlockPointer( pStudioHdr, mod->studio.pAnimBlockData );
+		return true;
+	}
+
+	studiohdr_v44_t *pHdr44 = (studiohdr_v44_t *)pStudioHdr;
+	const char *pszAnimBlockName = pHdr44->pszAnimBlockName();
+	if ( !pszAnimBlockName || !pszAnimBlockName[0] )
+	{
+		DevWarning( "Model %s has %d animation blocks but no .ani filename\n",
+			mod->name, pHdr44->numanimblocks );
+		Studio_SetupAnimBlockPointer( pStudioHdr, NULL );
+		return true;
+	}
+
+	char aniFileName[256];
+	Q_strncpy( aniFileName, mod->name, sizeof( aniFileName ) );
+
+	char *pLastSlash = Q_strrchr( aniFileName, '/' );
+	if ( !pLastSlash )
+		pLastSlash = Q_strrchr( aniFileName, '\\' );
+
+	if ( pLastSlash )
+	{
+		pLastSlash[1] = '\0';
+		Q_strncat( aniFileName, pszAnimBlockName, sizeof( aniFileName ) );
+	}
+	else
+	{
+		Q_strncpy( aniFileName, pszAnimBlockName, sizeof( aniFileName ) );
+	}
+
+	FileHandle_t fileHandle = g_pFileSystem->Open( aniFileName, "rb" );
+	if ( !fileHandle )
+	{
+		DevWarning( "Animation block file not found for %s: %s\n", mod->name, aniFileName );
+		Studio_SetupAnimBlockPointer( pStudioHdr, NULL );
+		return true;
+	}
+
+	int fileLength = g_pFileSystem->Size( fileHandle );
+	if ( fileLength <= 0 )
+	{
+		g_pFileSystem->Close( fileHandle );
+		DevWarning( "Animation block file is empty for %s: %s\n", mod->name, aniFileName );
+		return false;
+	}
+
+	CUtlMemory<unsigned char> tmpAniMem;
+	tmpAniMem.EnsureCapacity( fileLength );
+
+	bool readOK = ( fileLength == g_pFileSystem->Read( tmpAniMem.Base(), fileLength, fileHandle ) );
+	g_pFileSystem->Close( fileHandle );
+
+	if ( !readOK )
+	{
+		DevWarning( "Animation block file read error for %s: %s\n", mod->name, aniFileName );
+		return false;
+	}
+
+	uint32 decompressedSize = 0;
+	byte *pDecompressed = DecompressModelDataIfNeeded( tmpAniMem.Base(), fileLength, &decompressedSize );
+	const byte *pSourceData = tmpAniMem.Base();
+	int sourceSize = fileLength;
+
+	if ( pDecompressed != tmpAniMem.Base() )
+	{
+		pSourceData = pDecompressed;
+		sourceSize = decompressedSize;
+		Con_DPrintf( "ANI file %s: Decompressed from %i to %i bytes\n",
+			aniFileName, fileLength, sourceSize );
+	}
+
+	for ( int i = 1; i < pHdr44->numanimblocks; ++i )
+	{
+		mstudioanimblock_v44_t *pBlock = pHdr44->pAnimBlock( i );
+		if ( !pBlock )
+			continue;
+
+		if ( pBlock->datastart < 0 || pBlock->dataend < pBlock->datastart || pBlock->dataend > sourceSize )
+		{
+			DevWarning( "Animation block %d out of range for %s: start=%d end=%d fileSize=%d\n",
+				i, mod->name, pBlock->datastart, pBlock->dataend, sourceSize );
+			if ( pDecompressed != tmpAniMem.Base() )
+				delete[] pDecompressed;
+			return false;
+		}
+	}
+
+	mod->studio.pAnimBlockData = malloc( sourceSize );
+	if ( !mod->studio.pAnimBlockData )
+	{
+		DevWarning( "Failed to allocate %d bytes for animation blocks: %s\n", sourceSize, mod->name );
+		if ( pDecompressed != tmpAniMem.Base() )
+			delete[] pDecompressed;
+		return false;
+	}
+
+	memcpy( mod->studio.pAnimBlockData, pSourceData, sourceSize );
+	mod->studio.nAnimBlockDataSize = sourceSize;
+
+	if ( pDecompressed != tmpAniMem.Base() )
+		delete[] pDecompressed;
+
+	Studio_SetupAnimBlockPointer( pStudioHdr, mod->studio.pAnimBlockData );
+
+	DevMsg( "Loaded animation blocks: %s (file=%s, size=%d, blocks=%d)\n",
+		mod->name, aniFileName, sourceSize, pHdr44->numanimblocks );
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
 // Check if a model requires external VVD vertex data
 //-----------------------------------------------------------------------------
 bool Mod_ModelRequiresVvdFile( model_t *mod )
@@ -3705,13 +3866,26 @@ static void Studio_SetupVvdVertexPointers( studiohdr_t *pStudioHdr, vertexFileHe
 
 	// CRITICAL: Set up vertexdata structures for each v44+ model and mesh
 	// This populates the accessor structures that the rendering system uses
-	int numBodyParts = StudioHdr_GetNumBodyparts(pStudioHdr);
+	//
+	// CRITICAL FIX: Must cast to studiohdr_v44_t to use correct field offsets!
+	// The v37 studiohdr_t has different field layout than v44, so using
+	// pStudioHdr->pBodypart() would read bodypartindex from wrong offset.
+	studiohdr_v44_t *pStudioHdr44 = (studiohdr_v44_t *)pStudioHdr;
+
+	int numBodyParts = pStudioHdr44->numbodyparts;
 	for (int bodyPartID = 0; bodyPartID < numBodyParts; bodyPartID++)
 	{
-		mstudiobodyparts_t *pBodyPart = StudioHdr_GetBodypart(pStudioHdr, bodyPartID);
+		// Use v44 pBodypart() which returns mstudiobodyparts_v44_t*
+		mstudiobodyparts_v44_t *pBodyPart = pStudioHdr44->pBodypart(bodyPartID);
+		if (!pBodyPart)
+			continue;
+
 		for (int modelID = 0; modelID < pBodyPart->nummodels; modelID++)
 		{
-			mstudiomodel_v44_t *pModel44 = pBodyPart->pModel_v44(modelID);
+			// Use v44 pModel() which returns mstudiomodel_v44_t*
+			mstudiomodel_v44_t *pModel44 = pBodyPart->pModel(modelID);
+			if (!pModel44)
+				continue;
 
 			// For v44+ models, vertexindex should be byte offset into global vertex buffer
 			// Verify it's valid and aligned to mstudiovertex_t boundary
@@ -3736,6 +3910,8 @@ static void Studio_SetupVvdVertexPointers( studiohdr_t *pStudioHdr, vertexFileHe
 			for (int meshID = 0; meshID < pModel44->nummeshes; meshID++)
 			{
 				mstudiomesh_v44_t *pMesh = pModel44->pMesh(meshID);
+				if (!pMesh)
+					continue;
 
 				// Populate the mesh's vertexdata structure to point to the model's vertexdata
 				mstudio_meshvertexdata_t *pMeshVertexData = (mstudio_meshvertexdata_t *)&pMesh->vertexdata;
@@ -3789,35 +3965,43 @@ void CModelLoader::Studio_LoadStaticMeshes( model_t* mod )
 		void *pVvdData = NULL;
 		if (Mod_ModelRequiresVvdFile( mod ))
 		{
-			retVal = Mod_LoadStudioModelVvdFileIntoTempBuffer( mod, tmpVvdMem );
-			if (!retVal)
+			if ( mod->studio.pVvdData )
 			{
-				if ( cls.state != ca_dedicated )
+				pVvdData = mod->studio.pVvdData;
+				Studio_SetupVvdVertexPointers(pStudioHdr, (vertexFileHeader_t *)pVvdData);
+			}
+			else
+			{
+				retVal = Mod_LoadStudioModelVvdFileIntoTempBuffer( mod, tmpVvdMem );
+				if (!retVal)
 				{
-					Con_DPrintf( "--ERROR-- : Can't load vvd file for %s (v%d model requires external vertex data)\n",
-						pStudioHdr->name, pStudioHdr->version );
+					if ( cls.state != ca_dedicated )
+					{
+						Con_DPrintf( "--ERROR-- : Can't load vvd file for %s (v%d model requires external vertex data)\n",
+							pStudioHdr->name, pStudioHdr->version );
+					}
+					mod->studio.studiomeshLoaded = false;
+					return;
 				}
-				mod->studio.studiomeshLoaded = false;
-				return;
+
+				// Persist VVD data - copy from temp buffer to permanent storage
+				int vvdSize = tmpVvdMem.Count();
+				mod->studio.pVvdData = malloc(vvdSize);
+				if (!mod->studio.pVvdData)
+				{
+					Con_DPrintf( "--ERROR-- : Failed to allocate %d bytes for VVD data: %s\n",
+						vvdSize, pStudioHdr->name );
+					mod->studio.studiomeshLoaded = false;
+					return;
+				}
+				memcpy(mod->studio.pVvdData, tmpVvdMem.Base(), vvdSize);
+				mod->studio.nVvdDataSize = vvdSize;
+
+				pVvdData = mod->studio.pVvdData;
+
+				// Setup vertex pointers in studiohdr to point to VVD data
+				Studio_SetupVvdVertexPointers(pStudioHdr, (vertexFileHeader_t *)pVvdData);
 			}
-
-			// Persist VVD data - copy from temp buffer to permanent storage
-			int vvdSize = tmpVvdMem.Count();
-			mod->studio.pVvdData = malloc(vvdSize);
-			if (!mod->studio.pVvdData)
-			{
-				Con_DPrintf( "--ERROR-- : Failed to allocate %d bytes for VVD data: %s\n",
-					vvdSize, pStudioHdr->name );
-				mod->studio.studiomeshLoaded = false;
-				return;
-			}
-			memcpy(mod->studio.pVvdData, tmpVvdMem.Base(), vvdSize);
-			mod->studio.nVvdDataSize = vvdSize;
-
-			pVvdData = mod->studio.pVvdData;
-
-			// Setup vertex pointers in studiohdr to point to VVD data
-			Studio_SetupVvdVertexPointers(pStudioHdr, (vertexFileHeader_t *)pVvdData);
 		}
 		else
 		{
@@ -3878,6 +4062,27 @@ void CModelLoader::Studio_LoadStaticMeshes( model_t* mod )
 			// In that case, make sure we reset all the fields of the studiohdr_t
 			studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( mod );
 			g_pStudioRender->RefreshStudioHdr( pStudioHdr, &mod->studio.hardwareData );
+
+			// CRITICAL FIX for v44+ models: Restore vertex pointers after studiohdr recache
+			// When the studiohdr is evicted from cache and reloaded, the pVertexBase pointer
+			// and all model/mesh vertexdata structures are reset to NULL. We need to restore
+			// them from the persisted VVD data that was allocated during initial load.
+			// This is essential for viewmodels and other models that may get recached.
+			if (mod->studio.pVvdData != NULL && pStudioHdr != NULL)
+			{
+				// Only v44+ models have external VVD data
+				if (pStudioHdr->version >= STUDIO_VERSION_44)
+				{
+					DevMsg("Restoring VVD vertex pointers after recache for %s (v%d)\n",
+						pStudioHdr->name, pStudioHdr->version);
+					Studio_SetupVvdVertexPointers(pStudioHdr, (vertexFileHeader_t *)mod->studio.pVvdData);
+				}
+			}
+
+			if (mod->studio.pAnimBlockData != NULL && pStudioHdr != NULL)
+			{
+				Studio_SetupAnimBlockPointer(pStudioHdr, mod->studio.pAnimBlockData);
+			}
 		}
 	}
 }
@@ -3910,6 +4115,15 @@ void CModelLoader::Studio_LoadModel( model_t *mod, void *buffer )
 		{
 			if ( !Mod_LoadStudioModel( mod, buffer, false ) )
 				return;
+		}
+	}
+
+	studiohdr_t *pStudioHdr = (studiohdr_t *)Cache_Check( &mod->cache );
+	if ( pStudioHdr )
+	{
+		if ( !Mod_LoadStudioModelAniFile( mod, pStudioHdr ) )
+		{
+			Warning( "Model %s failed to load external animation blocks\n", mod->name );
 		}
 	}
 
@@ -4015,6 +4229,27 @@ void *CModelLoader::GetExtraData( model_t *model )
 			{
 				Sys_Error ("CModelLoader::GetExtraData: re-caching %s failed", model->name );
 			}
+
+			// CRITICAL FIX for viewmodel rendering: Restore VVD vertex pointers after cache reload
+			// When viewmodels get evicted from cache and reloaded (happens when switching first/third person),
+			// the VVD vertex pointers get lost causing models to become invisible
+			if (model->studio.pVvdData != NULL)
+			{
+				studiohdr_t *pStudioHdr = (studiohdr_t *)model->cache.data;
+				if (pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44)
+				{
+					DevMsg("Restoring VVD vertex pointers after cache reload for %s (v%d)\n",
+						pStudioHdr->name, pStudioHdr->version);
+					Studio_SetupVvdVertexPointers(pStudioHdr, (vertexFileHeader_t *)model->studio.pVvdData);
+				}
+			}
+
+			if (model->studio.pAnimBlockData != NULL)
+			{
+				studiohdr_t *pStudioHdr = (studiohdr_t *)model->cache.data;
+				Studio_SetupAnimBlockPointer(pStudioHdr, model->studio.pAnimBlockData);
+			}
+
 			return model->cache.data;
 		}
 		break;

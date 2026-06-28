@@ -15,6 +15,7 @@
 //=============================================================================
 
 #include "staticpropmgr.h"
+#include "studio_helpers.h"
 #include "convar.h"
 #include "vcollide_parse.h"
 #include "engine/icollideable.h"
@@ -459,7 +460,13 @@ bool CStaticProp::SetupBones( matrix3x4_t *pBoneToWorldOut, int nMaxBones, int b
 
 	// Just copy it on down baby
 	studiohdr_t *pStudioHdr = modelinfo->GetStudiomodel( m_pModel );
-	for (int i = 0; i < pStudioHdr->numbones; i++) 
+	if ( !pStudioHdr )
+	{
+		// v44+ models return NULL - they use independent bone system
+		// For now, return false to indicate no bone setup
+		return false;
+	}
+	for (int i = 0; i < StudioHdr_GetNumBones(pStudioHdr); i++)
 	{
 		MatrixCopy( m_ModelToWorld, pBoneToWorldOut[i] );
 	}
@@ -748,8 +755,12 @@ int CStaticProp::DrawModel( int flags )
 
 #ifdef _DEBUG
 	studiohdr_t *pStudioHdr = modelinfo->GetStudiomodel( m_pModel );
-	Assert( pStudioHdr );
-	if( !( pStudioHdr->flags & STUDIOHDR_FLAGS_STATIC_PROP ) )
+	if ( !pStudioHdr )
+	{
+		// v44+ models return NULL from GetStudiomodel - they use independent system
+		// For debug purposes, just continue without the static prop flag check
+	}
+	else if( !( pStudioHdr->flags & STUDIOHDR_FLAGS_STATIC_PROP ) )
 	{
 		return 0;
 	}
@@ -1212,15 +1223,27 @@ void CStaticPropMgr::OutputLevelStats( void )
 			continue;
 		}
 		Assert( pModel->type == mod_studio );
-		studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( pModel );
 
-		// Runtime version check - engine must support all model versions
-		bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
+		// Check if this is a v44+ model using independent system
+		if ( pModel->studio.hardwareData.m_pV44Model != NULL )
+		{
+			Con_DPrintf("OutputLevelStats: Skipping v44+ model %s (handled by independent system)\n", pModel->name);
+			continue;
+		}
+
+		studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( pModel );
+		if (!pStudioHdr)
+			continue;
+
+		// Runtime version check - engine must support all model versions.
+		bool bIsV44Plus = StudioHdr_IsV44Plus(pStudioHdr);
 
 		int bodyPart;
 		for( bodyPart = 0; bodyPart < StudioHdr_GetNumBodyparts(pStudioHdr); bodyPart++ )
 		{
 			mstudiobodyparts_t *pBodyPart = StudioHdr_GetBodypart(pStudioHdr, bodyPart);
+			if (!pBodyPart)
+				continue;
 			int model;
 			for( model = 0; model < pBodyPart->nummodels; model++ )
 			{
@@ -1682,4 +1705,3 @@ void Cmd_PropCrosshair_f (void)
 }
 
 static ConCommand prop_crosshair( "prop_crosshair", Cmd_PropCrosshair_f );
-

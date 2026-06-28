@@ -181,7 +181,18 @@ void R_Envmap_f (void)
 
 	if( world && world->GetModel() )
 	{
-		COM_FileBase( modelloader->GetName( ( model_t *)world->GetModel() ), base );
+		model_t *pWorldModel = ( model_t *)world->GetModel();
+
+		// Check if this is a v44+ model using independent system
+		if ( pWorldModel && pWorldModel->studio.hardwareData.m_pV44Model != NULL )
+		{
+			Con_DPrintf("R_Envmap_f: Skipping v44+ model %s (handled by independent system)\n", pWorldModel->name);
+			strcpy( base, "Env" );
+		}
+		else
+		{
+			COM_FileBase( modelloader->GetName( pWorldModel ), base );
+		}
 	}
 	else
 	{
@@ -450,9 +461,17 @@ void R_BuildCubemapSamples( int numIterations )
 		if( world && world->GetModel() )
 		{
 			const model_t *pModel = world->GetModel();
+
+			// Check if this is a v44+ model using independent system
+			if ( pModel && pModel->studio.hardwareData.m_pV44Model != NULL )
+			{
+				Con_DPrintf("R_BuildCubemapSamples: Skipping v44+ model %s (handled by independent system)\n", pModel->name);
+				return;
+			}
+
 			const char *pModelName = modelloader->GetName( pModel );
-			
-			// This handles the case where you have a map in a directory under maps. 
+
+			// This handles the case where you have a map in a directory under maps.
 			// We need to keep everything after "maps/" so it looks for the BSP file in the right place.
 			if ( Q_stristr( pModelName, "maps/" ) == pModelName ||
 				Q_stristr( pModelName, "maps\\" ) == pModelName )
@@ -509,6 +528,14 @@ void R_BuildCubemapSamples( int numIterations )
 		COM_FileBase( gameDir, gameDir );
 		
 		model_t *pWorldModel = ( model_t *)world->GetModel();
+
+		// Check if this is a v44+ model using independent system
+		if ( pWorldModel && pWorldModel->studio.hardwareData.m_pV44Model != NULL )
+		{
+			Con_DPrintf("R_BuildCubemapSamples: Cubemap sample processing - Skipping v44+ model %s (handled by independent system)\n", pWorldModel->name);
+			return;
+		}
+
 		int i;
 		for( i = 0; i < pWorldModel->brush.m_nCubemapSamples; i++ )
 		{
@@ -799,6 +826,13 @@ static bool R_CheckCubemapsNeedRebuild( void )
 {
 	if ( !host_state.worldmodel )
 		return false;
+
+	// Check if this is a v44+ model using independent system
+	if ( host_state.worldmodel->studio.hardwareData.m_pV44Model != NULL )
+	{
+		Con_DPrintf("R_CheckCubemapsNeedRebuild: Skipping v44+ model %s (handled by independent system)\n", host_state.worldmodel->name);
+		return false;
+	}
 
 	// Check if map has cubemap samples
 	int numCubemaps = host_state.worldmodel->brush.m_nCubemapSamples;

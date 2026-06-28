@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -161,6 +161,14 @@ TABLEID CServerState::GetModelPrecacheTable( void ) const
 //-----------------------------------------------------------------------------
 int CServerState::PrecacheModel( char const *name, int flags, model_t *model /*=NULL*/ )
 {
+	// Safety check: ensure the string table is valid before adding strings
+	// This can happen if precaching is attempted before server initialization or after shutdown
+	if ( m_hModelPrecacheTable == INVALID_STRING_TABLE )
+	{
+		Warning( "CServerState::PrecacheModel: Model precache table not initialized! Cannot precache '%s'\n", name );
+		return -1;
+	}
+
 	int idx = networkStringTableContainerServer->AddString( m_hModelPrecacheTable, name );
 	if ( idx == INVALID_STRING_INDEX )
 	{
@@ -236,6 +244,10 @@ model_t *CServerState::GetModel( int index )
 	if ( index <= 0 )
 		return NULL;
 
+	// Safety check: ensure the string table is valid
+	if ( m_hModelPrecacheTable == INVALID_STRING_TABLE )
+		return NULL;
+
 	if ( index >= networkStringTableContainerServer->GetNumStrings( m_hModelPrecacheTable ) )
 	{
 		return NULL;
@@ -269,6 +281,10 @@ model_t *CServerState::GetModel( int index )
 //-----------------------------------------------------------------------------
 int CServerState::LookupModelIndex( char const *name )
 {
+	// Safety check: ensure the string table is valid
+	if ( m_hModelPrecacheTable == INVALID_STRING_TABLE )
+		return -1;
+
 	int idx = networkStringTableContainerServer->FindStringIndex( m_hModelPrecacheTable, name );
 	return ( idx == INVALID_STRING_INDEX ) ? -1 : idx;
 }
@@ -290,6 +306,13 @@ TABLEID CServerState::GetSoundPrecacheTable( void ) const
 //-----------------------------------------------------------------------------
 int CServerState::PrecacheSound( char const *name, int flags )
 {
+	// Safety check: ensure the string table is valid
+	if ( m_hSoundPrecacheTable == INVALID_STRING_TABLE )
+	{
+		Warning( "CServerState::PrecacheSound: Sound precache table not initialized! Cannot precache '%s'\n", name );
+		return -1;
+	}
+
 	int idx = networkStringTableContainerServer->AddString( m_hSoundPrecacheTable, name );
 	if ( idx == INVALID_STRING_INDEX )
 	{
@@ -338,6 +361,10 @@ char const *CServerState::GetSound( int index )
 		return NULL;
 	}
 
+	// Safety check: ensure the string table is valid
+	if ( m_hSoundPrecacheTable == INVALID_STRING_TABLE )
+		return NULL;
+
 	if ( index >= networkStringTableContainerServer->GetNumStrings( m_hSoundPrecacheTable ) )
 	{
 		return NULL;
@@ -354,6 +381,10 @@ char const *CServerState::GetSound( int index )
 //-----------------------------------------------------------------------------
 int CServerState::LookupSoundIndex( char const *name )
 {
+	// Safety check: ensure the string table is valid
+	if ( m_hSoundPrecacheTable == INVALID_STRING_TABLE )
+		return 0;
+
 	int idx = networkStringTableContainerServer->FindStringIndex( m_hSoundPrecacheTable, name );
 	return ( idx == INVALID_STRING_INDEX ) ? 0 : idx;
 }
@@ -375,6 +406,13 @@ TABLEID CServerState::GetGenericPrecacheTable( void ) const
 //-----------------------------------------------------------------------------
 int CServerState::PrecacheGeneric( char const *name, int flags )
 {
+	// Safety check: ensure the string table is valid
+	if ( m_hGenericPrecacheTable == INVALID_STRING_TABLE )
+	{
+		Warning( "CServerState::PrecacheGeneric: Generic precache table not initialized! Cannot precache '%s'\n", name );
+		return -1;
+	}
+
 	int idx = networkStringTableContainerServer->AddString( m_hGenericPrecacheTable, name );
 	if ( idx == INVALID_STRING_INDEX )
 	{
@@ -418,8 +456,12 @@ int CServerState::PrecacheGeneric( char const *name, int flags )
 //-----------------------------------------------------------------------------
 char const *CServerState::GetGeneric( int index )
 {
+	// Safety check: ensure the string table is valid
+	if ( m_hGenericPrecacheTable == INVALID_STRING_TABLE )
+		return "";
+
 	// Bogus index
-	if ( index < 0 || 
+	if ( index < 0 ||
 		 index >= networkStringTableContainerServer->GetNumStrings( m_hGenericPrecacheTable ) )
 	{
 		return "";
@@ -436,6 +478,10 @@ char const *CServerState::GetGeneric( int index )
 //-----------------------------------------------------------------------------
 int CServerState::LookupGenericIndex( char const *name )
 {
+	// Safety check: ensure the string table is valid
+	if ( m_hGenericPrecacheTable == INVALID_STRING_TABLE )
+		return 0;
+
 	int idx = networkStringTableContainerServer->FindStringIndex( m_hGenericPrecacheTable, name );
 	return ( idx == INVALID_STRING_INDEX ) ? 0 : idx;
 }
@@ -457,6 +503,13 @@ TABLEID CServerState::GetDecalPrecacheTable( void ) const
 //-----------------------------------------------------------------------------
 int CServerState::PrecacheDecal( char const *name, int flags )
 {
+	// Safety check: ensure the string table is valid
+	if ( m_hDecalPrecacheTable == INVALID_STRING_TABLE )
+	{
+		Warning( "CServerState::PrecacheDecal: Decal precache table not initialized! Cannot precache '%s'\n", name );
+		return -1;
+	}
+
 	int idx = networkStringTableContainerServer->AddString( m_hDecalPrecacheTable, name );
 	if ( idx == INVALID_STRING_INDEX )
 	{
@@ -509,6 +562,10 @@ TABLEID CServerState::GetInstanceBaselineTable() const
 //-----------------------------------------------------------------------------
 int CServerState::LookupDecalIndex( char const *name )
 {
+	// Safety check: ensure the string table is valid
+	if ( m_hDecalPrecacheTable == INVALID_STRING_TABLE )
+		return -1;
+
 	int idx = networkStringTableContainerServer->FindStringIndex( m_hDecalPrecacheTable, name );
 	return ( idx == INVALID_STRING_INDEX ) ? -1 : idx;
 }

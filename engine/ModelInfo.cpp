@@ -13,6 +13,7 @@
 
 #include "engine/ivmodelinfo.h"
 #include "gl_model_private.h"
+#include "studio_helpers.h"
 #include "modelloader.h"
 #include "l_studio.h"
 #include "cmodel_engine.h"
@@ -46,13 +47,13 @@ static int R_StudioBodyVariations( studiohdr_t *pstudiohdr )
 		return 0;
 
 	count = 1;
-	pbodypart = StudioHdr_GetBodypart(pstudiohdr, 0);
-
 	// Each body part has nummodels variations so there are as many total variations as there
 	// are in a matrix of each part by each other part
 	for ( i = 0; i < StudioHdr_GetNumBodyparts(pstudiohdr); i++ )
 	{
-		count = count * pbodypart[i].nummodels;
+		pbodypart = StudioHdr_GetBodypart(pstudiohdr, i);
+		if (pbodypart)
+			count = count * pbodypart->nummodels;
 	}
 	return count;
 }
@@ -70,7 +71,16 @@ static int ModelFrameCount( model_t *model )
 	}
 	else if ( model->type == mod_studio )
 	{
-		count = R_StudioBodyVariations( ( studiohdr_t * )modelloader->GetExtraData( model ) );
+		// Check if this is a v44+ model using independent system
+		if ( model->studio.hardwareData.m_pV44Model != NULL )
+		{
+			Con_DPrintf("ModelFrameCount: Skipping v44+ model %s (handled by independent system)\n", model->name);
+			count = 1; // Default fallback for v44+ models
+		}
+		else
+		{
+			count = R_StudioBodyVariations( ( studiohdr_t * )modelloader->GetExtraData( model ) );
+		}
 	}
 
 	if ( count < 1 )
@@ -135,6 +145,16 @@ void CModelInfo::GetModelRenderBounds( const model_t *model, int sequence, Vecto
 	{
 	case mod_studio:
 		{
+			// Check if this is a v44+ model - use independent system
+			if ( model->studio.hardwareData.m_pV44Model != NULL )
+			{
+				Con_DPrintf("GetModelRenderBounds: Skipping v44+ model %s (handled by independent system)\n", model->name);
+				// Use model's static bounding box for v44+ models
+				VectorCopy( model->mins, mins );
+				VectorCopy( model->maxs, maxs );
+				return;
+			}
+
 			studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)model );
 			Assert( pStudioHdr );
 
@@ -154,14 +174,16 @@ void CModelInfo::GetModelRenderBounds( const model_t *model, int sequence, Vecto
 			}
 
 			// construct the base bounding box for this frame
-			if ( sequence >= pStudioHdr->numseq) 
+			// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+			if ( sequence >= pStudioHdr->GetNumLocalSeq())
 			{
 				sequence = 0;
 			}
 
-			mstudioseqdesc_t *pseqdesc = pStudioHdr->pSeqdesc( sequence );
-			VectorMin( pseqdesc->bbmin, mins, mins );
-			VectorMax( pseqdesc->bbmax, maxs, maxs );
+			Vector seqBBMin = StudioSeqdesc_GetBBMin( pStudioHdr, sequence );
+			Vector seqBBMax = StudioSeqdesc_GetBBMax( pStudioHdr, sequence );
+			VectorMin( seqBBMin, mins, mins );
+			VectorMax( seqBBMax, maxs, maxs );
 		}
 		break;
 
@@ -231,10 +253,21 @@ void CModelInfo::GetModelMaterials( const model_t *model, int count, IMaterial**
 		Mod_GetModelMaterials( (model_t *)model, count, ppMaterials );
 }
 
-void CModelInfo::GetIlluminationPoint( const model_t *model, const Vector& origin, 
+void CModelInfo::GetIlluminationPoint( const model_t *model, const Vector& origin,
 	const QAngle& angles, Vector* pLightingOrigin )
 {
 	Assert( model->type == mod_studio );
+
+	// Check if this is a v44+ model using independent system
+	if ( model && model->studio.hardwareData.m_pV44Model != NULL )
+	{
+		// v44+ models use independent lighting system
+		// For now, use origin as fallback (v44+ system should handle this independently)
+		Con_DPrintf("GetIlluminationPoint: Using origin fallback for v44+ model %s\n", model->name);
+		*pLightingOrigin = origin;
+		return;
+	}
+
 	studiohdr_t* pStudioHdr = (studiohdr_t*)GetModelExtraData(model);
 	if (pStudioHdr)
 		R_StudioGetLightingCenter( pStudioHdr, origin, angles, pLightingOrigin );
@@ -314,11 +347,18 @@ const char *CModelInfo::GetModelKeyValueText( const model_t *model )
 	if (!model || model->type != mod_studio)
 		return NULL;
 
+	// Check if this is a v44+ model using independent system
+	if ( model->studio.hardwareData.m_pV44Model != NULL )
+	{
+		Con_DPrintf("GetModelKeyValueText: Skipping v44+ model %s (handled by independent system)\n", model->name);
+		return NULL;
+	}
+
 	studiohdr_t* pStudioHdr = (studiohdr_t*)GetModelExtraData( model );
 	if (!pStudioHdr)
 		return NULL;
 
-	return StudioHdr_GetKeyValueText(pStudioHdr);
+	return pStudioHdr->KeyValueText();
 }
 
 //-----------------------------------------------------------------------------

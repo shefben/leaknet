@@ -1103,14 +1103,22 @@ void Cache_Print_Models_And_Totals (void)
 		int k;
 		studiohdr_t			*phdr=(studiohdr_t*)sortarray[j]->user->data;
 
+		// Skip v44+ models - they use independent system and won't be in cache
+		if (phdr && phdr->version >= STUDIO_VERSION_44)
+		{
+			Con_DPrintf("Zone cache report: Skipping v44+ model %s (handled by independent system)\n", sortarray[j]->name);
+			g_pFileSystem->FPrintf(file, "\t%16.16s : %s (v44+ independent)\n", Q_pretifymem(sortarray[j]->size,buf), sortarray[j]->name);
+			totalbytes+=sortarray[j]->size;
+			continue;
+		}
 
-		// Use version-safe accessor for texture data
-		// This code calculates memory usage from texture dimensions - use 0 for v44+ as they don't store textures inline
-		int numTextures = StudioHdr_GetNumTextures(phdr);
+		// Use version-safe accessor for texture data (v37 models only)
+		// This code calculates memory usage from texture dimensions
+		int numTextures = phdr ? phdr->numtextures : 0;
 		subtot=0;
 		for (k = 0; k < numTextures; k++)
 		{
-			mstudiotexture_t* pTex = StudioHdr_GetTexture(phdr, k);
+			mstudiotexture_t* pTex = phdr->pTexture(k);
 			if (pTex)
 				subtot += pTex->width * pTex->height + 768; // (256*3 for the palette)
 		}

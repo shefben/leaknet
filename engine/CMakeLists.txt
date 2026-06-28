@@ -140,6 +140,7 @@ BEGIN_SRC( ENGINE_SOURCE_FILES "Source Files" )
 			"matsys_interface.cpp"
 			"ModelInfo.cpp"
 			"modelloader.cpp" # Precomp: glquake.h
+			"modelloader_v44.cpp" # v44+ independent model system
 			"mod_vis.cpp"
 			"$<$<NOT:${IS_DEDICATED}>:netgraph.cpp>" # !DEDICATED
 			"networkstringtable.cpp"
