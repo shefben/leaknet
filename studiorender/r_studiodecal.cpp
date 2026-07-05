@@ -12,7 +12,6 @@
 //=============================================================================
 
 #include "cstudiorender.h"
-#include "studio_v37_compat.h"
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imesh.h"
 #include "materialsystem/imaterial.h"
@@ -196,6 +195,82 @@ inline bool CStudioRender::TransformToDecalSpace( DecalBuildInfo_t& build, const
 
 
 //-----------------------------------------------------------------------------
+// v37 overloads - use mstudioboneweight_v37_t which has short bone[4]
+//-----------------------------------------------------------------------------
+
+inline bool CStudioRender::IsFrontFacing( const Vector& norm, mstudioboneweight_v37_t *pboneweight )
+{
+	float z;
+	if (pboneweight->numbones == 1)
+	{
+		z = DotProduct( norm.Base(), m_PoseToDecal[pboneweight->bone[0]][2] );
+	}
+	else
+	{
+		float zbone;
+		z = 0;
+		for (int i = 0; i < pboneweight->numbones; i++)
+		{
+			zbone = DotProduct( norm.Base(), m_PoseToDecal[pboneweight->bone[i]][2] );
+			z += zbone * pboneweight->weight[i];
+		}
+	}
+	return ( z >= 0.0f );
+}
+
+inline bool CStudioRender::TransformToDecalSpace( DecalBuildInfo_t& build, const Vector& pos,
+						mstudioboneweight_v37_t *pboneweight, Vector2D& uv )
+{
+	if (pboneweight->numbones == 1)
+	{
+		uv.x = DotProduct( pos.Base(), m_PoseToDecal[pboneweight->bone[0]][0] ) +
+			m_PoseToDecal[pboneweight->bone[0]][0][3];
+		uv.y = DotProduct( pos.Base(), m_PoseToDecal[pboneweight->bone[0]][1] ) +
+			m_PoseToDecal[pboneweight->bone[0]][1][3];
+	}
+	else
+	{
+		uv.x = uv.y = 0;
+		float ubone, vbone;
+		for (int i = 0; i < pboneweight->numbones; i++)
+		{
+			ubone = DotProduct( pos.Base(), m_PoseToDecal[pboneweight->bone[i]][0] ) +
+				m_PoseToDecal[pboneweight->bone[i]][0][3];
+			vbone = DotProduct( pos.Base(), m_PoseToDecal[pboneweight->bone[i]][1] ) +
+				m_PoseToDecal[pboneweight->bone[i]][1][3];
+
+			uv.x += ubone * pboneweight->weight[i];
+			uv.y += vbone * pboneweight->weight[i];
+		}
+	}
+
+	if (!build.m_NoPokeThru)
+		return true;
+
+	// No poke thru? do culling....
+	float z;
+	if (pboneweight->numbones == 1)
+	{
+		z = DotProduct( pos.Base(), m_PoseToDecal[pboneweight->bone[0]][2] ) +
+			m_PoseToDecal[pboneweight->bone[0]][2][3];
+	}
+	else
+	{
+		z = 0;
+		float zbone;
+		for (int i = 0; i < pboneweight->numbones; i++)
+		{
+			zbone = DotProduct( pos.Base(), m_PoseToDecal[pboneweight->bone[i]][2] ) +
+				m_PoseToDecal[pboneweight->bone[i]][2][3];
+			z += zbone * pboneweight->weight[i];
+		}
+	}
+
+	return (fabs(z) < build.m_Radius );
+}
+
+
+//-----------------------------------------------------------------------------
 // Projects a decal onto a mesh
 //-----------------------------------------------------------------------------
 void CStudioRender::ProjectDecalOntoMesh( DecalBuildInfo_t& build )
@@ -206,27 +281,50 @@ void CStudioRender::ProjectDecalOntoMesh( DecalBuildInfo_t& build )
 
 	// For this to work, the plane and intercept must have been transformed
 	// into pose space. Also, we'll not be bothering with flexes.
-	for ( int j=0; j < build.m_pMesh->numvertices; ++j )
+	const bool bUseV37VertexLayout = ( !build.m_pStudioHdr || build.m_pStudioHdr->IsV37() );
+	const int numVertices = StudioMesh_GetNumVertices( build.m_pStudioHdr, build.m_pMesh );
+	for ( int j=0; j < numVertices; ++j )
 	{
-		// Use version-aware vertex access for v37 model compatibility
-		Vector vecPosition, vecNormal;
+		Vector position;
+		Vector normal;
 		mstudioboneweight_t boneWeight;
-		Studio_GetVertexAndBoneWeight_V37Aware( build.m_pStudioHdr, build.m_pMesh, j,
-			vecPosition, vecNormal, boneWeight );
 
 		// No decal vertex yet...
 		pVertexInfo[j].m_VertexIndex = 0xFFFF;
 
 		// We need to know if the normal is pointing in the negative direction
 		// if so, blow off all triangles connected to that vertex.
-		pVertexInfo[j].m_FrontFacing = IsFrontFacing( vecNormal, &boneWeight );
+		if ( bUseV37VertexLayout )
+		{
+			mstudiovertex_v37_t &vert = *build.m_pMesh->Vertex_v37(j);
+			position = vert.m_vecPosition;
+			normal = vert.m_vecNormal;
+			pVertexInfo[j].m_FrontFacing = IsFrontFacing( normal, &vert.m_BoneWeights );
+			if (!pVertexInfo[j].m_FrontFacing)
+			{
+				continue;
+			}
+
+			bool inValidArea = TransformToDecalSpace( build, position, &vert.m_BoneWeights, pVertexInfo[j].m_UV );
+			pVertexInfo[j].m_InValidArea = inValidArea;
+		}
+		else
+		{
+			Studio_GetVertexAndBoneWeight_V37Aware( build.m_pStudioHdr, build.m_pMesh, j,
+				position, normal, boneWeight );
+			pVertexInfo[j].m_FrontFacing = IsFrontFacing( normal, &boneWeight );
+			if (!pVertexInfo[j].m_FrontFacing)
+			{
+				continue;
+			}
+
+			bool inValidArea = TransformToDecalSpace( build, position, &boneWeight, pVertexInfo[j].m_UV );
+			pVertexInfo[j].m_InValidArea = inValidArea;
+		}
 		if (!pVertexInfo[j].m_FrontFacing)
 		{
 			continue;
 		}
-
-		bool inValidArea = TransformToDecalSpace( build, vecPosition, &boneWeight, pVertexInfo[j].m_UV );
-		pVertexInfo[j].m_InValidArea = inValidArea;
 
 		pVertexInfo[j].m_UV *= invRadius * 0.5f;
 		pVertexInfo[j].m_UV[0] += 0.5f;
@@ -353,22 +451,28 @@ static void ClipTriangleAgainstPlane( DecalClipState_t& state, int normalInd, in
 //-----------------------------------------------------------------------------
 // Converts a mesh index to a DecalVertex_t
 //-----------------------------------------------------------------------------
-void CStudioRender::ConvertMeshVertexToDecalVertex( DecalBuildInfo_t& build,
+void CStudioRender::ConvertMeshVertexToDecalVertex( DecalBuildInfo_t& build, 
 									int meshIndex, DecalVertex_t& decalVertex )
 {
 	// Copy over the data;
 	// get the texture coords from the decal planar projection
 
 	Assert( meshIndex < MAXSTUDIOVERTS );
-
-	// Use version-aware vertex access for v37 model compatibility
-	Vector vecPosition, vecNormal;
-	Vector2D vecTexCoord;
-	Studio_GetVertexData_V37Aware( build.m_pStudioHdr, build.m_pMesh, meshIndex,
-		vecPosition, vecNormal, vecTexCoord );
-
-	VectorCopy( vecPosition, decalVertex.m_Position );
-	VectorCopy( vecNormal, decalVertex.m_Normal );
+	
+	if ( !build.m_pStudioHdr || build.m_pStudioHdr->IsV37() )
+	{
+		VectorCopy( *build.m_pMesh->Position_v37(meshIndex), decalVertex.m_Position );
+		VectorCopy( *build.m_pMesh->Normal_v37(meshIndex), decalVertex.m_Normal );
+	}
+	else
+	{
+		Vector position;
+		Vector normal;
+		Vector2D texCoord;
+		Studio_GetVertexData_V37Aware( build.m_pStudioHdr, build.m_pMesh, meshIndex, position, normal, texCoord );
+		VectorCopy( position, decalVertex.m_Position );
+		VectorCopy( normal, decalVertex.m_Normal );
+	}
 	Vector2DCopy( build.m_pVertexInfo[meshIndex].m_UV, decalVertex.m_TexCoord );
 	decalVertex.m_MeshVertexIndex = meshIndex;
 	decalVertex.m_Mesh = build.m_Mesh;
@@ -618,12 +722,12 @@ void CStudioRender::AddDecalToMesh( DecalBuildInfo_t& build )
 	if (build.m_SuppressTlucDecal)
 	{
 		short *pSkinRef	= StudioHdr_GetSkinRef( m_pStudioHdr, 0 );
-		IMaterial *pMaterial = build.m_ppMaterials[pSkinRef[build.m_pMesh->material]];
+		IMaterial *pMaterial = build.m_ppMaterials[pSkinRef[StudioMesh_GetMaterial(m_pStudioHdr, build.m_pMesh)]];
 		if (pMaterial->IsTranslucent())
 			return;
 	}
 
-	build.m_pVertexInfo = (DecalBuildVertexInfo_t*)_alloca( build.m_pMesh->numvertices * sizeof(DecalBuildVertexInfo_t) );
+	build.m_pVertexInfo = (DecalBuildVertexInfo_t*)_alloca( StudioMesh_GetNumVertices( m_pStudioHdr, build.m_pMesh ) * sizeof(DecalBuildVertexInfo_t) );
 
 	// Project all vertices for this group into decal space
 	// Note we do this work at a mesh level instead of a model level
@@ -683,9 +787,7 @@ void CStudioRender::AddDecalToModel( DecalBuildInfo_t& buildInfo )
 	// we need to know the center of each mesh, could also store a
 	// bounding radius for each mesh and test the ray against each sphere.
 
-	// Use version-safe accessors for v44+ model compatibility
-	int numMeshes = StudioModel_GetNumMeshes(m_pStudioHdr, m_pSubModel);
-	for ( int i = 0; i < numMeshes; ++i)
+	for ( int i = 0; i < StudioModel_GetNumMeshes(m_pStudioHdr, m_pSubModel); ++i)
 	{
 		buildInfo.m_Mesh = i;
 		buildInfo.m_pMesh = StudioModel_GetMesh(m_pStudioHdr, m_pSubModel, i);
@@ -740,7 +842,7 @@ bool CStudioRender::ComputePoseToDecal( const Ray_t& ray, const Vector& up )
 	worldToDecal[2][3] = -DotProduct( ray.m_Start.Base(), worldToDecal[2] );
 
 	// Compute transforms from pose space to decal plane space
-	for ( int i = 0; i < m_pStudioHdr->numbones; i++)
+	for ( int i = 0; i < StudioHdr_GetNumBones(m_pStudioHdr); i++)
 	{
 		ConcatTransforms( worldToDecal, m_PoseToWorld[i], m_PoseToDecal[i] );
 	}
@@ -922,7 +1024,7 @@ void CStudioRender::AddDecal( StudioDecalHandle_t handle, studiohdr_t *pStudioHd
 		m_pStudioMeshes = list.m_pHardwareData->m_pLODs[i].m_pMeshData;
 
 		// Clip decals when there's no flexes or bones
- 		buildInfo.m_UseClipVert = ( m_pStudioHdr->numbones <= 1 ) && ( m_pStudioHdr->numflexdesc == 0 );
+ 		buildInfo.m_UseClipVert = ( StudioHdr_GetNumBones(m_pStudioHdr) <= 1 ) && ( StudioHdr_GetNumFlexDescs(m_pStudioHdr) == 0 );
 
 		// Don't decal on meshes that are translucent if it's twopass
 		buildInfo.m_SuppressTlucDecal = (m_pStudioHdr->flags & STUDIOHDR_FLAGS_TRANSLUCENT_TWOPASS) != 0;
@@ -1091,17 +1193,24 @@ void CStudioRender::DrawMultiBoneDecals( CMeshBuilder& meshBuilder, DecalMateria
 		else
 		{
 			// Prevent the computation of this again....
-			m_VertexCache.SetupComputation(pMesh, m_pStudioHdr);
+			m_VertexCache.SetupComputation(pMesh);
 			CachedVertex_t* pCachedVert = m_VertexCache.CreateWorldVertex( n );
 
-			// Use version-aware vertex access for v37 model compatibility
-			Vector vecPosition, vecNormal;
-			mstudioboneweight_t boneWeight;
-			Studio_GetVertexAndBoneWeight_V37Aware( pStudioHdr, pMesh, n,
-				vecPosition, vecNormal, boneWeight );
-
-			R_StudioTransform( vecPosition, &boneWeight, pCachedVert->m_Position );
-			R_StudioRotate( vecNormal, &boneWeight, pCachedVert->m_Normal );
+			if ( !pStudioHdr || pStudioHdr->IsV37() )
+			{
+				mstudioboneweight_v37_t* pBoneWeights = pMesh->BoneWeights_v37( n );
+				R_StudioTransform( *pMesh->Position_v37(n), pBoneWeights, pCachedVert->m_Position );
+				R_StudioRotate( *pMesh->Normal_v37(n), pBoneWeights, pCachedVert->m_Normal );
+			}
+			else
+			{
+				Vector position;
+				Vector normal;
+				mstudioboneweight_t boneWeight;
+				Studio_GetVertexAndBoneWeight_V37Aware( pStudioHdr, pMesh, n, position, normal, boneWeight );
+				R_StudioTransform( position, &boneWeight, pCachedVert->m_Position );
+				R_StudioRotate( normal, &boneWeight, pCachedVert->m_Normal );
+			}
 
 			// Add a little extra offset for hardware skinning; in that case
 			// we're doing software skinning for decals and it might not be quite right
@@ -1133,21 +1242,25 @@ void CStudioRender::DrawMultiBoneFlexedDecals( CMeshBuilder& meshBuilder, DecalM
 	m_pMaterialSystem->MatrixMode( MATERIAL_MODEL );
 	m_pMaterialSystem->LoadIdentity( );
 
-	DecalVertexList_t& verts = decalMaterial.m_Vertices;
+	DecalVertexList_t& verts = decalMaterial.m_Vertices; 
 	for ( unsigned short i = verts.Head(); i != verts.InvalidIndex(); i = verts.Next(i) )
 	{
 		DecalVertex_t& vertex = verts[i];
-
+		
 		int n = vertex.m_MeshVertexIndex;
 
 		mstudiomesh_t *pMesh = vertex.GetMesh( pStudioHdr );
 		Assert( pMesh );
 
-		// Use version-aware vertex access for v37 model compatibility
-		Vector vecPosition, vecNormal;
+		const bool bUseV37VertexLayout = ( !pStudioHdr || pStudioHdr->IsV37() );
+		mstudioboneweight_v37_t* pBoneWeights37 = bUseV37VertexLayout ? pMesh->BoneWeights_v37( n ) : NULL;
 		mstudioboneweight_t boneWeight;
-		Studio_GetVertexAndBoneWeight_V37Aware( pStudioHdr, pMesh, n,
-			vecPosition, vecNormal, boneWeight );
+		Vector position;
+		Vector normal;
+		if ( !bUseV37VertexLayout )
+		{
+			Studio_GetVertexAndBoneWeight_V37Aware( pStudioHdr, pMesh, n, position, normal, boneWeight );
+		}
 
 		m_VertexCache.SetBodyModelMesh( vertex.m_Body, vertex.m_Model, vertex.m_Mesh );
 
@@ -1160,20 +1273,36 @@ void CStudioRender::DrawMultiBoneFlexedDecals( CMeshBuilder& meshBuilder, DecalM
 		else
 		{
 			// Prevent the computation of this again....
-			m_VertexCache.SetupComputation(pMesh, m_pStudioHdr);
+			m_VertexCache.SetupComputation(pMesh);
 			CachedVertex_t* pCachedVert = m_VertexCache.CreateWorldVertex( n );
 
 			if (m_VertexCache.IsVertexFlexed( n ))
 			{
 				CachedVertex_t* pFlexedVertex = m_VertexCache.GetFlexVertex( n );
-				R_StudioTransform( pFlexedVertex->m_Position, &boneWeight, pCachedVert->m_Position );
-				R_StudioRotate( pFlexedVertex->m_Normal, &boneWeight, pCachedVert->m_Normal );
+				if ( bUseV37VertexLayout )
+				{
+					R_StudioTransform( pFlexedVertex->m_Position, pBoneWeights37, pCachedVert->m_Position );
+					R_StudioRotate( pFlexedVertex->m_Normal, pBoneWeights37, pCachedVert->m_Normal );
+				}
+				else
+				{
+					R_StudioTransform( pFlexedVertex->m_Position, &boneWeight, pCachedVert->m_Position );
+					R_StudioRotate( pFlexedVertex->m_Normal, &boneWeight, pCachedVert->m_Normal );
+				}
 			}
 			else
 			{
 				Assert( pMesh );
-				R_StudioTransform( vecPosition, &boneWeight, pCachedVert->m_Position );
-				R_StudioRotate( vecNormal, &boneWeight, pCachedVert->m_Normal );
+				if ( bUseV37VertexLayout )
+				{
+					R_StudioTransform( *pMesh->Position_v37(n), pBoneWeights37, pCachedVert->m_Position );
+					R_StudioRotate( *pMesh->Normal_v37(n), pBoneWeights37, pCachedVert->m_Normal );
+				}
+				else
+				{
+					R_StudioTransform( position, &boneWeight, pCachedVert->m_Position );
+					R_StudioRotate( normal, &boneWeight, pCachedVert->m_Normal );
+				}
 			}
 
 			// Add a little extra offset for hardware skinning; in that case
@@ -1230,16 +1359,16 @@ void CStudioRender::DrawDecalMaterial( DecalMaterial_t& decalMaterial, studiohdr
 
 	// Two possibilities: no/one bones, we let the hardware do all transformation
 	// or, more than one bone, we do software skinning.
-	if (m_pStudioHdr->numbones <= 1)
+	if (StudioHdr_GetNumBones(m_pStudioHdr) <= 1)
 	{
-		if (m_pStudioHdr->numflexdesc == 0)
+		if (StudioHdr_GetNumFlexDescs(m_pStudioHdr) == 0)
 			DrawSingleBoneDecals( meshBuilder, decalMaterial );
 		else
 			DrawSingleBoneFlexedDecals( meshBuilder, decalMaterial );
 	}
 	else
 	{
-		if (m_pStudioHdr->numflexdesc == 0)
+		if (StudioHdr_GetNumFlexDescs(m_pStudioHdr) == 0)
 			DrawMultiBoneDecals( meshBuilder, decalMaterial, pStudioHdr );
 		else
 			DrawMultiBoneFlexedDecals( meshBuilder, decalMaterial, pStudioHdr );
@@ -1299,7 +1428,7 @@ void CStudioRender::DrawDecal( StudioDecalHandle_t handle, studiohdr_t *pStudioH
 	m_pStudioHdr = pStudioHdr;
 
 	// Compute all the bone matrices the way the material system wants it
-	for ( int i = 0; i < m_pStudioHdr->numbones; i++)
+	for ( int i = 0; i < StudioHdr_GetNumBones(m_pStudioHdr); i++)
 	{
 		BoneMatToMaterialMat( m_PoseToWorld[i], m_MaterialPoseToWorld[i] );
 	}
@@ -1313,4 +1442,3 @@ void CStudioRender::DrawDecal( StudioDecalHandle_t handle, studiohdr_t *pStudioH
 		DrawDecalMaterial( decalMaterial, pStudioHdr );
 	}
 }
-

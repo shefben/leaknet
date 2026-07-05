@@ -53,6 +53,10 @@
 #include "igameevents.h"
 #include "KeyValues.h"
 #include "recipientfilter.h"
+#ifdef BMOD_DLL
+#include "bmod_dll/gmod_player_start.h"
+#include "bmod_dll/gmod_gamemode.h"
+#endif
 
 static ConVar	sv_aim( "sv_aim", "1", FCVAR_ARCHIVE | FCVAR_SERVER, "Autoaim state" );
 static ConVar dsp_explosion_effect_duration( "dsp_explosion_effect_duration", "4", 0, "How long to apply confusion/ear-ringing effect after taking damage from blast." );
@@ -135,9 +139,11 @@ BEGIN_DATADESC( CBasePlayer )
 
 	//DEFINE_FIELD( CBasePlayer, m_fOnTarget, FIELD_BOOLEAN ), // Don't need to restore
 	DEFINE_FIELD( CBasePlayer, m_iObserverMode, FIELD_INTEGER ),
+	DEFINE_FIELD( CBasePlayer, m_flChaseCamDistance, FIELD_FLOAT ),
 	DEFINE_FIELD( CBasePlayer, m_iObserverLastMode, FIELD_INTEGER ),
 	DEFINE_FIELD( CBasePlayer, m_hObserverTarget, FIELD_EHANDLE ),
 	DEFINE_FIELD( CBasePlayer, m_bForcedObserverMode, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CBasePlayer, m_bAllowNonPlayerObserverTarget, FIELD_BOOLEAN ),
 //	DEFINE_FIELD( CBasePlayer, m_hAutoAimTarget, FIELD_EHANDLE ),
 	DEFINE_AUTO_ARRAY( CBasePlayer, m_szAnimExtension, FIELD_CHARACTER ),
 //	DEFINE_FIELD( CBasePlayer, m_Activity, FIELD_INTEGER ),
@@ -1756,12 +1762,15 @@ void CBasePlayer::StartDeathCam( void )
 void CBasePlayer::StopObserverMode()
 {
 	m_bForcedObserverMode = false;
+	m_bAllowNonPlayerObserverTarget = false;
 	m_iObserverMode = OBS_MODE_NONE;
+	m_flChaseCamDistance = 96.0f;	// Default chase cam distance
 	m_afPhysicsFlags &= ~PFLAG_OBSERVER;
 }
 
 bool CBasePlayer::StartObserverMode( Vector vecPosition, QAngle vecViewAngle )
 {
+	m_bAllowNonPlayerObserverTarget = false;
 	m_afPhysicsFlags |= PFLAG_OBSERVER;
 
 	// Holster weapon immediately, to allow it to cleanup
@@ -1924,9 +1933,22 @@ CBaseEntity * CBasePlayer::GetObserverTarget()
 
 bool CBasePlayer::SetObserverTarget(CBaseEntity * target)
 {
+	const bool bAllowNonPlayerTarget = target && !target->IsPlayer();
+	if ( bAllowNonPlayerTarget )
+	{
+		m_bAllowNonPlayerObserverTarget = true;
+	}
+
 	if ( !IsValidObserverTarget( target ) )
+	{
+		if ( bAllowNonPlayerTarget )
+		{
+			m_bAllowNonPlayerObserverTarget = false;
+		}
 		return false;
+	}
 	
+	m_bAllowNonPlayerObserverTarget = bAllowNonPlayerTarget;
 	m_hObserverTarget.Set( target );
 
 	return true;
@@ -1939,8 +1961,10 @@ bool CBasePlayer::IsValidObserverTarget(CBaseEntity * target)
 
 	// MOD AUTHORS: Add checks on target here or in derived methode
 
-	if ( !target->IsPlayer() )	// only track players
-		return false;
+	if ( !target->IsPlayer() )	// only track players, unless GMod Lua explicitly targeted this entity
+	{
+		return m_bAllowNonPlayerObserverTarget;
+	}
 
 	CBasePlayer * player = ToBasePlayer( target );
 
@@ -1992,11 +2016,17 @@ CBaseEntity * CBasePlayer::FindNextObserverTarget(bool bReverse)
 	*/	// TODO move outside this function
 
 	int		startIndex;
-	
-	if ( m_hObserverTarget )
+
+	// This function cycles through PLAYER entities (UTIL_PlayerByIndex), so the start/terminate
+	// sentinel MUST be a valid client slot in [1, maxClients]. bmod's melonracer sets the observer
+	// target to a NON-player prop (the watermelon, entindex >> maxClients) via _PlayerSpectatorTarget.
+	// If we seed startIndex from that prop's entindex, currentIndex (always clamped to [1,maxClients]
+	// below) can never equal startIndex and the do/while spins forever -> hard client freeze on
+	// respawn. Only seed from the observer target when it is itself a player.
+	if ( m_hObserverTarget && m_hObserverTarget->IsPlayer() )
 	{
 		// start using last followed player
-		startIndex = m_hObserverTarget->entindex();	
+		startIndex = m_hObserverTarget->entindex();
 	}
 	else
 	{
@@ -2005,8 +2035,11 @@ CBaseEntity * CBasePlayer::FindNextObserverTarget(bool bReverse)
 	}
 
 	int	currentIndex = startIndex;
-	int iDir = bReverse ? -1 : 1; 
-	
+	int iDir = bReverse ? -1 : 1;
+
+	// Defense in depth: there are at most maxClients player targets, so cap the scan at that many
+	// iterations. Guarantees termination even if startIndex is ever out of range for any reason.
+	int iterationsLeft = gpGlobals->maxClients;
 	do
 	{
 		currentIndex += iDir;
@@ -2023,8 +2056,8 @@ CBaseEntity * CBasePlayer::FindNextObserverTarget(bool bReverse)
 		{
 			return nextTarget;	// found next valid player
 		}
-	} while ( currentIndex != startIndex );
-		
+	} while ( currentIndex != startIndex && --iterationsLeft > 0 );
+
 	return NULL;
 }
 
@@ -3446,6 +3479,18 @@ CBaseEntity *CBasePlayer::EntSelectSpawnPoint()
 
 	player = edict();
 
+#ifdef BMOD_DLL
+	// First, try to find a gmod_player_start entity for GMod gamemodes
+	// This handles team-based spawning for maps like melonrace
+	pSpot = FindGModPlayerStart(this);
+	if (pSpot)
+	{
+		DevMsg("EntSelectSpawnPoint: Using gmod_player_start at (%.1f, %.1f, %.1f)\n",
+			pSpot->GetAbsOrigin().x, pSpot->GetAbsOrigin().y, pSpot->GetAbsOrigin().z);
+		goto ReturnSpot;
+	}
+#endif
+
 // choose a info_player_deathmatch point
 	if (g_pGameRules->IsCoOp())
 	{
@@ -3608,7 +3653,12 @@ void CBasePlayer::Spawn( void )
 	m_Local.m_flFallVelocity = 0;
 
 	if ( !m_fGameHUDInitialized )
-		g_pGameRules->SetDefaultPlayerTeam( this );
+	{
+#ifdef BMOD_DLL
+		if ( !CGModGamemodeSystem::PickDefaultSpawnTeam( this ) )
+#endif
+			g_pGameRules->SetDefaultPlayerTeam( this );
+	}
 
 	SetSequence( SelectWeightedSequence( ACT_IDLE ) );
 
@@ -4085,9 +4135,13 @@ CBaseEntity	*CBasePlayer::GiveNamedItem( const char *pszName, int iSubType )
 
 	EHANDLE pent;
 
+	bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+	CBaseEntity::SetAllowPrecache( true );
+
 	pent = CreateEntityByName(pszName);
 	if ( pent == NULL )
 	{
+		CBaseEntity::SetAllowPrecache( bAllowPrecache );
 		Msg( "NULL Ent in GiveNamedItem!\n" );
 		return NULL;
 	}
@@ -4110,6 +4164,8 @@ CBaseEntity	*CBasePlayer::GiveNamedItem( const char *pszName, int iSubType )
 	{
 		pent->Touch( this );
 	}
+
+	CBaseEntity::SetAllowPrecache( bAllowPrecache );
 
 	return pent;
 }
@@ -5782,6 +5838,7 @@ void SendProxy_CropFlagsToPlayerFlagBitsLength( const void *pStruct, const void 
 		SendPropFloat		( SENDINFO( m_flConstraintSpeedFactor ), 0, SPROP_NOSCALE ),
 
 		SendPropInt			( SENDINFO( m_iObserverMode ), 3, SPROP_UNSIGNED ),
+		SendPropFloat		( SENDINFO( m_flChaseCamDistance ), 0, SPROP_NOSCALE ),
 		SendPropEHandle		( SENDINFO( m_hObserverTarget ) ),
 
 		SendPropInt			( SENDINFO( m_nWaterLevel ), 2, SPROP_UNSIGNED ),

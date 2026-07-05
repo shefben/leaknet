@@ -344,9 +344,23 @@ IVP_Material *CPhysicsSurfaceProps::GetIVPMaterial( int materialIndex )
 {
 	if ( IsReservedMaterialIndex( materialIndex ) )
 	{
-		return GetReservedMaterial( materialIndex );
+		IVP_Material *pReserved = GetReservedMaterial( materialIndex );
+		if ( pReserved )
+			return pReserved;
 	}
-	return GetInternalSurface(materialIndex);
+	else
+	{
+		CSurface *pSurface = GetInternalSurface( materialIndex );
+		if ( pSurface )
+			return pSurface;
+	}
+
+	// Never return a NULL material. The physics DLL is built NDEBUG, so IVP's
+	// IVP_ASSERT(mtl) in IVP_Contact_Point::get_material_info() is compiled out; a NULL here
+	// becomes a null-deref in IVP_Material_Manager::get_elasticity() on first contact (e.g. a
+	// thrown grenade whose default/ledge material index does not resolve in this surfaceprop
+	// database). Fall back to the always-present "default" surface, mirroring GetSurfaceData().
+	return GetInternalSurface( GetSurfaceIndex( "default" ) );
 }
 
 

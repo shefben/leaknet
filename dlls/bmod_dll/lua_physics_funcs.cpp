@@ -27,6 +27,44 @@ static IPhysicsObject* GetPhysicsObject(CBaseEntity *pEntity)
 	return pEntity->VPhysicsGetObject();
 }
 
+static bool LuaGetVector(lua_State *L, int index, Vector& vec)
+{
+	if (lua_istable(L, index))
+	{
+		lua_getfield(L, index, "x");
+		lua_getfield(L, index, "y");
+		lua_getfield(L, index, "z");
+
+		vec.x = (float)lua_tonumber(L, -3);
+		vec.y = (float)lua_tonumber(L, -2);
+		vec.z = (float)lua_tonumber(L, -1);
+
+		lua_pop(L, 3);
+		return true;
+	}
+
+	if (lua_gettop(L) >= index + 2 && lua_isnumber(L, index))
+	{
+		vec.x = CLuaUtility::GetFloat(L, index);
+		vec.y = CLuaUtility::GetFloat(L, index + 1);
+		vec.z = CLuaUtility::GetFloat(L, index + 2);
+		return true;
+	}
+
+	return false;
+}
+
+static void LuaPushVector(lua_State *L, const Vector& vec)
+{
+	lua_newtable(L);
+	lua_pushnumber(L, vec.x);
+	lua_setfield(L, -2, "x");
+	lua_pushnumber(L, vec.y);
+	lua_setfield(L, -2, "y");
+	lua_pushnumber(L, vec.z);
+	lua_setfield(L, -2, "z");
+}
+
 // _phys_EnableMotion - Enable/disable physics motion
 int Lua_PhysEnableMotion(lua_State *L)
 {
@@ -38,7 +76,15 @@ int Lua_PhysEnableMotion(lua_State *L)
 	if (!pPhys)
 		return CLuaUtility::LuaError(L, "_phys_EnableMotion: Entity has no physics");
 
+	// TEMP diagnostic: this is the RaceStart un-freeze path; log it so we can confirm it runs.
+	DevMsg( "GMod Phys EnableMotion(_Phys): ent %d enable=%d (was moveable=%d)\n",
+		entIndex, enable ? 1 : 0, pPhys->IsMoveable() ? 1 : 0 );
 	pPhys->EnableMotion(enable);
+	// Mirror the engine's CPhysicsProp::EnableMotion(): a frozen (pinned) object
+	// falls asleep, and a sleeping object silently discards async forces. Wake it on
+	// unfreeze so DoControls' ApplyForceCenter can actually roll the melon.
+	if (enable)
+		pPhys->Wake();
 	return 0;
 }
 
@@ -178,16 +224,25 @@ int Lua_PhysHasPhysics(lua_State *L)
 int Lua_PhysApplyForceCenter(lua_State *L)
 {
 	int entIndex = CLuaUtility::GetInt(L, 1);
-	float x = CLuaUtility::GetFloat(L, 2);
-	float y = CLuaUtility::GetFloat(L, 3);
-	float z = CLuaUtility::GetFloat(L, 4);
+	Vector force;
 
 	CBaseEntity *pEntity = UTIL_EntityByIndex(entIndex);
 	IPhysicsObject *pPhys = GetPhysicsObject(pEntity);
 	if (!pPhys)
 		return CLuaUtility::LuaError(L, "_phys_ApplyForceCenter: Entity has no physics");
 
-	pPhys->ApplyForceCenter(Vector(x, y, z));
+	if (!LuaGetVector(L, 2, force))
+		return CLuaUtility::LuaError(L, "_phys_ApplyForceCenter: Expected vector3 or x,y,z");
+
+	static int s_nLoggedApplyForceCenter = 0;
+	if (s_nLoggedApplyForceCenter < 16)
+	{
+		DevMsg("GMod Lua: _phys.ApplyForceCenter ent %d force (%.1f %.1f %.1f)\n",
+			entIndex, force.x, force.y, force.z);
+		++s_nLoggedApplyForceCenter;
+	}
+
+	pPhys->ApplyForceCenter(force);
 	return 0;
 }
 
@@ -195,19 +250,26 @@ int Lua_PhysApplyForceCenter(lua_State *L)
 int Lua_PhysApplyForceOffset(lua_State *L)
 {
 	int entIndex = CLuaUtility::GetInt(L, 1);
-	float fx = CLuaUtility::GetFloat(L, 2);
-	float fy = CLuaUtility::GetFloat(L, 3);
-	float fz = CLuaUtility::GetFloat(L, 4);
-	float ox = CLuaUtility::GetFloat(L, 5);
-	float oy = CLuaUtility::GetFloat(L, 6);
-	float oz = CLuaUtility::GetFloat(L, 7);
+	Vector force;
+	Vector offset;
 
 	CBaseEntity *pEntity = UTIL_EntityByIndex(entIndex);
 	IPhysicsObject *pPhys = GetPhysicsObject(pEntity);
 	if (!pPhys)
 		return CLuaUtility::LuaError(L, "_phys_ApplyForceOffset: Entity has no physics");
 
-	pPhys->ApplyForceOffset(Vector(fx, fy, fz), Vector(ox, oy, oz));
+	if (lua_istable(L, 2))
+	{
+		if (!LuaGetVector(L, 2, force) || !LuaGetVector(L, 3, offset))
+			return CLuaUtility::LuaError(L, "_phys_ApplyForceOffset: Expected force and offset vectors");
+	}
+	else
+	{
+		if (!LuaGetVector(L, 2, force) || !LuaGetVector(L, 5, offset))
+			return CLuaUtility::LuaError(L, "_phys_ApplyForceOffset: Expected force and offset vectors");
+	}
+
+	pPhys->ApplyForceOffset(force, offset);
 	return 0;
 }
 
@@ -215,16 +277,17 @@ int Lua_PhysApplyForceOffset(lua_State *L)
 int Lua_PhysApplyTorqueCenter(lua_State *L)
 {
 	int entIndex = CLuaUtility::GetInt(L, 1);
-	float x = CLuaUtility::GetFloat(L, 2);
-	float y = CLuaUtility::GetFloat(L, 3);
-	float z = CLuaUtility::GetFloat(L, 4);
+	Vector torque;
 
 	CBaseEntity *pEntity = UTIL_EntityByIndex(entIndex);
 	IPhysicsObject *pPhys = GetPhysicsObject(pEntity);
 	if (!pPhys)
 		return CLuaUtility::LuaError(L, "_phys_ApplyTorqueCenter: Entity has no physics");
 
-	pPhys->ApplyTorqueCenter(AngularImpulse(x, y, z));
+	if (!LuaGetVector(L, 2, torque))
+		return CLuaUtility::LuaError(L, "_phys_ApplyTorqueCenter: Expected vector3 or x,y,z");
+
+	pPhys->ApplyTorqueCenter(AngularImpulse(torque.x, torque.y, torque.z));
 	return 0;
 }
 
@@ -254,16 +317,27 @@ int Lua_TraceSetMask(lua_State *L)
 // _TraceLine - Perform a line trace
 int Lua_TraceLine(lua_State *L)
 {
-	float x1 = CLuaUtility::GetFloat(L, 1);
-	float y1 = CLuaUtility::GetFloat(L, 2);
-	float z1 = CLuaUtility::GetFloat(L, 3);
-	float x2 = CLuaUtility::GetFloat(L, 4);
-	float y2 = CLuaUtility::GetFloat(L, 5);
-	float z2 = CLuaUtility::GetFloat(L, 6);
-	int ignoreEnt = CLuaUtility::GetInt(L, 7, -1);
+	Vector start;
+	Vector end;
+	int ignoreEnt = -1;
 
-	Vector start(x1, y1, z1);
-	Vector end(x2, y2, z2);
+	if (lua_istable(L, 1))
+	{
+		Vector direction;
+		if (!LuaGetVector(L, 1, start) || !LuaGetVector(L, 2, direction))
+			return CLuaUtility::LuaError(L, "_TraceLine: Expected start and direction vectors");
+
+		float distance = CLuaUtility::GetFloat(L, 3, 0.0f);
+		end = start + (direction * distance);
+		ignoreEnt = CLuaUtility::GetInt(L, 4, -1);
+	}
+	else
+	{
+		if (!LuaGetVector(L, 1, start) || !LuaGetVector(L, 4, end))
+			return CLuaUtility::LuaError(L, "_TraceLine: Expected vector/distance or start/end coordinates");
+
+		ignoreEnt = CLuaUtility::GetInt(L, 7, -1);
+	}
 
 	CBaseEntity *pIgnore = ignoreEnt > 0 ? UTIL_EntityByIndex(ignoreEnt) : NULL;
 
@@ -277,10 +351,8 @@ int Lua_TraceLine(lua_State *L)
 // _TraceEndPos - Get end position of last trace
 int Lua_TraceEndPos(lua_State *L)
 {
-	lua_pushnumber(L, g_LuaTrace.endpos.x);
-	lua_pushnumber(L, g_LuaTrace.endpos.y);
-	lua_pushnumber(L, g_LuaTrace.endpos.z);
-	return 3;
+	LuaPushVector(L, g_LuaTrace.endpos);
+	return 1;
 }
 
 // _TraceFraction - Get fraction of last trace
@@ -311,6 +383,20 @@ int Lua_TraceHit(lua_State *L)
 	return 1;
 }
 
+// _TraceDidHitHitbox - whether the last trace hit a model hitbox (original checks the hitbox bit).
+int Lua_TraceDidHitHitbox(lua_State *L)
+{
+	lua_pushboolean(L, g_LuaTrace.hitbox != 0);
+	return 1;
+}
+
+// _TraceAttack - apply the last trace as an attack. bmod does not run the original's damage
+// pipeline here; the function is registered so scripts do not nil-call. (Unused by shipped content.)
+int Lua_TraceAttack(lua_State *L)
+{
+	return 0;
+}
+
 // _TraceGetEnt - Get entity hit by last trace
 int Lua_TraceGetEnt(lua_State *L)
 {
@@ -324,10 +410,8 @@ int Lua_TraceGetEnt(lua_State *L)
 // _TraceGetSurfaceNormal - Get surface normal from last trace
 int Lua_TraceGetSurfaceNormal(lua_State *L)
 {
-	lua_pushnumber(L, g_LuaTrace.plane.normal.x);
-	lua_pushnumber(L, g_LuaTrace.plane.normal.y);
-	lua_pushnumber(L, g_LuaTrace.plane.normal.z);
-	return 3;
+	LuaPushVector(L, g_LuaTrace.plane.normal);
+	return 1;
 }
 
 // _TraceDidHitSky - Check if trace hit sky
@@ -358,23 +442,10 @@ int Lua_TraceGetTexture(lua_State *L)
 void RegisterLuaPhysicsFunctions()
 {
 	// Physics control (original names)
-	CLuaIntegration::RegisterFunction("_phys_EnableMotion", Lua_PhysEnableMotion, "Enable/disable motion. Syntax: <entid> <bool>");
-	CLuaIntegration::RegisterFunction("_phys_EnableGravity", Lua_PhysEnableGravity, "Enable/disable gravity. Syntax: <entid> <bool>");
-	CLuaIntegration::RegisterFunction("_phys_EnableDrag", Lua_PhysEnableDrag, "Enable/disable drag. Syntax: <entid> <bool>");
-	CLuaIntegration::RegisterFunction("_phys_EnableCollisions", Lua_PhysEnableCollisions, "Enable/disable collisions. Syntax: <entid> <bool>");
 
 	// Physics properties (original names)
-	CLuaIntegration::RegisterFunction("_phys_GetMass", Lua_PhysGetMass, "Get mass. Syntax: <entid>");
-	CLuaIntegration::RegisterFunction("_phys_SetMass", Lua_PhysSetMass, "Set mass. Syntax: <entid> <mass>");
-	CLuaIntegration::RegisterFunction("_phys_Sleep", Lua_PhysSleep, "Put physics to sleep. Syntax: <entid>");
-	CLuaIntegration::RegisterFunction("_phys_Wake", Lua_PhysWake, "Wake physics. Syntax: <entid>");
-	CLuaIntegration::RegisterFunction("_phys_IsAsleep", Lua_PhysIsAsleep, "Check if asleep. Syntax: <entid>");
-	CLuaIntegration::RegisterFunction("_phys_HasPhysics", Lua_PhysHasPhysics, "Check if has physics. Syntax: <entid>");
 
 	// Physics forces (original names)
-	CLuaIntegration::RegisterFunction("_phys_ApplyForceCenter", Lua_PhysApplyForceCenter, "Apply force at center. Syntax: <entid> <x> <y> <z>");
-	CLuaIntegration::RegisterFunction("_phys_ApplyForceOffset", Lua_PhysApplyForceOffset, "Apply force at offset. Syntax: <entid> <fx> <fy> <fz> <ox> <oy> <oz>");
-	CLuaIntegration::RegisterFunction("_phys_ApplyTorqueCenter", Lua_PhysApplyTorqueCenter, "Apply torque. Syntax: <entid> <x> <y> <z>");
 
 	// GMod-style physics aliases (for script compatibility)
 	CLuaIntegration::RegisterFunction("_PhysEnableMotion", Lua_PhysEnableMotion, "Enable/disable motion. Syntax: <entid> <bool>");
@@ -383,10 +454,10 @@ void RegisterLuaPhysicsFunctions()
 	CLuaIntegration::RegisterFunction("_PhysSetMass", Lua_PhysSetMass, "Set mass. Syntax: <entid> <mass>");
 	CLuaIntegration::RegisterFunction("_PhysWake", Lua_PhysWake, "Wake physics. Syntax: <entid>");
 	CLuaIntegration::RegisterFunction("_PhysSleep", Lua_PhysSleep, "Put physics to sleep. Syntax: <entid>");
-	CLuaIntegration::RegisterFunction("_PhysApplyForce", Lua_PhysApplyForceCenter, "Apply force at center. Syntax: <entid> <x> <y> <z>");
-	CLuaIntegration::RegisterFunction("_PhysApplyForceCenter", Lua_PhysApplyForceCenter, "Apply force at center. Syntax: <entid> <x> <y> <z>");
-	CLuaIntegration::RegisterFunction("_PhysApplyForceOffset", Lua_PhysApplyForceOffset, "Apply force at offset. Syntax: <entid> <fx> <fy> <fz> <ox> <oy> <oz>");
-	CLuaIntegration::RegisterFunction("_PhysApplyTorque", Lua_PhysApplyTorqueCenter, "Apply torque. Syntax: <entid> <x> <y> <z>");
+	CLuaIntegration::RegisterFunction("_PhysApplyForce", Lua_PhysApplyForceCenter, "Apply force at center. Syntax: <entid> <vector3|x y z>");
+	CLuaIntegration::RegisterFunction("_PhysApplyForceCenter", Lua_PhysApplyForceCenter, "Apply force at center. Syntax: <entid> <vector3|x y z>");
+	CLuaIntegration::RegisterFunction("_PhysApplyForceOffset", Lua_PhysApplyForceOffset, "Apply force at offset. Syntax: <entid> <force vector3|fx fy fz> <offset vector3|ox oy oz>");
+	CLuaIntegration::RegisterFunction("_PhysApplyTorque", Lua_PhysApplyTorqueCenter, "Apply torque. Syntax: <entid> <vector3|x y z>");
 	CLuaIntegration::RegisterFunction("_PhysHasPhysics", Lua_PhysHasPhysics, "Check if has physics. Syntax: <entid>");
 	CLuaIntegration::RegisterFunction("_PhysIsAsleep", Lua_PhysIsAsleep, "Check if asleep. Syntax: <entid>");
 
@@ -397,6 +468,8 @@ void RegisterLuaPhysicsFunctions()
 	CLuaIntegration::RegisterFunction("_TraceEndPos", Lua_TraceEndPos, "Get trace end position.");
 	CLuaIntegration::RegisterFunction("_TraceFraction", Lua_TraceFraction, "Get trace fraction (0-1).");
 	CLuaIntegration::RegisterFunction("_TraceHitWorld", Lua_TraceHitWorld, "Check if trace hit world.");
+	CLuaIntegration::RegisterFunction("_TraceDidHitHitbox", Lua_TraceDidHitHitbox, "Check if trace hit a hitbox.");
+	CLuaIntegration::RegisterFunction("_TraceAttack", Lua_TraceAttack, "Apply the last trace as an attack.");
 	CLuaIntegration::RegisterFunction("_TraceHitNonWorld", Lua_TraceHitNonWorld, "Check if trace hit entity.");
 	CLuaIntegration::RegisterFunction("_TraceHit", Lua_TraceHit, "Check if trace hit anything.");
 	CLuaIntegration::RegisterFunction("_TraceGetEnt", Lua_TraceGetEnt, "Get entity hit by trace.");

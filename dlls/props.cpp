@@ -6,6 +6,9 @@
 //=============================================================================
 
 #include "cbase.h"
+#if defined( BMOD_DLL )
+#include "gmod_gamemode.h"
+#endif
 #include "BasePropDoor.h"
 #include "ai_basenpc.h"
 #include "npcevent.h"
@@ -19,6 +22,7 @@
 #include "vcollide_parse.h"
 #include "bone_setup.h"
 #include "studio.h"
+#include "studio_helpers.h"  // Helper functions for studiohdr_t access
 #include "explode.h"
 #include "igamesystem.h"
 #include "utlrbtree.h"
@@ -697,6 +701,10 @@ void CBreakableProp::Precache()
 
 void CBreakableProp::Break( CBaseEntity *pBreaker, const CTakeDamageInfo *pDamageInfo )
 {
+#if defined( BMOD_DLL )
+	CGModGamemodeSystem::OnPropBreak( pDamageInfo ? pDamageInfo->GetAttacker() : pBreaker, this );
+#endif
+
 	m_takedamage = DAMAGE_NO;
 	m_OnBreak.FireOutput( pBreaker, this );
 

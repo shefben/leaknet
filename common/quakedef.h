@@ -77,8 +77,8 @@ extern qboolean		isDedicated;
 void Host_Error (const char *error, ...);
 void Host_EndGame (const char *message, ...);
 
-// user message
-#define MAX_USER_MSG_DATA 192
+// User message payload length is serialized as one byte for variable-sized messages.
+#define MAX_USER_MSG_DATA 255
 
 // build info
 // day counter from 10/24/96

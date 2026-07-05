@@ -60,12 +60,12 @@ void RegisterBModUserMessages( void )
 	// Used for on-screen text and shape rendering
 	// =======================================
 	usermessages->Register( "GModText", -1 );         // Display text on screen
-	usermessages->Register( "GModTextAnimate", -1 );  // Animate text properties
+	usermessages->Register( "GModTextAnimate", -1 );     // Animate text properties
 	usermessages->Register( "GModTextHide", -1 );     // Hide specific text
 	usermessages->Register( "GModTextHideAll", 0 );   // Hide all text
 
 	usermessages->Register( "GModRect", -1 );         // Display rectangle on screen
-	usermessages->Register( "GModRectAnimate", -1 );  // Animate rectangle properties
+	usermessages->Register( "GModRectAnimate", -1 );     // Animate rectangle properties
 	usermessages->Register( "GModRectHide", -1 );     // Hide specific rectangle
 	usermessages->Register( "GModRectHideAll", 0 );   // Hide all rectangles
 

@@ -13,7 +13,6 @@
 //=============================================================================
 
 #include "studio.h"
-#include "studio_v37_compat.h"
 #include "imageloader.h"
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imaterial.h"
@@ -194,50 +193,68 @@ void CStudioRender::R_StudioFlexVerts( mstudiomesh_t *pmesh )
 	if (m_VertexCache.IsFlexComputationDone())
 		return;
 
-	// get pointers to geometry - version-safe for v44+ models
-	mstudiovertex_t *pVertices = NULL;
-	Vector4D *pstudiotangentS = NULL;
-	if (m_pStudioHdr->IsV37())
+	if (StudioHdr_IsV44Plus(m_pStudioHdr))
 	{
-		// v37 models have embedded vertex data
-		pVertices = pmesh->Vertex(0);
-		pstudiotangentS = pmesh->TangentS( 0 );
-	}
-	else if (m_pStudioHdr->version >= STUDIO_VERSION_44)
-	{
-		// v44+ models use external VVD data
-		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pmesh->pModel();
-		if (pModel44)
-		{
-			if (pModel44->vertexdata.pVertexData)
-			{
-				pVertices = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + pmesh->vertexoffset;
-			}
-			else
-			{
-				DevWarning("v44+ model has NULL vertex data (flex): %s (model: %s)\n", m_pStudioHdr->name, pModel44->name);
-			}
+		mstudiomesh_v44_t *pMesh44 = reinterpret_cast<mstudiomesh_v44_t *>(pmesh);
+		m_VertexCache.SetupComputation( pmesh, NULL, true );
 
-			if (pModel44->vertexdata.pTangentData)
+		for (int i = 0; i < pMesh44->numflexes; i++)
+		{
+			mstudioflex_v44_t *pflex = pMesh44->pFlex(i);
+			float w = m_FlexWeights[pflex->flexdesc];
+
+			if (w <= pflex->target0 || w >= pflex->target3)
+				continue;
+			else if (w < pflex->target1)
+				w = (w - pflex->target0) / (pflex->target1 - pflex->target0);
+			else if (w > pflex->target2)
+				w = (pflex->target3 - w) / (pflex->target3 - pflex->target2);
+			else
+				w = 1.0f;
+
+			if (w > -0.001f && w < 0.001f)
+				continue;
+
+			mstudiovertanim_v44_t *pvanim = pflex->pVertanim(0);
+			for (int j = 0; j < pflex->numverts; j++)
 			{
-				pstudiotangentS = (Vector4D*)pModel44->vertexdata.pTangentData + pmesh->vertexoffset;
+				int n = pvanim[j].index;
+				CachedVertex_t* pFlexedVertex;
+				if (!m_VertexCache.IsVertexFlexed(n))
+				{
+					Vector position, normal;
+					Vector2D texCoord;
+					Studio_GetVertexData_V37Aware(m_pStudioHdr, pmesh, n, position, normal, texCoord);
+
+					pFlexedVertex = m_VertexCache.CreateFlexVertex(n);
+					VectorCopy( position, pFlexedVertex->m_Position );
+					VectorCopy( normal, pFlexedVertex->m_Normal );
+					pFlexedVertex->m_TangentS.Init(0.0f, 0.0f, 0.0f, 1.0f);
+				}
+				else
+				{
+					pFlexedVertex = m_VertexCache.GetFlexVertex(n);
+				}
+
+				Vector delta = pvanim[j].GetDeltaFixed();
+				Vector nDeltaScale = pvanim[j].GetNDeltaFixed();
+				VectorMultiply( nDeltaScale, w, nDeltaScale );
+
+				VectorMA( pFlexedVertex->m_Position, w, delta, pFlexedVertex->m_Position );
+				pFlexedVertex->m_Normal += nDeltaScale;
+				pFlexedVertex->m_TangentS.AsVector3D() += nDeltaScale;
 			}
 		}
-		else
-		{
-			DevWarning("v44+ model has NULL pModel44 (flex): %s\n", m_pStudioHdr->name);
-		}
+		return;
 	}
-	else
-	{
-		// Fallback for other versions
-		pVertices = pmesh->Vertex(0);
-		pstudiotangentS = pmesh->TangentS( 0 );
-	}
+
+	// get pointers to geometry
+	mstudiovertex_v37_t *pVertices	= pmesh->Vertex_v37(0);
+	Vector4D *pstudiotangentS	= pmesh->TangentS( 0 );
 
 	mstudioflex_t	*pflex = pmesh->pFlex( 0 );
 	
-	m_VertexCache.SetupComputation( pmesh, m_pStudioHdr, true );
+	m_VertexCache.SetupComputation( pmesh, NULL, true );
 
 	// apply flex weights
 	int i, j, n;
@@ -275,7 +292,7 @@ void CStudioRender::R_StudioFlexVerts( mstudiomesh_t *pmesh )
 		for (j = 0; j < pflex[i].numverts; j++)
 		{
 			n = pvanim[j].index;
-			mstudiovertex_t &vert = pVertices[n];
+			mstudiovertex_v37_t &vert = pVertices[n];
 
 			// only flex the indicies that are (still) part of this mesh
 			// if (n < (int)pmesh->numvertices)
@@ -695,7 +712,13 @@ void R_MouthLighting( int count, const Vector *psrcverts, const Vector *psrcnorm
 void CStudioRender::R_MouthComputeLightingValues( float& fIllum, Vector& forward )
 {
 	// FIXME: this needs to get the mouth index from the shader
-	mstudiomouth_t *pMouth = m_pStudioHdr->pMouth( 0 ); 
+	mstudiomouth_t *pMouth = StudioHdr_GetMouth( m_pStudioHdr, 0 ); 
+	if ( !pMouth )
+	{
+		fIllum = 0.0f;
+		VectorFill( forward, 0 );
+		return;
+	}
 
 	fIllum = m_FlexWeights[pMouth->flexdesc];
 	if (fIllum < 0) fIllum = 0;
@@ -725,7 +748,9 @@ void CStudioRender::R_MouthSetupVertexShader( IMaterial* pMaterial )
 		return;
 
 	// FIXME: this needs to get the mouth index from the shader
-	mstudiomouth_t *pMouth = m_pStudioHdr->pMouth( 0 ); 
+	mstudiomouth_t *pMouth = StudioHdr_GetMouth( m_pStudioHdr, 0 ); 
+	if ( !pMouth )
+		return;
 
 	// Don't deal with illum gamma, we apply it at a different point
 	// for vertex shaders

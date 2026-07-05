@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: Declares basic entity communications classes, for input/output of data
 //			between entities
@@ -76,7 +76,7 @@ protected:
 	CEventAction *m_ActionList;
 	static typedescription_t m_SaveData[];
 
-	CBaseEntityOutput() {} // this class cannot be created, only it's children
+	CBaseEntityOutput() : m_ActionList(NULL) {} // this class cannot be created, only it's children
 	void FireOutput( variant_t Value, CBaseEntity *pActivator, CBaseEntity *pCaller, float fDelay = 0 );
 
 private:

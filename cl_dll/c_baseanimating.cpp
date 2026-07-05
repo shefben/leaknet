@@ -9,6 +9,8 @@
 #include "c_sprite.h"
 #include "model_types.h"
 #include "bone_setup.h"
+#include "studiohdr_v44.h"  // Version-aware seqdesc/animdesc accessors for v44+
+#include "studio_helpers.h"  // Helper functions for studiohdr_t access
 #include "ivrenderview.h"
 #include "r_efx.h"
 #include "dlight.h"
@@ -156,11 +158,14 @@ ShadowType_t C_BaseAnimating::ShadowCastType()
 	if ( IsEffectActive(EF_NODRAW | EF_NOSHADOW) )
 		return SHADOWS_NONE;
 
-	if (hdr->numanim == 0)
+	int numAnims = StudioHdr_GetNumLocalAnims(hdr);
+	if (numAnims == 0)
 		return SHADOWS_RENDER_TO_TEXTURE;
-		  
+
 	// FIXME: Need to check bone controllers and pose parameters
-	if ((hdr->numanim == 1) && (hdr->pAnimdesc(0)->numframes == 1))
+	// Use version-aware accessor for v44+ animdesc (baseptr shifts all fields by 4 bytes)
+	int numFrames = StudioAnimdesc_GetNumFrames(hdr, 0);
+	if ((numAnims == 1) && (numFrames == 1))
 		return SHADOWS_RENDER_TO_TEXTURE;
 
 	// FIXME: Do something to check to see how many frames the current animation has
@@ -183,9 +188,10 @@ studiohdr_t *C_BaseAnimating::OnNewModel()
 	InvalidateBoneCache();
 
 	// Make sure m_CachedBones has space.
-	if ( m_CachedBones.Count() != hdr->numbones )
+	int numBones = StudioHdr_GetNumBones(hdr);
+	if ( m_CachedBones.Count() != numBones )
 	{
-		m_CachedBones.SetSize( hdr->numbones );
+		m_CachedBones.SetSize( numBones );
 	}
 
 	// Don't reallocate unless a different size. 
@@ -219,13 +225,14 @@ studiohdr_t *C_BaseAnimating::OnNewModel()
 		m_iv_flPoseParameter.SetLooping( i, pPose ? pPose->loop != 0.0f : false );
 	}
 
-	int boneControllerCount = min( hdr->numbonecontrollers, ARRAYSIZE( m_flEncodedController ) );
+	int boneControllerCount = min( StudioHdr_GetNumBoneControllers(hdr), ARRAYSIZE( m_flEncodedController ) );
 
 	m_iv_flEncodedController.SetMaxCount( boneControllerCount );
 
 	for ( i = 0; i < boneControllerCount ; i++ )
 	{
-		bool loop = (hdr->pBonecontroller( i )->type & (STUDIO_XR | STUDIO_YR | STUDIO_ZR)) != 0;
+		mstudiobonecontroller_t *pController = StudioHdr_GetBoneController( hdr, i );
+		bool loop = pController && (pController->type & (STUDIO_XR | STUDIO_YR | STUDIO_ZR)) != 0;
 		m_iv_flEncodedController.SetLooping( i, loop );
 	}
 
@@ -352,12 +359,13 @@ void C_BaseAnimating::BuildTransformations( Vector *pos, Quaternion *q, const ma
 
 	// no bones have been simulated
 	memset( boneSimulated, 0, sizeof(boneSimulated) );
-	mstudiobone_t *pbones = hdr->pBone( 0 );
+	int numBones = StudioHdr_GetNumBones(hdr);
+	mstudiobone_t *pbones = StudioHdr_IsV44Plus(hdr) ? NULL : hdr->pBone( 0 );
 
 	if ( m_pRagdoll )
 	{
 		// simulate bones and update flags
-		m_pRagdoll->RagdollBone( this, pbones, hdr->numbones, boneSimulated, m_CachedBones.Base() );
+		m_pRagdoll->RagdollBone( this, pbones, numBones, boneSimulated, m_CachedBones.Base() );
 	}
 
 	C_BaseAnimating *follow = NULL;
@@ -371,7 +379,7 @@ void C_BaseAnimating::BuildTransformations( Vector *pos, Quaternion *q, const ma
 		}
 	}
 
-	for (int i = 0; i < hdr->numbones; i++) 
+	for (int i = 0; i < numBones; i++) 
 	{
 		if ( follow )
 		{
@@ -379,8 +387,9 @@ void C_BaseAnimating::BuildTransformations( Vector *pos, Quaternion *q, const ma
 			if ( fhdr )
 			{
 				int j;
+				int followNumBones = StudioHdr_GetNumBones(fhdr);
 				// Use version-aware bone name accessor for v37/v44+ compatibility
-				for (j = 0; j < fhdr->numbones; j++)
+				for (j = 0; j < followNumBones; j++)
 				{
 					if ( _stricmp(hdr->GetBoneName(i), fhdr->GetBoneName(j) ) == 0 )
 					{
@@ -388,7 +397,7 @@ void C_BaseAnimating::BuildTransformations( Vector *pos, Quaternion *q, const ma
 						break;
 					}
 				}
-				if ( j < fhdr->numbones )
+				if ( j < followNumBones )
 					continue;
 			}
 		}
@@ -533,19 +542,20 @@ void C_BaseAnimating::MaintainSequenceTransitions( float flCycle, float flPosePa
 	bool newSeq = m_nNewSequenceParity != m_nPrevNewSequenceParity;
 	m_nPrevNewSequenceParity = m_nNewSequenceParity;
 
-	if (currentblend->flAnimtime && 
+	if (currentblend->flAnimtime &&
 		(currentblend->nSequence != m_nSequence || newSeq))
 	{
-		mstudioseqdesc_t *pseqdesc = hdr->pSeqdesc( m_nSequence );
+		// Use version-aware seqdesc accessors for v44+ (baseptr shifts all fields by 4 bytes)
+		int seqFlags = StudioSeqdesc_GetFlags(hdr, m_nSequence);
 		// sequence changed
-		if ((pseqdesc->flags & STUDIO_SNAP) || IsEffectActive(EF_NOINTERP))
+		if ((seqFlags & STUDIO_SNAP) || IsEffectActive(EF_NOINTERP))
 		{
 			// remove all entries
 			m_animationQueue.RemoveAll();
 		}
 		else
 		{
-			currentblend->flFadeOuttime = pseqdesc->fadeouttime;
+			currentblend->flFadeOuttime = StudioSeqdesc_GetFadeOutTime(hdr, m_nSequence);
 			/*
 			// clip blends to time remaining
 			if ( !IsSequenceLooping(currentblend->nSequence) )
@@ -638,7 +648,8 @@ void C_BaseAnimating::StandardBlendingRules( Vector pos[], Quaternion q[], float
 		return;
 	}
 
-	if (m_nSequence >=  hdr->numseq) 
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	if (m_nSequence >= hdr->GetNumLocalSeq())
 	{
 		m_nSequence = 0;
 	}
@@ -699,19 +710,20 @@ void C_BaseAnimating::SetupBones_AttachmentHelper()
 	int numBones = StudioHdr_GetNumBones(hdr);
 	for (int i = 0; i < StudioHdr_GetNumAttachments(hdr); i++)
 	{
-		mstudioattachment_t *pattachment = StudioHdr_GetAttachment(hdr, i);
-		if ( !pattachment )
+		int attachmentBone = StudioAttachment_GetBone(hdr, i);
+		const matrix3x4_t *pLocal = StudioAttachment_GetLocal(hdr, i);
+		if ( !pLocal )
 			continue;
 
 		// Validate bone index to prevent crashes from bad model data
-		if ( pattachment->bone < 0 || pattachment->bone >= numBones )
+		if ( attachmentBone < 0 || attachmentBone >= numBones )
 		{
 			Warning( "C_BaseAnimating::SetupBones_AttachmentHelper: Invalid bone index %d for attachment %d (max: %d)\n",
-					 pattachment->bone, i, numBones );
+					 attachmentBone, i, numBones );
 			continue;
 		}
 
-		ConcatTransforms( m_CachedBones[ pattachment->bone ], pattachment->local, world );
+		ConcatTransforms( m_CachedBones[ attachmentBone ], *pLocal, world );
 
 		// FIXME: this shouldn't be here, it should client side on-demand only and hooked into the bone cache!!
 		QAngle angles;
@@ -817,8 +829,8 @@ mstudiohitboxset_t *C_BaseAnimating::GetTransformedHitboxSet( int nBoneMask )
 		return NULL;
 	}
 
-	mstudiohitboxset_t *set = hdr->pHitboxSet( m_nHitboxSet );
-	if ( set && set->numhitboxes )
+	mstudiohitboxset_t *set = StudioHdr_GetHitboxSet( hdr, m_nHitboxSet );
+	if ( set && StudioHitboxSet_GetNumHitboxes( hdr, m_nHitboxSet ) )
 	{
 		studiocache_t *pcache = Studio_GetBoneCache( hdr, m_nSequence, m_flAnimTime, GetAbsAngles(), GetAbsOrigin(), nBoneMask );
 		if ( !pcache )
@@ -1336,10 +1348,9 @@ void C_BaseAnimating::DoAnimationEvents( void )
 	if ( !ShouldDraw() && !IsViewModel() )
 		return;
 
-	mstudioseqdesc_t *pseqdesc = hdr->pSeqdesc(  m_nSequence );
-	mstudioevent_t *pevent = pseqdesc->pEvent( 0 );
-
-	if (pseqdesc->numevents == 0)
+	// Use version-aware seqdesc accessors for v44+ (baseptr shifts all fields by 4 bytes)
+	int numEvents = StudioSeqdesc_GetNumEvents(hdr, m_nSequence);
+	if (numEvents == 0)
 		return;
 
 	if ( watch )
@@ -1392,45 +1403,49 @@ void C_BaseAnimating::DoAnimationEvents( void )
 		}
 	}
 
-	for (int i = 0; i < pseqdesc->numevents; i++)
+	for (int i = 0; i < numEvents; i++)
 	{
+		mstudioevent_t *pevent = StudioSeqdesc_GetEvent(hdr, m_nSequence, i);
+		if (!pevent)
+			continue;
+
 		// ignore all non-client-side events
-		if ( pevent[i].event < 5000 )
+		if ( pevent->event < 5000 )
 			continue;
 
 		// looped
 		if (bLooped)
 		{
-			if ( (pevent[i].cycle > m_flPrevEventCycle || pevent[i].cycle <= flEventCycle) )
+			if ( (pevent->cycle > m_flPrevEventCycle || pevent->cycle <= flEventCycle) )
 			{
 			
 				if ( watch )
 				Msg( "%i FE %i Looped cycle %f, prev %f ev %f (time %.3f)\n",
 					gpGlobals->tickcount,
-					pevent[i].event,
-					pevent[i].cycle,
+					pevent->event,
+					pevent->cycle,
 					m_flPrevEventCycle,
 					flEventCycle,
 					gpGlobals->curtime );
 				
 				
-				FireEvent( GetAbsOrigin(), GetAbsAngles(), pevent[ i ].event, pevent[ i ].options );
+				FireEvent( GetAbsOrigin(), GetAbsAngles(), pevent->event, pevent->options );
 			}
 		}
 		else
 		{
-			if ( (pevent[i].cycle > m_flPrevEventCycle && pevent[i].cycle <= flEventCycle) )
+			if ( (pevent->cycle > m_flPrevEventCycle && pevent->cycle <= flEventCycle) )
 			{
 				if ( watch )
 				Msg( "%i FE %i Normal cycle %f, prev %f ev %f (time %.3f)\n",
 					gpGlobals->tickcount,
-					pevent[i].event,
-					pevent[i].cycle,
+					pevent->event,
+					pevent->cycle,
 					m_flPrevEventCycle,
 					flEventCycle,
 					gpGlobals->curtime );
 
-				FireEvent( GetAbsOrigin(), GetAbsAngles(), pevent[ i ].event, pevent[ i ].options );
+				FireEvent( GetAbsOrigin(), GetAbsAngles(), pevent->event, pevent->options );
 			}
 		}
 	}
@@ -1858,7 +1873,7 @@ void C_BaseAnimating::BecomeRagdollOnClient()
 		matrix3x4_t parentTransform;
 		AngleMatrix( GetAbsAngles(), GetAbsOrigin(), parentTransform );
 		// FIXME/CHECK:  This might be too expensive to do every frame???
-		SaveRagdollInfo( hdr->numbones, parentTransform, m_CachedBones.Base() );
+		SaveRagdollInfo( StudioHdr_GetNumBones(hdr), parentTransform, m_CachedBones.Base() );
 	}
 	SetMoveType( savedMovetype );
 
@@ -2079,8 +2094,8 @@ bool C_BaseAnimating::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask
 	if (!pStudioHdr)
 		return false;
 
-	mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( m_nHitboxSet );
-	if ( !set || !set->numhitboxes )
+	mstudiohitboxset_t *set = StudioHdr_GetHitboxSet( pStudioHdr, m_nHitboxSet );
+	if ( !set || !StudioHitboxSet_GetNumHitboxes( pStudioHdr, m_nHitboxSet ) )
 		return false;
 
 	// Use vcollide for box traces.
@@ -2105,11 +2120,11 @@ bool C_BaseAnimating::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask
 
 	if ( TraceToStudio( ray, pStudioHdr, set, hitboxbones, fContentsMask, tr ) )
 	{
-		mstudiobbox_t *pbox = set->pHitbox( tr.hitbox );
+		int hitBone = StudioHitbox_GetBone( pStudioHdr, set, tr.hitbox );
 		// Use version-aware accessor for v37/v44+ bone structure compatibility
 		tr.surface.name = "**studio**";
 		tr.surface.flags = SURF_HITBOX;
-		tr.surface.surfaceProps = physprops->GetSurfaceIndex( pStudioHdr->GetBoneSurfaceProp(pbox->bone) );
+		tr.surface.surfaceProps = hitBone >= 0 ? physprops->GetSurfaceIndex( pStudioHdr->GetBoneSurfaceProp(hitBone) ) : 0;
 		m_lastPhysicsBone = tr.physicsbone;
 	}
 
@@ -2382,7 +2397,8 @@ float C_BaseAnimating::SequenceDuration( int iSequence )
 	}
 
 	studiohdr_t* pstudiohdr = hdr;
-	if (iSequence >= pstudiohdr->numseq || iSequence < 0 )
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	if (iSequence >= pstudiohdr->GetNumLocalSeq() || iSequence < 0 )
 	{
 		DevWarning( 2, "C_BaseAnimating::SequenceDuration( %d ) out of range\n", iSequence );
 		return 0.1;
@@ -2468,7 +2484,7 @@ void C_BaseAnimating::SetHitboxSet( int setnum )
 	if ( !pStudioHdr )
 		return;
 
-	if (setnum > pStudioHdr->numhitboxsets)
+	if (setnum > StudioHdr_GetNumHitboxSets(pStudioHdr))
 	{
 		// Warn if an bogus hitbox set is being used....
 		static bool s_bWarned = false;

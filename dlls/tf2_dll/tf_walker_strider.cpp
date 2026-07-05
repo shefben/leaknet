@@ -12,6 +12,7 @@
 #include "shake.h"
 #include "in_buttons.h"
 #include "studio.h"
+#include "studio_helpers.h"  // Helper functions for studiohdr_t access
 
 
 #define STRIDER_AE_FOOTSTEP_LEFT		1
@@ -291,16 +292,16 @@ bool CWalkerStrider::GetAttachment( int iAttachment, matrix3x4_t &attachmentToWo
 	}
 
 	Vector vLocalPos( 0, 0, 0 );
-	mstudioattachment_t *pAttachment = StudioHdr_GetAttachment(pStudioHdr, iAttachment-1 );
-	if ( _stricmp( pAttachment->pszName(), "build_point_left_gun" ) == 0 )
+	const char *pAttachmentName = StudioAttachment_GetName(pStudioHdr, iAttachment-1 );
+	if ( _stricmp( pAttachmentName, "build_point_left_gun" ) == 0 )
 	{
 		vLocalPos.y = sideDist;
 	}
-	else if ( _stricmp( pAttachment->pszName(), "build_point_right_gun" ) == 0 )
+	else if ( _stricmp( pAttachmentName, "build_point_right_gun" ) == 0 )
 	{
 		vLocalPos.y = -sideDist;
 	}
-	else if ( _stricmp( pAttachment->pszName(), "ThirdPersonCameraOrigin" ) == 0 )
+	else if ( _stricmp( pAttachmentName, "ThirdPersonCameraOrigin" ) == 0 )
 	{
 	}
 	else

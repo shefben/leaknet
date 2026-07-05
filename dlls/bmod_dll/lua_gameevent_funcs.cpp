@@ -244,11 +244,6 @@ int Lua_PlayerGetRandomAllowedModel(lua_State *L)
 void RegisterLuaGameEventFunctions()
 {
 	// Game event functions (GMod 9 compatibility)
-	CLuaIntegration::RegisterFunction("_gameevent_start", Lua_GameEventStart, "Start game event. Syntax: <eventname>");
-	CLuaIntegration::RegisterFunction("_gameevent_SetString", Lua_GameEventSetString, "Set event string. Syntax: <key> <value>");
-	CLuaIntegration::RegisterFunction("_gameevent_SetInt", Lua_GameEventSetInt, "Set event int. Syntax: <key> <value>");
-	CLuaIntegration::RegisterFunction("_gameevent_SetFloat", Lua_GameEventSetFloat, "Set event float. Syntax: <key> <value>");
-	CLuaIntegration::RegisterFunction("_gameevent_Fire", Lua_GameEventFire, "Fire game event.");
 
 	// Additional ConVar functions (GMod 9 compatibility)
 	CLuaIntegration::RegisterFunction("_GetConVar_Bool", Lua_GetConVar_Bool, "Get convar as bool. Syntax: <name>");

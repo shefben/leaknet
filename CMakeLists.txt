@@ -47,8 +47,24 @@ include( "cmake/video_base.cmake" )
 include( "cmake/postbuild.cmake" )
 include( "cmake/misc/install_lib.cmake" )
 
-add_compile_definitions( $<$<CONFIG:Debug>:DEBUG> $<$<CONFIG:Debug>:_DEBUG> )
-add_compile_definitions( $<$<CONFIG:Release>:NDEBUG> )
+# DEBUG / NDEBUG selection.
+#   * _DEBUG (debug CRT + symbols) is applied to EVERY target in the Debug config so the CRT ABI
+#     stays consistent across all DLLs, including the vphysics<->engine boundary.
+#   * IVP/Havok physics middleware ships as NDEBUG in retail Source. Its ivu_types.hxx requires
+#     EXACTLY ONE of DEBUG/NDEBUG and, under DEBUG, enables internal IVP_ASSERT/IVP_IF self-
+#     consistency checks that int3 (software breakpoint) on edge-case-but-nonfatal physics states
+#     the retail engine silently tolerates (degenerate contacts, e.g. on a map whose world
+#     collision failed to load). Targets that opt in via the IVP_NDEBUG target property therefore
+#     get NDEBUG instead of DEBUG so those checks compile out, matching retail physics. _DEBUG is
+#     intentionally kept for them so they remain a debug build (symbols, debug CRT). The property
+#     is set on the physics targets just below (search: IVP_NDEBUG).
+add_compile_definitions(
+	$<$<AND:$<CONFIG:Debug>,$<NOT:$<BOOL:$<TARGET_PROPERTY:IVP_NDEBUG>>>>:DEBUG>
+	$<$<CONFIG:Debug>:_DEBUG>
+)
+add_compile_definitions(
+	$<$<OR:$<CONFIG:Release>,$<AND:$<CONFIG:Debug>,$<BOOL:$<TARGET_PROPERTY:IVP_NDEBUG>>>>:NDEBUG>
+)
 
 if( ${IS_WINDOWS} )
 	include( "cmake/windows_base.cmake" )
@@ -59,6 +75,18 @@ endif()
 include( "cmake/misc/srcgrp.cmake" )
 
 include( "cmake/groups.cmake" )
+
+
+# Build the physics middleware DLL (vphysics) and its IVP/Havok static libs as NDEBUG so IVP's
+# internal self-consistency asserts compile out (see the DEBUG/NDEBUG comment above). All of these
+# libs link only into vphysics.dll, so the whole DLL is NDEBUG-consistent (no intra-DLL DEBUG vs
+# NDEBUG layout/ODR mismatch). Guarded with if(TARGET) so build groups that omit a physics target
+# do not error.
+foreach( _phys_tgt vphysics ivp_physics ivp_compact_builder hk_math hk_base havana_constraints )
+	if( TARGET ${_phys_tgt} )
+		set_target_properties( ${_phys_tgt} PROPERTIES IVP_NDEBUG TRUE )
+	endif()
+endforeach()
 
 
 # Store all targets in a variable name ( See: https://stackoverflow.com/questions/37434946/how-do-i-iterate-over-all-cmake-targets-programmatically/62311397#62311397 )

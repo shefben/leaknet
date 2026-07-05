@@ -848,49 +848,50 @@ void CPhysicsCollision::VCollideLoad( vcollide_t *pOutput, int solidCount, const
 
 		if ( vphyMagic == VPHY_HEADER_ID )
 		{
-			// v44+ format: VPHY header wrapper around IVP_Compact_Surface
-			// The header is 28 bytes (not including the 'size' we already read):
-			// - vphysicsID (4), version (2), modelType (2), surfaceSize (4), dragAxisAreas (12), axisMapSize (4)
-			// Total header after 'size': 28 bytes
+			// v44+ format: a VPHY header wrapper. The header MUST be dispatched on modelType --
+			// the two model types have DIFFERENT header sizes:
+			//   physcollideheader_t { int vphysicsID(4); short version(2); short modelType(2); }  // 8 bytes, modelType @ offset 6
+			//   COLLIDE_POLY(0): + compactsurfaceheader_t { int surfaceSize(4); Vector dragAxisAreas(12); int axisMapSize(4); }
+			//                    => 28-byte header, then IVP_Compact_Surface (surfaceSize bytes)
+			//   COLLIDE_MOPP(1): + moppheader_t         { int moppSize(4); }
+			//                    => 12-byte header, then IVP_Compact_Mopp  (moppSize bytes)
+			// The payload-size field (surfaceSize / moppSize) sits at offset 8 for BOTH headers.
+			//
+			// The original bmod code assumed EVERY VPHY solid was COLLIDE_POLY (a fixed 28-byte
+			// header). Retail Source world/terrain collision (e.g. gm_melonrace) mixes one POLY
+			// solid with several MOPP solids, and the 12-byte MOPP solids failed the 28-byte
+			// bounds check (28 + moppSize > 12 + moppSize) and were skipped -- so the map loaded
+			// with no world collision, and props/melons fell through into degenerate IVP contacts
+			// that crashed vphysics. Dispatch on modelType and strip the correct header; the raw
+			// IVP_Compact_Surface / IVP_Compact_Mopp is stored and CreateSurfaceManager() later
+			// auto-detects the type via dummy[2] == IVP_COMPACT_MOPP_ID.
+			short modelType = 0;
+			memcpy( &modelType, pBuffer + position + 6, sizeof(short) );
 
-			// Read surfaceSize at offset 8 from current position
-			// (vphysicsID=4, version=2, modelType=2, then surfaceSize)
-			int surfaceSize;
-			memcpy( &surfaceSize, pBuffer + position + 8, sizeof(int) );
+			int payloadSize = 0;
+			memcpy( &payloadSize, pBuffer + position + 8, sizeof(int) );
 
-			// Validate surfaceSize is reasonable
-			if ( surfaceSize <= 0 || surfaceSize > size )
+			const int headerSize = ( modelType == COLLIDE_MOPP ) ? 12 : 28;
+
+			// Validate: payload must be positive and header+payload must fit in the blob
+			// (size may be larger than header+payload -- e.g. a trailing axis map -- which is fine).
+			if ( payloadSize <= 0 || headerSize + payloadSize > size )
 			{
-				Warning( "VCollideLoad: Invalid surfaceSize %d (blob size %d) in VPHY solid %d\n", surfaceSize, size, i );
+				Warning( "VCollideLoad: VPHY solid %d (modelType %d) payloadSize %d + header %d exceeds blob %d - skipping\n",
+					i, modelType, payloadSize, headerSize, size );
 				pOutput->solids[i] = NULL;
 				position += size;
 				continue;
 			}
 
-			// The actual IVP_Compact_Surface data starts 28 bytes after current position
-			// (after vphysicsID + version + modelType + surfaceSize + dragAxisAreas + axisMapSize)
-			const int vphyHeaderSizeAfterBlobSize = 28;  // 4+2+2+4+12+4
-			const char *pSurfaceData = pBuffer + position + vphyHeaderSizeAfterBlobSize;
+			// Store only the raw IVP_Compact_Surface / IVP_Compact_Mopp (header stripped).
+			pOutput->solids[i] = (CPhysCollide *)ivp_malloc_aligned( payloadSize, 32 );
+			memcpy( pOutput->solids[i], pBuffer + position + headerSize, payloadSize );
 
-			// Verify we have enough data
-			if ( vphyHeaderSizeAfterBlobSize + surfaceSize > size )
-			{
-				Warning( "VCollideLoad: VPHY header claims surfaceSize %d but only %d bytes in blob after header\n",
-					surfaceSize, size - vphyHeaderSizeAfterBlobSize );
-				pOutput->solids[i] = NULL;
-				position += size;
-				continue;
-			}
+			DevMsg( "VCollideLoad: Loaded v44+ VPHY solid %d: modelType=%d blobSize=%d payloadSize=%d\n",
+				i, modelType, size, payloadSize );
 
-			// Allocate and copy only the IVP_Compact_Surface data
-			pOutput->solids[i] = (CPhysCollide *)ivp_malloc_aligned( surfaceSize, 32 );
-			memcpy( pOutput->solids[i], pSurfaceData, surfaceSize );
-
-			DevMsg( "VCollideLoad: Loaded v44+ VPHY solid %d: blobSize=%d, surfaceSize=%d\n", i, size, surfaceSize );
-
-			// Skip past the entire solid blob
-			// 'size' is the total blob size (not including the 4-byte size field itself)
-			// We're currently positioned at the start of the blob, so skip 'size' bytes
+			// Skip past the entire solid blob (the full 'size', including any trailing data).
 			position += size;
 		}
 		else

@@ -11,7 +11,37 @@
 #include "shake.h"
 #include "igameevents.h"
 #include "usermessages.h"
+#include "basecombatweapon.h"
+#include "lua_integration.h"
+#include "in_buttons.h"  // IN_ATTACK, IN_FORWARD, etc.
+#include "shareddefs.h"  // OBS_MODE constants, TEAM constants
 #include "tier0/memdbgon.h"
+
+// Forward declarations for Lua functions defined later in this file (extern "C" linkage)
+extern "C" {
+int lua_PlayerSpectatorStart(lua_State* L);
+
+static int SourceTeamToGModTeam( int iTeam )
+{
+	switch ( iTeam )
+	{
+	case TEAM_UNASSIGNED:
+		return 0;
+	case TEAM_SPECTATOR:
+		return 1;
+	default:
+		return ( iTeam > TEAM_SPECTATOR ) ? iTeam - 1 : iTeam;
+	}
+}
+int lua_PlayerSpectatorEnd(lua_State* L);
+int lua_PlayerSpectatorTarget(lua_State* L);
+int lua_PlayerSetChaseCamDistance(lua_State* L);
+int lua_PlayerRespawn(lua_State* L);
+int lua_PlayerAddDeath(lua_State* L);
+int lua_PlayerAddScore(lua_State* L);
+int lua_PlayerSilentKill(lua_State* L);
+int lua_PlayerIsKeyDown(lua_State* L);
+}
 
 namespace
 {
@@ -20,6 +50,8 @@ namespace
         const char* name;
         lua_CFunction function;
     };
+
+    trace_t g_LegacyLuaTrace;
 
     template <size_t N>
     int RegisterLuaBindings(lua_State* L, const LuaBinding (&bindings)[N])
@@ -34,6 +66,122 @@ namespace
 
         return static_cast<int>(N);
     }
+
+    int LuaObserverModeToSource(int mode)
+    {
+        // GMod 9 Lua constants are one slot above Source after OBS_MODE_NONE:
+        // NONE=0, DEATHCAM=1, FIXED=2, IN_EYE=3, CHASE=4, ROAMING=5.
+        switch (mode)
+        {
+        case 0: return OBS_MODE_NONE;
+        case 1: return OBS_MODE_FIXED;   // Beta deathcam fallback.
+        case 2: return OBS_MODE_FIXED;
+        case 3: return OBS_MODE_IN_EYE;
+        case 4: return OBS_MODE_CHASE;
+        case 5: return OBS_MODE_ROAMING;
+        default: return mode;
+        }
+    }
+
+    void LuaPushVector(lua_State* L, const Vector& vec)
+    {
+        lua_newtable(L);
+        lua_pushnumber(L, vec.x);
+        lua_setfield(L, -2, "x");
+        lua_pushnumber(L, vec.y);
+        lua_setfield(L, -2, "y");
+        lua_pushnumber(L, vec.z);
+        lua_setfield(L, -2, "z");
+    }
+
+    bool LuaGetVector(lua_State* L, int index, Vector& vec)
+    {
+        if (lua_istable(L, index))
+        {
+            lua_getfield(L, index, "x");
+            lua_getfield(L, index, "y");
+            lua_getfield(L, index, "z");
+
+            vec.x = (float)lua_tonumber(L, -3);
+            vec.y = (float)lua_tonumber(L, -2);
+            vec.z = (float)lua_tonumber(L, -1);
+
+            lua_pop(L, 3);
+            return true;
+        }
+
+        if (lua_gettop(L) >= index + 2 && lua_isnumber(L, index))
+        {
+            vec.x = (float)lua_tonumber(L, index);
+            vec.y = (float)lua_tonumber(L, index + 1);
+            vec.z = (float)lua_tonumber(L, index + 2);
+            return true;
+        }
+
+        return false;
+    }
+
+    const char* LuaPlayerName(CBasePlayer* pPlayer)
+    {
+        const char* name = pPlayer ? STRING(pPlayer->pl.netname) : "";
+        return name ? name : "";
+    }
+
+    void LuaPushPlayerInfoField(lua_State* L, CBasePlayer* pPlayer, const char* field)
+    {
+        if (!field)
+        {
+            lua_pushnil(L);
+            return;
+        }
+
+        if (!pPlayer)
+        {
+            if (!Q_stricmp(field, "connected"))
+                lua_pushboolean(L, false);
+            else
+                lua_pushnil(L);
+            return;
+        }
+
+        if (!Q_stricmp(field, "connected"))
+            lua_pushboolean(L, true);
+        else if (!Q_stricmp(field, "name"))
+            lua_pushstring(L, LuaPlayerName(pPlayer));
+        else if (!Q_stricmp(field, "userid"))
+            lua_pushnumber(L, engine->GetPlayerUserId(pPlayer->edict()));
+        else if (!Q_stricmp(field, "ping"))
+            lua_pushnumber(L, 0);
+        else if (!Q_stricmp(field, "packetloss"))
+            lua_pushnumber(L, 0);
+        else if (!Q_stricmp(field, "kills"))
+            lua_pushnumber(L, pPlayer->FragCount());
+        else if (!Q_stricmp(field, "deaths"))
+            lua_pushnumber(L, pPlayer->DeathCount());
+        else if (!Q_stricmp(field, "team"))
+            lua_pushnumber(L, SourceTeamToGModTeam( pPlayer->GetTeamNumber() ));
+        else if (!Q_stricmp(field, "alive"))
+            lua_pushboolean(L, pPlayer->IsAlive());
+        else if (!Q_stricmp(field, "health"))
+            lua_pushnumber(L, pPlayer->GetHealth());
+        else if (!Q_stricmp(field, "armor"))
+            lua_pushnumber(L, pPlayer->ArmorValue());
+        else if (!Q_stricmp(field, "model"))
+            lua_pushstring(L, STRING(pPlayer->GetModelName()));
+        else if (!Q_stricmp(field, "networkid"))
+            lua_pushstring(L, "UNKNOWN");
+        else if (!Q_stricmp(field, "entindex"))
+            lua_pushnumber(L, pPlayer->entindex());
+        else if (!Q_stricmp(field, "weapon"))
+        {
+            CBaseCombatWeapon* pWeapon = pPlayer->GetActiveWeapon();
+            lua_pushstring(L, pWeapon ? pWeapon->GetClassname() : "none");
+        }
+        else
+        {
+            lua_pushstring(L, "<Not Found>");
+        }
+    }
 }
 
 // Static member definitions
@@ -42,6 +190,32 @@ CUtlVector<LuaContext_t> CGModLuaSystem::s_LoadedScripts;
 LuaContext_t CGModLuaSystem::s_CurrentContext;
 int CGModLuaSystem::s_ErrorCount = 0;
 bool CGModLuaSystem::s_bSystemInitialized = false;
+
+static int s_GModPlayerRawButtons[MAX_PLAYERS];
+
+void CGModLuaSystem::UpdatePlayerRawButtons(CBasePlayer* pPlayer, int buttons)
+{
+    if (!pPlayer)
+        return;
+
+    int playerIndex = pPlayer->entindex();
+    if (playerIndex < 0 || playerIndex >= MAX_PLAYERS)
+        return;
+
+    s_GModPlayerRawButtons[playerIndex] = buttons;
+}
+
+int CGModLuaSystem::GetPlayerRawButtons(CBasePlayer* pPlayer)
+{
+    if (!pPlayer)
+        return 0;
+
+    int playerIndex = pPlayer->entindex();
+    if (playerIndex < 0 || playerIndex >= MAX_PLAYERS)
+        return 0;
+
+    return s_GModPlayerRawButtons[playerIndex];
+}
 
 // Global instance
 CGModLuaSystem g_GMod_LuaSystem;
@@ -124,24 +298,7 @@ void CGModLuaSystem::LevelInitPostEntity()
 
 void CGModLuaSystem::FrameUpdatePreEntityThink()
 {
-    if (!s_bSystemInitialized || !gmod_lua_enabled.GetBool())
-        return;
-
-    // Call think functions every frame
-    // This matches GMod server.dll's DoLuaThinkFunctions behavior
-    if (s_pLuaState)
-    {
-        // Call DoLuaThinkFunctions - iterates ThinkFunctions table and calls each
-        CallGamemodeFunction("DoLuaThinkFunctions");
-    }
-
-    // Call gamemode think function every frame
-    static float nextThinkTime = 0.0f;
-    if (gpGlobals->curtime > nextThinkTime)
-    {
-        CallGamemodeFunction("gamerulesThink");
-        nextThinkTime = gpGlobals->curtime + 0.1f; // 10 FPS for gamemode logic
-    }
+    RunFrameLuaThink();
 }
 
 LuaFunctionResult_t CGModLuaSystem::InitializeLua()
@@ -181,15 +338,21 @@ void CGModLuaSystem::RegisterEngineBindings()
     if (!s_pLuaState)
         return;
 
-    // Register all the engine functions that GMod scripts expect
+    // Share our Lua state with CLuaIntegration so that functions registered
+    // via CLuaIntegration::RegisterFunction() use the same state as gamemodes
+    CLuaIntegration::SetLuaState(s_pLuaState);
+
+    // Register all the engine functions that GMod scripts expect.
+    // NOTE: The extended lua_*_funcs.cpp registrations below run last and win for
+    // every duplicated global. The core Register*Functions here only register the
+    // names the extended files do NOT cover. Fully-duplicated core tables
+    // (Entity/Trace/Sound/GModQuad) are intentionally NOT called here anymore to
+    // remove the dead double-registration; the extended files supply those names.
     RegisterPlayerFunctions();
-    RegisterEntityFunctions();
-    RegisterTraceFunctions();
     RegisterPhysicsFunctions();
     RegisterUtilityFunctions();
     RegisterGamemodeFunctions();
     RegisterConVarFunctions();
-    RegisterSoundFunctions();
     RegisterMathFunctions();
 
     // Register additional GMod 9 global tables
@@ -197,23 +360,40 @@ void CGModLuaSystem::RegisterEngineBindings()
     RegisterPlayerTable();
     RegisterNPCTable();
     RegisterSpawnMenuTable();
-    RegisterGModQuadFunctions();
     RegisterGameEventTable();
     RegisterGModTextFunctions();
     RegisterGModRectFunctions();
 
-    DevMsg("Registered engine bindings for Lua\n");
+    // Register extended functions from lua_integration subsystem
+    // These include _EntPrecacheModel, _GModText_SetTime, and many others
+    // needed by GMod gamemodes like melonracer
+    RegisterLuaEntityFunctions();
+    RegisterLuaPlayerFunctions();
+    RegisterLuaPhysicsFunctions();
+    RegisterLuaEffectFunctions();
+    RegisterLuaGameEventFunctions();
+
+    // File-funcs globals (_PlaySound, _ScreenText, _GetRule, _ServerCommand, ...) live only in
+    // lua_file_funcs.cpp's RegisterLuaFileFunctions(), which feeds the separate CLuaIntegration
+    // init state -- never the gamemode state. Without this, _PlaySound is nil for gamemodes, so
+    // MelonRacer's AddTimer(1,4,_PlaySound,...) stores a nil func and errors every tick until the
+    // Lua system is disabled. SetLuaState(s_pLuaState) above makes these land in the gamemode state.
+    RegisterLuaFileGlobalsForGamemode();
+
+    // Original gmod exposes file access as the "_file" table in the gamemode state.
+    RegisterLuaFileTable(s_pLuaState);
+
+    DevMsg("Registered engine bindings for Lua (including extended functions)\n");
 }
 
 void CGModLuaSystem::RegisterPlayerFunctions()
 {
+    // NOTE: All player globals except _PrintMessage are also registered (last, so
+    // they win) by lua_player_funcs.cpp's RegisterLuaPlayerFunctions(). Only the
+    // non-duplicated _PrintMessage remains here (its extended copy in
+    // lua_file_funcs.cpp is not reachable in the gamemode Lua state).
     static const LuaBinding bindings[] = {
-        {"_PlayerInfo", lua_PlayerInfo},
-        {"_PlayerGetShootPos", lua_PlayerGetShootPos},
-        {"_PlayerGetShootAng", lua_PlayerGetShootAng},
-        {"_PlayerFreeze", lua_PlayerFreeze},
         {"_PrintMessage", lua_PrintMessage},
-        {"_PlayerAllowDecalPaint", lua_PlayerAllowDecalPaint},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
@@ -250,9 +430,10 @@ void CGModLuaSystem::RegisterTraceFunctions()
 
 void CGModLuaSystem::RegisterPhysicsFunctions()
 {
+    // Only _PhysSetVelocity is unique here. _PhysSetMass/_PhysGetMass/_PhysEnableMotion/
+    // _PhysApplyForce are re-registered by lua_physics_funcs.cpp (win) and additionally
+    // re-pointed to the _phys table by includes/backcompat.lua, so the core copies are dead.
     static const LuaBinding bindings[] = {
-        {"_PhysSetMass", lua_PhysSetMass},
-        {"_PhysGetMass", lua_PhysGetMass},
         {"_PhysSetVelocity", lua_PhysSetVelocity},
     };
 
@@ -303,12 +484,9 @@ void CGModLuaSystem::RegisterPhysicsFunctions()
 
     lua_pushcfunction(s_pLuaState, lua_phys_ConstraintSetEnts);
     lua_setfield(s_pLuaState, -2, "ConstraintSetEnts");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_GetVelocity);
-    lua_setfield(s_pLuaState, -2, "GetVelocity");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_SetVelocity);
-    lua_setfield(s_pLuaState, -2, "SetVelocity");
+    // Note: GetVelocity/SetVelocity were bmod-only _phys members not present in the
+    // original gmod _phys table; removed for exact parity (0 content use). The handlers
+    // remain defined (see lua_phys_GetVelocity/SetVelocity) for potential internal use.
 
     lua_setglobal(s_pLuaState, "_phys");
 
@@ -317,9 +495,9 @@ void CGModLuaSystem::RegisterPhysicsFunctions()
 
 void CGModLuaSystem::RegisterUtilityFunctions()
 {
+    // _CurTime is re-registered (and wins) by lua_player_funcs.cpp; removed here.
     static const LuaBinding bindings[] = {
         {"_RunString", lua_RunString},
-        {"_CurTime", lua_CurTime},
         {"_Msg", lua_Msg},
         {"_OpenScript", lua_OpenScript},
     };
@@ -330,17 +508,11 @@ void CGModLuaSystem::RegisterUtilityFunctions()
 
 void CGModLuaSystem::RegisterGamemodeFunctions()
 {
+    // Only AddThinkFunction (drives the timer/think system) and _TeamGetName are unique.
+    // The rest are re-registered (and win) by lua_player_funcs.cpp / lua_gameevent_funcs.cpp.
     static const LuaBinding bindings[] = {
-        {"_StartNextLevel", lua_StartNextLevel},
         {"AddThinkFunction", lua_AddThinkFunction},
-        {"_GameSetTargetIDRules", lua_GameSetTargetIDRules},
-        // Team functions (from gmod_gamemode.cpp)
-        {"_TeamSetScore", lua_TeamSetScore},
-        {"_TeamScore", lua_TeamGetScore},
-        {"_TeamSetName", lua_TeamSetName},
         {"_TeamGetName", lua_TeamGetName},
-        {"_PlayerChangeTeam", lua_PlayerChangeTeam},
-        {"_MaxPlayers", lua_MaxPlayers},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
@@ -506,52 +678,46 @@ void CGModLuaSystem::RegisterGModQuadFunctions()
 
 void CGModLuaSystem::RegisterGModTextFunctions()
 {
-    // _GModText_* functions for screen text display
-    // These match the original GMod 9.0.4b behavior exactly
+    // The primary _GModText_* names and most no-underscore aliases are re-registered
+    // (and win) by lua_effect_funcs.cpp's RegisterLuaEffectFunctions(). Only these four
+    // no-underscore aliases are NOT covered there, so they remain here.
     static const LuaBinding bindings[] = {
-        {"_GModText_Start", lua_GModText_Start},
-        {"_GModText_SetPos", lua_GModText_SetPos},
-        {"_GModText_SetColor", lua_GModText_SetColor},
-        {"_GModText_SetFade", lua_GModText_SetFade},
-        {"_GModText_SetText", lua_GModText_SetText},
-        {"_GModText_SetEffect", lua_GModText_SetEffect},
-        {"_GModText_SetAlign", lua_GModText_SetAlign},
-        {"_GModText_Send", lua_GModText_Send},
-        {"_GModText_Hide", lua_GModText_Hide},
-        // Also register without underscore separator for alternate naming convention
-        {"_GModTextStart", lua_GModText_Start},
-        {"_GModTextSetPos", lua_GModText_SetPos},
-        {"_GModTextSetColor", lua_GModText_SetColor},
-        {"_GModTextSetFade", lua_GModText_SetFade},
-        {"_GModTextSetText", lua_GModText_SetText},
-        {"_GModTextSetEffect", lua_GModText_SetEffect},
-        {"_GModTextSetAlign", lua_GModText_SetAlign},
-        {"_GModTextSend", lua_GModText_Send},
-        {"_GModTextHideAll", lua_GModText_Hide},
+        {"_GModTextSetTime", lua_GModText_SetTime},
+        {"_GModTextSetEntity", lua_GModText_SetEntity},
+        {"_GModTextSetEntityOffset", lua_GModText_SetEntityOffset},
+        {"_GModTextSendAnimate", lua_GModText_SendAnimate},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
     DevMsg("Lua: Registered %d _GModText functions\n", registered);
 }
 
+static int lua_GModRect_SetAdditive(lua_State* L)
+{
+    (void)L;
+    return 0;
+}
+
+static int lua_GModRect_SetEntity(lua_State* L)
+{
+    (void)L;
+    return 0;
+}
+
 void CGModLuaSystem::RegisterGModRectFunctions()
 {
-    // _GModRect_* functions for screen rectangle display
+    // The primary _GModRect_* names and most no-underscore aliases are re-registered
+    // (and win) by lua_effect_funcs.cpp's RegisterLuaEffectFunctions(). Only these eight
+    // (SetAdditive/SetEntity variants + a few no-underscore aliases) are NOT covered there.
     static const LuaBinding bindings[] = {
-        {"_GModRect_Start", lua_GModRect_Start},
-        {"_GModRect_SetPos", lua_GModRect_SetPos},
-        {"_GModRect_SetSize", lua_GModRect_SetSize},
-        {"_GModRect_SetColor", lua_GModRect_SetColor},
-        {"_GModRect_SetID", lua_GModRect_SetID},
-        {"_GModRect_Send", lua_GModRect_Send},
-        {"_GModRect_Hide", lua_GModRect_Hide},
-        // Also register without underscore separator
-        {"_GModRectSetPos", lua_GModRect_SetPos},
-        {"_GModRectSetSize", lua_GModRect_SetSize},
-        {"_GModRectSetColor", lua_GModRect_SetColor},
-        {"_GModRectSetID", lua_GModRect_SetID},
-        {"_GModRectSend", lua_GModRect_Send},
-        {"_GModRectHideAll", lua_GModRect_Hide},
+        {"_GModRect_SetAdditive", lua_GModRect_SetAdditive},
+        {"_GModRect_SetEntity", lua_GModRect_SetEntity},
+        {"_GModRectStart", lua_GModRect_Start},
+        {"_GModRectSetAdditive", lua_GModRect_SetAdditive},
+        {"_GModRectSetEntity", lua_GModRect_SetEntity},
+        {"_GModRectSetTime", lua_GModRect_SetTime},
+        {"_GModRectSetDelay", lua_GModRect_SetDelay},
+        {"_GModRectSendAnimate", lua_GModRect_SendAnimate},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
@@ -691,7 +857,6 @@ LuaFunctionResult_t CGModLuaSystem::ExecuteString(const char* pszCode)
 void CGModLuaSystem::LoadAllScripts()
 {
     LoadIncludeScripts();
-    LoadGamemodeScripts();
     LoadSWEPScripts();
 
     DevMsg("Loaded all Lua scripts\n");
@@ -699,22 +864,25 @@ void CGModLuaSystem::LoadAllScripts()
 
 void CGModLuaSystem::LoadIncludeScripts()
 {
-    // Load include files first (discovered from base.lua analysis)
+    // Keep this in the same order as lua/init/init.lua. Timers depend on
+    // luathink.lua, and melonracer depends on player.lua helpers.
     LoadScript("includes/defines.lua", LUA_SCRIPT_INCLUDE);
-    LoadScript("includes/vector3.lua", LUA_SCRIPT_INCLUDE);
-    LoadScript("includes/misc.lua", LUA_SCRIPT_INCLUDE);
-    LoadScript("includes/timers.lua", LUA_SCRIPT_INCLUDE);  // Defines DoLuaThinkFunctions
+    LoadScript("includes/concommands.lua", LUA_SCRIPT_INCLUDE);
     LoadScript("includes/backcompat.lua", LUA_SCRIPT_INCLUDE);
+    LoadScript("includes/vector3.lua", LUA_SCRIPT_INCLUDE);
+    LoadScript("includes/luathink.lua", LUA_SCRIPT_INCLUDE);
+    LoadScript("includes/player.lua", LUA_SCRIPT_INCLUDE);
+    LoadScript("includes/misc.lua", LUA_SCRIPT_INCLUDE);
+    LoadScript("includes/events.lua", LUA_SCRIPT_INCLUDE);
+    LoadScript("includes/timers.lua", LUA_SCRIPT_INCLUDE);
+    LoadScript("includes/eventhook.lua", LUA_SCRIPT_INCLUDE);
 }
 
 void CGModLuaSystem::LoadGamemodeScripts()
 {
-    // Load gamemode scripts (discovered from directory analysis)
-    LoadScript("gamemodes/gm_910.lua", LUA_SCRIPT_GAMEMODE);
-    LoadScript("gamemodes/gm_football.lua", LUA_SCRIPT_GAMEMODE);
-    LoadScript("gamemodes/gm_hideandseek.lua", LUA_SCRIPT_GAMEMODE);
-    LoadScript("gamemodes/gm_laserdance.lua", LUA_SCRIPT_GAMEMODE);
-    LoadScript("gamemodes/gm_longsight.lua", LUA_SCRIPT_GAMEMODE);
+    // Legacy gamemodes install global callbacks. Loading all of them makes the
+    // last script win, so CGModGamemodeSystem loads only the active gamemode.
+    DevMsg("Lua gamemode autoload skipped; active gamemode system owns gamemode scripts\n");
 }
 
 void CGModLuaSystem::LoadSWEPScripts()
@@ -748,6 +916,38 @@ void CGModLuaSystem::CallGamemodeFunction(const char* pszFunction)
     {
         lua_pop(s_pLuaState, 1);
     }
+}
+
+void CGModLuaSystem::RunFrameLuaThink()
+{
+    if (!s_bSystemInitialized || !gmod_lua_enabled.GetBool() || !s_pLuaState)
+        return;
+
+    static int s_nLastThinkTick = -1;
+    if (gpGlobals && gpGlobals->tickcount == s_nLastThinkTick)
+        return;
+
+    s_nLastThinkTick = gpGlobals ? gpGlobals->tickcount : s_nLastThinkTick;
+
+    static int s_nLoggedThinkPump = 0;
+    if (s_nLoggedThinkPump < 4)
+    {
+        DevMsg("GMod Lua: running frame think tick %d\n", gpGlobals ? gpGlobals->tickcount : -1);
+        ++s_nLoggedThinkPump;
+    }
+
+    // Mirrors the beta server's player think hook: run registered Lua think
+    // callbacks first, then the active gamemode's per-frame rule callback.
+    // NOTE: do NOT also call DoTimers directly here. includes/timers.lua self-registers
+    // DoTimers via AddThinkFunction(), so DoLuaThinkFunctions already runs it exactly once
+    // per tick. Calling it a second time double-runs every timer; for a timer whose func
+    // errors (e.g. a binding missing from the gamemode Lua state), timers.lua:37 aborts
+    // before it stamps Timer.time, so the timer re-fires every tick and a direct second
+    // call doubles the error rate, hitting gmod_lua_maxerrors twice as fast and disabling
+    // the whole Lua system.
+    CallGamemodeFunction("DoLuaThinkFunctions");
+
+    CallGamemodeFunction("gamerulesThink");
 }
 
 void CGModLuaSystem::HandleLuaError(lua_State* L, const char* pszContext)
@@ -871,7 +1071,23 @@ bool CGModLuaSystem::RunLuaFile(const char* pszFileName)
 
 bool CGModLuaSystem::Initialize()
 {
-    return (InitializeLua() == LUA_RESULT_SUCCESS);
+    if (s_bSystemInitialized && s_pLuaState)
+        return true;
+
+    LuaFunctionResult_t result = InitializeLua();
+    if (result != LUA_RESULT_SUCCESS)
+        return false;
+
+    s_LoadedScripts.Purge();
+    s_ErrorCount = 0;
+    s_bSystemInitialized = true;
+
+    if (gmod_lua_autoload.GetBool())
+    {
+        LoadAllScripts();
+    }
+
+    return true;
 }
 
 // Forward declarations for gameevent Lua helpers
@@ -893,6 +1109,63 @@ void CGModLuaSystem::RegisterGlobalFunctions()
     lua_register(s_pLuaState, "GameEvent_SetPlayerInt", Lua_GameEvent_SetPlayerInt);
     lua_register(s_pLuaState, "GameEvent_SetPlayerVector", Lua_GameEvent_SetPlayerVector);
     lua_register(s_pLuaState, "GameEvent_Fire", Lua_GameEvent_Fire);
+
+    // Register beta GMod Lua constants as a fallback. includes/defines.lua
+    // normally owns these values; keep this path numerically compatible with it.
+    lua_pushinteger(s_pLuaState, 0);
+    lua_setglobal(s_pLuaState, "OBS_MODE_NONE");
+    lua_pushinteger(s_pLuaState, 1);
+    lua_setglobal(s_pLuaState, "OBS_MODE_DEATHCAM");
+    lua_pushinteger(s_pLuaState, 2);
+    lua_setglobal(s_pLuaState, "OBS_MODE_FIXED");
+    lua_pushinteger(s_pLuaState, 3);
+    lua_setglobal(s_pLuaState, "OBS_MODE_IN_EYE");
+    lua_pushinteger(s_pLuaState, 4);
+    lua_setglobal(s_pLuaState, "OBS_MODE_CHASE");
+    lua_pushinteger(s_pLuaState, 5);
+    lua_setglobal(s_pLuaState, "OBS_MODE_ROAMING");
+
+    // Input keys (used by _PlayerIsKeyDown)
+    lua_pushinteger(s_pLuaState, IN_ATTACK);
+    lua_setglobal(s_pLuaState, "IN_ATTACK");
+    lua_pushinteger(s_pLuaState, IN_ATTACK2);
+    lua_setglobal(s_pLuaState, "IN_ATTACK2");
+    lua_pushinteger(s_pLuaState, IN_JUMP);
+    lua_setglobal(s_pLuaState, "IN_JUMP");
+    lua_pushinteger(s_pLuaState, IN_DUCK);
+    lua_setglobal(s_pLuaState, "IN_DUCK");
+    lua_pushinteger(s_pLuaState, IN_FORWARD);
+    lua_setglobal(s_pLuaState, "IN_FORWARD");
+    lua_pushinteger(s_pLuaState, IN_BACK);
+    lua_setglobal(s_pLuaState, "IN_BACK");
+    lua_pushinteger(s_pLuaState, IN_MOVELEFT);
+    lua_setglobal(s_pLuaState, "IN_MOVELEFT");
+    lua_pushinteger(s_pLuaState, IN_MOVERIGHT);
+    lua_setglobal(s_pLuaState, "IN_MOVERIGHT");
+    lua_pushinteger(s_pLuaState, IN_USE);
+    lua_setglobal(s_pLuaState, "IN_USE");
+    lua_pushinteger(s_pLuaState, IN_RELOAD);
+    lua_setglobal(s_pLuaState, "IN_RELOAD");
+    lua_pushinteger(s_pLuaState, IN_SPEED);
+    lua_setglobal(s_pLuaState, "IN_SPEED");
+    lua_pushinteger(s_pLuaState, IN_WALK);
+    lua_setglobal(s_pLuaState, "IN_WALK");
+
+    // Team numbers from beta includes/defines.lua.
+    lua_pushinteger(s_pLuaState, 0);
+    lua_setglobal(s_pLuaState, "TEAM_UNASSIGNED");
+    lua_pushinteger(s_pLuaState, 1);
+    lua_setglobal(s_pLuaState, "TEAM_SPECTATOR");
+    lua_pushinteger(s_pLuaState, 2);
+    lua_setglobal(s_pLuaState, "TEAM_BLUE");
+    lua_pushinteger(s_pLuaState, 3);
+    lua_setglobal(s_pLuaState, "TEAM_YELLOW");
+    lua_pushinteger(s_pLuaState, 4);
+    lua_setglobal(s_pLuaState, "TEAM_GREEN");
+    lua_pushinteger(s_pLuaState, 5);
+    lua_setglobal(s_pLuaState, "TEAM_RED");
+
+    DevMsg("Lua: Registered game constants (OBS_MODE, IN_*, TEAM_*)\n");
 }
 
 //-----------------------------------------------------------------------------
@@ -913,7 +1186,7 @@ int lua_PlayerInfo(lua_State* L)
 {
     if (lua_gettop(L) < 2)
     {
-        lua_pushboolean(L, false);
+        lua_pushnil(L);
         return 1;
     }
 
@@ -921,25 +1194,7 @@ int lua_PlayerInfo(lua_State* L)
     const char* info = lua_tostring(L, 2);
 
     CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
-    if (!pPlayer || !info)
-    {
-        lua_pushboolean(L, false);
-        return 1;
-    }
-
-    if (Q_strcmp(info, "alive") == 0)
-    {
-        lua_pushboolean(L, pPlayer->IsAlive());
-    }
-    else if (Q_strcmp(info, "name") == 0)
-    {
-        lua_pushstring(L, STRING(pPlayer->pl.netname));
-    }
-    else
-    {
-        lua_pushboolean(L, false);
-    }
-
+    LuaPushPlayerInfoField(L, pPlayer, info);
     return 1;
 }
 
@@ -955,15 +1210,7 @@ int lua_PlayerGetShootPos(lua_State* L)
 
     Vector shootPos = pPlayer->EyePosition();
 
-    // Create vector3 table
-    lua_newtable(L);
-    lua_pushnumber(L, shootPos.x);
-    lua_setfield(L, -2, "x");
-    lua_pushnumber(L, shootPos.y);
-    lua_setfield(L, -2, "y");
-    lua_pushnumber(L, shootPos.z);
-    lua_setfield(L, -2, "z");
-
+    LuaPushVector(L, shootPos);
     return 1;
 }
 
@@ -1058,14 +1305,30 @@ int lua_PlayerGetShootAng(lua_State* L)
 
     QAngle shootAng = pPlayer->EyeAngles();
 
-    // Create angle table
+    // Convert eye angles to forward direction vector for movement
+    // MelonRacer uses this to apply forces in the direction player is looking
+    Vector forward;
+    AngleVectors(shootAng, &forward);
+
+    // Create angle/vector table with both naming conventions for compatibility
+    // GMod 9 scripts like MelonRacer expect x/y/z
     lua_newtable(L);
+
+    // Traditional angle names
     lua_pushnumber(L, shootAng.x);
     lua_setfield(L, -2, "pitch");
     lua_pushnumber(L, shootAng.y);
     lua_setfield(L, -2, "yaw");
     lua_pushnumber(L, shootAng.z);
     lua_setfield(L, -2, "roll");
+
+    // GMod 9 vector-style names (forward direction) - used by MelonRacer
+    lua_pushnumber(L, forward.x);
+    lua_setfield(L, -2, "x");
+    lua_pushnumber(L, forward.y);
+    lua_setfield(L, -2, "y");
+    lua_pushnumber(L, forward.z);
+    lua_setfield(L, -2, "z");
 
     return 1;
 }
@@ -1118,7 +1381,13 @@ int lua_EntCreate(lua_State* L)
         return 1;
     }
 
-    CBaseEntity* pEntity = CreateEntityByName(classname);
+    const char* sourceClassname = classname;
+    if (Q_stricmp(classname, "physics_prop") == 0)
+    {
+        sourceClassname = "prop_physics";
+    }
+
+    CBaseEntity* pEntity = CreateEntityByName(sourceClassname);
     if (!pEntity)
     {
         lua_pushnumber(L, -1);
@@ -1139,22 +1408,9 @@ int lua_EntSetPos(lua_State* L)
     if (!pEntity)
         return 0;
 
-    // Get vector from table
-    if (lua_istable(L, 2))
-    {
-        lua_getfield(L, 2, "x");
-        lua_getfield(L, 2, "y");
-        lua_getfield(L, 2, "z");
-
-        Vector pos;
-        pos.x = (float)lua_tonumber(L, -3);
-        pos.y = (float)lua_tonumber(L, -2);
-        pos.z = (float)lua_tonumber(L, -1);
-
+    Vector pos;
+    if (LuaGetVector(L, 2, pos))
         pEntity->SetAbsOrigin(pos);
-
-        lua_pop(L, 3);
-    }
 
     return 0;
 }
@@ -1165,12 +1421,25 @@ int lua_EntSpawn(lua_State* L)
         return 0;
 
     int entid = (int)lua_tonumber(L, 1);
-    CBaseEntity* pEntity = UTIL_EntityByIndex(entid);
-    if (!pEntity)
-        return 0;
+	CBaseEntity* pEntity = UTIL_EntityByIndex(entid);
+	if (!pEntity)
+		return 0;
 
-    pEntity->Spawn();
-    pEntity->Activate();
+	CBasePlayer* pPlayer = dynamic_cast<CBasePlayer*>(pEntity);
+	if (pPlayer)
+	{
+		bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+		CBaseEntity::SetAllowPrecache(true);
+		pPlayer->Spawn();
+		CBaseEntity::SetAllowPrecache(bAllowPrecache);
+		DevMsg("GMod Lua: _EntSpawn respawned player %d on team %d\n", entid, pPlayer->GetTeamNumber());
+		return 0;
+	}
+
+	bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+	CBaseEntity::SetAllowPrecache(true);
+	DispatchSpawn(pEntity);
+    CBaseEntity::SetAllowPrecache(bAllowPrecache);
 
     return 0;
 }
@@ -1228,6 +1497,196 @@ int lua_PlayerFreeze(lua_State* L)
         pPlayer->RemoveFlag(FL_FROZEN);
 
     return 0;
+}
+
+// Spectator functions for melonracer and other gamemodes
+int lua_PlayerSpectatorStart(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    int playerid = (int)lua_tonumber(L, 1);
+    int obsmode = LuaObserverModeToSource((int)lua_tonumber(L, 2));
+
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+    if (!pPlayer)
+        return 0;
+
+    static int s_nLoggedSpectatorStart = 0;
+    if (s_nLoggedSpectatorStart < 8)
+    {
+        DevMsg("GMod Lua: _PlayerSpectatorStart player %d mode %d\n", playerid, obsmode);
+        ++s_nLoggedSpectatorStart;
+    }
+
+    pPlayer->StartObserverMode(pPlayer->GetAbsOrigin(), pPlayer->GetAbsAngles());
+    pPlayer->SetObserverMode(obsmode);
+    return 0;
+}
+
+int lua_PlayerSpectatorEnd(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+        return 0;
+
+    int playerid = (int)lua_tonumber(L, 1);
+
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+    if (!pPlayer)
+        return 0;
+
+    // End spectator mode by respawning
+    pPlayer->StopObserverMode();
+    return 0;
+}
+
+int lua_PlayerSpectatorTarget(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    int playerid = (int)lua_tonumber(L, 1);
+    int targetid = (int)lua_tonumber(L, 2);
+
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+    CBaseEntity* pTarget = UTIL_EntityByIndex(targetid);
+    if (!pPlayer)
+        return 0;
+
+    if (pTarget)
+    {
+        if (pPlayer->m_iObserverMode != OBS_MODE_CHASE && pPlayer->m_iObserverMode != OBS_MODE_IN_EYE)
+        {
+            pPlayer->StartObserverMode(pPlayer->GetAbsOrigin(), pPlayer->GetAbsAngles());
+            pPlayer->SetObserverMode(OBS_MODE_CHASE);
+        }
+
+        pPlayer->m_bAllowNonPlayerObserverTarget = !pTarget->IsPlayer();
+        if (!pPlayer->SetObserverTarget(pTarget))
+        {
+            pPlayer->m_bAllowNonPlayerObserverTarget = !pTarget->IsPlayer();
+            pPlayer->m_hObserverTarget.Set(pTarget);
+        }
+
+        static int s_nLoggedSpectatorTarget = 0;
+        if (s_nLoggedSpectatorTarget < 8)
+        {
+            DevMsg("GMod Lua: _PlayerSpectatorTarget player %d target %d (%s)\n",
+                playerid, targetid, pTarget->GetClassname());
+            ++s_nLoggedSpectatorTarget;
+        }
+    }
+    return 0;
+}
+
+int lua_PlayerSetChaseCamDistance(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    int playerid = (int)lua_tonumber(L, 1);
+    float distance = (float)lua_tonumber(L, 2);
+
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+    if (!pPlayer)
+        return 0;
+
+    if (distance < 10.0f)
+        distance = 10.0f;
+    if (distance > 500.0f)
+        distance = 500.0f;
+
+    pPlayer->m_flChaseCamDistance = distance;
+    return 0;
+}
+
+int lua_PlayerRespawn(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+        return 0;
+
+    int playerid = (int)lua_tonumber(L, 1);
+
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+    if (!pPlayer)
+        return 0;
+
+    pPlayer->Spawn();
+    return 0;
+}
+
+int lua_PlayerAddDeath(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    int playerid = (int)lua_tonumber(L, 1);
+    int deaths = (int)lua_tonumber(L, 2);
+
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+    if (!pPlayer)
+        return 0;
+
+    pPlayer->IncrementDeathCount(deaths);
+    return 0;
+}
+
+int lua_PlayerAddScore(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+        return 0;
+
+    int playerid = (int)lua_tonumber(L, 1);
+    int score = (int)lua_tonumber(L, 2);
+
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+    if (!pPlayer)
+        return 0;
+
+    pPlayer->IncrementFragCount(score);
+    return 0;
+}
+
+int lua_PlayerSilentKill(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+        return 0;
+
+    int playerid = (int)lua_tonumber(L, 1);
+
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+    if (!pPlayer)
+        return 0;
+
+    // Kill player silently (no death sound/notification)
+    pPlayer->CommitSuicide();
+    return 0;
+}
+
+int lua_PlayerIsKeyDown(lua_State* L)
+{
+    if (lua_gettop(L) < 2)
+    {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    int playerid = (int)lua_tonumber(L, 1);
+    int key = (int)lua_tonumber(L, 2);
+
+    CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
+    if (!pPlayer)
+    {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    // Source observer/movement code can clear m_nButtons after processing.
+    // GMod Lua wants the raw command button state for this frame.
+    int rawButtons = CGModLuaSystem::GetPlayerRawButtons(pPlayer);
+    bool isDown = ((rawButtons | pPlayer->m_nButtons) & key) != 0;
+    lua_pushboolean(L, isDown);
+    return 1;
 }
 
 int lua_EntSetKeyValue(lua_State* L)
@@ -1296,72 +1755,55 @@ int lua_TraceLine(lua_State* L)
     if (lua_gettop(L) < 2)
         return 0;
 
-    // Get start position from table
     Vector start, end;
+    int ignoreEnt = -1;
+
     if (lua_istable(L, 1))
     {
-        lua_getfield(L, 1, "x");
-        lua_getfield(L, 1, "y");
-        lua_getfield(L, 1, "z");
-        start.x = (float)lua_tonumber(L, -3);
-        start.y = (float)lua_tonumber(L, -2);
-        start.z = (float)lua_tonumber(L, -1);
-        lua_pop(L, 3);
-    }
+        Vector direction;
+        if (!LuaGetVector(L, 1, start) || !LuaGetVector(L, 2, direction))
+            return 0;
 
-    // Get end position from table
-    if (lua_istable(L, 2))
+        float distance = (float)lua_tonumber(L, 3);
+        end = start + direction * distance;
+        if (lua_gettop(L) >= 4)
+            ignoreEnt = (int)lua_tonumber(L, 4);
+    }
+    else
     {
-        lua_getfield(L, 2, "x");
-        lua_getfield(L, 2, "y");
-        lua_getfield(L, 2, "z");
-        end.x = (float)lua_tonumber(L, -3);
-        end.y = (float)lua_tonumber(L, -2);
-        end.z = (float)lua_tonumber(L, -1);
-        lua_pop(L, 3);
+        if (!LuaGetVector(L, 1, start) || !LuaGetVector(L, 4, end))
+            return 0;
+
+        if (lua_gettop(L) >= 7)
+            ignoreEnt = (int)lua_tonumber(L, 7);
     }
 
+    CBaseEntity* pIgnore = ignoreEnt > 0 ? UTIL_EntityByIndex(ignoreEnt) : NULL;
+    CTraceFilterSimple filter(pIgnore, COLLISION_GROUP_NONE);
     trace_t tr;
-    UTIL_TraceLine(start, end, MASK_SOLID, NULL, COLLISION_GROUP_NONE, &tr);
+    UTIL_TraceLine(start, end, MASK_SOLID, &filter, &tr);
 
-    // Store trace result globally for other functions to access
-    LuaContext_t* pCtx = CGModLuaSystem::GetCurrentContext();
-    if (pCtx)
-    {
-        pCtx->lastTrace = tr;
-    }
+    g_LegacyLuaTrace = tr;
 
-    return 0;
+    lua_pushboolean(L, tr.DidHit());
+    return 1;
 }
 
 int lua_TraceEndPos(lua_State* L)
 {
-    LuaContext_t* pCtx = CGModLuaSystem::GetCurrentContext();
-    Vector endPos = pCtx ? pCtx->lastTrace.endpos : vec3_origin;
-
-    // Create vector3 table
-    lua_newtable(L);
-    lua_pushnumber(L, endPos.x);
-    lua_setfield(L, -2, "x");
-    lua_pushnumber(L, endPos.y);
-    lua_setfield(L, -2, "y");
-    lua_pushnumber(L, endPos.z);
-    lua_setfield(L, -2, "z");
-
+    LuaPushVector(L, g_LegacyLuaTrace.endpos);
     return 1;
 }
 
 int lua_TraceHit(lua_State* L)
 {
-    LuaContext_t* pCtx = CGModLuaSystem::GetCurrentContext();
-    lua_pushboolean(L, pCtx ? pCtx->lastTrace.DidHit() : 0);
+    lua_pushboolean(L, g_LegacyLuaTrace.DidHit());
     return 1;
 }
 
 int lua_TraceHitWorld(lua_State* L)
 {
-    LuaContext_t* pCtx = CGModLuaSystem::GetCurrentContext();
-    lua_pushboolean(L, pCtx ? pCtx->lastTrace.DidHitWorld() : 0);
+    lua_pushboolean(L, g_LegacyLuaTrace.DidHitWorld());
     return 1;
 }
 
@@ -1935,7 +2377,14 @@ int lua_phys_EnableMotion(lua_State* L)
     if (pPhys)
     {
         bool enable = lua_toboolean(L, 2) != 0;
+        // TEMP diagnostic: track melon freeze/unfreeze so we can see if RaceStart ever un-pins it.
+        DevMsg( "GMod Phys EnableMotion(_phys): ent %d enable=%d (was moveable=%d)\n",
+            (int)lua_tonumber(L, 1), enable ? 1 : 0, pPhys->IsMoveable() ? 1 : 0 );
         pPhys->EnableMotion(enable);
+        // A frozen (pinned) object sleeps and then ignores async forces; wake it on
+        // unfreeze so applied force takes effect (mirrors CPhysicsProp::EnableMotion).
+        if (enable)
+            pPhys->Wake();
     }
     return 0;
 }
@@ -1945,21 +2394,52 @@ int lua_phys_ApplyForceCenter(lua_State* L)
     if (lua_gettop(L) < 2)
         return 0;
 
-    IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
-    if (pPhys && lua_istable(L, 2))
-    {
-        lua_getfield(L, 2, "x");
+	int entIndex = (int)lua_tonumber(L, 1);
+	IPhysicsObject* pPhys = GetPhysicsFromEntityID(L, 1);
+	if (pPhys && lua_istable(L, 2))
+	{
+		lua_getfield(L, 2, "x");
         lua_getfield(L, 2, "y");
         lua_getfield(L, 2, "z");
 
         Vector force;
         force.x = (float)lua_tonumber(L, -3);
-        force.y = (float)lua_tonumber(L, -2);
-        force.z = (float)lua_tonumber(L, -1);
+		force.y = (float)lua_tonumber(L, -2);
+		force.z = (float)lua_tonumber(L, -1);
 
-        pPhys->ApplyForceCenter(force);
+		static int s_nLoggedApplyForceCenter = 0;
+		if (s_nLoggedApplyForceCenter < 16)
+		{
+			DevMsg("GMod Lua: _phys.ApplyForceCenter ent %d force (%.1f %.1f %.1f)\n",
+				entIndex, force.x, force.y, force.z);
+			++s_nLoggedApplyForceCenter;
+		}
 
-        lua_pop(L, 3);
+		// TEMP diagnostic: capture the melon's actual physics state + whether the force changes its
+		// velocity. Tells us if the object is frozen (IsMoveable=0 -> ApplyForceCenter returns early),
+		// asleep, has an absurd mass, or if the velocity simply isn't changing.
+		// Sample OVER TIME (first 5, then every 30th call) so we capture the melon's state after the
+		// "GO!!" un-freeze, not just the first ~4s of frozen intermission.
+		static int s_physCallCount = 0;
+		static int s_physDbg = 0;
+		++s_physCallCount;
+		if ( s_physDbg < 40 && ( s_physCallCount <= 5 || (s_physCallCount % 30) == 0 ) )
+		{
+			Vector velBefore( 0, 0, 0 ), velAfter( 0, 0, 0 );
+			pPhys->GetVelocity( &velBefore, NULL );
+			pPhys->ApplyForceCenter(force);
+			pPhys->GetVelocity( &velAfter, NULL );
+			DevMsg( "GMod Phys DBG #%d: ent %d moveable=%d asleep=%d mass=%.1f vel (%.1f %.1f %.1f)->(%.1f %.1f %.1f)\n",
+				s_physCallCount, entIndex, pPhys->IsMoveable() ? 1 : 0, pPhys->IsAsleep() ? 1 : 0, pPhys->GetMass(),
+				velBefore.x, velBefore.y, velBefore.z, velAfter.x, velAfter.y, velAfter.z );
+			++s_physDbg;
+		}
+		else
+		{
+			pPhys->ApplyForceCenter(force);
+		}
+
+		lua_pop(L, 3);
     }
     return 0;
 }
@@ -2096,18 +2576,15 @@ int lua_AddThinkFunction(lua_State* L)
     if (lua_gettop(L) < 1)
         return 0;
 
-    // In GMod 9, AddThinkFunction stores a reference to the passed function
-    // The DoLuaThinkFunctions Lua function then iterates and calls them
-    // We implement this by registering the function in the ThinkFunctions table
-
-    // Get or create the ThinkFunctions table
-    lua_getglobal(L, "ThinkFunctions");
+    // Match includes/luathink.lua so callbacks registered through the C++
+    // fallback are still executed by DoLuaThinkFunctions.
+    lua_getglobal(L, "gLuaThinkFunctions");
     if (!lua_istable(L, -1))
     {
         lua_pop(L, 1);
         lua_newtable(L);
-        lua_setglobal(L, "ThinkFunctions");
-        lua_getglobal(L, "ThinkFunctions");
+        lua_setglobal(L, "gLuaThinkFunctions");
+        lua_getglobal(L, "gLuaThinkFunctions");
     }
 
     // Get the next index (using luaL_getn for Lua 5.0 compatibility)
@@ -2119,7 +2596,7 @@ int lua_AddThinkFunction(lua_State* L)
     // Store it at index len+1
     lua_rawseti(L, -2, len + 1);
 
-    lua_pop(L, 1); // pop ThinkFunctions table
+    lua_pop(L, 1); // pop gLuaThinkFunctions table
     return 0;
 }
 
@@ -2888,7 +3365,9 @@ static struct GModText_t {
     float fadeIn, fadeOut, holdTime;
     int effect;
     int align;
-} s_GModText = {"Default", "", 0.5f, 0.5f, 255, 255, 255, 255, 0.1f, 0.1f, 5.0f, 0, 0};
+    int entityID;
+    float entityOffsetX, entityOffsetY, entityOffsetZ;
+} s_GModText = {"Default", "", 0.5f, 0.5f, 255, 255, 255, 255, 0.1f, 0.1f, 5.0f, 0, 0, 0, 0, 0, 0};
 
 int lua_GModText_Start(lua_State* L)
 {
@@ -2898,6 +3377,10 @@ int lua_GModText_Start(lua_State* L)
     else
         Q_strncpy(s_GModText.fontName, "Default", sizeof(s_GModText.fontName));
     s_GModText.text[0] = '\0';
+    s_GModText.entityID = 0;
+    s_GModText.entityOffsetX = 0.0f;
+    s_GModText.entityOffsetY = 0.0f;
+    s_GModText.entityOffsetZ = 0.0f;
     return 0;
 }
 
@@ -2935,6 +3418,18 @@ int lua_GModText_SetFade(lua_State* L)
     return 0;
 }
 
+int lua_GModText_SetTime(lua_State* L)
+{
+    int n = lua_gettop(L);
+    if (n >= 1)
+        s_GModText.holdTime = (float)lua_tonumber(L, 1);
+    if (n >= 2)
+        s_GModText.fadeIn = (float)lua_tonumber(L, 2);
+    if (n >= 3)
+        s_GModText.fadeOut = (float)lua_tonumber(L, 3);
+    return 0;
+}
+
 int lua_GModText_SetText(lua_State* L)
 {
     if (lua_gettop(L) >= 1)
@@ -2964,9 +3459,29 @@ int lua_GModText_SetAlign(lua_State* L)
     return 0;
 }
 
+int lua_GModText_SetEntity(lua_State* L)
+{
+    if (lua_gettop(L) >= 1)
+        s_GModText.entityID = (int)lua_tonumber(L, 1);
+    return 0;
+}
+
+int lua_GModText_SetEntityOffset(lua_State* L)
+{
+    Vector offset;
+    if (LuaGetVector(L, 1, offset))
+    {
+        s_GModText.entityOffsetX = offset.x;
+        s_GModText.entityOffsetY = offset.y;
+        s_GModText.entityOffsetZ = offset.z;
+    }
+    return 0;
+}
+
 int lua_GModText_Send(lua_State* L)
 {
     int playerID = lua_gettop(L) >= 1 ? (int)lua_tonumber(L, 1) : -1;
+    int textID = lua_gettop(L) >= 2 ? (int)lua_tonumber(L, 2) : 0;
 
     CRecipientFilter filter;
     if (playerID > 0)
@@ -2984,6 +3499,7 @@ int lua_GModText_Send(lua_State* L)
 
     // Send GModText user message
     UserMessageBegin(filter, "GModText");
+        WRITE_SHORT(textID);
         WRITE_STRING(s_GModText.fontName);
         WRITE_STRING(s_GModText.text);
         WRITE_FLOAT(s_GModText.x);
@@ -2993,18 +3509,24 @@ int lua_GModText_Send(lua_State* L)
         WRITE_BYTE((int)s_GModText.b);
         WRITE_BYTE((int)s_GModText.a);
         WRITE_FLOAT(s_GModText.fadeIn);
-        WRITE_FLOAT(s_GModText.holdTime);
         WRITE_FLOAT(s_GModText.fadeOut);
+        WRITE_FLOAT(s_GModText.holdTime);
         WRITE_BYTE(s_GModText.effect);
-        WRITE_BYTE(s_GModText.align);
+        WRITE_SHORT(s_GModText.entityID);
+        WRITE_FLOAT(s_GModText.entityOffsetX);
+        WRITE_FLOAT(s_GModText.entityOffsetY);
+        WRITE_FLOAT(s_GModText.entityOffsetZ);
     MessageEnd();
 
     return 0;
 }
 
-int lua_GModText_Hide(lua_State* L)
+int lua_GModText_SendAnimate(lua_State* L)
 {
     int playerID = lua_gettop(L) >= 1 ? (int)lua_tonumber(L, 1) : -1;
+    int textID = lua_gettop(L) >= 2 ? (int)lua_tonumber(L, 2) : 0;
+    float scale = lua_gettop(L) >= 3 ? (float)lua_tonumber(L, 3) : 1.0f;
+    float duration = lua_gettop(L) >= 4 ? (float)lua_tonumber(L, 4) : 0.5f;
 
     CRecipientFilter filter;
     if (playerID > 0)
@@ -3020,7 +3542,46 @@ int lua_GModText_Hide(lua_State* L)
     }
     filter.MakeReliable();
 
-    UserMessageBegin(filter, "GModTextHideAll");
+    UserMessageBegin(filter, "GModTextAnimate");
+        WRITE_SHORT(textID);
+        WRITE_FLOAT(s_GModText.x);
+        WRITE_FLOAT(s_GModText.y);
+        WRITE_BYTE((int)s_GModText.r);
+        WRITE_BYTE((int)s_GModText.g);
+        WRITE_BYTE((int)s_GModText.b);
+        WRITE_BYTE((int)s_GModText.a);
+        WRITE_FLOAT(scale);
+        WRITE_FLOAT(duration);
+    MessageEnd();
+
+    return 0;
+}
+
+int lua_GModText_Hide(lua_State* L)
+{
+    int playerID = lua_gettop(L) >= 1 ? (int)lua_tonumber(L, 1) : -1;
+    int textID = lua_gettop(L) >= 2 ? (int)lua_tonumber(L, 2) : 0;
+    float fadeTime = lua_gettop(L) >= 3 ? (float)lua_tonumber(L, 3) : 0.0f;
+    float delay = lua_gettop(L) >= 4 ? (float)lua_tonumber(L, 4) : 0.0f;
+
+    CRecipientFilter filter;
+    if (playerID > 0)
+    {
+        CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerID);
+        if (!pPlayer)
+            return 0;
+        filter.AddRecipient(pPlayer);
+    }
+    else
+    {
+        filter.AddAllPlayers();
+    }
+    filter.MakeReliable();
+
+    UserMessageBegin(filter, "GModTextHide");
+        WRITE_SHORT(textID);
+        WRITE_FLOAT(fadeTime);
+        WRITE_FLOAT(delay);
     MessageEnd();
 
     return 0;
@@ -3031,15 +3592,21 @@ int lua_GModText_Hide(lua_State* L)
 //-----------------------------------------------------------------------------
 
 static struct GModRect_t {
+    char material[256];
     float x, y;
     float w, h;
     float r, g, b, a;
+    float holdTime, fadeIn, fadeOut;
+    float delay;
     int id;
-} s_GModRect = {0, 0, 100, 100, 255, 255, 255, 255, 0};
+} s_GModRect = {"", 0, 0, 100, 100, 255, 255, 255, 255, 5.0f, 0.1f, 0.1f, 0, 0};
 
 int lua_GModRect_Start(lua_State* L)
 {
+    const char *material = lua_gettop(L) >= 1 ? lua_tostring(L, 1) : "";
+
     // Reset rect state
+    Q_strncpy(s_GModRect.material, material ? material : "", sizeof(s_GModRect.material));
     s_GModRect.x = 0;
     s_GModRect.y = 0;
     s_GModRect.w = 100;
@@ -3048,8 +3615,11 @@ int lua_GModRect_Start(lua_State* L)
     s_GModRect.g = 255;
     s_GModRect.b = 255;
     s_GModRect.a = 255;
+    s_GModRect.holdTime = 5.0f;
+    s_GModRect.fadeIn = 0.1f;
+    s_GModRect.fadeOut = 0.1f;
+    s_GModRect.delay = 0.0f;
     s_GModRect.id = 0;
-    (void)L;
     return 0;
 }
 
@@ -3095,9 +3665,29 @@ int lua_GModRect_SetID(lua_State* L)
     return 0;
 }
 
+int lua_GModRect_SetTime(lua_State* L)
+{
+    int n = lua_gettop(L);
+    if (n >= 1)
+        s_GModRect.holdTime = (float)lua_tonumber(L, 1);
+    if (n >= 2)
+        s_GModRect.fadeIn = (float)lua_tonumber(L, 2);
+    if (n >= 3)
+        s_GModRect.fadeOut = (float)lua_tonumber(L, 3);
+    return 0;
+}
+
+int lua_GModRect_SetDelay(lua_State* L)
+{
+    if (lua_gettop(L) >= 1)
+        s_GModRect.delay = (float)lua_tonumber(L, 1);
+    return 0;
+}
+
 int lua_GModRect_Send(lua_State* L)
 {
     int playerID = lua_gettop(L) >= 1 ? (int)lua_tonumber(L, 1) : -1;
+    int rectID = lua_gettop(L) >= 2 ? (int)lua_tonumber(L, 2) : s_GModRect.id;
 
     CRecipientFilter filter;
     if (playerID > 0)
@@ -3114,7 +3704,8 @@ int lua_GModRect_Send(lua_State* L)
     filter.MakeReliable();
 
     UserMessageBegin(filter, "GModRect");
-        WRITE_SHORT(s_GModRect.id);
+        WRITE_SHORT(rectID);
+        WRITE_STRING(s_GModRect.material);
         WRITE_FLOAT(s_GModRect.x);
         WRITE_FLOAT(s_GModRect.y);
         WRITE_FLOAT(s_GModRect.w);
@@ -3123,6 +3714,49 @@ int lua_GModRect_Send(lua_State* L)
         WRITE_BYTE((int)s_GModRect.g);
         WRITE_BYTE((int)s_GModRect.b);
         WRITE_BYTE((int)s_GModRect.a);
+        WRITE_FLOAT(s_GModRect.holdTime);
+        WRITE_FLOAT(s_GModRect.fadeIn);
+        WRITE_FLOAT(s_GModRect.fadeOut);
+        WRITE_FLOAT(s_GModRect.delay);
+    MessageEnd();
+
+    return 0;
+}
+
+int lua_GModRect_SendAnimate(lua_State* L)
+{
+    int playerID = lua_gettop(L) >= 1 ? (int)lua_tonumber(L, 1) : -1;
+    int rectID = lua_gettop(L) >= 2 ? (int)lua_tonumber(L, 2) : s_GModRect.id;
+    float targetX = lua_gettop(L) >= 3 ? (float)lua_tonumber(L, 3) : s_GModRect.x;
+    float targetY = lua_gettop(L) >= 4 ? (float)lua_tonumber(L, 4) : s_GModRect.y;
+
+    CRecipientFilter filter;
+    if (playerID > 0)
+    {
+        CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerID);
+        if (!pPlayer)
+            return 0;
+        filter.AddRecipient(pPlayer);
+    }
+    else
+    {
+        filter.AddAllPlayers();
+    }
+    filter.MakeReliable();
+
+    UserMessageBegin(filter, "GModRectAnimate");
+        WRITE_SHORT(rectID);
+        WRITE_FLOAT(s_GModRect.x);
+        WRITE_FLOAT(s_GModRect.y);
+        WRITE_FLOAT(s_GModRect.w);
+        WRITE_FLOAT(s_GModRect.h);
+        WRITE_BYTE((int)s_GModRect.r);
+        WRITE_BYTE((int)s_GModRect.g);
+        WRITE_BYTE((int)s_GModRect.b);
+        WRITE_BYTE((int)s_GModRect.a);
+        WRITE_FLOAT(targetX);
+        WRITE_FLOAT(targetY);
+        WRITE_FLOAT(s_GModRect.delay);
     MessageEnd();
 
     return 0;

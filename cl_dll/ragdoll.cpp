@@ -13,6 +13,7 @@
 #include "engine/ivmodelinfo.h"
 #include "iviewrender.h"
 #include "tier0/vprof.h"
+#include "studio_helpers.h"
 
 #define RAGDOLL_VISUALIZE	0
 class CRagdoll : public IRagdoll
@@ -85,8 +86,9 @@ void CRagdoll::Init( C_BaseEntity *ent, studiohdr_t *pstudiohdr, const Vector &f
 	m_mins.Init(-m_radius,-m_radius,-m_radius);
 	m_maxs.Init(m_radius,m_radius,m_radius);
 #if RAGDOLL_VISUALIZE
-	memcpy( m_savedBone1, pPrevBones, sizeof(matrix3x4_t) * pstudiohdr->numbones );
-	memcpy( m_savedBone2, pBoneToWorld, sizeof(matrix3x4_t) * pstudiohdr->numbones );
+	int numBones = StudioHdr_GetNumBones(pstudiohdr);
+	memcpy( m_savedBone1, pPrevBones, sizeof(matrix3x4_t) * numBones );
+	memcpy( m_savedBone2, pBoneToWorld, sizeof(matrix3x4_t) * numBones );
 #endif
 }
 
@@ -321,7 +323,8 @@ public:
 				AngleMatrix( m_ragAngles[i], m_ragPos[i], matrix );
 			}
 		}
-		for ( i = 0; i < hdr->numbones; i++ ) 
+		int numBones = StudioHdr_GetNumBones(hdr);
+		for ( i = 0; i < numBones; i++ ) 
 		{
 			// BUGBUG: Merge this code with the code in c_baseanimating somehow!!!
 			// animate all non-simulated bones
@@ -429,7 +432,8 @@ public:
 			m_vecOffset = offset;
 		}
 
-		for ( int i = 0; i < hdr->numbones; i++ )
+		int numBones = StudioHdr_GetNumBones(hdr);
+		for ( int i = 0; i < numBones; i++ )
 		{
 			Vector pos;
 			matrix3x4_t &matrix = m_CachedBones[ i ];

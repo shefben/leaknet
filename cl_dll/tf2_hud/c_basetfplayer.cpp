@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 #include "cbase.h"
+#include "studio_helpers.h"
 #include "c_basetfplayer.h"
 #include "beamdraw.h"
 #include <stdarg.h>
@@ -1198,7 +1199,7 @@ void C_BaseTFPlayer::StandardBlendingRules( Vector pos[], Quaternion q[], float 
 	frac = clamp( frac, 0.0f, 1.0f );
 
 	int i;
-	for ( i = 0; i < hdr->numbones; i++ )
+	for ( i = 0; i < StudioHdr_GetNumBones(hdr); i++ )
 	{
 		VectorLerp( m_pRagdollInfo->m_rgBonePos[ i ], pos[ i ], frac, pos[ i ] );
 		QuaternionSlerp( m_pRagdollInfo->m_rgBoneQuaternion[ i ], q[ i ], frac, q[ i ] );

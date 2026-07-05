@@ -3,6 +3,8 @@
 #include "animation.h"
 #include "studio.h"
 #include "bone_setup.h"
+#include "studiohdr_v44.h"  // Version-aware seqdesc/animdesc accessors for v44+
+#include "studio_helpers.h"  // Helper functions for studiohdr_t access
 #include "ai_basenpc.h"
 #include "npcevent.h"
 #include "baseanimating.h"  // For ANIMATION_SEQUENCE_BITS
@@ -328,17 +330,19 @@ void CAnimationLayer::DispatchAnimEvents( CBaseAnimating *eventHandler, CBaseAni
 
 	if ( !pstudiohdr )
 	{
-		Assert(!"CBaseAnimating::DispatchAnimEvents: model missing");
+		// v44+ models or missing models - return gracefully
 		return;
 	}
 	
 	// don't fire events if the framerate is 0, and skip this altogether if there are no events
-	if (m_flPlaybackRate == 0.0 || pstudiohdr->pSeqdesc( m_nSequence )->numevents == 0)
+	// Use version-aware seqdesc accessor for v44+ (baseptr shifts all fields by 4 bytes)
+	int numEvents = StudioSeqdesc_GetNumEvents(pstudiohdr, m_nSequence);
+	if (m_flPlaybackRate == 0.0 || numEvents == 0)
 	{
 		return;
 	}
 
-	// look from when it last checked to some short time in the future	
+	// look from when it last checked to some short time in the future
 	float flCycleRate = pOwner->GetSequenceCycleRate( m_nSequence ) * m_flPlaybackRate;
 	float flStart = m_flLastEventCheck;
 	float flEnd = m_flCycle;
@@ -346,7 +350,9 @@ void CAnimationLayer::DispatchAnimEvents( CBaseAnimating *eventHandler, CBaseAni
 	if (!m_bLooping)
 	{
 		// fire off events early
-		float flLastVisibleCycle = 1.0f - (pstudiohdr->pSeqdesc( m_nSequence )->fadeouttime) * flCycleRate;
+		// Use version-aware seqdesc accessor for v44+
+		float fadeouttime = StudioSeqdesc_GetFadeOutTime(pstudiohdr, m_nSequence);
+		float flLastVisibleCycle = 1.0f - fadeouttime * flCycleRate;
 		if (flEnd >= flLastVisibleCycle || flEnd < 0.0) 
 		{
 			m_bSequenceFinished = true;
@@ -358,7 +364,7 @@ void CAnimationLayer::DispatchAnimEvents( CBaseAnimating *eventHandler, CBaseAni
 	/*
 	if (m_debugOverlays & OVERLAY_NPC_SELECTED_BIT)
 	{
-		Msg( "%s:%s : checking %.2f %.2f (%d)\n", STRING(GetModelName()), pstudiohdr->pSeqdesc( m_nSequence )->pszLabel(), flStart, flEnd, m_bSequenceFinished );
+		Msg( "%s:%s : checking %.2f %.2f (%d)\n", STRING(GetModelName()), StudioSeqdesc_GetLabel( pstudiohdr, m_nSequence ), flStart, flEnd, m_bSequenceFinished );
 	}
 	*/
 

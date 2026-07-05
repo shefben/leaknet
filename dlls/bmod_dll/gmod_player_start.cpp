@@ -15,6 +15,8 @@
 #include "cbase.h"
 #include "player.h"
 #include "gamerules.h"
+#include "gmod_player_start.h"
+#include "vstdlib/random.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -128,13 +130,23 @@ bool CGModPlayerStart::IsValidForTeam(int teamNumber)
 		return false;
 
 	// Team 0 (unassigned) and Team 1 (spectator) can't use team spawns
-	if (teamNumber < 2)
+	// But for GMod 9, team 0 should be able to use all-team spawns
+	if (teamNumber < 0)
 		return false;
+
+	// If all teams flag is set and spawn is not disabled, allow any team
+	if (m_nSpawnFlags == SF_GMOD_SPAWN_ALLTEAMS)
+		return true;
 
 	// Map team number to flag bit
 	// Team 2 = bit 0 (0x01), Team 3 = bit 1 (0x02), etc.
-	int flagBit = 1 << (teamNumber - 2);
+	if (teamNumber < 2)
+	{
+		// Teams 0 and 1 (unassigned/spectator) can only use all-team spawns
+		return false;
+	}
 
+	int flagBit = 1 << (teamNumber - 2);
 	return (m_nSpawnFlags & flagBit) != 0;
 }
 
@@ -171,4 +183,106 @@ void CGModPlayerStart::InputEnable(inputdata_t &inputdata)
 void CGModPlayerStart::InputDisable(inputdata_t &inputdata)
 {
 	m_bDisabled = true;
+}
+
+//-----------------------------------------------------------------------------
+// Helper: Check if an info_player_start spawn point is valid (not blocked)
+//-----------------------------------------------------------------------------
+static bool IsInfoPlayerStartValid(CBaseEntity* pSpot, CBasePlayer* pPlayer)
+{
+	if (!pSpot)
+		return false;
+
+	// Check if another player is blocking this spawn
+	CBaseEntity* ent = NULL;
+	for (CEntitySphereQuery sphere(pSpot->GetAbsOrigin(), 64); (ent = sphere.GetCurrentEntity()) != NULL; sphere.NextEntity())
+	{
+		if (ent->IsPlayer() && ent != pPlayer)
+			return false;
+	}
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Find a valid gmod_player_start for the given player
+// This is called from CBasePlayer::EntSelectSpawnPoint() to handle
+// GMod gamemode spawning with team-based spawn points.
+//
+// Search order:
+// 1. gmod_player_start entities matching player's team
+// 2. gmod_player_start entities with all-team flags
+// 3. info_player_start entities (fallback for GMod maps)
+//-----------------------------------------------------------------------------
+CBaseEntity* FindGModPlayerStart(CBasePlayer* pPlayer)
+{
+	if (!pPlayer)
+		return NULL;
+
+	int playerTeam = pPlayer->GetTeamNumber();
+
+	// Build a list of valid spawn points for this player's team
+	CUtlVector<CGModPlayerStart*> validGModSpawns;
+
+	CGModPlayerStart* pSpawn = NULL;
+	while ((pSpawn = (CGModPlayerStart*)gEntList.FindEntityByClassname(pSpawn, "gmod_player_start")) != NULL)
+	{
+		// Check if this spawn is valid for the player's team and not blocked
+		if (pSpawn->IsValidForTeam(playerTeam) && pSpawn->IsValid(pPlayer))
+		{
+			validGModSpawns.AddToTail(pSpawn);
+		}
+	}
+
+	// If we found valid spawns, pick one randomly
+	if (validGModSpawns.Count() > 0)
+	{
+		int index = random->RandomInt(0, validGModSpawns.Count() - 1);
+		DevMsg("FindGModPlayerStart: Found %d gmod_player_start spawns for team %d, selected index %d\n",
+			validGModSpawns.Count(), playerTeam, index);
+		return validGModSpawns[index];
+	}
+
+	// No valid team-specific spawns found
+	// Try again without team restriction (for maps with all-team spawns)
+	pSpawn = NULL;
+	while ((pSpawn = (CGModPlayerStart*)gEntList.FindEntityByClassname(pSpawn, "gmod_player_start")) != NULL)
+	{
+		if (pSpawn->IsValid(pPlayer))
+		{
+			validGModSpawns.AddToTail(pSpawn);
+		}
+	}
+
+	if (validGModSpawns.Count() > 0)
+	{
+		int index = random->RandomInt(0, validGModSpawns.Count() - 1);
+		DevMsg("FindGModPlayerStart: No team-specific gmod_player_start, using any. Found %d spawns, selected index %d\n",
+			validGModSpawns.Count(), index);
+		return validGModSpawns[index];
+	}
+
+	// No gmod_player_start entities found at all
+	// Fall back to info_player_start (many GMod maps use these)
+	CUtlVector<CBaseEntity*> validInfoSpawns;
+
+	CBaseEntity* pInfoSpawn = NULL;
+	while ((pInfoSpawn = gEntList.FindEntityByClassname(pInfoSpawn, "info_player_start")) != NULL)
+	{
+		if (IsInfoPlayerStartValid(pInfoSpawn, pPlayer))
+		{
+			validInfoSpawns.AddToTail(pInfoSpawn);
+		}
+	}
+
+	if (validInfoSpawns.Count() > 0)
+	{
+		int index = random->RandomInt(0, validInfoSpawns.Count() - 1);
+		DevMsg("FindGModPlayerStart: Using info_player_start fallback. Found %d spawns, selected index %d\n",
+			validInfoSpawns.Count(), index);
+		return validInfoSpawns[index];
+	}
+
+	DevMsg("FindGModPlayerStart: No gmod_player_start or info_player_start entities found\n");
+	return NULL;
 }

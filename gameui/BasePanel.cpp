@@ -163,23 +163,40 @@ static void GetBackgroundName(char *pszBackgroundName, int bufSize)
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Tries to load a background texture
+// Purpose: Tries to load a background texture with mod/hl2 fallback
 // Returns true if successful
 //-----------------------------------------------------------------------------
 static bool TryLoadBackgroundTexture(int imageID, const char *texturePath, bool hardwareFilter)
 {
-	// Check if the texture file exists
+	// Try to load the material directly first (searches current mod)
 	char vmtPath[512];
 	char vtfPath[512];
 	Q_snprintf(vmtPath, sizeof(vmtPath), "materials/%s.vmt", texturePath);
 	Q_snprintf(vtfPath, sizeof(vtfPath), "materials/%s.vtf", texturePath);
 
+	// First try: Check if the texture files exist in current mod
 	if (vgui::filesystem()->FileExists(vmtPath, "GAME") ||
 		vgui::filesystem()->FileExists(vtfPath, "GAME"))
 	{
 		surface()->DrawSetTextureFile(imageID, texturePath, hardwareFilter, false);
+		DevMsg("Console background loaded from current mod: %s\n", texturePath);
 		return true;
 	}
+
+	// Second try: Fallback to hl2 mod folder
+	// Check if files exist specifically in hl2 folder
+	Q_snprintf(vmtPath, sizeof(vmtPath), "materials/%s.vmt", texturePath);
+	Q_snprintf(vtfPath, sizeof(vtfPath), "materials/%s.vtf", texturePath);
+
+	if (vgui::filesystem()->FileExists(vmtPath, "hl2") ||
+		vgui::filesystem()->FileExists(vtfPath, "hl2"))
+	{
+		surface()->DrawSetTextureFile(imageID, texturePath, hardwareFilter, false);
+		DevMsg("Console background loaded from hl2 fallback: %s\n", texturePath);
+		return true;
+	}
+
+	// Nothing found in either location
 	return false;
 }
 
@@ -215,10 +232,12 @@ void CBasePanel::ApplySchemeSettings(IScheme *pScheme)
 	GetBackgroundName(backgroundName, sizeof(backgroundName));
 
 	// Build list of paths to try, in order of preference
+	// Each path is checked first in current mod, then falls back to hl2 folder
 	// 1. ChapterBackgrounds.txt specified background (with widescreen variant)
 	// 2. Mod-specific background: console/<modname>_background
 	// 3. Generic background: console/background
-	// 4. Default: console/background01 or console/console_background
+	// 4a. Default: console/background01
+	// 4b. Legacy fallback: console/console_background (primary requested fallback)
 
 	// Try 1: ChapterBackgrounds.txt background (widescreen first if applicable)
 	if (!bFoundBackground && backgroundName[0])
@@ -284,17 +303,26 @@ void CBasePanel::ApplySchemeSettings(IScheme *pScheme)
 		}
 	}
 
-	// Try 4b: Legacy console_background
+	// Try 4b: Legacy console_background (the primary requested fallback)
 	if (!bFoundBackground)
 	{
 		Q_snprintf(filename, sizeof(filename), "console/console_background");
 		bFoundBackground = TryLoadBackgroundTexture(bimage.imageID, filename, hardwareFilter);
 	}
 
+	// Try 4c: VGUI/console/console_background (alternate location for dropdown console)
+	if (!bFoundBackground)
+	{
+		Q_snprintf(filename, sizeof(filename), "VGUI/console/console_background");
+		bFoundBackground = TryLoadBackgroundTexture(bimage.imageID, filename, hardwareFilter);
+	}
+
 	// Final fallback - just load whatever we last tried
+	// This ensures the material system still tries to load something, even if files don't exist
 	if (!bFoundBackground)
 	{
 		surface()->DrawSetTextureFile(bimage.imageID, filename, hardwareFilter, false);
+		DevMsg("Console background fallback: Loading %s (may not exist)\n", filename);
 	}
 
 	// Get the texture size

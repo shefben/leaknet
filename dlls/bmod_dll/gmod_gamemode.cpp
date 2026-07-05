@@ -4,6 +4,7 @@
 #include "team.h"
 #include "filesystem.h"
 #include "gmod_lua.h"
+#include "in_buttons.h"
 #include <string.h>
 #include "tier0/memdbgon.h"
 
@@ -29,12 +30,201 @@ ConVar gmod_gamemode_path("gmod_gamemode_path", "lua/gamemodes/", FCVAR_GAMEDLL,
 //-----------------------------------------------------------------------------
 // Helper function to get player from console command
 //-----------------------------------------------------------------------------
+static int GModTeamToSourceTeam( int iTeam )
+{
+	switch ( iTeam )
+	{
+	case 0:
+		return TEAM_UNASSIGNED;
+	case 1:
+		return TEAM_SPECTATOR;
+	default:
+		return iTeam + 1;
+	}
+}
+
+static const char *GetDefaultGModTeamName( int iTeam )
+{
+	switch ( iTeam )
+	{
+	case TEAM_UNASSIGNED:
+		return "Unassigned";
+	case TEAM_SPECTATOR:
+		return "Spectators";
+	case 3:
+		return "Blue Team";
+	case 4:
+		return "Yellow Team";
+	case 5:
+		return "Green Team";
+	case 6:
+		return "Red Team";
+	default:
+		return "Unassigned";
+	}
+}
+
+static void EnsureGModTeamManagers()
+{
+	for ( int iTeam = TEAM_UNASSIGNED; iTeam <= GModTeamToSourceTeam( 5 ); ++iTeam )
+	{
+		if ( GetGlobalTeam( iTeam ) )
+			continue;
+
+		while ( GetNumberOfTeams() < iTeam )
+		{
+			int iNewTeam = GetNumberOfTeams() + 1;
+			CTeam *pTeam = (CTeam *)CreateEntityByName( "team_manager" );
+			if ( !pTeam )
+			{
+				Warning( "GMod Gamemode System: failed to create team_manager for team %d\n", iNewTeam );
+				return;
+			}
+
+			pTeam->Init( GetDefaultGModTeamName( iNewTeam ), iNewTeam );
+			g_Teams.AddToTail( pTeam );
+			DevMsg( "GMod Gamemode System: created team_manager %d (%s)\n", iNewTeam, GetDefaultGModTeamName( iNewTeam ) );
+		}
+	}
+}
+
 static CBasePlayer* GetCommandPlayer()
 {
     if (!UTIL_GetCommandClient())
         return NULL;
 
     return dynamic_cast<CBasePlayer*>(UTIL_GetCommandClient());
+}
+
+static bool CallLuaPlayerFunction(const char* pszFunction, CBasePlayer* pPlayer)
+{
+    lua_State* L = CGModLuaSystem::GetLuaState();
+    if (!L || !pszFunction || !pPlayer)
+        return false;
+
+    int stackTop = lua_gettop(L);
+    lua_getglobal(L, pszFunction);
+    if (!lua_isfunction(L, -1))
+    {
+        lua_settop(L, stackTop);
+        return false;
+    }
+
+    lua_pushnumber(L, pPlayer->entindex());
+    int result = lua_pcall(L, 1, 0, 0);
+    if (result != 0)
+    {
+        CGModLuaSystem::HandleLuaError(L, pszFunction);
+        lua_settop(L, stackTop);
+        return false;
+    }
+
+    lua_settop(L, stackTop);
+    return true;
+}
+
+static bool CallLuaPlayerBoolFunction(const char* pszFunction, CBasePlayer* pPlayer, bool& bReturn)
+{
+    lua_State* L = CGModLuaSystem::GetLuaState();
+    if (!L || !pszFunction || !pPlayer)
+        return false;
+
+    int stackTop = lua_gettop(L);
+    lua_getglobal(L, pszFunction);
+    if (!lua_isfunction(L, -1))
+    {
+        lua_settop(L, stackTop);
+        return false;
+    }
+
+    lua_pushnumber(L, pPlayer->entindex());
+    int result = lua_pcall(L, 1, 1, 0);
+    if (result != 0)
+    {
+        CGModLuaSystem::HandleLuaError(L, pszFunction);
+        lua_settop(L, stackTop);
+        return false;
+    }
+
+    bReturn = lua_toboolean(L, -1) != 0;
+    lua_settop(L, stackTop);
+    return true;
+}
+
+static void CallLuaPlayerEventHook(const char* pszHookName, CBasePlayer* pPlayer)
+{
+    lua_State* L = CGModLuaSystem::GetLuaState();
+    if (!L || !pszHookName || !pPlayer)
+        return;
+
+    int stackTop = lua_gettop(L);
+    lua_getglobal(L, "DoEventHook");
+    if (!lua_isfunction(L, -1))
+    {
+        lua_settop(L, stackTop);
+        return;
+    }
+
+    lua_pushstring(L, pszHookName);
+    lua_pushnumber(L, pPlayer->entindex());
+    int result = lua_pcall(L, 2, 0, 0);
+    if (result != 0)
+    {
+        CGModLuaSystem::HandleLuaError(L, "DoEventHook");
+    }
+
+    lua_settop(L, stackTop);
+}
+
+static void CallLuaPlayerKeyFunction(const char* pszFunction, CBasePlayer* pPlayer, int button)
+{
+    lua_State* L = CGModLuaSystem::GetLuaState();
+    if (!L || !pszFunction || !pPlayer)
+        return;
+
+    int stackTop = lua_gettop(L);
+    lua_getglobal(L, pszFunction);
+    if (!lua_isfunction(L, -1))
+    {
+        lua_settop(L, stackTop);
+        return;
+    }
+
+    lua_pushnumber(L, pPlayer->entindex());
+    lua_pushnumber(L, button);
+    int result = lua_pcall(L, 2, 0, 0);
+    if (result != 0)
+    {
+        CGModLuaSystem::HandleLuaError(L, pszFunction);
+    }
+
+    lua_settop(L, stackTop);
+}
+
+static void CallLuaKeyEventHook(const char* pszHookName, CBasePlayer* pPlayer, int button)
+{
+    lua_State* L = CGModLuaSystem::GetLuaState();
+    if (!L || !pszHookName || !pPlayer)
+        return;
+
+    int stackTop = lua_gettop(L);
+    lua_getglobal(L, "DoEventHook");
+    if (!lua_isfunction(L, -1))
+    {
+        lua_settop(L, stackTop);
+        return;
+    }
+
+    lua_pushstring(L, pszHookName);
+    lua_pushnumber(L, pPlayer->entindex());
+    lua_pushnumber(L, button);
+    int result = lua_pcall(L, 3, 0, 0);
+    if (result != 0)
+    {
+        CGModLuaSystem::HandleLuaError(L, "DoEventHook");
+    }
+
+    lua_settop(L, stackTop);
 }
 
 //-----------------------------------------------------------------------------
@@ -55,13 +245,12 @@ bool CGModGamemodeSystem::Init()
 
     InitializeGamemodeDefaults();
     SetupDefaultTeams();
+    s_bSystemInitialized = true;
 
     if (gmod_gamemode_autoload.GetBool())
     {
         LoadAllGamemodes();
     }
-
-    s_bSystemInitialized = true;
 
     DevMsg("GMod Gamemode System initialized with %d gamemodes\n", s_GamemodeRegistry.Count());
     return true;
@@ -96,21 +285,59 @@ void CGModGamemodeSystem::LevelInitPostEntity()
     if (!s_bSystemInitialized)
         return;
 
-    if (s_pActiveGamemode)
+    EnsureGModTeamManagers();
+
+    // Map-based gamemode auto-detection
+    const char* mapName = STRING(gpGlobals->mapname);
+    const char* detectedGamemode = NULL;
+
+    if (mapName && mapName[0])
     {
-        OnMapStart();
-    }
-    else
-    {
-        // Load default gamemode
-        const char* defaultGamemode = gmod_gamemode_current.GetString();
-        if (defaultGamemode && defaultGamemode[0])
+        // Check map name prefixes for gamemode detection
+        if (Q_strnicmp(mapName, "gm_melonrace", 12) == 0 || Q_strnicmp(mapName, "gm_melonlockdown", 16) == 0)
         {
-            SetActiveGamemode(defaultGamemode);
+            detectedGamemode = "melonracer";
+        }
+        else if (Q_strnicmp(mapName, "gm_football", 11) == 0)
+        {
+            detectedGamemode = "football";
+        }
+        else if (Q_strnicmp(mapName, "gm_hideandseek", 14) == 0 || Q_strnicmp(mapName, "gm_has", 6) == 0)
+        {
+            detectedGamemode = "hideandseek";
+        }
+        else if (Q_strnicmp(mapName, "gm_laserdance", 13) == 0)
+        {
+            detectedGamemode = "laserdance";
+        }
+        else if (Q_strnicmp(mapName, "gm_longsight", 12) == 0)
+        {
+            detectedGamemode = "longsight";
+        }
+        else if (Q_strnicmp(mapName, "gm_910", 6) == 0)
+        {
+            detectedGamemode = "910";
+        }
+        else if (Q_strnicmp(mapName, "gm_tpc", 6) == 0)
+        {
+            detectedGamemode = "tpc";
+        }
+        else if (Q_strnicmp(mapName, "gm_", 3) == 0)
+        {
+            // Generic gm_ prefix defaults to build mode
+            detectedGamemode = "build";
+        }
+
+        if (detectedGamemode)
+        {
+            DevMsg("GMod Gamemode System: Auto-detected gamemode '%s' from map '%s'\n", detectedGamemode, mapName);
+            gmod_gamemode_current.SetValue(detectedGamemode);
+            DevMsg("GMod Gamemode System: Deferring gamemode load until Lua reload completes\n");
+            return;
         }
     }
 
-    DevMsg("GMod Gamemode System: Level initialized, gamemode started\n");
+    DevMsg("GMod Gamemode System: Level initialized, gamemode load deferred\n");
 }
 
 void CGModGamemodeSystem::LevelShutdownPostEntity()
@@ -128,13 +355,8 @@ void CGModGamemodeSystem::FrameUpdatePreEntityThink()
     if (!s_bSystemInitialized || !s_pActiveGamemode)
         return;
 
-    // Call gamemode think function every frame
-    static float nextThinkTime = 0.0f;
-    if (gpGlobals->curtime > nextThinkTime)
-    {
-        CallGamemodeFunction("gamerulesThink");
-        nextThinkTime = gpGlobals->curtime + 0.1f; // 10 FPS for gamemode logic
-    }
+    // The beta server runs gamerulesThink from the Lua think path after
+    // DoLuaThinkFunctions. Keep this system from issuing a second call.
 }
 
 void CGModGamemodeSystem::PostGamemodeLoad()
@@ -206,6 +428,7 @@ bool CGModGamemodeSystem::LoadGamemode(const char* pszGamemodeName)
     if (success)
     {
         pGamemode->isLoaded = true;
+        DevMsg("GMod Gamemode System: Loaded Lua script %s\n", pGamemode->scriptPath);
         if (gmod_gamemode_debug.GetBool())
         {
             DevMsg("Loaded gamemode: %s\n", pszGamemodeName);
@@ -258,22 +481,21 @@ bool CGModGamemodeSystem::SetActiveGamemode(const char* pszGamemodeName)
         return false;
     }
 
-    if (!pGamemode->isLoaded)
-    {
-        if (!LoadGamemode(pszGamemodeName))
-        {
-            Warning("Failed to load gamemode: %s\n", pszGamemodeName);
-            return false;
-        }
-    }
-
     // End current gamemode
-    if (s_pActiveGamemode)
+    if (s_pActiveGamemode && s_pActiveGamemode != pGamemode)
     {
         CallGamemodeFunction("onGamemodeEnd");
         s_pActiveGamemode->isActive = false;
         s_pActiveGamemode->state = GAMEMODE_STATE_INACTIVE;
     }
+
+    if (!LoadGamemodeScript(pGamemode))
+    {
+        Warning("Failed to load gamemode: %s\n", pszGamemodeName);
+        return false;
+    }
+    pGamemode->isLoaded = true;
+    DevMsg("GMod Gamemode System: Loaded Lua script %s\n", pGamemode->scriptPath);
 
     // Set new active gamemode
     s_pActiveGamemode = pGamemode;
@@ -284,7 +506,6 @@ bool CGModGamemodeSystem::SetActiveGamemode(const char* pszGamemodeName)
     gmod_gamemode_current.SetValue(pszGamemodeName);
 
     // Initialize gamemode
-    CallGamemodeFunction("gamerulesStartMap");
     OnMapStart();
 
     if (gmod_gamemode_debug.GetBool())
@@ -359,6 +580,346 @@ void CGModGamemodeSystem::OnRoundEnd()
     CallGamemodeFunction("gamerulesRoundEnd");
 }
 
+enum GModLuaArgType_t
+{
+    GMOD_LUA_ARG_NUMBER = 0,
+    GMOD_LUA_ARG_STRING,
+    GMOD_LUA_ARG_BOOL
+};
+
+struct GModLuaArg_t
+{
+    GModLuaArgType_t type;
+    double numberValue;
+    const char* stringValue;
+    bool boolValue;
+};
+
+static GModLuaArg_t LuaArgNumber(double value)
+{
+    GModLuaArg_t arg;
+    arg.type = GMOD_LUA_ARG_NUMBER;
+    arg.numberValue = value;
+    arg.stringValue = "";
+    arg.boolValue = false;
+    return arg;
+}
+
+static GModLuaArg_t LuaArgString(const char* value)
+{
+    GModLuaArg_t arg;
+    arg.type = GMOD_LUA_ARG_STRING;
+    arg.numberValue = 0.0;
+    arg.stringValue = value ? value : "";
+    arg.boolValue = false;
+    return arg;
+}
+
+static GModLuaArg_t LuaArgBool(bool value)
+{
+    GModLuaArg_t arg;
+    arg.type = GMOD_LUA_ARG_BOOL;
+    arg.numberValue = 0.0;
+    arg.stringValue = "";
+    arg.boolValue = value;
+    return arg;
+}
+
+static int LuaPlayerID(CBasePlayer* pPlayer)
+{
+    return pPlayer ? pPlayer->entindex() : 0;
+}
+
+static int LuaEntityID(CBaseEntity* pEntity)
+{
+    return pEntity ? pEntity->entindex() : 0;
+}
+
+static void PushLuaArg(lua_State* L, const GModLuaArg_t& arg)
+{
+    switch (arg.type)
+    {
+    case GMOD_LUA_ARG_STRING:
+        lua_pushstring(L, arg.stringValue ? arg.stringValue : "");
+        break;
+    case GMOD_LUA_ARG_BOOL:
+        lua_pushboolean(L, arg.boolValue);
+        break;
+    case GMOD_LUA_ARG_NUMBER:
+    default:
+        lua_pushnumber(L, arg.numberValue);
+        break;
+    }
+}
+
+static bool PushLuaFunction(lua_State* L, const char* pszFunction, int stackTop)
+{
+    if (!L || !pszFunction || !pszFunction[0])
+        return false;
+
+    lua_getglobal(L, pszFunction);
+    if (!lua_isfunction(L, -1))
+    {
+        lua_settop(L, stackTop);
+        return false;
+    }
+
+    return true;
+}
+
+static bool CallLuaNoResult(const char* pszFunction, const GModLuaArg_t* pArgs, int nArgs)
+{
+    lua_State* L = CGModLuaSystem::GetLuaState();
+    if (!L)
+        return false;
+
+    int stackTop = lua_gettop(L);
+    if (!PushLuaFunction(L, pszFunction, stackTop))
+        return false;
+
+    for (int i = 0; i < nArgs; ++i)
+        PushLuaArg(L, pArgs[i]);
+
+    if (lua_pcall(L, nArgs, 0, 0) != 0)
+    {
+        Warning("Lua error in %s: %s\n", pszFunction, lua_tostring(L, -1));
+        lua_settop(L, stackTop);
+        return false;
+    }
+
+    lua_settop(L, stackTop);
+    return true;
+}
+
+static bool CallLuaBoolResult(const char* pszFunction, const GModLuaArg_t* pArgs, int nArgs, bool defaultValue)
+{
+    lua_State* L = CGModLuaSystem::GetLuaState();
+    if (!L)
+        return defaultValue;
+
+    int stackTop = lua_gettop(L);
+    if (!PushLuaFunction(L, pszFunction, stackTop))
+        return defaultValue;
+
+    for (int i = 0; i < nArgs; ++i)
+        PushLuaArg(L, pArgs[i]);
+
+    if (lua_pcall(L, nArgs, 1, 0) != 0)
+    {
+        Warning("Lua error in %s: %s\n", pszFunction, lua_tostring(L, -1));
+        lua_settop(L, stackTop);
+        return defaultValue;
+    }
+
+    bool result = defaultValue;
+    if (lua_isboolean(L, -1))
+        result = lua_toboolean(L, -1) != 0;
+    else if (lua_isnumber(L, -1))
+        result = lua_tonumber(L, -1) != 0.0;
+
+    lua_settop(L, stackTop);
+    return result;
+}
+
+static bool CallLuaSayResult(const char* pszFunction, const GModLuaArg_t* pArgs, int nArgs, const char* pszDefaultText, char* pszOutText, int iOutTextSize)
+{
+    if (!pszOutText || iOutTextSize <= 0)
+        return true;
+
+    Q_strncpy(pszOutText, pszDefaultText ? pszDefaultText : "", iOutTextSize);
+
+    lua_State* L = CGModLuaSystem::GetLuaState();
+    if (!L)
+        return true;
+
+    int stackTop = lua_gettop(L);
+    if (!PushLuaFunction(L, pszFunction, stackTop))
+        return true;
+
+    for (int i = 0; i < nArgs; ++i)
+        PushLuaArg(L, pArgs[i]);
+
+    if (lua_pcall(L, nArgs, 1, 0) != 0)
+    {
+        Warning("Lua error in %s: %s\n", pszFunction, lua_tostring(L, -1));
+        lua_settop(L, stackTop);
+        return true;
+    }
+
+    bool allow = true;
+    if (lua_isboolean(L, -1))
+    {
+        allow = lua_toboolean(L, -1) != 0;
+    }
+    else if (lua_isstring(L, -1))
+    {
+        Q_strncpy(pszOutText, lua_tostring(L, -1), iOutTextSize);
+        allow = pszOutText[0] != '\0';
+    }
+
+    lua_settop(L, stackTop);
+    return allow;
+}
+
+void CGModGamemodeSystem::OnPlayerConnect(const char* pszName, const char* pszAddress, const char* pszSteamID)
+{
+    GModLuaArg_t args[3];
+    args[0] = LuaArgString(pszName);
+    args[1] = LuaArgString(pszAddress);
+    args[2] = LuaArgString(pszSteamID);
+    CallLuaNoResult("eventPlayerConnect", args, 3);
+}
+
+void CGModGamemodeSystem::OnPlayerDisconnect(const char* pszName, int iUserID, const char* pszAddress, const char* pszSteamID, const char* pszReason)
+{
+    GModLuaArg_t args[5];
+    args[0] = LuaArgString(pszName);
+    args[1] = LuaArgNumber(iUserID);
+    args[2] = LuaArgString(pszAddress);
+    args[3] = LuaArgString(pszSteamID);
+    args[4] = LuaArgString(pszReason);
+    CallLuaNoResult("eventPlayerDisconnect", args, 5);
+}
+
+void CGModGamemodeSystem::OnPlayerInitialSpawn(CBasePlayer* pPlayer)
+{
+    if (!pPlayer)
+        return;
+
+    GModLuaArg_t args[1];
+    args[0] = LuaArgNumber(LuaPlayerID(pPlayer));
+    CallLuaNoResult("eventPlayerInitialSpawn", args, 1);
+}
+
+void CGModGamemodeSystem::OnPlayerActive(CBasePlayer* pPlayer)
+{
+    if (!pPlayer)
+        return;
+
+    GModLuaArg_t args[3];
+    args[0] = LuaArgString(STRING(pPlayer->pl.netname));
+    args[1] = LuaArgNumber(LuaPlayerID(pPlayer));
+    args[2] = LuaArgString("");
+    CallLuaNoResult("eventPlayerActive", args, 3);
+}
+
+void CGModGamemodeSystem::OnPlayerChangeTeam(const char* pszName, int iUserID, int iNewTeam, int iOldTeam)
+{
+    GModLuaArg_t args[4];
+    args[0] = LuaArgString(pszName);
+    args[1] = LuaArgNumber(iUserID);
+    args[2] = LuaArgNumber(iNewTeam);
+    args[3] = LuaArgNumber(iOldTeam);
+    CallLuaNoResult("eventPlayerChangeTeam", args, 4);
+}
+
+void CGModGamemodeSystem::OnPlayerNameChange(int iUserID, const char* pszNewName, const char* pszOldName)
+{
+    GModLuaArg_t args[3];
+    args[0] = LuaArgNumber(iUserID);
+    args[1] = LuaArgString(pszNewName);
+    args[2] = LuaArgString(pszOldName);
+    CallLuaNoResult("eventPlayerNameChange", args, 3);
+}
+
+void CGModGamemodeSystem::OnPlayerHurt(int iUserID, int iNewHealth, int iAttacker)
+{
+    GModLuaArg_t args[3];
+    args[0] = LuaArgNumber(iUserID);
+    args[1] = LuaArgNumber(iNewHealth);
+    args[2] = LuaArgNumber(iAttacker);
+    CallLuaNoResult("eventPlayerHurt", args, 3);
+}
+
+void CGModGamemodeSystem::OnPlayerKilled(int iUserID, int iAttacker, const char* pszWeapon)
+{
+    GModLuaArg_t args[3];
+    args[0] = LuaArgNumber(iUserID);
+    args[1] = LuaArgNumber(iAttacker);
+    args[2] = LuaArgString(pszWeapon);
+    CallLuaNoResult("eventPlayerKilled", args, 3);
+}
+
+bool CGModGamemodeSystem::OnPlayerSay(CBasePlayer* pPlayer, const char* pszText, bool bTeamOnly, char* pszOutText, int iOutTextSize)
+{
+    if (!pPlayer)
+        return true;
+
+    GModLuaArg_t args[3];
+    args[0] = LuaArgNumber(LuaPlayerID(pPlayer));
+    args[1] = LuaArgString(pszText);
+    args[2] = LuaArgBool(bTeamOnly);
+    return CallLuaSayResult("eventPlayerSay", args, 3, pszText, pszOutText, iOutTextSize);
+}
+
+bool CGModGamemodeSystem::OnPlayerUseEntity(CBasePlayer* pPlayer, CBaseEntity* pEntity)
+{
+    if (!pPlayer || !pEntity)
+        return false;
+
+    GModLuaArg_t args[2];
+    args[0] = LuaArgNumber(LuaPlayerID(pPlayer));
+    args[1] = LuaArgNumber(LuaEntityID(pEntity));
+    return CallLuaBoolResult("eventPlayerUseEntity", args, 2, false);
+}
+
+void CGModGamemodeSystem::OnNPCKilled(int iKillerID, CBaseEntity* pKilled, CBaseEntity* pInflictor)
+{
+    GModLuaArg_t args[3];
+    args[0] = LuaArgNumber(iKillerID);
+    args[1] = LuaArgNumber(LuaEntityID(pKilled));
+    args[2] = LuaArgNumber(LuaEntityID(pInflictor));
+    CallLuaNoResult("eventNPCKilled", args, 3);
+}
+
+bool CGModGamemodeSystem::CanPlayerSpawnProp(CBasePlayer* pPlayer, const char* pszModelName)
+{
+    GModLuaArg_t args[2];
+    args[0] = LuaArgNumber(LuaPlayerID(pPlayer));
+    args[1] = LuaArgString(pszModelName);
+    return CallLuaBoolResult("eventPlayerSpawnProp", args, 2, true);
+}
+
+void CGModGamemodeSystem::OnPlayerPropSpawned(CBasePlayer* pPlayer, CBaseEntity* pProp)
+{
+    GModLuaArg_t args[2];
+    args[0] = LuaArgNumber(LuaPlayerID(pPlayer));
+    args[1] = LuaArgNumber(LuaEntityID(pProp));
+    CallLuaNoResult("eventPlayerPropSpawned", args, 2);
+}
+
+bool CGModGamemodeSystem::CanPlayerSpawnRagdoll(CBasePlayer* pPlayer, const char* pszModelName)
+{
+    GModLuaArg_t args[2];
+    args[0] = LuaArgNumber(LuaPlayerID(pPlayer));
+    args[1] = LuaArgString(pszModelName);
+    return CallLuaBoolResult("eventPlayerSpawnRagdoll", args, 2, true);
+}
+
+void CGModGamemodeSystem::OnPlayerRagdollSpawned(CBasePlayer* pPlayer, CBaseEntity* pRagdoll)
+{
+    GModLuaArg_t args[2];
+    args[0] = LuaArgNumber(LuaPlayerID(pPlayer));
+    args[1] = LuaArgNumber(LuaEntityID(pRagdoll));
+    CallLuaNoResult("eventPlayerRagdollSpawned", args, 2);
+}
+
+bool CGModGamemodeSystem::CanPlayerDuplicateProp(CBasePlayer* pPlayer, CBaseEntity* pProp)
+{
+    GModLuaArg_t args[2];
+    args[0] = LuaArgNumber(LuaPlayerID(pPlayer));
+    args[1] = LuaArgNumber(LuaEntityID(pProp));
+    return CallLuaBoolResult("eventPlayerDuplicateProp", args, 2, true);
+}
+
+bool CGModGamemodeSystem::CanPlayerDuplicateRagdoll(CBasePlayer* pPlayer, CBaseEntity* pRagdoll)
+{
+    GModLuaArg_t args[2];
+    args[0] = LuaArgNumber(LuaPlayerID(pPlayer));
+    args[1] = LuaArgNumber(LuaEntityID(pRagdoll));
+    return CallLuaBoolResult("eventPlayerDuplicateRagdoll", args, 2, true);
+}
+
 void CGModGamemodeSystem::OnPlayerConnect(CBasePlayer* pPlayer)
 {
     if (!s_pActiveGamemode || !pPlayer)
@@ -384,9 +945,39 @@ void CGModGamemodeSystem::OnPlayerSpawn(CBasePlayer* pPlayer)
     if (!s_pActiveGamemode || !pPlayer)
         return;
 
-    char args[64];
-    Q_snprintf(args, sizeof(args), "%d", pPlayer->entindex());
-    CallGamemodeFunctionWithArgs("gamerulesPlayerSpawn", args);
+    bool bCalled = CallLuaPlayerFunction("eventPlayerSpawn", pPlayer);
+    DevMsg("GMod Gamemode System: eventPlayerSpawn for player %d %s\n",
+        pPlayer->entindex(), bCalled ? "called" : "not found/failed");
+}
+
+void CGModGamemodeSystem::OnPlayerInput(CBasePlayer* pPlayer, int buttonsPressed, int buttonsReleased)
+{
+    if (!s_pActiveGamemode || !pPlayer)
+        return;
+
+    for (int i = 0; i < 22; ++i)
+    {
+        int button = 1 << i;
+		if (buttonsPressed & button)
+		{
+			if (button == IN_ATTACK || button == IN_ATTACK2 || button == IN_FORWARD || button == IN_BACK)
+			{
+				DevMsg("GMod Input: eventKeyPressed player %d button %d\n", pPlayer->entindex(), button);
+			}
+			CallLuaPlayerKeyFunction("eventKeyPressed", pPlayer, button);
+			CallLuaKeyEventHook("eventKeyPressed", pPlayer, button);
+		}
+
+		if (buttonsReleased & button)
+		{
+			if (button == IN_ATTACK || button == IN_ATTACK2 || button == IN_FORWARD || button == IN_BACK)
+			{
+				DevMsg("GMod Input: eventKeyReleased player %d button %d\n", pPlayer->entindex(), button);
+			}
+			CallLuaPlayerKeyFunction("eventKeyReleased", pPlayer, button);
+			CallLuaKeyEventHook("eventKeyReleased", pPlayer, button);
+		}
+    }
 }
 
 void CGModGamemodeSystem::OnPlayerDeath(CBasePlayer* pPlayer, CBaseEntity* pKiller)
@@ -408,6 +999,19 @@ void CGModGamemodeSystem::OnPlayerChangeTeam(CBasePlayer* pPlayer, int newTeam)
     char args[128];
     Q_snprintf(args, sizeof(args), "%d, %d", pPlayer->entindex(), newTeam);
     CallGamemodeFunctionWithArgs("gamerulesPlayerChangeTeam", args);
+}
+
+void CGModGamemodeSystem::OnPropBreak(CBaseEntity* pBreaker, CBaseEntity* pProp)
+{
+    if (!s_pActiveGamemode || !pProp)
+        return;
+
+    CBasePlayer* pBreakerPlayer = ToBasePlayer(pBreaker);
+
+    GModLuaArg_t args[2];
+    args[0] = LuaArgNumber(pBreakerPlayer ? LuaPlayerID(pBreakerPlayer) : LuaEntityID(pBreaker));
+    args[1] = LuaArgNumber(LuaEntityID(pProp));
+    CallLuaNoResult("eventPropBreak", args, 2);
 }
 
 void CGModGamemodeSystem::OnPlayerChat(CBasePlayer* pPlayer, const char* pszMessage)
@@ -447,14 +1051,48 @@ void CGModGamemodeSystem::CallGamemodeFunctionWithArgs(const char* pszFunction, 
     char luaCode[512];
     if (pszArgs && pszArgs[0])
     {
-        Q_snprintf(luaCode, sizeof(luaCode), "%s(%s)", pszFunction, pszArgs);
+        Q_snprintf(luaCode, sizeof(luaCode), "if type(%s)==\"function\" then %s(%s) end", pszFunction, pszFunction, pszArgs);
     }
     else
     {
-        Q_snprintf(luaCode, sizeof(luaCode), "%s()", pszFunction);
+        Q_snprintf(luaCode, sizeof(luaCode), "if type(%s)==\"function\" then %s() end", pszFunction, pszFunction);
     }
 
     CGModLuaSystem::ExecuteString(luaCode);
+}
+
+bool CGModGamemodeSystem::PickDefaultSpawnTeam(CBasePlayer* pPlayer)
+{
+    if (!s_pActiveGamemode || !pPlayer)
+        return false;
+
+    bool bHandled = false;
+    if (CallLuaPlayerBoolFunction("PickDefaultSpawnTeam", pPlayer, bHandled))
+    {
+        CallLuaPlayerEventHook("PickDefaultSpawnTeam", pPlayer);
+        return bHandled;
+    }
+
+    return false;
+}
+
+void CGModGamemodeSystem::PlayerSpawnChooseModel(CBasePlayer* pPlayer)
+{
+    if (!s_pActiveGamemode || !pPlayer)
+        return;
+
+    CallLuaPlayerFunction("PlayerSpawnChooseModel", pPlayer);
+}
+
+void CGModGamemodeSystem::GiveDefaultItems(CBasePlayer* pPlayer)
+{
+    if (!s_pActiveGamemode || !pPlayer)
+        return;
+
+    if (CallLuaPlayerFunction("GiveDefaultItems", pPlayer))
+    {
+        CallLuaPlayerEventHook("GiveDefaultItems", pPlayer);
+    }
 }
 
 // Game rules functions
@@ -523,6 +1161,14 @@ void CGModGamemodeSystem::ChangePlayerTeam(CBasePlayer* pPlayer, int newTeam)
     if (!pPlayer)
         return;
 
+    EnsureGModTeamManagers();
+
+    if (newTeam > 0 && !GetGlobalTeam(newTeam))
+    {
+        Warning("GMod Gamemode System: refusing invalid ChangeTeam(%d) for player %d\n", newTeam, pPlayer->entindex());
+        return;
+    }
+
     pPlayer->ChangeTeam(newTeam);
     OnPlayerChangeTeam(pPlayer, newTeam);
 }
@@ -557,21 +1203,22 @@ void CGModGamemodeSystem::FreezePlayer(CBasePlayer* pPlayer, bool freeze)
 
 void CGModGamemodeSystem::LoadAllGamemodes()
 {
-    // Register and load built-in gamemodes discovered from lua/gamemodes/ analysis
-    RegisterGamemode("build", "lua/gamemodes/gm_build.lua");
+    // Register built-in gamemodes discovered from lua/gamemodes/ analysis.
+    // Legacy gamemode scripts define globals, so only the active gamemode is executed.
+    RegisterGamemode("build", "lua/gamemodes/default/init.lua");
+    RegisterGamemode("default", "lua/gamemodes/default/init.lua");
+    RegisterGamemode("sandbox", "lua/gamemodes/default/init.lua");
     RegisterGamemode("football", "lua/gamemodes/gm_football.lua");
     RegisterGamemode("hideandseek", "lua/gamemodes/gm_hideandseek.lua");
     RegisterGamemode("laserdance", "lua/gamemodes/gm_laserdance.lua");
     RegisterGamemode("longsight", "lua/gamemodes/gm_longsight.lua");
     RegisterGamemode("910", "lua/gamemodes/gm_910.lua");
 
-    // Load all registered gamemodes
-    for (int i = 0; i < s_GamemodeRegistry.Count(); i++)
-    {
-        LoadGamemode(s_GamemodeRegistry[i].gamemodeName);
-    }
+    // Additional gamemodes with multi-file structure
+    RegisterGamemode("melonracer", "lua/gamemodes/melonracer/init.lua");
+    RegisterGamemode("tpc", "lua/gamemodes/tpc/init.lua");
 
-    DevMsg("Loaded all gamemodes\n");
+    DevMsg("Registered %d gamemodes\n", s_GamemodeRegistry.Count());
 }
 
 void CGModGamemodeSystem::ReloadAllGamemodes()
@@ -709,19 +1356,21 @@ bool CGModGamemodeSystem::ValidateGamemodeScript(const char* pszScriptPath)
 void CGModGamemodeSystem::SetupDefaultTeams()
 {
     // Setup default teams (discovered from gamemode analysis)
-    SetTeamName(TEAM_UNASSIGNED, "Unassigned");
-    SetTeamName(TEAM_SPECTATOR, "Spectators");
+    SetTeamName(GModTeamToSourceTeam(0), "Unassigned");
+    SetTeamName(GModTeamToSourceTeam(1), "Spectators");
 
-    // Additional teams for specific gamemodes
-    SetTeamName(2, "Blue Team");
-    SetTeamName(3, "Yellow Team");
-    SetTeamName(4, "Red Team");
+    // Beta GMod team layout from includes/defines.lua.
+    SetTeamName(GModTeamToSourceTeam(2), "Blue Team");
+    SetTeamName(GModTeamToSourceTeam(3), "Yellow Team");
+    SetTeamName(GModTeamToSourceTeam(4), "Green Team");
+    SetTeamName(GModTeamToSourceTeam(5), "Red Team");
 
-    SetTeamScore(TEAM_UNASSIGNED, 0);
-    SetTeamScore(TEAM_SPECTATOR, 0);
-    SetTeamScore(2, 0);
-    SetTeamScore(3, 0);
-    SetTeamScore(4, 0);
+    SetTeamScore(GModTeamToSourceTeam(0), 0);
+    SetTeamScore(GModTeamToSourceTeam(1), 0);
+    SetTeamScore(GModTeamToSourceTeam(2), 0);
+    SetTeamScore(GModTeamToSourceTeam(3), 0);
+    SetTeamScore(GModTeamToSourceTeam(4), 0);
+    SetTeamScore(GModTeamToSourceTeam(5), 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -827,7 +1476,7 @@ int lua_TeamSetScore(lua_State* L)
     if (lua_gettop(L) < 2)
         return 0;
 
-    int team = (int)lua_tonumber(L, 1);
+    int team = GModTeamToSourceTeam( (int)lua_tonumber(L, 1) );
     int score = (int)lua_tonumber(L, 2);
 
     CGModGamemodeSystem::SetTeamScore(team, score);
@@ -842,7 +1491,7 @@ int lua_TeamGetScore(lua_State* L)
         return 1;
     }
 
-    int team = (int)lua_tonumber(L, 1);
+    int team = GModTeamToSourceTeam( (int)lua_tonumber(L, 1) );
     int score = CGModGamemodeSystem::GetTeamScore(team);
 
     lua_pushnumber(L, score);
@@ -854,7 +1503,7 @@ int lua_TeamSetName(lua_State* L)
     if (lua_gettop(L) < 2)
         return 0;
 
-    int team = (int)lua_tonumber(L, 1);
+    int team = GModTeamToSourceTeam( (int)lua_tonumber(L, 1) );
     const char* name = lua_tostring(L, 2);
 
     if (name)
@@ -873,7 +1522,7 @@ int lua_TeamGetName(lua_State* L)
         return 1;
     }
 
-    int team = (int)lua_tonumber(L, 1);
+    int team = GModTeamToSourceTeam( (int)lua_tonumber(L, 1) );
     const char* name = CGModGamemodeSystem::GetTeamName(team);
 
     lua_pushstring(L, name ? name : "");
@@ -886,7 +1535,7 @@ int lua_PlayerChangeTeam(lua_State* L)
         return 0;
 
     int playerid = (int)lua_tonumber(L, 1);
-    int team = (int)lua_tonumber(L, 2);
+    int team = GModTeamToSourceTeam( (int)lua_tonumber(L, 2) );
 
     CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
     if (pPlayer)

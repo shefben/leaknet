@@ -13,8 +13,9 @@
 //=============================================================================
 // r_studio.c: routines for setting up to draw 3DStudio models 
 #include "studio.h"
-#include "studio_v37_compat.h"
-#include "studiohdr_v44.h"
+#include "studio_helpers.h"
+// Note: v44+ support is handled through studio_v37_compat.h wrapper functions
+// Do NOT include studiohdr_v44.h directly in v37 code
 #include "optimize.h"
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imaterialvar.h"
@@ -113,13 +114,30 @@ static const char *GetTextureName( studiohdr_t *phdr, OptimizedModel::FileHeader
 			return str;
 		}
 	}
-	// Use version-safe accessor for texture data
-	// v44+ has different header layout, so we need to use the helper function
-	// v37 texture structures are 32 bytes (mstudiotexture_v37_t), v48+ are 64 bytes (mstudiotexture_t)
-	mstudiotexture_t* pTexture = StudioHdr_GetTexture( phdr, inMaterialID );
-	if ( pTexture )
+
+	// CRITICAL FIX: Must use correct type based on model version
+	// v37 and v44 studiohdr have different field layouts, so pTexture() uses wrong offsets for v44
+	if (phdr->version >= STUDIO_VERSION_44)
 	{
-		return pTexture->pszName();
+		// v44+ path - cast to v44 types for correct field offsets
+		studiohdr_v44_t *phdr44 = (studiohdr_v44_t *)phdr;
+		if (inMaterialID >= 0 && inMaterialID < phdr44->numtextures)
+		{
+			mstudiotexture_v44_t *pTexture44 = phdr44->pTexture(inMaterialID);
+			if (pTexture44)
+			{
+				return pTexture44->pszName();
+			}
+		}
+	}
+	else
+	{
+		// v37 path - use v37 types
+		mstudiotexture_v37_t* pTexture = phdr->pTexture_V37(inMaterialID);
+		if (pTexture)
+		{
+			return pTexture->pszName();
+		}
 	}
 	return "";
 }
@@ -134,7 +152,7 @@ void CStudioRender::LoadMaterials( studiohdr_t *phdr, OptimizedModel::FileHeader
 								   studioloddata_t &lodData, int lodID )
 {
 	// Use version-safe accessors for texture counts - v44 has different header layout
-	int numTextures = StudioHdr_GetNumTextures(phdr);
+	int numTextures = StudioHdr_GetNumTextures_VersionAware(phdr);
 	int numCdTextures = StudioHdr_GetNumCdTextures(phdr);
 
 	lodData.numMaterials = numTextures;
@@ -363,6 +381,14 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 	mstudiovertex_t* pVert = Studio_GetVertex_VersionAware( pStudioHdr, pMesh, idx );
 	if ( !pVert )
 	{
+		// Debug: Log when v44+ vertex access fails
+		static int s_nV44VertexFailCount = 0;
+		if (pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44 && s_nV44VertexFailCount < 5)
+		{
+			s_nV44VertexFailCount++;
+			Con_DPrintf("R_AddVertexToMesh: v44+ vertex access failed for model %s (pVertexBase=%p)\n",
+				pStudioHdr->name, pStudioHdr->pVertexBase);
+		}
 		// Fallback to standard accessor (may not work for v44+)
 		pVert = pMesh->Vertex(idx);
 	}
@@ -710,23 +736,27 @@ int CStudioRender::CalculateNumVerticesForWholeModel( studiohdr_t *pStudioHdr,
 	bool hwSkin = (pMeshGroup->m_Flags & MESHGROUP_IS_HWSKINNED) != 0;
 
 	// Iterate over every body part...
-	for ( i = 0; i < pStudioHdr->numbodyparts; i++ )
+	for ( i = 0; i < StudioHdr_GetNumBodyparts(pStudioHdr); i++ )
 	{
-		mstudiobodyparts_t* pBodyPart = pStudioHdr->pBodypart(i);
+		mstudiobodyparts_t* pBodyPart = StudioHdr_GetBodypart(pStudioHdr, i);
 		OptimizedModel::BodyPartHeader_t* pVtxBodyPart = pVtxHdr->pBodyPart(i);
 
 		// Iterate over every submodel...
-		for (j = 0; j < pBodyPart->nummodels; ++j)
+		for (j = 0; j < StudioBodypart_GetNumModels(pStudioHdr, pBodyPart); ++j)
 		{
-			mstudiomodel_t* pModel = pBodyPart->pModel(j);
+			mstudiomodel_t* pModel = StudioBodypart_GetModel(pStudioHdr, pBodyPart, j);
+			if (!pModel)
+				continue;
 			OptimizedModel::ModelHeader_t* pVtxModel = pVtxBodyPart->pModel(j);
 			
 			OptimizedModel::ModelLODHeader_t *pVtxLOD = pVtxModel->pLOD( lodID );
 			// Iterate over all the meshes....
-			for (k = 0; k < pModel->nummeshes; ++k)
+			for (k = 0; k < StudioModel_GetNumMeshes(pStudioHdr, pModel); ++k)
 			{
-				Assert( pModel->nummeshes == pVtxLOD->numMeshes );
-				mstudiomesh_t* pMesh = pModel->pMesh(k);
+				Assert( StudioModel_GetNumMeshes(pStudioHdr, pModel) == pVtxLOD->numMeshes );
+				mstudiomesh_t* pMesh = StudioModel_GetMesh(pStudioHdr, pModel, k);
+				if (!pMesh)
+					continue;
 				OptimizedModel::MeshHeader_t* pVtxMesh = pVtxLOD->pMesh(k);
 
 				for( l = 0; l < pVtxMesh->numStripGroups; l++ )
@@ -774,61 +804,85 @@ bool CStudioRender::R_StudioCreateStaticMeshes(const char *pModelName, studiohdr
 	// Runtime version check - engine must support all model versions
 	bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
 
-	// Use version-safe accessors for header fields that differ between v37 and v44+
-	int numBodyParts = StudioHdr_GetNumBodyparts(pStudioHdr);
+	// CRITICAL FIX: Must use completely separate code paths for v44 vs v37
+	// because studiohdr_t and studiohdr_v44_t have different field layouts!
+	// Using StudioHdr_GetBodypart (which uses v37 offsets) on v44 models returns garbage.
 
-	// Iterate over every body part...
-	for ( i = 0; i < numBodyParts; i++ )
+	if (bIsV44Plus)
 	{
-		mstudiobodyparts_t* pBodyPart = StudioHdr_GetBodypart(pStudioHdr, i);
-		OptimizedModel::BodyPartHeader_t* pVtxBodyPart = pVtxHdr->pBodyPart(i);
+		// v44+ path - must cast to studiohdr_v44_t to access correct field offsets
+		studiohdr_v44_t *pStudioHdr44 = (studiohdr_v44_t *)pStudioHdr;
 
-		// Iterate over every submodel...
-		for (j = 0; j < pBodyPart->nummodels; ++j)
+		// Iterate over every body part...
+		for ( i = 0; i < pStudioHdr44->numbodyparts; i++ )
 		{
-			OptimizedModel::ModelHeader_t* pVtxModel = pVtxBodyPart->pModel(j);
-			OptimizedModel::ModelLODHeader_t *pVtxLOD = pVtxModel->pLOD( lodID );
+			mstudiobodyparts_v44_t* pBodyPart44 = pStudioHdr44->pBodypart(i);
+			OptimizedModel::BodyPartHeader_t* pVtxBodyPart = pVtxHdr->pBodyPart(i);
 
-			// Get nummeshes using correct struct based on MDL version
-			int nummeshes;
-			if (bIsV44Plus)
+			// Iterate over every submodel...
+			for (j = 0; j < pBodyPart44->nummodels; ++j)
 			{
-				mstudiomodel_v44_t* pModel44 = pBodyPart->pModel_v44(j);
-				nummeshes = pModel44->nummeshes;
-			}
-			else
-			{
-				mstudiomodel_t* pModel37 = pBodyPart->pModel(j);
-				nummeshes = pModel37->nummeshes;
-			}
+				OptimizedModel::ModelHeader_t* pVtxModel = pVtxBodyPart->pModel(j);
+				OptimizedModel::ModelLODHeader_t *pVtxLOD = pVtxModel->pLOD( lodID );
 
-			// Iterate over all the meshes....
-			for (k = 0; k < nummeshes; ++k)
-			{
-				Assert( nummeshes == pVtxLOD->numMeshes );
-				OptimizedModel::MeshHeader_t* pVtxMesh = pVtxLOD->pMesh(k);
+				mstudiomodel_v44_t* pModel44 = pBodyPart44->pModel(j);
+				int nummeshes = pModel44->nummeshes;
 
-				// Get mesh data using correct struct based on MDL version
-				mstudiomesh_t* pMesh;
-				int meshid;
-				if (bIsV44Plus)
+				// Iterate over all the meshes....
+				for (k = 0; k < nummeshes; ++k)
 				{
-					mstudiomodel_v44_t* pModel44 = pBodyPart->pModel_v44(j);
+					Assert( nummeshes == pVtxLOD->numMeshes );
+					OptimizedModel::MeshHeader_t* pVtxMesh = pVtxLOD->pMesh(k);
+
 					mstudiomesh_v44_t* pMesh44 = pModel44->pMesh(k);
-					// Cast to v37 struct for R_StudioCreateSingleMesh - fields at same offsets
-					pMesh = (mstudiomesh_t*)pMesh44;
-					meshid = pMesh44->meshid;
-				}
-				else
-				{
-					mstudiomodel_t* pModel37 = pBodyPart->pModel(j);
-					pMesh = pModel37->pMesh(k);
-					meshid = pMesh->meshid;
-				}
+					// Cast to v37 struct for R_StudioCreateSingleMesh - compatible field layout
+					mstudiomesh_t* pMesh = (mstudiomesh_t*)pMesh44;
+					int meshid = pMesh44->meshid;
 
-				Assert( meshid < numStudioMeshes );
-				R_StudioCreateSingleMesh( pMesh, pVtxMesh, pVtxHdr->maxBonesPerVert,
-					&((*ppStudioMeshes)[meshid]), pStudioHdr, pVtxHdr->IsV6() );
+					Assert( meshid < numStudioMeshes );
+					R_StudioCreateSingleMesh( pMesh, pVtxMesh, pVtxHdr->maxBonesPerVert,
+						&((*ppStudioMeshes)[meshid]), pStudioHdr, pVtxHdr->IsV6() );
+				}
+			}
+		}
+	}
+	else
+	{
+		// v37 path - use original v37 types and methods
+		int numBodyParts = StudioHdr_GetNumBodyparts(pStudioHdr);
+
+		// Iterate over every body part...
+		for ( i = 0; i < numBodyParts; i++ )
+		{
+			mstudiobodyparts_t* pBodyPart = StudioHdr_GetBodypart(pStudioHdr, i);
+			OptimizedModel::BodyPartHeader_t* pVtxBodyPart = pVtxHdr->pBodyPart(i);
+
+			// Iterate over every submodel...
+			for (j = 0; j < StudioBodypart_GetNumModels(pStudioHdr, pBodyPart); ++j)
+			{
+				OptimizedModel::ModelHeader_t* pVtxModel = pVtxBodyPart->pModel(j);
+				OptimizedModel::ModelLODHeader_t *pVtxLOD = pVtxModel->pLOD( lodID );
+
+				mstudiomodel_t* pModel = StudioBodypart_GetModel(pStudioHdr, pBodyPart, j);
+				if (!pModel)
+					continue;
+				int nummeshes = StudioModel_GetNumMeshes(pStudioHdr, pModel);
+
+				// Iterate over all the meshes....
+				for (k = 0; k < nummeshes; ++k)
+				{
+					Assert( nummeshes == pVtxLOD->numMeshes );
+					OptimizedModel::MeshHeader_t* pVtxMesh = pVtxLOD->pMesh(k);
+
+					mstudiomesh_t* pMesh = StudioModel_GetMesh(pStudioHdr, pModel, k);
+					if (!pMesh)
+						continue;
+					int meshid = pMesh->meshid;
+
+					Assert( meshid < numStudioMeshes );
+					R_StudioCreateSingleMesh( pMesh, pVtxMesh, pVtxHdr->maxBonesPerVert,
+						&((*ppStudioMeshes)[meshid]), pStudioHdr, pVtxHdr->IsV6() );
+				}
 			}
 		}
 	}
@@ -932,31 +986,63 @@ outputs:
 	pmdl
 =================
 */
-int CStudioRender::R_StudioSetupModel ( int bodypart, int entity_body, mstudiomodel_t **ppSubModel, 
+int CStudioRender::R_StudioSetupModel ( int bodypart, int entity_body, mstudiomodel_t **ppSubModel,
 									   studiohdr_t *pStudioHdr ) const
 {
 	int index;
-	mstudiobodyparts_t   *pbodypart;
-
-	// Use version-safe accessor for v37/v44+ compatibility
-	int numBodyParts = StudioHdr_GetNumBodyparts(pStudioHdr);
-	if (bodypart > numBodyParts)
-	{
-		Con_DPrintf ("R_StudioSetupModel: no such bodypart %d\n", bodypart);
-		bodypart = 0;
-	}
-
-	pbodypart = StudioHdr_GetBodypart(pStudioHdr, bodypart);
-
-	index = entity_body / pbodypart->base;
-	index = index % pbodypart->nummodels;
 
 	Assert( ppSubModel );
-	// For v44+, use the correct model accessor - caller receives mstudiomodel_t* cast
+
+	// CRITICAL FIX: Must use completely separate code paths for v44 vs v37
+	// because studiohdr_t and studiohdr_v44_t have different field layouts!
 	if (pStudioHdr->version >= STUDIO_VERSION_44)
-		*ppSubModel = (mstudiomodel_t*)pbodypart->pModel_v44( index );
+	{
+		// v44+ path - cast to v44 types for correct field offsets
+		studiohdr_v44_t *pStudioHdr44 = (studiohdr_v44_t *)pStudioHdr;
+
+		if (pStudioHdr44->numbodyparts <= 0)
+		{
+			Con_DPrintf ("R_StudioSetupModel: model has no bodyparts\n");
+			*ppSubModel = NULL;
+			return 0;
+		}
+
+		if (bodypart < 0 || bodypart >= pStudioHdr44->numbodyparts)
+		{
+			Con_DPrintf ("R_StudioSetupModel: no such bodypart %d\n", bodypart);
+			bodypart = 0;
+		}
+
+		mstudiobodyparts_v44_t *pbodypart44 = pStudioHdr44->pBodypart(bodypart);
+
+		index = entity_body / pbodypart44->base;
+		index = index % pbodypart44->nummodels;
+
+		*ppSubModel = (mstudiomodel_t*)pbodypart44->pModel( index );
+	}
 	else
+	{
+		// v37 path - use original v37 types
+		if (StudioHdr_GetNumBodyparts(pStudioHdr) <= 0)
+		{
+			Con_DPrintf ("R_StudioSetupModel: model has no bodyparts\n");
+			*ppSubModel = NULL;
+			return 0;
+		}
+
+		if (bodypart < 0 || bodypart >= StudioHdr_GetNumBodyparts(pStudioHdr))
+		{
+			Con_DPrintf ("R_StudioSetupModel: no such bodypart %d\n", bodypart);
+			bodypart = 0;
+		}
+
+		mstudiobodyparts_t *pbodypart = StudioHdr_GetBodypart(pStudioHdr, bodypart);
+
+		index = entity_body / pbodypart->base;
+		index = index % pbodypart->nummodels;
+
 		*ppSubModel = pbodypart->pModel( index );
+	}
 	return index;
 }
 

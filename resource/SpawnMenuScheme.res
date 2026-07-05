@@ -1,128 +1,289 @@
-//=========== Copyright © 1996-2003, Valve LLC, All rights reserved. ===========
+///////////////////////////////////////////////////////////
+// Tracker scheme resource file
 //
-// Purpose: BarrysMod Spawn Menu Color Scheme - Identical to Garry's Mod
+// sections:
+//		Colors			- all the colors used by the scheme
+//		BaseSettings	- contains settings for app to use to draw controls
+//		Fonts			- list of all the fonts used by app
+//		Borders			- description of all the borders
 //
-//=============================================================================
-
+// Based on Garry's Mod 9 SpawnMenuScheme.res
+///////////////////////////////////////////////////////////
 Scheme
 {
 	//////////////////////// COLORS ///////////////////////////
+	// color details
+	// this is a list of all the colors used by the scheme
 	Colors
 	{
-		// Base colors
-		"White"				"255 255 255 255"
-		"OffWhite"			"221 221 221 255"
-		"DullWhite"			"142 142 142 255"
-		"Orange"			"255 155 0 255"
-		"TransparentBlack"	"0 0 0 196"
-		"Black"				"0 0 0 255"
+		// base colors
+		"White"				"255 255 255 245"
+		"OffWhite"			"216 216 216 245"
+		"DullWhite"			"142 142 142 245"
+
+		"TransparentBlack"	"0 0 0 128"
+		"Black"				"0 0 0 245"
 
 		"Blank"				"0 0 0 0"
 
-		// Spawn Menu specific colors - matching Garry's Mod
-		"SpawnMenuBackground"		"0 0 0 180"
-		"SpawnMenuTitle"			"255 255 255 255"
-		"SpawnMenuButton"			"100 100 100 255"
-
-		// Tool Buttons Panel colors
-		"ToolButtonsBackground"		"50 50 50 200"
-		"ToolButtonNormal"			"100 100 100 255"
-		"ToolButtonSelected"		"255 155 0 255"
-		"ToolButtonHover"			"150 150 150 255"
-		"ToolButtonPressed"			"80 80 80 255"
-
-		// Context Panel colors
-		"ContextPanelBG"			"40 40 40 200"
-		"ContextPanelBGSeperated"	"60 60 60 200"
-		"ContextPanels"				"80 80 80 255"
-
-		// Menu item colors
-		"MenuColor"					"255 255 255 255"
-		"MenuItemColor"				"255 255 255 255"
-		"MenuBoxBg"					"0 0 0 100"
-		"MenuBoxColor"				"255 255 255 255"
-
-		// Button colors
-		"ButtonBgColor"				"76 88 68 255"
-		"ButtonSelectedBgColor"		"196 181 80 255"
-		"ButtonArmedBgColor"		"196 181 80 255"
-		"ButtonDepressedBgColor"	"96 108 88 255"
-
-		// Text colors
-		"LabelBgColor"				"0 0 0 0"
-		"LabelFgColor"				"255 255 255 255"
-		"TextColor"					"255 255 255 255"
-		"BrightTextColor"			"255 255 255 255"
-		"DisabledText1"				"117 117 117 255"
-		"DisabledText2"				"40 46 34 255"
-
-		// Border colors
-		"BorderBright"				"136 145 128 255"
-		"BorderDark"				"40 46 34 255"
-		"BorderSelection"			"196 181 80 255"
-
-		// Tooltip colors
-		"Tooltip.TextColor"			"0 0 0 255"
-		"Tooltip.BgColor"			"255 255 225 255"
+		"HoverColor"			"50 150 255 245"
+		"DownColor"				" 70 130 255 245"
+		"ButtonColor"			"130 132 137 245"
+		"ButtonColorDisabled"	"100 102 107 215"
 	}
 
 	///////////////////// BASE SETTINGS ////////////////////////
+	//
+	// default settings for all panels
+	// controls use these to determine their settings
 	BaseSettings
 	{
+		SpawnMenuBackground				"150 155 165 220"
+		ToolButtonsBackground			"0 0 10 100"
+		ContextPanelBG					"0 0 0 50"
+		ContextPanelBGSeperated			"70 70 80 230"
+		SpawnListBG						"0 0 10 100"
+
 		// vgui_controls color specifications
-		"FgColor"			"255 255 255 255"
-		"BgColor"			"0 0 0 76"
+		Border.Bright					"180 180 180 196"	// the lit side of a control
+		Border.Dark						"60 60 60 196"		// the dark/unlit side of a control
+		Border.Selection				"0 0 0 196"			// the additional border color for displaying the default/selected button
 
-		"Panel.FgColor"			"255 255 255 255"
-		"Panel.BgColor"			"0 0 0 76"
+		Button.TextDullColor			"DullWhite"
+		Button.TextColor				"White"
+		Button.TextBrightColor			"0 0 0 240"
+		Button.BgColor					"ButtonColor"
+		Button.DisabledBgColor			"ButtonColorDisabled"
+		Button.ArmedTextColor			"White"
+		Button.ArmedBgColor				"HoverColor"
+		Button.DepressedTextColor		"White"
+		Button.DepressedBgColor			"DownColor"
+		Button.FocusBorderColor			"Black"
 
-		"BrightFg"		"255 255 255 255"
+		CheckButton.TextColor			"OffWhite"
+		CheckButton.SelectedTextColor	"White"
+		CheckButton.BgColor				"TransparentBlack"
+		CheckButton.Border1  			"Border.Dark" 		// the left checkbutton border
+		CheckButton.Border2  			"Border.Bright"		// the right checkbutton border
+		CheckButton.Check				"White"				// color of the check itself
 
-		"DamagedBg"			"180 0 0 200"
-		"DamagedFg"			"180 0 0 230"
-		"BrightDamagedFg"	"255 0 0 255"
+		ComboBoxButton.ArrowColor		"White"
+		ComboBoxButton.ArmedArrowColor	"White"
+		ComboBoxButton.BgColor			"Blank"
+		ComboBoxButton.DisabledBgColor	"Blank"
 
-		// weapon selection colors
-		"SelectionNumberFg"		"255 220 0 200"
-		"SelectionTextFg"		"255 220 0 200"
-		"SelectionEmptyBoxBg" 	"0 0 0 80"
-		"SelectionBoxBg" 		"0 0 0 80"
-		"SelectionSelectedBoxBg" "0 0 0 190"
+		Frame.TitleTextInsetX			16
+		Frame.ClientInsetX				8
+		Frame.ClientInsetY				6
+		Frame.BgColor					"170 173 182 235"
+		Frame.OutOfFocusBgColor			"150 153 155 235"
+		Frame.FocusTransitionEffectTime	"0.1"	// time it takes for a window to fade in/out on focus/out of focus
+		Frame.TransitionEffectTime		"0.1"	// time it takes for a window to fade in/out on open/close
+		Frame.AutoSnapRange				"0"
+		FrameGrip.Color1				"200 200 200 196"
+		FrameGrip.Color2				"0 0 0 196"
+		FrameTitleButton.FgColor		"200 200 200 196"
+		FrameTitleButton.BgColor		"Blank"
+		FrameTitleButton.DisabledFgColor	"255 255 255 192"
+		FrameTitleButton.DisabledBgColor	"Blank"
+		FrameSystemButton.FgColor		"Blank"
+		FrameSystemButton.BgColor		"Blank"
+		FrameSystemButton.Icon			""
+		FrameSystemButton.DisabledIcon	""
+		FrameTitleBar.Font				"UiBold"
+		FrameTitleBar.TextColor			"White"
+		FrameTitleBar.BgColor			"Blank"
+		FrameTitleBar.DisabledTextColor	"255 255 255 192"
+		FrameTitleBar.DisabledBgColor	"Blank"
 
-		// Hint message colors
-		"HintMessageFg"			"255 255 255 255"
-		"HintMessageBg" 		"0 0 0 60"
+		GraphPanel.FgColor				"White"
+		GraphPanel.BgColor				"TransparentBlack"
 
-		"ProgressBarFg"			"255 30 13 255"
+		Label.TextDullColor				"DullWhite"
+		Label.TextColor					"White"
+		Label.TextBrightColor			"0 0 0 240"
+		Label.SelectedTextColor			"White"
+		Label.BgColor					"Blank"
+		Label.DisabledFgColor1			"117 117 117 100"
+		Label.DisabledFgColor2			"30 30 30 100"
 
-		// Top-left corner of the menu on the main screen
-		"Main.Title1.X"		"53"
-		"Main.Title1.Y"		"190"
-		"Main.Title1.Color"	"255 255 255 255"
+		ListPanel.TextColor					"OffWhite"
+		ListPanel.TextBgColor				"Blank"
+		ListPanel.BgColor					"60 63 67 235"
+		ListPanel.SelectedTextColor			"Black"
+		ListPanel.SelectedBgColor			"130 133 135 235"
+		ListPanel.SelectedOutOfFocusBgColor	"130 133 135 235"
+		ListPanel.EmptyListInfoTextColor	"OffWhite"
 
-		"Main.Title2.X"		"53"
-		"Main.Title2.Y"		"212"
-		"Main.Title2.Color"	"255 255 255 200"
+		Menu.TextColor					"White"
+		Menu.BgColor					"HoverColor"
+		Menu.ArmedTextColor				"Black"
+		Menu.ArmedBgColor				"DownColor"
+		Menu.TextInset					"6"
 
-		"Main.Menu.X"		"53"
-		"Main.Menu.Y"		"240"
+		Panel.FgColor					"DullWhite"
+		Panel.BgColor					"Blank"
 
-		"Main.BottomBorder"	"32"
+		ProgressBar.FgColor				"White"
+		ProgressBar.BgColor				"TransparentBlack"
+
+		PropertySheet.TextColor			"OffWhite"
+		PropertySheet.SelectedTextColor	"White"
+		PropertySheet.TransitionEffectTime	"0.25"	// time to change from one tab to another
+
+		RadioButton.TextColor			"DullWhite"
+		RadioButton.SelectedTextColor	"White"
+
+		RichText.TextColor				"OffWhite"
+		RichText.BgColor				"TransparentBlack"
+		RichText.SelectedTextColor		"Black"
+		RichText.SelectedBgColor		"255 155 0 255"
+
+		ScrollBar.Wide					17
+
+		ScrollBarButton.FgColor				"White"
+		ScrollBarButton.BgColor				"ButtonColor"
+		ScrollBarButton.ArmedFgColor		"White"
+		ScrollBarButton.ArmedBgColor		"HoverColor"
+		ScrollBarButton.DepressedFgColor	"White"
+		ScrollBarButton.DepressedBgColor	"DownColor"
+
+		ScrollBarSlider.FgColor				"White"			// nob color
+		ScrollBarSlider.BgColor				"Blank"	// slider background color
+
+		SectionedListPanel.HeaderTextColor	"White"
+		SectionedListPanel.HeaderBgColor	"Blank"
+		SectionedListPanel.DividerColor		"Black"
+		SectionedListPanel.TextColor		"DullWhite"
+		SectionedListPanel.BrightTextColor	"White"
+		SectionedListPanel.BgColor			"TransparentBlack"
+		SectionedListPanel.SelectedTextColor			"Black"
+		SectionedListPanel.SelectedBgColor				"255 155 0 235"
+		SectionedListPanel.OutOfFocusSelectedTextColor	"Black"
+		SectionedListPanel.OutOfFocusSelectedBgColor	"255 155 0 128"
+
+		Slider.NobColor				"HoverColor"
+		Slider.TextColor			"180 180 180 50"
+		Slider.TrackColor			"30 30 30 100"
+		Slider.DisabledTextColor1	"117 117 117 255"
+		Slider.DisabledTextColor2	"30 30 30 255"
+		Slider.DisabledTextColor2	"30 30 30 255"
+
+		TextEntry.TextColor			"OffWhite"
+		TextEntry.BgColor			"TransparentBlack"
+		TextEntry.CursorColor		"OffWhite"
+		TextEntry.DisabledTextColor	"DullWhite"
+		TextEntry.DisabledBgColor	"Blank"
+		TextEntry.SelectedTextColor	"Black"
+		TextEntry.SelectedBgColor	"255 155 0 255"
+		TextEntry.OutOfFocusSelectedBgColor	"255 155 0 128"
+		TextEntry.FocusEdgeColor	"0 0 0 196"
+
+		ToggleButton.SelectedTextColor	"White"
+
+		Tooltip.TextColor			"0 0 0 196"
+		Tooltip.BgColor				"255 255 222 220"
+
+		TreeView.BgColor			"TransparentBlack"
+
+		WizardSubPanel.BgColor		"Blank"
 	}
 
+	//
 	//////////////////////// FONTS /////////////////////////////
+	//
+	// describes all the fonts
 	Fonts
 	{
 		// fonts are used in order that they are listed
 		// fonts listed later in the order will only be used if they fulfill a range not already filled
 		// if a font fails to load then the subsequent fonts will replace
+		// fonts are used in order that they are listed
+
+		"SpawnMenuTitle"
+		{
+			"1"
+			{
+				"name"			"Coolvetica"
+				"tall"			"25"
+				"weight"		"100"
+				"antialias"		"1"
+				//"dropshadow"	"1"
+				//"outline"		"1"
+			}
+		}
+		"SpawnMenuButton"
+		{
+			"1"
+			{
+				"name"		"Tahoma"
+				"tall"		"13"
+				"weight"	"600"
+				"antialias" 	"1"
+				//"outline"	"1"
+			}
+		}
+		"SpawnPanelTitle"
+		{
+			"1"
+			{
+				"name"			"Tahoma"
+				"tall"			"14"
+				"weight"		"700"
+				"antialias"		"1"
+			}
+		}
+		"SpawnPanelButton"
+		{
+			"1"
+			{
+				"name"		"Tahoma"
+				"tall"		"13"
+				"weight"	"500"
+				"antialias" 	"1"
+			}
+		}
+
+		"DebugFixed"
+		{
+			"1"
+			{
+				"name"		"Courier New"
+				"tall"		"10"
+				"weight"	"500"
+				"antialias" "1"
+			}
+		}
+		// fonts are used in order that they are listed
+		"DebugFixedSmall"
+		{
+			"1"
+			{
+				"name"		"Courier New"
+				"tall"		"7"
+				"weight"	"500"
+				"antialias" "1"
+			}
+		}
+		"DefaultFixedOutline"
+		{
+			"1"
+			{
+				"name"		"Lucida Console"
+				"tall"		"10"
+				"weight"	"0"
+				"outline"	"1"
+			}
+		}
 		"Default"
 		{
 			"1"
 			{
 				"name"		"Tahoma"
-				"tall"		"16"
+				"tall"		"13"
 				"weight"	"500"
+				"antialias" "1"
+				"weight"	"1000"
 			}
 		}
 		"DefaultBold"
@@ -130,8 +291,9 @@ Scheme
 			"1"
 			{
 				"name"		"Tahoma"
-				"tall"		"16"
-				"weight"	"1000"
+				"tall"		"13"
+				"weight"	"2000"
+				"antialias" "1"
 			}
 		}
 		"DefaultUnderline"
@@ -139,7 +301,7 @@ Scheme
 			"1"
 			{
 				"name"		"Tahoma"
-				"tall"		"16"
+				"tall"		"13"
 				"weight"	"500"
 				"underline" "1"
 			}
@@ -158,7 +320,7 @@ Scheme
 			"1"
 			{
 				"name"		"Tahoma"
-				"tall"		"13"
+				"tall"		"10"
 				"weight"	"0"
 				"dropshadow" "1"
 			}
@@ -168,7 +330,7 @@ Scheme
 			"1"
 			{
 				"name"		"Tahoma"
-				"tall"		"12"
+				"tall"		"9"
 				"weight"	"0"
 			}
 		}
@@ -183,7 +345,27 @@ Scheme
 			}
 		}
 
+		"ModName"
+		{
+			"1"
+			{
+				"name"		"Tahoma"
+				"tall"		"13"
+				"weight"	"1000"
+				"antialias" "1"
+			}
+		}
+
 		"UiBold"
+		{
+			"1"
+			{
+				"name"		"Tahoma"
+				"tall"		"12"
+				"weight"	"1000"
+			}
+		}
+		"SpawnMenuHeader"
 		{
 			"1"
 			{
@@ -207,7 +389,7 @@ Scheme
 		{
 			"1"
 			{
-				"name"		 "Lucida Console"
+				"name"		"Lucida Console"
 				"tall"		"10"
 				"weight"	"500"
 			}
@@ -232,8 +414,10 @@ Scheme
 				"name"		"Trebuchet MS"
 				"tall"		"24"
 				"weight"	"900"
+				"antialias"	"1"
 			}
 		}
+
 
 		"Trebuchet20"
 		{
@@ -311,13 +495,12 @@ Scheme
 				"weight"	"900"
 			}
 		}
-
 		"DefaultFixed"
 		{
 			"1"
 			{
-				"name"		 "Lucida Console"
-				"tall"		"11"
+				"name"		"Lucida Console"
+				"tall"		"10"
 				"weight"	"0"
 			}
 //			"1"
@@ -332,8 +515,8 @@ Scheme
 		{
 			"1"
 			{
-				"name"		 "Lucida Console"
-				"tall"		"14"
+				"name"		"Lucida Console"
+				"tall"		"10"
 				"weight"	"0"
 				"dropshadow" "1"
 			}
@@ -384,45 +567,11 @@ Scheme
 			}
 		}
 
-		// Menu fonts
-		"MenuTextFont"
-		{
-			"1"
-			{
-				"name"		"Tahoma"
-				"tall"		"13"
-				"weight"	"600"
-				"antialias" "1"
-			}
-		}
-
-		"MenuItemFont"
-		{
-			"1"
-			{
-				"name"		"Tahoma"
-				"tall"		"13"
-				"weight"	"600"
-				"antialias" "1"
-			}
-		}
-
-		"MenuItemFontPulsing"
-		{
-			"1"
-			{
-				"name"		"Tahoma"
-				"tall"		"13"
-				"weight"	"600"
-				"antialias" "1"
-			}
-		}
-
 		TitleFont
 		{
 			"1"
 			{
-				"name"		"Arial"
+				"name"		"HalfLife2"
 				"tall"		"72"
 				"weight"	"400"
 				"antialias"	"1"
@@ -434,7 +583,7 @@ Scheme
 		{
 			"1"
 			{
-				"name"		"Arial"
+				"name"		"HalfLife2"
 				"tall"		"120"
 				"weight"	"400"
 				"antialias"	"1"
@@ -444,165 +593,66 @@ Scheme
 	}
 
 	//
-	//////////////////////// BORDERS //////////////////////////////
+	//////////////////// BORDERS //////////////////////////////
 	//
 	// describes all the border types
 	Borders
 	{
-		BaseBorder		SubtleBorder
-		SubtleBorder
+		BaseBorder		DepressedBorder
+
+		ComboBoxBorder	ButtonDepressedBorder
+		MenuBorder		ButtonDepressedBorder
+		BrowserBorder	ButtonDepressedBorder
+		PropertySheetBorder	ButtonDepressedBorder
+		ScrollBarButtonDepressedBorder ButtonDepressedBorder
+		ScrollBarButtonBorder ButtonDepressedBorder
+
+		RoundedBorder
 		{
-			"inset" "0 0 1 1"
-			Left
-			{
-				"1"
-				{
-					"color" "BorderDark"
-					"offset" "0 1"
-				}
-			}
-
-			Right
-			{
-				"1"
-				{
-					"color" "BorderBright"
-					"offset" "1 0"
-				}
-			}
-
-			Top
-			{
-				"1"
-				{
-					"color" "BorderDark"
-					"offset" "0 0"
-				}
-			}
-
-			Bottom
-			{
-				"1"
-				{
-					"color" "BorderBright"
-					"offset" "0 0"
-				}
-			}
+			"backgroundtype" "2"
 		}
 
-		ButtonBorder
+		FrameBorder
 		{
-			"inset" "0 0 1 1"
-			Left
-			{
-				"1"
-				{
-					"color" "BorderBright"
-					"offset" "0 1"
-				}
-			}
+			"backgroundtype" "2"
+		}
 
-			Right
-			{
-				"1"
-				{
-					"color" "BorderDark"
-					"offset" "0 0"
-				}
-			}
+		TitleButtonBorder
+		{
+			"backgroundtype" "0"
+		}
 
-			Top
-			{
-				"1"
-				{
-					"color" "BorderBright"
-					"offset" "0 1"
-				}
-			}
+		TitleButtonDisabledBorder
+		{
+			"backgroundtype" "0"
+		}
 
-			Bottom
-			{
-				"1"
-				{
-					"color" "BorderDark"
-					"offset" "0 0"
-				}
-			}
+		TitleButtonDepressedBorder
+		{
+			"backgroundtype" "0"
 		}
 
 		TabBorder
 		{
 			"inset" "0 0 1 1"
-			Left
-			{
-				"1"
-				{
-					"color" "BorderBright"
-					"offset" "0 1"
-				}
-			}
-
-			Right
-			{
-				"1"
-				{
-					"color" "BorderDark"
-					"offset" "1 0"
-				}
-			}
-
-			Top
-			{
-				"1"
-				{
-					"color" "BorderBright"
-					"offset" "0 0"
-				}
-			}
 
 		}
 
 		TabActiveBorder
 		{
 			"inset" "0 0 1 0"
-			Left
-			{
-				"1"
-				{
-					"color" "BorderBright"
-					"offset" "0 0"
-				}
-			}
-
-			Right
-			{
-				"1"
-				{
-					"color" "BorderDark"
-					"offset" "1 0"
-				}
-			}
-
-			Top
-			{
-				"1"
-				{
-					"color" "BorderBright"
-					"offset" "0 0"
-				}
-			}
-
 		}
 
 
 		ToolTipBorder
 		{
+			"backgroundtype" "2"
 			"inset" "0 0 1 0"
 			Left
 			{
 				"1"
 				{
-					"color" "BorderDark"
+					"color" "Border.Dark"
 					"offset" "0 0"
 				}
 			}
@@ -611,7 +661,7 @@ Scheme
 			{
 				"1"
 				{
-					"color" "BorderDark"
+					"color" "Border.Dark"
 					"offset" "1 0"
 				}
 			}
@@ -620,7 +670,7 @@ Scheme
 			{
 				"1"
 				{
-					"color" "BorderDark"
+					"color" "Border.Dark"
 					"offset" "0 0"
 				}
 			}
@@ -629,108 +679,29 @@ Scheme
 			{
 				"1"
 				{
-					"color" "BorderDark"
+					"color" "Border.Dark"
 					"offset" "0 0"
 				}
 			}
 		}
 
-		// this is the border used for default buttons (the button that gets pressed when you hit enter)
+
+		ButtonBorder
+		{
+			"backgroundtype" "2"
+			"inset" "2 1 1 1"
+		}
+
 		ButtonKeyFocusBorder
 		{
+			"backgroundtype" "2"
 			"inset" "0 0 1 1"
-			Left
-			{
-				"1"
-				{
-					"color" "BorderSelection"
-					"offset" "0 0"
-				}
-				"2"
-				{
-					"color" "BorderBright"
-					"offset" "0 1"
-				}
-			}
-			Top
-			{
-				"1"
-				{
-					"color" "BorderSelection"
-					"offset" "0 0"
-				}
-				"2"
-				{
-					"color" "BorderBright"
-					"offset" "1 0"
-				}
-			}
-			Right
-			{
-				"1"
-				{
-					"color" "BorderSelection"
-					"offset" "0 0"
-				}
-				"2"
-				{
-					"color" "BorderDark"
-					"offset" "1 0"
-				}
-			}
-			Bottom
-			{
-				"1"
-				{
-					"color" "BorderSelection"
-					"offset" "0 0"
-				}
-				"2"
-				{
-					"color" "BorderDark"
-					"offset" "0 0"
-				}
-			}
 		}
 
 		ButtonDepressedBorder
 		{
+			"backgroundtype" "2"
 			"inset" "2 1 1 1"
-			Left
-			{
-				"1"
-				{
-					"color" "BorderDark"
-					"offset" "0 1"
-				}
-			}
-
-			Right
-			{
-				"1"
-				{
-					"color" "BorderBright"
-					"offset" "1 0"
-				}
-			}
-
-			Top
-			{
-				"1"
-				{
-					"color" "BorderDark"
-					"offset" "0 0"
-				}
-			}
-
-			Bottom
-			{
-				"1"
-				{
-					"color" "BorderBright"
-					"offset" "0 0"
-				}
-			}
 		}
 	}
 
@@ -740,6 +711,6 @@ Scheme
 	CustomFontFiles
 	{
 		"1"		"resource/HALFLIFE2.ttf"
-		"2"		"resource/HL2crosshairs.ttf"
+		"2"		"fonts/COOLVETI.TTF"
 	}
 }

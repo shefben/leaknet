@@ -503,10 +503,12 @@ public:
 	CNetworkVar( bool, m_fOnTarget );		//Is the crosshair on a target?
 
 	CNetworkVar( int, m_iObserverMode );	// if in spectator mode != 0
+	CNetworkVar( float, m_flChaseCamDistance );	// Chase camera distance for spectator mode (GMod)
 
 	int						m_iObserverLastMode; // last used observer mode
 	CNetworkHandle( CBaseEntity, m_hObserverTarget );	// entity handle to m_iObserverTarget
 	bool					m_bForcedObserverMode; // true, player was forced by invalid targets to switch mode
+	bool					m_bAllowNonPlayerObserverTarget; // true when GMod Lua explicitly targets a prop/camera
 
 	EHANDLE					m_hAutoAimTarget;	//If the crosshair is on a target, this is it
 

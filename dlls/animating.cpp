@@ -10,6 +10,8 @@
 #include "activitylist.h"
 #include "studio.h"
 #include "bone_setup.h"
+#include "studiohdr_v44.h"  // Version-aware seqdesc/animdesc accessors for v44+
+#include "studio_helpers.h"  // Helper functions for studiohdr_t access
 #include "mathlib.h"
 #include "model_types.h"
 #include "physics.h"
@@ -207,8 +209,12 @@ void CBaseAnimating::StudioFrameAdvance()
 int CBaseAnimating::SelectWeightedSequence ( Activity activity )
 {
 	Assert( activity != ACT_INVALID );
-	Assert( GetModelPtr() );
-	return ::SelectWeightedSequence( GetModelPtr(), activity, m_nSequence );
+
+	studiohdr_t *pStudioHdr = GetModelPtr();
+	if ( !pStudioHdr )
+		return -1; // Return invalid sequence for v44+ models or missing models
+
+	return ::SelectWeightedSequence( pStudioHdr, activity, m_nSequence );
 }
 
 //=========================================================
@@ -216,8 +222,11 @@ int CBaseAnimating::SelectWeightedSequence ( Activity activity )
 //=========================================================
 void CBaseAnimating::ResetActivityIndexes ( void )
 {
-	Assert( GetModelPtr() );
-	::ResetActivityIndexes( GetModelPtr() );
+	studiohdr_t *pStudioHdr = GetModelPtr();
+	if ( !pStudioHdr )
+		return; // Return gracefully for v44+ models or missing models
+
+	::ResetActivityIndexes( pStudioHdr );
 }
 
 //=========================================================
@@ -228,8 +237,11 @@ void CBaseAnimating::ResetActivityIndexes ( void )
 //=========================================================
 int CBaseAnimating::SelectHeaviestSequence ( Activity activity )
 {
-	Assert( GetModelPtr() );
-	return ::SelectHeaviestSequence( GetModelPtr(), activity );
+	studiohdr_t *pStudioHdr = GetModelPtr();
+	if ( !pStudioHdr )
+		return -1; // Return invalid sequence for v44+ models or missing models
+
+	return ::SelectHeaviestSequence( pStudioHdr, activity );
 }
 
 
@@ -240,16 +252,22 @@ int CBaseAnimating::SelectHeaviestSequence ( Activity activity )
 //-----------------------------------------------------------------------------
 int CBaseAnimating::LookupActivity( const char *label )
 {
-	Assert( GetModelPtr() );
-	return ::LookupActivity( GetModelPtr(), label );
+	studiohdr_t *pStudioHdr = GetModelPtr();
+	if ( !pStudioHdr )
+		return ACT_INVALID; // Return invalid activity for v44+ models or missing models
+
+	return ::LookupActivity( pStudioHdr, label );
 }
 
 //=========================================================
 //=========================================================
 int CBaseAnimating::LookupSequence( const char *label )
 {
-	Assert( GetModelPtr() );
-	return ::LookupSequence( GetModelPtr(), label );
+	studiohdr_t *pStudioHdr = GetModelPtr();
+	if ( !pStudioHdr )
+		return -1; // Return invalid sequence for v44+ models or missing models
+
+	return ::LookupSequence( pStudioHdr, label );
 }
 
 //-----------------------------------------------------------------------------
@@ -262,9 +280,11 @@ int CBaseAnimating::LookupSequence( const char *label )
 float CBaseAnimating::GetSequenceMoveYaw( int iSequence )
 {
 	Vector				vecReturn;
-	
-	Assert( GetModelPtr() );
-	::GetSequenceLinearMotion( GetModelPtr(), iSequence, GetPoseParameterArray(), &vecReturn );
+
+	studiohdr_t *pStudioHdr = GetModelPtr();
+	if ( !pStudioHdr )
+		return NOMOTION; // Return no motion for v44+ models
+	::GetSequenceLinearMotion( pStudioHdr, iSequence, GetPoseParameterArray(), &vecReturn );
 
 	if (vecReturn.Length() > 0)
 	{
@@ -284,9 +304,11 @@ float CBaseAnimating::GetSequenceMoveYaw( int iSequence )
 float CBaseAnimating::GetSequenceMoveDist( int iSequence )
 {
 	Vector				vecReturn;
-	
-	Assert( GetModelPtr() );
-	::GetSequenceLinearMotion( GetModelPtr(), iSequence, GetPoseParameterArray(), &vecReturn );
+
+	studiohdr_t *pStudioHdr = GetModelPtr();
+	if ( !pStudioHdr )
+		return 0.0f; // Return no movement distance for v44+ models or missing models
+	::GetSequenceLinearMotion( pStudioHdr, iSequence, GetPoseParameterArray(), &vecReturn );
 
 	return vecReturn.Length();
 }
@@ -300,8 +322,13 @@ float CBaseAnimating::GetSequenceMoveDist( int iSequence )
 //-----------------------------------------------------------------------------
 void CBaseAnimating::GetSequenceLinearMotion( int iSequence, Vector *pVec )
 {
-	Assert( GetModelPtr() );
-	::GetSequenceLinearMotion( GetModelPtr(), iSequence, GetPoseParameterArray(), pVec );
+	studiohdr_t *pStudioHdr = GetModelPtr();
+	if ( !pStudioHdr )
+	{
+		pVec->Init(); // Zero vector for v44+ models or missing models
+		return;
+	}
+	::GetSequenceLinearMotion( pStudioHdr, iSequence, GetPoseParameterArray(), pVec );
 }
 
 //-----------------------------------------------------------------------------
@@ -410,9 +437,11 @@ void CBaseAnimating::ResetSequenceInfo ( )
 //=========================================================
 bool CBaseAnimating::IsValidSequence( int iSequence )
 {
-	Assert( GetModelPtr() );
 	studiohdr_t* pstudiohdr = GetModelPtr( );
-	if (iSequence < 0 || iSequence >= pstudiohdr->numseq)
+	if ( !pstudiohdr )
+		return false; // Invalid for v44+ models
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	if (iSequence < 0 || iSequence >= pstudiohdr->GetNumLocalSeq())
 	{
 		return false;
 	}
@@ -424,8 +453,10 @@ bool CBaseAnimating::IsValidSequence( int iSequence )
 //=========================================================
 int CBaseAnimating::GetSequenceFlags( int iSequence )
 {
-	Assert( GetModelPtr() );
-	return ::GetSequenceFlags( GetModelPtr(), iSequence );
+	studiohdr_t *pStudioHdr = GetModelPtr();
+	if ( !pStudioHdr )
+		return 0; // Return no flags for v44+ models
+	return ::GetSequenceFlags( pStudioHdr, iSequence );
 }
 
 //=========================================================
@@ -439,7 +470,8 @@ float CBaseAnimating::SequenceDuration( int iSequence )
 		DevWarning( 2, "CBaseAnimating::SequenceDuration( %d ) NULL pstudiohdr on %s!\n", iSequence, GetClassname() );
 		return 0.1;
 	}
-	if (iSequence >= pstudiohdr->numseq || iSequence < 0 )
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	if (iSequence >= pstudiohdr->GetNumLocalSeq() || iSequence < 0 )
 	{
 		DevWarning( 2, "CBaseAnimating::SequenceDuration( %d ) out of range\n", iSequence );
 		return 0.1;
@@ -474,7 +506,9 @@ float CBaseAnimating::GetLastVisibleCycle( int iSequence )
 
 	if (!(GetSequenceFlags( iSequence ) & STUDIO_LOOPING))
 	{
-		return 1.0f - (pstudiohdr->pSeqdesc( iSequence )->fadeouttime) * GetSequenceCycleRate( iSequence ) * m_flPlaybackRate;
+		// Use version-aware seqdesc accessor for v44+ (baseptr shifts all fields by 4 bytes)
+		float fadeouttime = StudioSeqdesc_GetFadeOutTime(pstudiohdr, iSequence);
+		return 1.0f - fadeouttime * GetSequenceCycleRate( iSequence ) * m_flPlaybackRate;
 	}
 	else
 	{
@@ -542,12 +576,14 @@ void CBaseAnimating::DispatchAnimEvents ( CBaseAnimating *eventHandler )
 
 	if ( !pstudiohdr )
 	{
-		Assert(!"CBaseAnimating::DispatchAnimEvents: model missing");
+		// v44+ models or missing models - return gracefully
 		return;
 	}
 
 	// don't fire events if the framerate is 0, and skip this altogether if there are no events
-	if (m_flPlaybackRate == 0.0 || pstudiohdr->pSeqdesc( m_nSequence )->numevents == 0)
+	// Use version-aware seqdesc accessor for v44+ (baseptr shifts all fields by 4 bytes)
+	int numEvents = StudioSeqdesc_GetNumEvents(pstudiohdr, m_nSequence);
+	if (m_flPlaybackRate == 0.0 || numEvents == 0)
 	{
 		return;
 	}
@@ -566,7 +602,9 @@ void CBaseAnimating::DispatchAnimEvents ( CBaseAnimating *eventHandler )
 #ifdef _DEBUG
 	if (m_debugOverlays & OVERLAY_NPC_SELECTED_BIT)
 	{
-		DevMsg( "%s:%s : checking %.2f %.2f (%d)\n", STRING(GetModelName()), pstudiohdr->pSeqdesc( m_nSequence )->pszLabel(), flStart, flEnd, m_bSequenceFinished );
+		// Use version-safe seqdesc accessor for v44+
+		const char *pszLabel = StudioSeqdesc_GetLabel(pstudiohdr, m_nSequence);
+		DevMsg( "%s:%s : checking %.2f %.2f (%d)\n", STRING(GetModelName()), pszLabel, flStart, flEnd, m_bSequenceFinished );
 	}
 #endif // _DEBUG
 
@@ -610,7 +648,7 @@ float CBaseAnimating::SetPoseParameter( int iParameter, float flValue )
 
 	if ( !pstudiohdr )
 	{
-		Assert(!"CBaseAnimating::SetPoseParameter: model missing");
+		// v44+ models or missing models - return gracefully
 		return flValue;
 	}
 
@@ -637,7 +675,7 @@ float CBaseAnimating::GetPoseParameter( int iParameter )
 
 	if ( !pstudiohdr )
 	{
-		Assert(!"CBaseAnimating::GetPoseParameter: model missing");
+		// v44+ models or missing models - return gracefully
 		return 0.0;
 	}
 
@@ -699,15 +737,15 @@ bool CBaseAnimating::HasPoseParameter( int iSequence, int iParameter )
 		return false;
 	}
 
-	if (iSequence < 0 || iSequence >= pstudiohdr->numseq)
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	if (iSequence < 0 || iSequence >= pstudiohdr->GetNumLocalSeq())
 	{
 		return false;
 	}
 
 	mstudioseqdesc_t *pSeqDesc = pstudiohdr->pSeqdesc( iSequence );
-
-	// Direct access (same binary layout for v37 and v48)
-	if (pSeqDesc->paramindex[0] == iParameter || pSeqDesc->paramindex[1] == iParameter)
+	if (StudioSeqdesc_GetParamIndexFromPtr(pstudiohdr, pSeqDesc, 0) == iParameter ||
+		StudioSeqdesc_GetParamIndexFromPtr(pstudiohdr, pSeqDesc, 1) == iParameter)
 	{
 		return true;
 	}
@@ -734,11 +772,11 @@ void CBaseAnimating::GetBonePosition ( int iBone, Vector &origin, QAngle &angles
 	studiohdr_t *pStudioHdr = GetModelPtr( );
 	if (!pStudioHdr)
 	{
-		Assert(!"CBaseAnimating::GetBonePosition: model missing");
+		// v44+ models or missing models - return gracefully
 		return;
 	}
 
-	if (iBone < 0 || iBone >= pStudioHdr->numbones)
+	if (iBone < 0 || iBone >= StudioHdr_GetNumBones(pStudioHdr))
 	{
 		Assert(!"CBaseAnimating::GetBonePosition: invalid bone index");
 		return;
@@ -761,11 +799,11 @@ void CBaseAnimating::GetBoneTransform( int iBone, matrix3x4_t &pBoneToWorld )
 
 	if (!pStudioHdr)
 	{
-		Assert(!"CBaseAnimating::GetBoneTransform: model missing");
+		// v44+ models or missing models - return gracefully
 		return;
 	}
 
-	if (iBone < 0 || iBone >= pStudioHdr->numbones)
+	if (iBone < 0 || iBone >= StudioHdr_GetNumBones(pStudioHdr))
 	{
 		Assert(!"CBaseAnimating::GetBoneTransform: invalid bone index");
 		return;
@@ -856,11 +894,11 @@ int CBaseAnimating::GetNumBones ( void )
 	studiohdr_t *pStudioHdr = GetModelPtr( );
 	if(pStudioHdr)
 	{
-		return pStudioHdr->numbones;
+		return StudioHdr_GetNumBones(pStudioHdr);
 	}
 	else
 	{
-		Assert(!"CBaseAnimating::GetNumBones: model missing");
+		// v44+ models or missing models - return gracefully
 		return 0;
 	}
 }
@@ -879,7 +917,7 @@ int CBaseAnimating::LookupAttachment( const char *szName )
 	studiohdr_t *pStudioHdr = GetModelPtr( );
 	if (!pStudioHdr)
 	{
-		Assert(!"CBaseAnimating::LookupAttachment: model missing");
+		// v44+ models or missing models - return gracefully
 		return 0;
 	}
 
@@ -929,7 +967,7 @@ bool CBaseAnimating::GetAttachment ( int iAttachment, matrix3x4_t &attachmentToW
 	studiohdr_t *pStudioHdr = GetModelPtr( );
 	if (!pStudioHdr)
 	{
-		Assert(!"CBaseAnimating::GetAttachment: model missing");
+		// v44+ models or missing models - return gracefully
 		return false;
 	}
 
@@ -939,11 +977,15 @@ bool CBaseAnimating::GetAttachment ( int iAttachment, matrix3x4_t &attachmentToW
 		return false;
 	}
 
-	mstudioattachment_t *pattachment = StudioHdr_GetAttachment(pStudioHdr, iAttachment-1 );
+	int attachmentIndex = iAttachment - 1;
+	int attachmentBone = StudioAttachment_GetBone(pStudioHdr, attachmentIndex);
+	const matrix3x4_t *pLocal = StudioAttachment_GetLocal(pStudioHdr, attachmentIndex);
+	if ( !pLocal || attachmentBone < 0 )
+		return false;
 
 	matrix3x4_t bonetoworld;
-	GetBoneTransform( pattachment->bone, bonetoworld );
-	ConcatTransforms( bonetoworld, pattachment->local, attachmentToWorld ); 
+	GetBoneTransform( attachmentBone, bonetoworld );
+	ConcatTransforms( bonetoworld, *pLocal, attachmentToWorld ); 
 
 	return true;
 }
@@ -1039,9 +1081,11 @@ void CBaseAnimating::GetEyeballs( Vector &origin, QAngle &angles )
 	studiohdr_t *pStudioHdr = GetModelPtr( );
 	if (!pStudioHdr)
 	{
-		Assert(!"CBaseAnimating::GetAttachment: model missing");
+		// v44+ models or missing models - return gracefully
 		return;
 	}
+	if (StudioHdr_IsV44Plus(pStudioHdr))
+		return;
 
 	for (int iBodypart = 0; iBodypart < StudioHdr_GetNumBodyparts(pStudioHdr); iBodypart++)
 	{
@@ -1089,9 +1133,7 @@ int CBaseAnimating::GetEntryNode( int iSequence )
 	if (! pstudiohdr)
 		return 0;
 	
-	mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( iSequence );
-
-	return pseqdesc->entrynode;
+	return StudioSeqdesc_GetEntryNode( pstudiohdr, iSequence );
 }
 
 
@@ -1101,9 +1143,7 @@ int CBaseAnimating::GetExitNode( int iSequence )
 	if (! pstudiohdr)
 		return 0;
 	
-	mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( iSequence );
-
-	return pseqdesc->exitnode;
+	return StudioSeqdesc_GetExitNode( pstudiohdr, iSequence );
 }
 
 
@@ -1113,9 +1153,7 @@ float CBaseAnimating::GetExitPhase( int iSequence )
 	if (! pstudiohdr)
 		return 0;
 	
-	mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( iSequence );
-
-	return pseqdesc->exitphase;
+	return StudioSeqdesc_GetExitPhase( pstudiohdr, iSequence );
 }
 
 //=========================================================
@@ -1265,7 +1303,7 @@ int CBaseAnimating::GetNumFlexControllers( void )
 	if (! pstudiohdr)
 		return 0;
 
-	return pstudiohdr->numflexcontrollers;
+	return StudioHdr_GetNumFlexControllers( pstudiohdr );
 }
 
 
@@ -1275,7 +1313,9 @@ const char *CBaseAnimating::GetFlexDescFacs( int iFlexDesc )
 	if (! pstudiohdr)
 		return 0;
 
-	mstudioflexdesc_t *pflexdesc = pstudiohdr->pFlexdesc( iFlexDesc );
+	mstudioflexdesc_t *pflexdesc = StudioHdr_GetFlexDesc( pstudiohdr, iFlexDesc );
+	if ( !pflexdesc )
+		return 0;
 
 	return pflexdesc->pszFACS( );
 }
@@ -1286,7 +1326,9 @@ const char *CBaseAnimating::GetFlexControllerName( int iFlexController )
 	if (! pstudiohdr)
 		return 0;
 
-	mstudioflexcontroller_t *pflexcontroller = pstudiohdr->pFlexcontroller( iFlexController );
+	mstudioflexcontroller_t *pflexcontroller = StudioHdr_GetFlexController( pstudiohdr, iFlexController );
+	if ( !pflexcontroller )
+		return 0;
 
 	return pflexcontroller->pszName( );
 }
@@ -1297,7 +1339,9 @@ const char *CBaseAnimating::GetFlexControllerType( int iFlexController )
 	if (! pstudiohdr)
 		return 0;
 
-	mstudioflexcontroller_t *pflexcontroller = pstudiohdr->pFlexcontroller( iFlexController );
+	mstudioflexcontroller_t *pflexcontroller = StudioHdr_GetFlexController( pstudiohdr, iFlexController );
+	if ( !pflexcontroller )
+		return 0;
 
 	return pflexcontroller->pszType( );
 }
@@ -1453,8 +1497,8 @@ void CBaseAnimating::SetModel( const char *szModelName )
 	InitBoneControllers(); // VXP: Initializes poseparameters too, multiplayer needs it
 }
 
-studiohdr_t *CBaseAnimating::GetModelPtr( void ) 
-{ 
+studiohdr_t *CBaseAnimating::GetModelPtr( void )
+{
 	model_t *model = GetModel();
 	if ( !model )
 		return NULL;
@@ -1463,7 +1507,7 @@ studiohdr_t *CBaseAnimating::GetModelPtr( void )
 	if ( modelinfo->GetModelType( model ) != mod_studio )
 		return NULL;
 
-	return static_cast< studiohdr_t * >( modelinfo->GetModelExtraData( model ) ); 
+	return static_cast< studiohdr_t * >( modelinfo->GetModelExtraData( model ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -1533,12 +1577,12 @@ bool CBaseAnimating::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask,
 	studiohdr_t *pStudioHdr = GetModelPtr( );
 	if (!pStudioHdr)
 	{
-		Assert(!"CBaseAnimating::GetBonePosition: model missing");
+		// v44+ models or missing models - return gracefully
 		return false;
 	}
 
-	mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( m_nHitboxSet );
-	if ( !set || !set->numhitboxes )
+	mstudiohitboxset_t *set = StudioHdr_GetHitboxSet( pStudioHdr, m_nHitboxSet );
+	if ( !set || !StudioHitboxSet_GetNumHitboxes( pStudioHdr, m_nHitboxSet ) )
 		return false;
 
 	// Use vcollide for box traces
@@ -1555,11 +1599,11 @@ bool CBaseAnimating::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask,
 
 	if ( TraceToStudio( ray, pStudioHdr, set, hitboxbones, fContentsMask, tr ) )
 	{
-		mstudiobbox_t *pbox = set->pHitbox( tr.hitbox );
+		int hitBone = StudioHitbox_GetBone( pStudioHdr, set, tr.hitbox );
 		// Use version-aware accessor for v37/v44+ bone structure compatibility
 		tr.surface.name = "**studio**";
 		tr.surface.flags = SURF_HITBOX;
-		tr.surface.surfaceProps = physprops->GetSurfaceIndex( pStudioHdr->GetBoneSurfaceProp(pbox->bone) );
+		tr.surface.surfaceProps = hitBone >= 0 ? physprops->GetSurfaceIndex( pStudioHdr->GetBoneSurfaceProp(hitBone) ) : 0;
 	}
 	return true;
 }
@@ -1572,7 +1616,7 @@ void CBaseAnimating::InitBoneControllers ( void ) // FIXME: rename
 
 	int i;
 
-	for (i = 0; i < pStudioHdr->numbonecontrollers; i++)
+	for (i = 0; i < StudioHdr_GetNumBoneControllers(pStudioHdr); i++)
 	{
 		SetBoneController( i, 0.0 );
 	}
@@ -1749,7 +1793,7 @@ void CBaseAnimating::SetHitboxSet( int setnum )
 	if ( !pStudioHdr )
 		return;
 
-	if (setnum > pStudioHdr->numhitboxsets)
+	if (setnum > StudioHdr_GetNumHitboxSets(pStudioHdr))
 	{
 		// Warn if an bogus hitbox set is being used....
 		static bool s_bWarned = false;
@@ -1838,18 +1882,21 @@ void CBaseAnimating::DrawServerHitboxes( void )
 	if ( !pStudioHdr )
 		return;
 
-	mstudiohitboxset_t *set =pStudioHdr->pHitboxSet( m_nHitboxSet );
+	mstudiohitboxset_t *set = StudioHdr_GetHitboxSet( pStudioHdr, m_nHitboxSet );
 	if ( !set )
 		return;
 
 	Vector position;
 	QAngle angles;
 
-	for ( int i = 0; i < set->numhitboxes; i++ )
+	for ( int i = 0; i < StudioHitboxSet_GetNumHitboxes( pStudioHdr, m_nHitboxSet ); i++ )
 	{
-		mstudiobbox_t *pbox = set->pHitbox( i );
+		mstudiobbox_t *pbox = StudioHitboxSet_GetHitboxFromPtr( pStudioHdr, set, i );
+		if ( !pbox )
+			continue;
+		int hitBone = StudioHitbox_GetBone( pStudioHdr, set, i );
 
-		GetBonePosition( pbox->bone, position, angles );
+		GetBonePosition( hitBone, position, angles );
 
 		int j = (pbox->group % 8);
 
@@ -1868,10 +1915,10 @@ int CBaseAnimating::GetHitboxBone( int hitboxIndex )
 	studiohdr_t *pStudioHdr = GetModelPtr();
 	if ( pStudioHdr )
 	{
-		mstudiohitboxset_t *set =pStudioHdr->pHitboxSet( m_nHitboxSet );
-		if ( set && hitboxIndex < set->numhitboxes )
+		mstudiohitboxset_t *set = StudioHdr_GetHitboxSet( pStudioHdr, m_nHitboxSet );
+		if ( set && hitboxIndex < StudioHitboxSet_GetNumHitboxes( pStudioHdr, m_nHitboxSet ) )
 		{
-			return set->pHitbox( hitboxIndex )->bone;
+			return StudioHitbox_GetBone( pStudioHdr, set, hitboxIndex );
 		}
 	}
 	return 0;
@@ -1883,7 +1930,7 @@ int CBaseAnimating::GetPhysicsBone( int boneIndex )
 	studiohdr_t *pStudioHdr = GetModelPtr();
 	if ( pStudioHdr )
 	{
-		if ( boneIndex >= 0 && boneIndex < pStudioHdr->numbones )
+		if ( boneIndex >= 0 && boneIndex < StudioHdr_GetNumBones(pStudioHdr) )
 			return pStudioHdr->GetBonePhysicsbone( boneIndex );  // Version-aware accessor
 	}
 	return 0;
@@ -1899,16 +1946,16 @@ bool CBaseAnimating::LookupHitbox( const char *szName, int& outSet, int& outBox 
 	if( !pHdr )
 		return false;
 
-	for( int set=0; set < pHdr->numhitboxsets; set++ )
+	for( int set=0; set < StudioHdr_GetNumHitboxSets(pHdr); set++ )
 	{
-		for( int i = 0; i < pHdr->iHitboxCount(set); i++ )
+		for( int i = 0; i < StudioHitboxSet_GetNumHitboxes(pHdr, set); i++ )
 		{
-			mstudiobbox_t* pBox = pHdr->pHitbox( i, set );
+			mstudiobbox_t* pBox = StudioHitboxSet_GetHitbox( pHdr, set, i );
 			
 			if( !pBox )
 				continue;
 			
-			const char* szBoxName = pBox->pszHitboxName(pHdr);
+			const char* szBoxName = StudioHitbox_GetName( pHdr, set, i );
 			if( Q_stricmp( szBoxName, szName ) == 0 )
 			{
 				outSet = set;
@@ -1939,15 +1986,18 @@ int CBaseAnimating::GetHitboxesFrontside( int *boxList, int boxMax, const Vector
 	studiohdr_t *pStudioHdr = GetModelPtr();
 	if ( pStudioHdr )
 	{
-		mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( m_nHitboxSet );
+		mstudiohitboxset_t *set = StudioHdr_GetHitboxSet( pStudioHdr, m_nHitboxSet );
 		if ( set )
 		{
 			matrix3x4_t matrix;
-			for ( int b = 0; b < set->numhitboxes; b++ )
+			for ( int b = 0; b < StudioHitboxSet_GetNumHitboxes( pStudioHdr, m_nHitboxSet ); b++ )
 			{
-				mstudiobbox_t *pbox = set->pHitbox( b );
+				mstudiobbox_t *pbox = StudioHitboxSet_GetHitboxFromPtr( pStudioHdr, set, b );
+				if ( !pbox )
+					continue;
+				int hitBone = StudioHitbox_GetBone( pStudioHdr, set, b );
 
-				GetBoneTransform( pbox->bone, matrix );
+				GetBoneTransform( hitBone, matrix );
 				Vector center = (pbox->bbmax + pbox->bbmin) * 0.5;
 				Vector centerWs;
 				VectorTransform( center, matrix, centerWs );

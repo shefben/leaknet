@@ -79,11 +79,11 @@ struct SWEPData_t
     SWEPScriptOverride_t secondaryScriptOverride;
 
     // Weapon configuration
-    bool weaponSwapHands;
-    int weaponFOV;
-    int weaponSlot;
-    int weaponSlotPos;
-    bool firesUnderwater;
+	bool weaponSwapHands;
+	int weaponFOV;
+	int weaponSlot;
+	int weaponSlotPos;
+	bool firesUnderwater;
     bool reloadsSingly;
     bool isLoaded;
     bool isRegistered;
@@ -126,11 +126,11 @@ struct SWEPData_t
         tracerFreqSecondary = 2;
         secondaryScriptOverride = SWEP_OVERRIDE_NONE;
 
-        weaponSwapHands = false;
-        weaponFOV = 70;
-        weaponSlot = 5;
-        weaponSlotPos = 2;
-        firesUnderwater = true;
+	weaponSwapHands = false;
+	weaponFOV = 70;
+	weaponSlot = 5;
+	weaponSlotPos = 2;
+	firesUnderwater = true;
         reloadsSingly = false;
         isLoaded = false;
         isRegistered = false;

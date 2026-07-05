@@ -954,8 +954,12 @@ void CInput::ExtraMouseSample( float frametime, int active )
 	// Retreive view angles from engine ( could have been set in IN_AdjustAngles above )
 	engine->GetViewAngles( viewangles );
 
-	// Use new view angles if alive, otherwise user last angles we stored off.
-	if ( g_iAlive )
+	// Use new (current) view angles if alive, OR while spectating. GMod chase-cam observers
+	// (e.g. MelonRacer) steer by looking, so their live aim MUST reach the server; otherwise the
+	// frozen dead-player angle (_PlayerGetShootAng) makes the melon un-steerable. Only a genuine
+	// non-observing dead player keeps the frozen angle.
+	C_BasePlayer *pLocalPlayerForAim = C_BasePlayer::GetLocalPlayer();
+	if ( g_iAlive || ( pLocalPlayerForAim && pLocalPlayerForAim->IsObserver() ) )
 	{
 		VectorCopy( viewangles, cmd->viewangles );
 		VectorCopy( viewangles, m_angPreviousViewAngles );
@@ -1055,8 +1059,12 @@ void CInput::CreateMove ( int command_number, int totalslots, float tick_frameti
 		}
 	}
 
-	// Use new view angles if alive, otherwise user last angles we stored off.
-	if ( g_iAlive )
+	// Use new (current) view angles if alive, OR while spectating. GMod chase-cam observers
+	// (e.g. MelonRacer) steer by looking, so their live aim MUST reach the server; otherwise the
+	// frozen dead-player angle (_PlayerGetShootAng) makes the melon un-steerable. Only a genuine
+	// non-observing dead player keeps the frozen angle.
+	C_BasePlayer *pLocalPlayerForAim = C_BasePlayer::GetLocalPlayer();
+	if ( g_iAlive || ( pLocalPlayerForAim && pLocalPlayerForAim->IsObserver() ) )
 	{
 		VectorCopy( viewangles, cmd->viewangles );
 		VectorCopy( viewangles, m_angPreviousViewAngles );

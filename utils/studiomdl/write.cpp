@@ -656,14 +656,14 @@ static byte *WriteAnimations( byte *pData, byte *pStart, int group, studiohdr_t 
 	mstudioanim_t		*panim;
 	mstudioanimvalue_t	*panimvalue;
 
-#if STUDIO_VERSION == 37
+#if STUDIO_VERSION == 37 && !defined( STUDIOHDR_V44_H )
 	mstudioanimgroup_t	*panimgroup;
 #endif
 
 	// hack for seqgroup 0
 	// pseqgroup->data = (pData - pStart);
 
-#if STUDIO_VERSION == 37
+#if STUDIO_VERSION == 37 && !defined( STUDIOHDR_V44_H )
 	// VXP: Save animgroups
 	panimgroup = (mstudioanimgroup_t *)pData;
 	if( phdr )
@@ -1238,7 +1238,7 @@ static void WriteModel( studiohdr_t *phdr )
 
 		if( !g_quiet )
 		{
-			printf("vertices   %6d bytes (%d vertices)\n", pData - cur, psource->numvertices );
+			printf("vertices   %6d bytes (%d vertices)\n", (int)( pData - cur ), psource->numvertices );
 		}
 		cur = (int)pData;
 
@@ -1299,7 +1299,7 @@ static void WriteModel( studiohdr_t *phdr )
 
 		if( !g_quiet )
 		{
-			printf("faces      %6d bytes (%d faces)\n", pData - cur, psource->numfaces );
+			printf("faces      %6d bytes (%d faces)\n", (int)( pData - cur ), psource->numfaces );
 		}
 		cur = (int)pData;
 
@@ -1385,7 +1385,7 @@ static void WriteModel( studiohdr_t *phdr )
 
 		if( !g_quiet )
 		{
-			printf("flexes     %6d bytes (%d flexes)\n", pData - cur, g_numflexkeys );
+			printf("flexes     %6d bytes (%d flexes)\n", (int)( pData - cur ), g_numflexkeys );
 		}
 		cur = (int)pData;
 	}
@@ -1741,6 +1741,4 @@ void WriteFile (void)
 	LoadMaterials( phdr );
 	OptimizedModel::WriteOptimizedFiles( phdr, g_bodypart );
 }
-
-
 

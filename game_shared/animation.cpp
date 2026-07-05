@@ -14,6 +14,8 @@
 ****/
 #include "cbase.h"
 #include "studio.h"
+#include "studiohdr_v44.h"
+#include "studio_helpers.h"
 #include "activitylist.h"
 #include "engine/IEngineSound.h"
 #include "ai_activity.h"
@@ -35,15 +37,8 @@ int ExtractBbox( studiohdr_t *pstudiohdr, int sequence, Vector& mins, Vector& ma
 	if (! pstudiohdr)
 		return 0;
 
-	mstudioseqdesc_t	*pseqdesc = pstudiohdr->pSeqdesc( sequence );
-	
-	mins[0] = pseqdesc->bbmin[0];
-	mins[1] = pseqdesc->bbmin[1];
-	mins[2] = pseqdesc->bbmin[2];
-
-	maxs[0] = pseqdesc->bbmax[0];
-	maxs[1] = pseqdesc->bbmax[1];
-	maxs[2] = pseqdesc->bbmax[2];
+	mins = StudioSeqdesc_GetBBMin(pstudiohdr, sequence);
+	maxs = StudioSeqdesc_GetBBMax(pstudiohdr, sequence);
 
 	return 1;
 }
@@ -83,28 +78,27 @@ void IndexModelSequences( studiohdr_t *pstudiohdr )
 	if (! pstudiohdr)
 		return;
 
-	// NOTE: Must use pSeqdesc(i) for each element since v37/v48 have different binary sizes
-	for ( i = 0 ; i < pstudiohdr->numseq ; i++ )
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	for ( i = 0 ; i < pstudiohdr->GetNumLocalSeq() ; i++ )
 	{
-		mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( i );
-
 		// look up the activity number, but only for sequences that are assigned activities.
 		pszActivityName = GetSequenceActivityName( pstudiohdr, i );
 		if ( pszActivityName && pszActivityName[0] != '\0' )
 		{
 			iActivityIndex = ActivityList_IndexForName( pszActivityName );
 
+			int activityToSet;
 			if ( iActivityIndex == -1 )
 			{
 				// Allow this now.  Animators can create custom activities that are referenced only on the client or by scripts, etc.
-				//Warning( "***\nModel %s tried to reference unregistered activity: %s \n***\n", pstudiohdr->name, pszActivityName );
-				//Assert(0);
-				pseqdesc->activity = ActivityList_RegisterPrivateActivity( pszActivityName );
+				activityToSet = ActivityList_RegisterPrivateActivity( pszActivityName );
 			}
 			else
 			{
-				pseqdesc->activity = iActivityIndex;
+				activityToSet = iActivityIndex;
 			}
+
+			StudioSeqdesc_SetActivity(pstudiohdr, i, activityToSet);
 		}
 	}
 
@@ -146,19 +140,22 @@ int SelectWeightedSequence( studiohdr_t *pstudiohdr, int activity, int curSequen
 	int weighttotal = 0;
 	int seq = ACTIVITY_NOT_AVAILABLE;
 
-	// NOTE: Must use pSeqdesc(i) for each element since v37/v48 have different binary sizes
-	for (int i = 0; i < pstudiohdr->numseq; i++)
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	for (int i = 0; i < pstudiohdr->GetNumLocalSeq(); i++)
 	{
-		mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( i );
-		if (pseqdesc->activity == activity)
+		// Use version-safe helper functions - no inline casting needed
+		int seqActivity = StudioSeqdesc_GetActivity(pstudiohdr, i);
+		int seqActWeight = StudioSeqdesc_GetActweight(pstudiohdr, i);
+
+		if (seqActivity == activity)
 		{
-			if ( curSequence == i && pseqdesc->actweight < 0 )
+			if ( curSequence == i && seqActWeight < 0 )
 			{
 				seq = i;
 				break;
 			}
-			weighttotal += iabs(pseqdesc->actweight);
-			if (!weighttotal || random->RandomInt(0,weighttotal-1) < iabs(pseqdesc->actweight))
+			weighttotal += iabs(seqActWeight);
+			if (!weighttotal || random->RandomInt(0,weighttotal-1) < iabs(seqActWeight))
 				seq = i;
 		}
 	}
@@ -177,15 +174,18 @@ int SelectHeaviestSequence( studiohdr_t *pstudiohdr, int activity )
 	int weight = 0;
 	int seq = ACTIVITY_NOT_AVAILABLE;
 
-	// NOTE: Must use pSeqdesc(i) for each element since v37/v48 have different binary sizes
-	for (int i = 0; i < pstudiohdr->numseq; i++)
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	for (int i = 0; i < pstudiohdr->GetNumLocalSeq(); i++)
 	{
-		mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( i );
-		if (pseqdesc->activity == activity)
+		// Use version-safe helper functions - no inline casting needed
+		int seqActivity = StudioSeqdesc_GetActivity(pstudiohdr, i);
+		int seqActWeight = StudioSeqdesc_GetActweight(pstudiohdr, i);
+
+		if (seqActivity == activity)
 		{
-			if ( iabs(pseqdesc->actweight) > weight )
+			if ( iabs(seqActWeight) > weight )
 			{
-				weight = iabs(pseqdesc->actweight);
+				weight = iabs(seqActWeight);
 				seq = i;
 			}
 		}
@@ -221,13 +221,16 @@ int LookupActivity( studiohdr_t *pstudiohdr, const char *label )
 	if (!label)
 		return ACT_INVALID;
 
-	// NOTE: Must use pSeqdesc(i) for each element since v37/v48 have different binary sizes
-	for ( int i = 0; i < pstudiohdr->numseq; i++ )
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	for ( int i = 0; i < pstudiohdr->GetNumLocalSeq(); i++ )
 	{
-		mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( i );
-		if ( _stricmp( pseqdesc->pszActivityName(), label ) == 0 )
+		// Use version-safe helper functions - no inline casting needed
+		const char *pszActName = StudioSeqdesc_GetActivityName(pstudiohdr, i);
+		int seqActivity = StudioSeqdesc_GetActivity(pstudiohdr, i);
+
+		if ( _stricmp( pszActName, label ) == 0 )
 		{
-			return pseqdesc->activity;
+			return seqActivity;
 		}
 	}
 
@@ -248,21 +251,18 @@ int LookupSequence( studiohdr_t *pstudiohdr, const char *label )
 	if (!label)
 		return ACT_INVALID;
 
-	//
 	// Look up by sequence name.
-	// NOTE: Must use pSeqdesc(i) for each element since v37/v48 have different binary sizes
-	// and C++ array indexing uses sizeof(mstudioseqdesc_t) which doesn't match v37 binary layout
-	//
-	for (int i = 0; i < pstudiohdr->numseq; i++)
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	for (int i = 0; i < pstudiohdr->GetNumLocalSeq(); i++)
 	{
-		mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( i );
-		if (_stricmp( pseqdesc->pszLabel(), label ) == 0)
+		// Use version-safe helper function - no inline casting needed
+		const char *pszLabel = StudioSeqdesc_GetLabel(pstudiohdr, i);
+
+		if (_stricmp( pszLabel, label ) == 0)
 			return i;
 	}
 
-	//
 	// Not found, look up by activity name.
-	//
 	int nActivity = LookupActivity( pstudiohdr, label );
 	if (nActivity != ACT_INVALID )
 	{
@@ -280,12 +280,14 @@ void GetSequenceLinearMotion( studiohdr_t *pstudiohdr, int iSequence, const floa
 		return;
 	}
 
-	if( iSequence < 0 || iSequence >= pstudiohdr->numseq )
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	int numSeqs = pstudiohdr->GetNumLocalSeq();
+	if( iSequence < 0 || iSequence >= numSeqs )
 	{
 		// Don't spam on bogus model
-		if ( pstudiohdr->numseq > 0 )
+		if ( numSeqs > 0 )
 		{
-			Msg( "Bad sequence (%i out of %i max) in GetSequenceLinearMotion() for model '%s'!\n", iSequence, pstudiohdr->numseq, pstudiohdr->name );
+			Msg( "Bad sequence (%i out of %i max) in GetSequenceLinearMotion() for model '%s'!\n", iSequence, numSeqs, pstudiohdr->name );
 		}
 		return;
 	}
@@ -297,9 +299,8 @@ void GetSequenceLinearMotion( studiohdr_t *pstudiohdr, int iSequence, const floa
 
 const char *GetSequenceName( studiohdr_t *pstudiohdr, int iSequence )
 {
-	mstudioseqdesc_t	*pseqdesc;
-
-	if( !pstudiohdr || iSequence < 0 || iSequence >= pstudiohdr->numseq )
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	if( !pstudiohdr || iSequence < 0 || iSequence >= pstudiohdr->GetNumLocalSeq() )
 	{
 		if ( pstudiohdr )
 		{
@@ -308,15 +309,14 @@ const char *GetSequenceName( studiohdr_t *pstudiohdr, int iSequence )
 		return "Unknown";
 	}
 
-	pseqdesc = pstudiohdr->pSeqdesc( iSequence );
-	return pseqdesc->pszLabel();
+	// Use version-safe helper function - no inline casting needed
+	return StudioSeqdesc_GetLabel(pstudiohdr, iSequence);
 }
 
 const char *GetSequenceActivityName( studiohdr_t *pstudiohdr, int iSequence )
 {
-	mstudioseqdesc_t	*pseqdesc;
-
-	if( !pstudiohdr || iSequence < 0 || iSequence >= pstudiohdr->numseq )
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	if( !pstudiohdr || iSequence < 0 || iSequence >= pstudiohdr->GetNumLocalSeq() )
 	{
 		if ( pstudiohdr )
 		{
@@ -325,51 +325,46 @@ const char *GetSequenceActivityName( studiohdr_t *pstudiohdr, int iSequence )
 		return "Unknown";
 	}
 
-	pseqdesc = pstudiohdr->pSeqdesc( iSequence );
-	return pseqdesc->pszActivityName( );
+	// Use version-safe helper function - no inline casting needed
+	return StudioSeqdesc_GetActivityName(pstudiohdr, iSequence);
 }
 
 int GetSequenceFlags( studiohdr_t *pstudiohdr, int sequence )
 {
-	if ( !pstudiohdr || 
-		sequence < 0 || 
-		sequence >= pstudiohdr->numseq )
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	if ( !pstudiohdr ||
+		sequence < 0 ||
+		sequence >= pstudiohdr->GetNumLocalSeq() )
 	{
 		return 0;
 	}
 
-	mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( sequence );
-
-	return pseqdesc->flags;
+	// Use version-safe helper function - no inline casting needed
+	return StudioSeqdesc_GetFlags(pstudiohdr, sequence);
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *pstudiohdr - 
-//			sequence - 
-//			type - 
+// Purpose:
+// Input  : *pstudiohdr -
+//			sequence -
+//			type -
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
 bool HasAnimationEventOfType( studiohdr_t *pstudiohdr, int sequence, int type )
 {
-	if ( !pstudiohdr || sequence >= pstudiohdr->numseq )
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	if ( !pstudiohdr || sequence >= pstudiohdr->GetNumLocalSeq() )
 		return false;
 
-	mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( sequence );
-	if ( !pseqdesc )
+	// Use version-safe helper functions - no inline casting needed
+	int numEvents = StudioSeqdesc_GetNumEvents(pstudiohdr, sequence);
+	if (numEvents == 0)
 		return false;
 
-	mstudioevent_t *pevent = pseqdesc->pEvent( 0 );
-	if ( !pevent )
-		return false;
-
-	if (pseqdesc->numevents == 0 )
-		return false;
-
-	int index;
-	for ( index = 0; index < pseqdesc->numevents; index++ )
+	for (int index = 0; index < numEvents; index++)
 	{
-		if ( pevent[ index ].event == type )
+		mstudioevent_t *pevent = StudioSeqdesc_GetEvent(pstudiohdr, sequence, index);
+		if (pevent && pevent->event == type)
 		{
 			return true;
 		}
@@ -380,33 +375,37 @@ bool HasAnimationEventOfType( studiohdr_t *pstudiohdr, int sequence, int type )
 
 int GetAnimationEvent( studiohdr_t *pstudiohdr, int sequence, animevent_t *pNPCEvent, float flStart, float flEnd, int index )
 {
-	if ( !pstudiohdr || sequence >= pstudiohdr->numseq || !pNPCEvent )
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	if ( !pstudiohdr || sequence >= pstudiohdr->GetNumLocalSeq() || !pNPCEvent )
 		return 0;
 
-	mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( sequence );
-	mstudioevent_t *pevent = pseqdesc->pEvent( 0 );
+	// Use version-safe helper functions - no inline casting needed
+	int numEvents = StudioSeqdesc_GetNumEvents(pstudiohdr, sequence);
+	int seqFlags = StudioSeqdesc_GetFlags(pstudiohdr, sequence);
 
-	if (pseqdesc->numevents == 0 || index > pseqdesc->numevents )
+	if (numEvents == 0 || index > numEvents )
 		return 0;
 
-	// Msg( "flStart %f flEnd %f (%d) %s\n", flStart, flEnd, pseqdesc->numevents, pseqdesc->label );
-
-	for (; index < pseqdesc->numevents; index++)
+	for (; index < numEvents; index++)
 	{
+		mstudioevent_t *pevent = StudioSeqdesc_GetEvent(pstudiohdr, sequence, index);
+		if (!pevent)
+			continue;
+
 		// Don't send client-side events to the server AI
-		if ( pevent[index].event >= EVENT_CLIENT )
+		if ( pevent->event >= EVENT_CLIENT )
 			continue;
 
 		bool bOverlapEvent = false;
 
-		if (pevent[index].cycle >= flStart && pevent[index].cycle < flEnd)
+		if (pevent->cycle >= flStart && pevent->cycle < flEnd)
 		{
 			bOverlapEvent = true;
 		}
 		// FIXME: doesn't work with animations being played in reverse
-		else if ((pseqdesc->flags & STUDIO_LOOPING) && flEnd < flStart)
+		else if ((seqFlags & STUDIO_LOOPING) && flEnd < flStart)
 		{
-			if (pevent[index].cycle >= flStart || pevent[index].cycle < flEnd)
+			if (pevent->cycle >= flStart || pevent->cycle < flEnd)
 			{
 				bOverlapEvent = true;
 			}
@@ -415,10 +414,10 @@ int GetAnimationEvent( studiohdr_t *pstudiohdr, int sequence, animevent_t *pNPCE
 		if (bOverlapEvent)
 		{
 			pNPCEvent->pSource = NULL;
-			pNPCEvent->cycle = pevent[index].cycle;
+			pNPCEvent->cycle = pevent->cycle;
 			pNPCEvent->eventtime = gpGlobals->curtime;
-			pNPCEvent->event = pevent[index].event;
-			pNPCEvent->options = pevent[index].options;
+			pNPCEvent->event = pevent->event;
+			pNPCEvent->options = pevent->options;
 			return index + 1;
 		}
 	}
@@ -432,15 +431,17 @@ int FindTransitionSequence( studiohdr_t *pstudiohdr, int iCurrentSequence, int i
 	if ( !pstudiohdr )
 		return iGoalSequence;
 
-	if ( ( iCurrentSequence < 0 ) || ( iCurrentSequence >= pstudiohdr->numseq ) )
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	if ( ( iCurrentSequence < 0 ) || ( iCurrentSequence >= pstudiohdr->GetNumLocalSeq() ) )
 		return iGoalSequence;
 
-	// NOTE: Must use pSeqdesc(i) for each element since v37/v48 have different binary sizes
-	mstudioseqdesc_t *pCurrentSeq = pstudiohdr->pSeqdesc( iCurrentSequence );
-	mstudioseqdesc_t *pGoalSeq = pstudiohdr->pSeqdesc( iGoalSequence );
+	// Use version-safe helper functions - no inline casting needed
+	int currentEntryNode = StudioSeqdesc_GetEntryNode(pstudiohdr, iCurrentSequence);
+	int currentExitNode = StudioSeqdesc_GetExitNode(pstudiohdr, iCurrentSequence);
+	int goalEntryNode = StudioSeqdesc_GetEntryNode(pstudiohdr, iGoalSequence);
 
 	// bail if we're going to or from a node 0
-	if (pCurrentSeq->entrynode == 0 || pGoalSeq->entrynode == 0)
+	if (currentEntryNode == 0 || goalEntryNode == 0)
 	{
 		*piDir = 1;
 		return iGoalSequence;
@@ -448,20 +449,18 @@ int FindTransitionSequence( studiohdr_t *pstudiohdr, int iCurrentSequence, int i
 
 	int	iEndNode;
 
-	// Msg( "from %d to %d: ", pEndNode->iEndNode, pGoalNode->iStartNode );
-
 	// check to see if we should be going forward or backward through the graph
 	if (*piDir > 0)
 	{
-		iEndNode = pCurrentSeq->exitnode;
+		iEndNode = currentExitNode;
 	}
 	else
 	{
-		iEndNode = pCurrentSeq->entrynode;
+		iEndNode = currentEntryNode;
 	}
 
 	// if both sequences are on the same node, just go there
-	if (iEndNode == pGoalSeq->entrynode)
+	if (iEndNode == goalEntryNode)
 	{
 		*piDir = 1;
 		return iGoalSequence;
@@ -469,27 +468,30 @@ int FindTransitionSequence( studiohdr_t *pstudiohdr, int iCurrentSequence, int i
 
 	byte *pTransition = pstudiohdr->pTransition( 0 );
 
-	int iInternNode = pTransition[(iEndNode-1)*pstudiohdr->numtransitions + (pGoalSeq->entrynode-1)];
+	int iInternNode = pTransition[(iEndNode-1)*pstudiohdr->numtransitions + (goalEntryNode-1)];
 
 	// if there is no transitionial node, just go to the goal sequence
 	if (iInternNode == 0)
 		return iGoalSequence;
 
-	int i;
-
 	// look for someone going from the entry node to next node it should hit
 	// this may be the goal sequences node or an intermediate node
-	for (i = 0; i < pstudiohdr->numseq; i++)
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	for (int i = 0; i < pstudiohdr->GetNumLocalSeq(); i++)
 	{
-		mstudioseqdesc_t *pseqdesc = pstudiohdr->pSeqdesc( i );
-		if (pseqdesc->entrynode == iEndNode && pseqdesc->exitnode == iInternNode)
+		// Use version-safe helper functions - no inline casting needed
+		int entryNode = StudioSeqdesc_GetEntryNode(pstudiohdr, i);
+		int exitNode = StudioSeqdesc_GetExitNode(pstudiohdr, i);
+		int nodeFlags = StudioSeqdesc_GetNodeFlags(pstudiohdr, i);
+
+		if (entryNode == iEndNode && exitNode == iInternNode)
 		{
 			*piDir = 1;
 			return i;
 		}
-		if (pseqdesc->nodeflags)
+		if (nodeFlags)
 		{
-			if (pseqdesc->exitnode == iEndNode && pseqdesc->entrynode == iInternNode)
+			if (exitNode == iEndNode && entryNode == iInternNode)
 			{
 				*piDir = -1;
 				return i;
@@ -595,7 +597,8 @@ int GetSequenceActivity( studiohdr_t *pstudiohdr, int sequence )
 	if (! pstudiohdr)
 		return 0;
 
-	return pstudiohdr->pSeqdesc( sequence )->activity;
+	// Use version-safe helper function - no inline casting needed
+	return StudioSeqdesc_GetActivity(pstudiohdr, sequence);
 }
 
 
@@ -603,8 +606,11 @@ void GetAttachmentLocalSpace( studiohdr_t *pstudiohdr, int attachIndex, matrix3x
 {
 	if ( attachIndex >= 0 )
 	{
-		mstudioattachment_t *pAttachment = StudioHdr_GetAttachment(pstudiohdr, attachIndex);
-		MatrixCopy( pAttachment->local, pLocalToWorld );
+		const matrix3x4_t *pLocal = StudioAttachment_GetLocal(pstudiohdr, attachIndex);
+		if ( pLocal )
+		{
+			MatrixCopy( *pLocal, pLocalToWorld );
+		}
 	}
 }
 
@@ -619,13 +625,13 @@ int FindHitboxSetByName( studiohdr_t *pstudiohdr, const char *name )
 	if ( !pstudiohdr )
 		return -1;
 
-	for ( int i = 0; i < pstudiohdr->numhitboxsets; i++ )
+	for ( int i = 0; i < StudioHdr_GetNumHitboxSets(pstudiohdr); i++ )
 	{
-		mstudiohitboxset_t *set = pstudiohdr->pHitboxSet( i );
+		mstudiohitboxset_t *set = StudioHdr_GetHitboxSet( pstudiohdr, i );
 		if ( !set )
 			continue;
 
-		if ( !_stricmp( set->pszName(), name ) )
+		if ( !_stricmp( StudioHitboxSet_GetName(pstudiohdr, i), name ) )
 			return i;
 	}
 
@@ -643,11 +649,11 @@ const char *GetHitboxSetName( studiohdr_t *pstudiohdr, int setnumber )
 	if ( !pstudiohdr )
 		return "";
 
-	mstudiohitboxset_t *set = pstudiohdr->pHitboxSet( setnumber );
+	mstudiohitboxset_t *set = StudioHdr_GetHitboxSet( pstudiohdr, setnumber );
 	if ( !set )
 		return "";
 
-	return set->pszName();
+	return StudioHitboxSet_GetName(pstudiohdr, setnumber);
 }
 
 //-----------------------------------------------------------------------------
@@ -660,5 +666,5 @@ int GetHitboxSetCount( studiohdr_t *pstudiohdr )
 	if ( !pstudiohdr )
 		return 0;
 
-	return pstudiohdr->numhitboxsets;
+	return StudioHdr_GetNumHitboxSets(pstudiohdr);
 }

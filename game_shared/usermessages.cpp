@@ -14,6 +14,8 @@ void RegisterBModUserMessages( void );
 void RegisterHL1UserMessages( void );
 #elif defined( CSTRIKE_DLL )
 void RegisterCSUserMessages( void );
+#elif defined( BMOD_CLIENT_DLL )
+void RegisterUserMessages( void );
 #elif defined( HL2_DLL )
 void RegisterHL2UserMessages( void );
 #elif defined( TF_DLL )
@@ -34,6 +36,8 @@ CUserMessages::CUserMessages()
 	RegisterHL1UserMessages();
 #elif defined( CSTRIKE_DLL )
 	RegisterCSUserMessages();
+#elif defined( BMOD_CLIENT_DLL )
+	RegisterUserMessages();
 #elif defined( HL2_DLL )
 	RegisterHL2UserMessages();
 #elif defined( TF_DLL )
@@ -277,6 +281,7 @@ void RegisterUserMessages( void )
 	// GMod system messages
 	// =======================================
 	usermessages->Register( "GModVersion", -1 );      // Version info exchange
+	usermessages->Register( "GModPlayerOption", -1 ); // _PlayerOption: named option/menu + timeout
 
 	// =======================================
 	// GMod Spawn menu messages (original GMod 9 format)

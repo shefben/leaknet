@@ -21,6 +21,9 @@
 */
 
 #include "cbase.h"
+#ifdef BMOD_DLL
+#include "bmod_dll/gmod_gamemode.h"
+#endif
 #include "player.h"
 #include "client.h"
 #include "soundent.h"
@@ -133,6 +136,13 @@ void Host_Say( edict_t *pEdict, int teamonly )
 
 	if ( !pPlayer->CanSpeak() )
 		return;
+
+#ifdef BMOD_DLL
+	char luaText[128];
+	if ( !CGModGamemodeSystem::OnPlayerSay(pPlayer, p, teamonly != 0, luaText, sizeof(luaText)) )
+		return;
+	p = luaText;
+#endif
 
 	Assert( STRING( pPlayer->pl.netname ) );
 

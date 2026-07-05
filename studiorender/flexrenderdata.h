@@ -14,7 +14,7 @@
 #include "vector.h"
 #include "utlvector.h"
 #include "studio.h"
-#include "studiohdr_v44.h"
+// Note: v44+ support is handled separately - do NOT include studiohdr_v44.h in v37 code
 
 //-----------------------------------------------------------------------------
 // forward declarations

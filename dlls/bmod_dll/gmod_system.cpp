@@ -29,6 +29,31 @@ ConVar gmod_enable("gmod_enable", "1", FCVAR_NONE, "Enable GMod functionality");
 ConVar gmod_gamemode("gmod_gamemode", "sandbox", FCVAR_NONE, "Current gamemode");
 ConVar gmod_debug("gmod_debug", "0", FCVAR_NONE, "Enable GMod debug output");
 
+static const char* DetectGamemodeFromMapName(const char* pszMapName)
+{
+    if (!pszMapName || !pszMapName[0])
+        return NULL;
+
+    if (Q_strnicmp(pszMapName, "gm_melonrace", 12) == 0 || Q_strnicmp(pszMapName, "gm_melonlockdown", 16) == 0)
+        return "melonracer";
+    if (Q_strnicmp(pszMapName, "gm_football", 11) == 0)
+        return "football";
+    if (Q_strnicmp(pszMapName, "gm_hideandseek", 14) == 0 || Q_strnicmp(pszMapName, "gm_has", 6) == 0)
+        return "hideandseek";
+    if (Q_strnicmp(pszMapName, "gm_laserdance", 13) == 0)
+        return "laserdance";
+    if (Q_strnicmp(pszMapName, "gm_longsight", 12) == 0)
+        return "longsight";
+    if (Q_strnicmp(pszMapName, "gm_910", 6) == 0)
+        return "910";
+    if (Q_strnicmp(pszMapName, "gm_tpc", 6) == 0)
+        return "tpc";
+    if (Q_strnicmp(pszMapName, "gm_", 3) == 0)
+        return "build";
+
+    return NULL;
+}
+
 // Console commands for system management
 ConCommand gmod_system_status("gmod_system_status", CC_GMod_SystemStatus, "Show GMod system status");
 ConCommand gmod_reload_systems("gmod_reload_systems", CC_GMod_ReloadSystems, "Reload all GMod systems");
@@ -116,8 +141,12 @@ void CGModSystem::PostInit()
     // This was moved from Init() because events may not be registered that early
     ListenForGameEvent("player_connect");
     ListenForGameEvent("player_disconnect");
+    ListenForGameEvent("player_activate");
     ListenForGameEvent("player_spawn");
     ListenForGameEvent("player_death");
+    ListenForGameEvent("player_team");
+    ListenForGameEvent("player_changename");
+    ListenForGameEvent("player_hurt");
     ListenForGameEvent("game_newmap");
     ListenForGameEvent("server_spawn");
     ListenForGameEvent("server_cvar");
@@ -214,6 +243,24 @@ void CGModSystem::FrameUpdatePreEntityThink()
     if (!m_bSystemsReady)
         return;
 
+    if (m_pLuaSystem)
+        m_pLuaSystem->FrameUpdatePreEntityThink();
+
+    if (m_pGamemodeSystem)
+        m_pGamemodeSystem->FrameUpdatePreEntityThink();
+
+    if (m_pUndoSystem)
+        m_pUndoSystem->FrameUpdatePreEntityThink();
+
+    if (m_pOverlaySystem)
+        m_pOverlaySystem->FrameUpdatePreEntityThink();
+
+    if (m_pExpressionsSystem)
+        m_pExpressionsSystem->FrameUpdatePreEntityThink();
+
+    if (m_pDeathSystem)
+        m_pDeathSystem->FrameUpdatePreEntityThink();
+
     // Run diagnostics periodically
     if (gmod_debug.GetBool() && gpGlobals->curtime > m_flLastDiagnosticTime + 10.0f)
     {
@@ -271,12 +318,26 @@ static CBasePlayer* GetPlayerByUserId(int userid)
     return NULL;
 }
 
+static int GetLuaPlayerIdFromUserId(int userid)
+{
+    CBasePlayer* pPlayer = GetPlayerByUserId(userid);
+    return pPlayer ? pPlayer->entindex() : userid;
+}
+
 void CGModSystem::FireGameEvent(KeyValues* event)
 {
     const char* pszEventName = event->GetName();
 
     if (Q_stricmp(pszEventName, "player_connect") == 0)
     {
+        if (m_pGamemodeSystem)
+        {
+            m_pGamemodeSystem->OnPlayerConnect(
+                event->GetString("name"),
+                event->GetString("address"),
+                event->GetString("networkid"));
+        }
+
         int userid = event->GetInt("userid");
         CBasePlayer* pPlayer = GetPlayerByUserId(userid);
         if (pPlayer)
@@ -287,10 +348,29 @@ void CGModSystem::FireGameEvent(KeyValues* event)
     else if (Q_stricmp(pszEventName, "player_disconnect") == 0)
     {
         int userid = event->GetInt("userid");
+        if (m_pGamemodeSystem)
+        {
+            m_pGamemodeSystem->OnPlayerDisconnect(
+                event->GetString("name"),
+                GetLuaPlayerIdFromUserId(userid),
+                "",
+                event->GetString("networkid"),
+                event->GetString("reason"));
+        }
+
         CBasePlayer* pPlayer = GetPlayerByUserId(userid);
         if (pPlayer)
         {
             OnPlayerDisconnect(pPlayer);
+        }
+    }
+    else if (Q_stricmp(pszEventName, "player_activate") == 0)
+    {
+        int userid = event->GetInt("userid");
+        CBasePlayer* pPlayer = GetPlayerByUserId(userid);
+        if (pPlayer && m_pGamemodeSystem)
+        {
+            m_pGamemodeSystem->OnPlayerActive(pPlayer);
         }
     }
     else if (Q_stricmp(pszEventName, "player_spawn") == 0)
@@ -305,10 +385,52 @@ void CGModSystem::FireGameEvent(KeyValues* event)
     else if (Q_stricmp(pszEventName, "player_death") == 0)
     {
         int userid = event->GetInt("userid");
+        if (m_pGamemodeSystem)
+        {
+            m_pGamemodeSystem->OnPlayerKilled(
+                GetLuaPlayerIdFromUserId(userid),
+                GetLuaPlayerIdFromUserId(event->GetInt("attacker")),
+                event->GetString("weapon"));
+        }
+
         CBasePlayer* pPlayer = GetPlayerByUserId(userid);
         if (pPlayer)
         {
             OnPlayerDeath(pPlayer);
+        }
+    }
+    else if (Q_stricmp(pszEventName, "player_team") == 0)
+    {
+        if (!event->GetBool("disconnect") && m_pGamemodeSystem)
+        {
+            int userid = event->GetInt("userid");
+            CBasePlayer* pPlayer = GetPlayerByUserId(userid);
+            m_pGamemodeSystem->OnPlayerChangeTeam(
+                pPlayer ? STRING(pPlayer->pl.netname) : "",
+                GetLuaPlayerIdFromUserId(userid),
+                event->GetInt("team"),
+                event->GetInt("oldteam"));
+        }
+    }
+    else if (Q_stricmp(pszEventName, "player_changename") == 0)
+    {
+        if (m_pGamemodeSystem)
+        {
+            int userid = event->GetInt("userid");
+            m_pGamemodeSystem->OnPlayerNameChange(
+                GetLuaPlayerIdFromUserId(userid),
+                event->GetString("newname"),
+                event->GetString("oldname"));
+        }
+    }
+    else if (Q_stricmp(pszEventName, "player_hurt") == 0)
+    {
+        if (m_pGamemodeSystem)
+        {
+            m_pGamemodeSystem->OnPlayerHurt(
+                GetLuaPlayerIdFromUserId(event->GetInt("userid")),
+                event->GetInt("health"),
+                GetLuaPlayerIdFromUserId(event->GetInt("attacker")));
         }
     }
     else if (Q_stricmp(pszEventName, "server_spawn") == 0)
@@ -380,17 +502,22 @@ void CGModSystem::InitializePhaseGamemode()
 {
     DevMsg("GMod System: Gamemode initialization phase\n");
 
-    // Load the specified gamemode (based on IDA analysis of gamemode loading)
-    const char* pszGamemode = gmod_gamemode.GetString();
-    if (pszGamemode && pszGamemode[0])
+    // This phase runs after Lua is reinitialized, so it is the authoritative
+    // gamemode load. Prefer the current map over the default sandbox cvar.
+    const char* pszGamemode = DetectGamemodeFromMapName(m_SystemState.szMapName);
+
+    if (!pszGamemode || !pszGamemode[0])
     {
-        LoadGamemode(pszGamemode);
+        pszGamemode = gmod_gamemode.GetString();
     }
-    else
+
+    if (!pszGamemode || !pszGamemode[0])
     {
-        // Default to sandbox if no gamemode specified
-        LoadGamemode("sandbox");
+        pszGamemode = "sandbox";
     }
+
+    DevMsg("GMod System: Selected gamemode '%s' for map '%s'\n", pszGamemode, m_SystemState.szMapName);
+    LoadGamemode(pszGamemode);
 }
 
 void CGModSystem::InitializePhaseLate()
@@ -448,8 +575,8 @@ bool CGModSystem::LoadGamemodeConfiguration()
 
     DevMsg("GMod System: Loading gamemode configuration for %s\n", pszGamemode);
 
-    // Load gamemode init.lua file (based on IDA strings: gamemodes/%s/init.lua)
-    LoadGamemodeLuaFiles(pszGamemode);
+    // Script execution is owned by CGModGamemodeSystem::SetActiveGamemode().
+    // Loading init.lua here can run the gamemode before active state exists.
 
     return true;
 }
@@ -594,11 +721,8 @@ void CGModSystem::LoadGamemodeLuaFiles(const char* pszGamemode)
     char szGamemodeInit[MAX_PATH];
     Q_snprintf(szGamemodeInit, sizeof(szGamemodeInit), "gamemodes/%s/init.lua", pszGamemode);
 
-    if (filesystem->FileExists(szGamemodeInit, "GAME"))
-    {
-        DevMsg("Loading gamemode init file: %s\n", szGamemodeInit);
-        m_pLuaSystem->RunLuaFile(szGamemodeInit);
-    }
+    DevMsg("Loading gamemode init file: %s\n", szGamemodeInit);
+    m_pLuaSystem->LoadScript(szGamemodeInit, LUA_SCRIPT_GAMEMODE);
 }
 
 //-----------------------------------------------------------------------------
@@ -647,10 +771,12 @@ void CGModSystem::OnPlayerSpawn(CBasePlayer* pPlayer)
 
     DevMsg("GMod System: Player %s spawned\n", STRING(pPlayer->pl.netname));
 
-    // Notify all subsystems of player spawn
-    if (m_pGamemodeSystem)
-        m_pGamemodeSystem->OnPlayerSpawn(pPlayer);
-
+    // Notify the SWEP subsystem only. The gamemode's OnPlayerSpawn (Lua eventPlayerSpawn) is
+    // invoked directly from CHL2_Player::Spawn() AFTER the gamemode team/model/loadout/observer
+    // setup, so Lua sees the final spawn state. This function is also reached from the mid-Spawn
+    // "player_spawn" game event (BaseClass::Spawn -> CGModSystem listener), so calling the gamemode
+    // hook here too double-fired eventPlayerSpawn and created TWO melons per spawn. Keep exactly one
+    // gamemode spawn hook per real spawn (the direct call in CHL2_Player::Spawn).
     if (m_pSWEPSystem)
         m_pSWEPSystem->OnPlayerSpawn(pPlayer);
 }
@@ -687,10 +813,14 @@ bool CGModSystem::LoadGamemode(const char* pszGamemodeName)
     // Load gamemode configuration
     LoadGamemodeConfiguration();
 
+    if (!m_pGamemodeSystem)
+        m_pGamemodeSystem = g_pGModGamemodeSystem;
+
     // Initialize gamemode in subsystem
     if (m_pGamemodeSystem)
     {
-        if (m_pGamemodeSystem->LoadGamemode(pszGamemodeName))
+        DevMsg("GMod System: Calling SetActiveGamemode('%s')\n", pszGamemodeName);
+        if (m_pGamemodeSystem->SetActiveGamemode(pszGamemodeName))
         {
             m_SystemState.bGamemodeLoaded = true;
             DevMsg("GMod System: Gamemode %s loaded successfully\n", pszGamemodeName);
@@ -700,6 +830,10 @@ bool CGModSystem::LoadGamemode(const char* pszGamemodeName)
         {
             Warning("GMod System: Failed to load gamemode %s\n", pszGamemodeName);
         }
+    }
+    else
+    {
+        Warning("GMod System: No gamemode subsystem available for %s\n", pszGamemodeName);
     }
 
     return false;

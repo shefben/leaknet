@@ -12,7 +12,6 @@
 #include "cstudiorender.h"
 
 #include "studio.h"
-#include "studio_v37_compat.h"
 #include "materialsystem/imesh.h"
 #include "materialsystem/imaterialsystemhardwareconfig.h"
 #include "materialsystem/imaterialvar.h"
@@ -26,8 +25,23 @@
 
 #include "tier0/vprof.h"
 
-typedef void (*SoftwareProcessMeshDX6Func_t)( mstudiomesh_t* pmesh, const studiohdr_t* pStudioHdr, matrix3x4_t *pPoseToWorld,
+typedef void (*SoftwareProcessMeshDX6Func_t)( mstudiomesh_t* pmesh, studiohdr_t *pStudioHdr, matrix3x4_t *pPoseToWorld,
 	CCachedRenderData &vertexCache, CMeshBuilder& meshBuilder, int numVertices, unsigned short* pGroupToMesh, float r_blend );
+
+static void Studio_BuildFallbackTangent( const Vector& normal, Vector4D& tangentS )
+{
+	Vector tangent;
+	if ( fabs( normal.z ) < 0.999f )
+	{
+		tangent = CrossProduct( Vector( 0, 0, 1 ), normal );
+	}
+	else
+	{
+		tangent = CrossProduct( Vector( 1, 0, 0 ), normal );
+	}
+	VectorNormalize( tangent );
+	tangentS.Init( tangent.x, tangent.y, tangent.z, 1.0f );
+}
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -72,11 +86,11 @@ void CStudioRender::R_StudioDrawHulls( int hitboxset, bool translucent )
 	mstudiobbox_t		*pbbox;
 	IMaterialVar *colorVar;
 
-	mstudiohitboxset_t *s = m_pStudioHdr->pHitboxSet( hitboxset );
+	mstudiohitboxset_t *s = StudioHdr_GetHitboxSet( m_pStudioHdr, hitboxset );
 	if ( !s )
 		return;
 
-	pbbox		= s->pHitbox( 0 );
+	pbbox		= StudioHitboxSet_GetHitbox( m_pStudioHdr, hitboxset, 0 );
 	if ( !pbbox )
 		return;
 
@@ -92,7 +106,7 @@ void CStudioRender::R_StudioDrawHulls( int hitboxset, bool translucent )
 	}
 
 
-	for (i = 0; i < s->numhitboxes; i++)
+	for (i = 0; i < StudioHitboxSet_GetNumHitboxes( m_pStudioHdr, hitboxset ); i++)
 	{
 		for (j = 0; j < 8; j++)
 		{
@@ -149,20 +163,22 @@ void CStudioRender::R_StudioAbsBB ( int sequence, Vector& origin )
 	Vector		p[8];
 	mstudioseqdesc_t	*pseqdesc;
 
-	if ( sequence >= m_pStudioHdr->numseq )
+	if ( sequence >= m_pStudioHdr->GetNumLocalSeq() )
 	{
 		sequence = 0;
 	}
 
 	pseqdesc	= m_pStudioHdr->pSeqdesc( sequence );
+	Vector seqBBMin = StudioSeqdesc_GetBBMin( m_pStudioHdr, sequence );
+	Vector seqBBMax = StudioSeqdesc_GetBBMax( m_pStudioHdr, sequence );
 
 	m_pMaterialSystem->Bind( m_pMaterialAdditiveVertexColorVertexAlpha );
 
 	for (j = 0; j < 8; j++)
 	{
-		p[j][0] = (j & 1) ? pseqdesc->bbmin[0] : pseqdesc->bbmax[0];
-		p[j][1] = (j & 2) ? pseqdesc->bbmin[1] : pseqdesc->bbmax[1];
-		p[j][2] = (j & 4) ? pseqdesc->bbmin[2] : pseqdesc->bbmax[2];
+		p[j][0] = (j & 1) ? seqBBMin[0] : seqBBMax[0];
+		p[j][1] = (j & 2) ? seqBBMin[1] : seqBBMax[1];
+		p[j][2] = (j & 4) ? seqBBMin[2] : seqBBMax[2];
 
 		VectorAdd( p[j], origin, p[j] );
 	}
@@ -208,14 +224,13 @@ void CStudioRender::R_StudioDrawBones (void)
 	Vector		a1;
 	Vector		positionArray[4];
 
-	for (i = 0; i < m_pStudioHdr->numbones; i++)
+	for (i = 0; i < StudioHdr_GetNumBones(m_pStudioHdr); i++)
 	{
-		// Use version-safe bone accessor - v44+ bones have different stride than v37
-		int parentBone = StudioBone_GetParent(m_pStudioHdr, i);
-		if (parentBone == -1)
+		int parent = StudioBone_GetParent(m_pStudioHdr, i);
+		if (parent == -1)
 			continue;
 
-		k = parentBone;
+		k = parent;
 
 		a1[0] = a1[1] = a1[2] = 1.0;
 		up[0] = m_BoneToWorld[i][0][3] - m_BoneToWorld[k][0][3];
@@ -744,6 +759,105 @@ static matrix3x4_t *ComputeSkinMatrixSSE( mstudioboneweight_t &boneweights, matr
 }
 
 
+// v37-specific ComputeSkinMatrix - uses mstudioboneweight_v37_t which has
+// short bone[4] (2 bytes each) instead of char bone[3] (1 byte each)
+static matrix3x4_t *ComputeSkinMatrix_v37( mstudioboneweight_v37_t &boneweights, matrix3x4_t *pPoseToWorld, matrix3x4_t &result )
+{
+	float flWeight0, flWeight1, flWeight2, flWeight3;
+
+	switch( boneweights.numbones )
+	{
+	default:
+	case 1:
+		return &pPoseToWorld[boneweights.bone[0]];
+
+	case 2:
+		{
+			matrix3x4_t &boneMat0 = pPoseToWorld[boneweights.bone[0]];
+			matrix3x4_t &boneMat1 = pPoseToWorld[boneweights.bone[1]];
+			flWeight0 = boneweights.weight[0];
+			flWeight1 = boneweights.weight[1];
+
+			result[0][0] = boneMat0[0][0] * flWeight0 + boneMat1[0][0] * flWeight1;
+			result[0][1] = boneMat0[0][1] * flWeight0 + boneMat1[0][1] * flWeight1;
+			result[0][2] = boneMat0[0][2] * flWeight0 + boneMat1[0][2] * flWeight1;
+			result[0][3] = boneMat0[0][3] * flWeight0 + boneMat1[0][3] * flWeight1;
+			result[1][0] = boneMat0[1][0] * flWeight0 + boneMat1[1][0] * flWeight1;
+			result[1][1] = boneMat0[1][1] * flWeight0 + boneMat1[1][1] * flWeight1;
+			result[1][2] = boneMat0[1][2] * flWeight0 + boneMat1[1][2] * flWeight1;
+			result[1][3] = boneMat0[1][3] * flWeight0 + boneMat1[1][3] * flWeight1;
+			result[2][0] = boneMat0[2][0] * flWeight0 + boneMat1[2][0] * flWeight1;
+			result[2][1] = boneMat0[2][1] * flWeight0 + boneMat1[2][1] * flWeight1;
+			result[2][2] = boneMat0[2][2] * flWeight0 + boneMat1[2][2] * flWeight1;
+			result[2][3] = boneMat0[2][3] * flWeight0 + boneMat1[2][3] * flWeight1;
+		}
+		return &result;
+
+	case 3:
+		{
+			matrix3x4_t &boneMat0 = pPoseToWorld[boneweights.bone[0]];
+			matrix3x4_t &boneMat1 = pPoseToWorld[boneweights.bone[1]];
+			matrix3x4_t &boneMat2 = pPoseToWorld[boneweights.bone[2]];
+			flWeight0 = boneweights.weight[0];
+			flWeight1 = boneweights.weight[1];
+			flWeight2 = boneweights.weight[2];
+
+			result[0][0] = boneMat0[0][0] * flWeight0 + boneMat1[0][0] * flWeight1 + boneMat2[0][0] * flWeight2;
+			result[0][1] = boneMat0[0][1] * flWeight0 + boneMat1[0][1] * flWeight1 + boneMat2[0][1] * flWeight2;
+			result[0][2] = boneMat0[0][2] * flWeight0 + boneMat1[0][2] * flWeight1 + boneMat2[0][2] * flWeight2;
+			result[0][3] = boneMat0[0][3] * flWeight0 + boneMat1[0][3] * flWeight1 + boneMat2[0][3] * flWeight2;
+			result[1][0] = boneMat0[1][0] * flWeight0 + boneMat1[1][0] * flWeight1 + boneMat2[1][0] * flWeight2;
+			result[1][1] = boneMat0[1][1] * flWeight0 + boneMat1[1][1] * flWeight1 + boneMat2[1][1] * flWeight2;
+			result[1][2] = boneMat0[1][2] * flWeight0 + boneMat1[1][2] * flWeight1 + boneMat2[1][2] * flWeight2;
+			result[1][3] = boneMat0[1][3] * flWeight0 + boneMat1[1][3] * flWeight1 + boneMat2[1][3] * flWeight2;
+			result[2][0] = boneMat0[2][0] * flWeight0 + boneMat1[2][0] * flWeight1 + boneMat2[2][0] * flWeight2;
+			result[2][1] = boneMat0[2][1] * flWeight0 + boneMat1[2][1] * flWeight1 + boneMat2[2][1] * flWeight2;
+			result[2][2] = boneMat0[2][2] * flWeight0 + boneMat1[2][2] * flWeight1 + boneMat2[2][2] * flWeight2;
+			result[2][3] = boneMat0[2][3] * flWeight0 + boneMat1[2][3] * flWeight1 + boneMat2[2][3] * flWeight2;
+		}
+		return &result;
+
+	case 4:
+		{
+			matrix3x4_t &boneMat0 = pPoseToWorld[boneweights.bone[0]];
+			matrix3x4_t &boneMat1 = pPoseToWorld[boneweights.bone[1]];
+			matrix3x4_t &boneMat2 = pPoseToWorld[boneweights.bone[2]];
+			matrix3x4_t &boneMat3 = pPoseToWorld[boneweights.bone[3]];
+			flWeight0 = boneweights.weight[0];
+			flWeight1 = boneweights.weight[1];
+			flWeight2 = boneweights.weight[2];
+			flWeight3 = boneweights.weight[3];
+
+			result[0][0] = boneMat0[0][0] * flWeight0 + boneMat1[0][0] * flWeight1 + boneMat2[0][0] * flWeight2 + boneMat3[0][0] * flWeight3;
+			result[0][1] = boneMat0[0][1] * flWeight0 + boneMat1[0][1] * flWeight1 + boneMat2[0][1] * flWeight2 + boneMat3[0][1] * flWeight3;
+			result[0][2] = boneMat0[0][2] * flWeight0 + boneMat1[0][2] * flWeight1 + boneMat2[0][2] * flWeight2 + boneMat3[0][2] * flWeight3;
+			result[0][3] = boneMat0[0][3] * flWeight0 + boneMat1[0][3] * flWeight1 + boneMat2[0][3] * flWeight2 + boneMat3[0][3] * flWeight3;
+			result[1][0] = boneMat0[1][0] * flWeight0 + boneMat1[1][0] * flWeight1 + boneMat2[1][0] * flWeight2 + boneMat3[1][0] * flWeight3;
+			result[1][1] = boneMat0[1][1] * flWeight0 + boneMat1[1][1] * flWeight1 + boneMat2[1][1] * flWeight2 + boneMat3[1][1] * flWeight3;
+			result[1][2] = boneMat0[1][2] * flWeight0 + boneMat1[1][2] * flWeight1 + boneMat2[1][2] * flWeight2 + boneMat3[1][2] * flWeight3;
+			result[1][3] = boneMat0[1][3] * flWeight0 + boneMat1[1][3] * flWeight1 + boneMat2[1][3] * flWeight2 + boneMat3[1][3] * flWeight3;
+			result[2][0] = boneMat0[2][0] * flWeight0 + boneMat1[2][0] * flWeight1 + boneMat2[2][0] * flWeight2 + boneMat3[2][0] * flWeight3;
+			result[2][1] = boneMat0[2][1] * flWeight0 + boneMat1[2][1] * flWeight1 + boneMat2[2][1] * flWeight2 + boneMat3[2][1] * flWeight3;
+			result[2][2] = boneMat0[2][2] * flWeight0 + boneMat1[2][2] * flWeight1 + boneMat2[2][2] * flWeight2 + boneMat3[2][2] * flWeight3;
+			result[2][3] = boneMat0[2][3] * flWeight0 + boneMat1[2][3] * flWeight1 + boneMat2[2][3] * flWeight2 + boneMat3[2][3] * flWeight3;
+		}
+		return &result;
+	}
+
+	Assert(0);
+	return NULL;
+}
+
+// v37-specific ComputeSkinMatrixSSE - uses mstudioboneweight_v37_t
+// This version falls back to the C implementation since the SSE version
+// would require different memory layout handling
+static matrix3x4_t *ComputeSkinMatrixSSE_v37( mstudioboneweight_v37_t &boneweights, matrix3x4_t *pPoseToWorld, matrix3x4_t &result )
+{
+	// For v37 models, use the C implementation
+	return ComputeSkinMatrix_v37( boneweights, pPoseToWorld, result );
+}
+
+
 //-----------------------------------------------------------------------------
 // Computes lighting
 //-----------------------------------------------------------------------------
@@ -849,11 +963,11 @@ public:
 		}
 	}
 
-	static void R_StudioSoftwareProcessMesh( mstudiomesh_t* pmesh, const studiohdr_t* pStudioHdr, matrix3x4_t *pPoseToWorld,
+	static void R_StudioSoftwareProcessMesh( mstudiomesh_t* pmesh, studiohdr_t *pStudioHdr, matrix3x4_t *pPoseToWorld,
 		CCachedRenderData &vertexCache, CMeshBuilder& meshBuilder, int numVertices, unsigned short* pGroupToMesh, float r_blend )
 	{
 		Vector color;
-		Vector4D *pStudioTangentS;
+		Vector4D *pStudioTangentS = NULL;
 		VectorAligned norm, pos;
 		Vector4DAligned tangentS;
 		Vector *pSrcPos;
@@ -870,41 +984,13 @@ public:
 
 		Assert( numVertices > 0 );
 
-		// Get vertex data using simplified approach (compatible with both v37 and v44+)
-		mstudiovertex_t *pVertices = NULL;
-		Vector4D *pTangents = NULL;
-
-		if (!SetupVertexDataForMesh(pmesh, pStudioHdr, &pVertices, nHasTangentSpace ? &pTangents : NULL))
+		// Gets at the vertex data
+		const bool bUseV37VertexLayout = ( !pStudioHdr || pStudioHdr->IsV37() );
+		mstudiovertex_v37_t *pVertices = bUseV37VertexLayout ? pmesh->Vertex_v37(0) : NULL;
+		if (nHasTangentSpace && bUseV37VertexLayout)
 		{
-			DevWarning("CRITICAL: SetupVertexDataForMesh failed for %s (v%d)\n", pStudioHdr->name, pStudioHdr->version);
-		}
-
-		// Debug check: Verify vertex data before rendering
-		if (pVertices == NULL)
-		{
-			DevWarning("CRITICAL: pVertices is NULL for %s (v%d), mesh will be invisible!\n", pStudioHdr->name, pStudioHdr->version);
-			return; // Skip rendering this mesh
-		}
-		else
-		{
-			DevMsg("Vertex data OK for %s (v%d): %p, first vertex pos: (%.2f, %.2f, %.2f)\n",
-				pStudioHdr->name, pStudioHdr->version, pVertices,
-				pVertices[0].m_vecPosition.x, pVertices[0].m_vecPosition.y, pVertices[0].m_vecPosition.z);
-		}
-
-		if (nHasTangentSpace)
-		{
-			pStudioTangentS = pTangents;
-
-			if (pStudioTangentS)
-			{
-				Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
-				DevMsg("Simplified tangent data found for %s: %p\n", pStudioHdr->name, pStudioTangentS);
-			}
-			else
-			{
-				DevWarning("No tangent data available for %s\n", pStudioHdr->name);
-			}
+			pStudioTangentS = pmesh->TangentS( 0 );
+			Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
 		}
 
 		// Mouth related stuff...
@@ -935,7 +1021,7 @@ public:
 		{
 			ntemp[i] = pGroupToMesh[i];
 
-			if (nHasSSE)
+			if (nHasSSE && bUseV37VertexLayout)
 			{
 				char *pMem = (char*)&pVertices[ntemp[i]];
 				_mm_prefetch( pMem, _MM_HINT_T0 );
@@ -954,18 +1040,37 @@ public:
 			idx = j & 0x3;
 			n = ntemp[idx];
 
-			mstudiovertex_t &vert = pVertices[n];
-
 			ntemp[idx] = pGroupToMesh[j+4];
 
-			// Compute the skinning matrix
-			if (nHasSSE)
+			Vector vertexPosition;
+			Vector vertexNormal;
+			Vector2D vertexTexCoord;
+			Vector4D fallbackTangent;
+
+			if ( bUseV37VertexLayout )
 			{
-				pSkinMat = ComputeSkinMatrixSSE( vert.m_BoneWeights, pPoseToWorld, temp );
+				mstudiovertex_v37_t &vert = pVertices[n];
+				vertexPosition = vert.m_vecPosition;
+				vertexNormal = vert.m_vecNormal;
+				vertexTexCoord = vert.m_vecTexCoord;
+
+				// Compute the skinning matrix
+				if (nHasSSE)
+				{
+					pSkinMat = ComputeSkinMatrixSSE_v37( vert.m_BoneWeights, pPoseToWorld, temp );
+				}
+				else
+				{
+					pSkinMat = ComputeSkinMatrix_v37( vert.m_BoneWeights, pPoseToWorld, temp );
+				}
 			}
 			else
 			{
-				pSkinMat = ComputeSkinMatrix( vert.m_BoneWeights, pPoseToWorld, temp );
+				mstudioboneweight_t boneWeight;
+				Studio_GetVertexData_V37Aware( pStudioHdr, pmesh, n, vertexPosition, vertexNormal, vertexTexCoord );
+				Studio_GetBoneWeight_V37Aware( pStudioHdr, pmesh, n, boneWeight );
+				pSkinMat = nHasSSE ? ComputeSkinMatrixSSE( boneWeight, pPoseToWorld, temp ) :
+					ComputeSkinMatrix( boneWeight, pPoseToWorld, temp );
 			}
 			
 			// transform into world space
@@ -984,12 +1089,18 @@ public:
 			}
 			else
 			{
-				pSrcPos = &vert.m_vecPosition;
-				pSrcNorm = &vert.m_vecNormal;
+				pSrcPos = &vertexPosition;
+				pSrcNorm = &vertexNormal;
 
 				if (nHasTangentSpace)
 				{
-					pSrcTangentS = &pStudioTangentS[n];
+					pSrcTangentS = bUseV37VertexLayout ? &pStudioTangentS[n] :
+						Studio_GetTangentS_VersionAware( pStudioHdr, pmesh, n );
+					if ( !pSrcTangentS )
+					{
+						Studio_BuildFallbackTangent( vertexNormal, fallbackTangent );
+						pSrcTangentS = &fallbackTangent;
+					}
 					Assert( pSrcTangentS->w == -1.0f || pSrcTangentS->w == 1.0f );
 				}
 			}
@@ -1002,7 +1113,7 @@ public:
 
 			meshBuilder.Position3fv( pos.Base() );
 			meshBuilder.Normal3fv( norm.Base() );
-			meshBuilder.TexCoord2fv( 0, vert.m_vecTexCoord.Base() );
+			meshBuilder.TexCoord2fv( 0, vertexTexCoord.Base() );
 
 			if (nHasTangentSpace)
 			{
@@ -1024,7 +1135,7 @@ public:
 
 			meshBuilder.AdvanceVertex();
 
-			if (nHasSSE)
+			if (nHasSSE && bUseV37VertexLayout)
 			{
 				_mm_prefetch( (char*)&pVertices[ntemp[idx]], _MM_HINT_T0 );
 				_mm_prefetch( (char*)&pVertices[ntemp[idx]] + 32, _MM_HINT_T0 );
@@ -1151,60 +1262,43 @@ void CStudioRender::R_StudioSoftwareProcessMesh_Normals( mstudiomesh_t* pmesh, C
 	Vector *pSrcPos;
 	Vector *pSrcNorm;
 	Vector4D *pSrcTangentS = NULL;
-	Vector4D *pStudioTangentS;
+	Vector4D *pStudioTangentS = NULL;
 	VectorAligned norm, pos;
 	Vector4DAligned tangentS;
 
-	// Gets at the vertex data - version-safe for v44+ models
-	mstudiovertex_t *pVertices = NULL;
-	if (m_pStudioHdr->IsV37())
+	// Gets at the vertex data
+	const bool bUseV37VertexLayout = ( !m_pStudioHdr || m_pStudioHdr->IsV37() );
+	mstudiovertex_v37_t *pVertices = bUseV37VertexLayout ? pmesh->Vertex_v37(0) : NULL;
+	if ( bUseV37VertexLayout )
 	{
-		// v37 models have embedded vertex data
-		pVertices = pmesh->Vertex(0);
 		pStudioTangentS = pmesh->TangentS( 0 );
-		if (pStudioTangentS) Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
-	}
-	else if (m_pStudioHdr->version >= STUDIO_VERSION_44)
-	{
-		// v44+ models use external VVD data
-		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pmesh->pModel();
-		if (pModel44)
-		{
-			if (pModel44->vertexdata.pVertexData)
-			{
-				pVertices = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + pmesh->vertexoffset;
-			}
-			else
-			{
-				DevWarning("v44+ model has NULL vertex data (tangent): %s (model: %s)\n", m_pStudioHdr->name, pModel44->name);
-			}
-
-			if (pModel44->vertexdata.pTangentData)
-			{
-				pStudioTangentS = (Vector4D*)pModel44->vertexdata.pTangentData + pmesh->vertexoffset;
-				if (pStudioTangentS) Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
-			}
-		}
-		else
-		{
-			DevWarning("v44+ model has NULL pModel44 (tangent): %s\n", m_pStudioHdr->name);
-		}
-	}
-	else
-	{
-		// Fallback for other versions
-		pVertices = pmesh->Vertex(0);
-		pStudioTangentS = pmesh->TangentS( 0 );
-		if (pStudioTangentS) Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
+		Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
 	}
 
 	for ( int j=0; j < numVertices; j++ )
 	{
 		int n = pGroupToMesh[j];
 
-		mstudiovertex_t &vert = pVertices[n];
+		Vector vertexPosition;
+		Vector vertexNormal;
+		Vector2D vertexTexCoord;
+		Vector4D fallbackTangent;
 
-		pSkinMat = ComputeSkinMatrix( vert.m_BoneWeights, m_PoseToWorld, temp );
+		if ( bUseV37VertexLayout )
+		{
+			mstudiovertex_v37_t &vert = pVertices[n];
+			vertexPosition = vert.m_vecPosition;
+			vertexNormal = vert.m_vecNormal;
+			vertexTexCoord = vert.m_vecTexCoord;
+			pSkinMat = ComputeSkinMatrix_v37( vert.m_BoneWeights, m_PoseToWorld, temp );
+		}
+		else
+		{
+			mstudioboneweight_t boneWeight;
+			Studio_GetVertexData_V37Aware( m_pStudioHdr, pmesh, n, vertexPosition, vertexNormal, vertexTexCoord );
+			Studio_GetBoneWeight_V37Aware( m_pStudioHdr, pmesh, n, boneWeight );
+			pSkinMat = ComputeSkinMatrix( boneWeight, m_PoseToWorld, temp );
+		}
 
 		// transform into world space
 		if (m_VertexCache.IsVertexFlexed(n))
@@ -1219,10 +1313,16 @@ void CStudioRender::R_StudioSoftwareProcessMesh_Normals( mstudiomesh_t* pmesh, C
 		}
 		else
 		{
-			pSrcPos = &vert.m_vecPosition;
-			pSrcNorm = &vert.m_vecNormal;
+			pSrcPos = &vertexPosition;
+			pSrcNorm = &vertexNormal;
 
-			pSrcTangentS = &pStudioTangentS[n];
+			pSrcTangentS = bUseV37VertexLayout ? &pStudioTangentS[n] :
+				Studio_GetTangentS_VersionAware( m_pStudioHdr, pmesh, n );
+			if ( !pSrcTangentS )
+			{
+				Studio_BuildFallbackTangent( vertexNormal, fallbackTangent );
+				pSrcTangentS = &fallbackTangent;
+			}
 			Assert( pSrcTangentS->w == -1.0f || pSrcTangentS->w == 1.0f );
 		}
 
@@ -1265,54 +1365,33 @@ void CStudioRender::R_StudioSoftwareProcessMesh_Normals( mstudiomesh_t* pmesh, C
 void CStudioRender::R_StudioProcessFlexedMesh( mstudiomesh_t* pmesh, CMeshBuilder& meshBuilder, 
 							int numVertices, unsigned short* pGroupToMesh )
 {
-	// Gets at the vertex data - version-safe for v44+ models
-	mstudiovertex_t *pVertices = NULL;
-	Vector4D *pstudiotangentS = NULL;
-	if (m_pStudioHdr->IsV37())
+	const bool bUseV37VertexLayout = ( !m_pStudioHdr || m_pStudioHdr->IsV37() );
+	mstudiovertex_v37_t *pVertices = bUseV37VertexLayout ? pmesh->Vertex_v37(0) : NULL;
+	Vector4D *pstudiotangentS = bUseV37VertexLayout ? pmesh->TangentS( 0 ) : NULL;
+	if ( pstudiotangentS )
 	{
-		// v37 models have embedded vertex data
-		pVertices = pmesh->Vertex(0);
-		pstudiotangentS = pmesh->TangentS( 0 );
-		if (pstudiotangentS) Assert( pstudiotangentS->w == -1.0f || pstudiotangentS->w == 1.0f );
-	}
-	else if (m_pStudioHdr->version >= STUDIO_VERSION_44)
-	{
-		// v44+ models use external VVD data
-		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pmesh->pModel();
-		if (pModel44)
-		{
-			if (pModel44->vertexdata.pVertexData)
-			{
-				pVertices = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + pmesh->vertexoffset;
-			}
-			else
-			{
-				DevWarning("v44+ model has NULL vertex data (3rd): %s (model: %s)\n", m_pStudioHdr->name, pModel44->name);
-			}
-
-			if (pModel44->vertexdata.pTangentData)
-			{
-				pstudiotangentS = (Vector4D*)pModel44->vertexdata.pTangentData + pmesh->vertexoffset;
-				if (pstudiotangentS) Assert( pstudiotangentS->w == -1.0f || pstudiotangentS->w == 1.0f );
-			}
-		}
-		else
-		{
-			DevWarning("v44+ model has NULL pModel44 (3rd): %s\n", m_pStudioHdr->name);
-		}
-	}
-	else
-	{
-		// Fallback for other versions
-		pVertices = pmesh->Vertex(0);
-		pstudiotangentS = pmesh->TangentS( 0 );
-		if (pstudiotangentS) Assert( pstudiotangentS->w == -1.0f || pstudiotangentS->w == 1.0f );
+		Assert( pstudiotangentS->w == -1.0f || pstudiotangentS->w == 1.0f );
 	}
 
 	for ( int j=0; j < numVertices ; j++)
 	{
 		int n = pGroupToMesh[j];
-		mstudiovertex_t &vert = pVertices[n];
+		Vector vertexPosition;
+		Vector vertexNormal;
+		Vector2D vertexTexCoord;
+		Vector4D fallbackTangent;
+
+		if ( bUseV37VertexLayout )
+		{
+			mstudiovertex_v37_t &vert = pVertices[n];
+			vertexPosition = vert.m_vecPosition;
+			vertexNormal = vert.m_vecNormal;
+			vertexTexCoord = vert.m_vecTexCoord;
+		}
+		else
+		{
+			Studio_GetVertexData_V37Aware( m_pStudioHdr, pmesh, n, vertexPosition, vertexNormal, vertexTexCoord );
+		}
 
 		// Here, we are doing HW skinning, so we need to simply copy over the flex
 		if (m_VertexCache.IsVertexFlexed(n))
@@ -1326,12 +1405,19 @@ void CStudioRender::R_StudioProcessFlexedMesh( mstudiomesh_t* pmesh, CMeshBuilde
 		}
 		else
 		{
-			meshBuilder.Position3fv( vert.m_vecPosition.Base() );
-			meshBuilder.Normal3fv( vert.m_vecNormal.Base() );
-			Assert( pstudiotangentS[n].w == -1.0f || pstudiotangentS[n].w == 1.0f );
-			meshBuilder.UserData( pstudiotangentS[n].Base() );
+			meshBuilder.Position3fv( vertexPosition.Base() );
+			meshBuilder.Normal3fv( vertexNormal.Base() );
+			Vector4D *pTangentS = bUseV37VertexLayout ? &pstudiotangentS[n] :
+				Studio_GetTangentS_VersionAware( m_pStudioHdr, pmesh, n );
+			if ( !pTangentS )
+			{
+				Studio_BuildFallbackTangent( vertexNormal, fallbackTangent );
+				pTangentS = &fallbackTangent;
+			}
+			Assert( pTangentS->w == -1.0f || pTangentS->w == 1.0f );
+			meshBuilder.UserData( pTangentS->Base() );
 		}
-		meshBuilder.TexCoord2fv( 0, vert.m_vecTexCoord.Base() );
+		meshBuilder.TexCoord2fv( 0, vertexTexCoord.Base() );
 
 		// FIXME: For now, flexed hw-skinned meshes can only have one bone
 		// The data must exist in the 0th hardware matrix
@@ -1355,46 +1441,9 @@ void CStudioRender::R_StudioProcessFlexedMesh( mstudiomesh_t* pmesh, CMeshBuilde
 void CStudioRender::R_StudioRestoreMesh( mstudiomesh_t* pmesh, 
 									studiomeshgroup_t* pMeshData )
 {
-	// Gets at the vertex data - version-safe for v44+ models
-	mstudiovertex_t *pVertices = NULL;
-	Vector4D *pstudiotangentS = NULL;
-	if (m_pStudioHdr->IsV37())
-	{
-		// v37 models have embedded vertex data
-		pVertices = pmesh->Vertex(0);
-		pstudiotangentS = pmesh->TangentS( 0 );
-	}
-	else if (m_pStudioHdr->version >= STUDIO_VERSION_44)
-	{
-		// v44+ models use external VVD data
-		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pmesh->pModel();
-		if (pModel44)
-		{
-			if (pModel44->vertexdata.pVertexData)
-			{
-				pVertices = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + pmesh->vertexoffset;
-			}
-			else
-			{
-				DevWarning("v44+ model has NULL vertex data (4th): %s (model: %s)\n", m_pStudioHdr->name, pModel44->name);
-			}
-
-			if (pModel44->vertexdata.pTangentData)
-			{
-				pstudiotangentS = (Vector4D*)pModel44->vertexdata.pTangentData + pmesh->vertexoffset;
-			}
-		}
-		else
-		{
-			DevWarning("v44+ model has NULL pModel44 (4th): %s\n", m_pStudioHdr->name);
-		}
-	}
-	else
-	{
-		// Fallback for other versions
-		pVertices = pmesh->Vertex(0);
-		pstudiotangentS = pmesh->TangentS( 0 );
-	}
+	const bool bUseV37VertexLayout = ( !m_pStudioHdr || m_pStudioHdr->IsV37() );
+	mstudiovertex_v37_t *pVertices = bUseV37VertexLayout ? pmesh->Vertex_v37(0) : NULL;
+	Vector4D *pstudiotangentS = bUseV37VertexLayout ? pmesh->TangentS( 0 ) : NULL;
 
 	CMeshBuilder meshBuilder;
 	meshBuilder.BeginModify( pMeshData->m_pMesh );
@@ -1402,13 +1451,35 @@ void CStudioRender::R_StudioRestoreMesh( mstudiomesh_t* pmesh,
 	{
 		meshBuilder.SelectVertex(j);
 		int n = pMeshData->m_pGroupIndexToMeshIndex[j];
-		mstudiovertex_t &vert = pVertices[n];
+		Vector vertexPosition;
+		Vector vertexNormal;
+		Vector2D vertexTexCoord;
+		Vector4D fallbackTangent;
 
-		meshBuilder.Position3fv( vert.m_vecPosition.Base() );
-		meshBuilder.Normal3fv( vert.m_vecNormal.Base() );
-		meshBuilder.TexCoord2fv( 0, vert.m_vecTexCoord.Base() );
-		Assert( pstudiotangentS[n].w == -1.0f || pstudiotangentS[n].w == 1.0f );
-		meshBuilder.UserData( pstudiotangentS[n].Base() );
+		if ( bUseV37VertexLayout )
+		{
+			mstudiovertex_v37_t &vert = pVertices[n];
+			vertexPosition = vert.m_vecPosition;
+			vertexNormal = vert.m_vecNormal;
+			vertexTexCoord = vert.m_vecTexCoord;
+		}
+		else
+		{
+			Studio_GetVertexData_V37Aware( m_pStudioHdr, pmesh, n, vertexPosition, vertexNormal, vertexTexCoord );
+		}
+
+		meshBuilder.Position3fv( vertexPosition.Base() );
+		meshBuilder.Normal3fv( vertexNormal.Base() );
+		meshBuilder.TexCoord2fv( 0, vertexTexCoord.Base() );
+		Vector4D *pTangentS = bUseV37VertexLayout ? &pstudiotangentS[n] :
+			Studio_GetTangentS_VersionAware( m_pStudioHdr, pmesh, n );
+		if ( !pTangentS )
+		{
+			Studio_BuildFallbackTangent( vertexNormal, fallbackTangent );
+			pTangentS = &fallbackTangent;
+		}
+		Assert( pTangentS->w == -1.0f || pTangentS->w == 1.0f );
+		meshBuilder.UserData( pTangentS->Base() );
 		meshBuilder.Color4ub( 255, 255, 255, 255 );
 	}
 	meshBuilder.EndModify();
@@ -1425,7 +1496,7 @@ int CStudioRender::R_StudioDrawGroupHWSkin( studiomeshgroup_t* pGroup, IMesh* pM
 
 	int numTrianglesRendered = 0;
 
-	if( m_pStudioHdr->numbones == 1 )
+	if( StudioHdr_GetNumBones(m_pStudioHdr) == 1 )
 	{
 		m_pMaterialSystem->MatrixMode( MATERIAL_MODEL );
 		m_pMaterialSystem->LoadMatrix( (float*)m_MaterialPoseToWorld[0] );
@@ -1758,6 +1829,8 @@ int CStudioRender::R_StudioDrawEyeball( mstudiomesh_t* pmesh, studiomeshdata_t* 
 	if( !m_Config.bEyes )
 		return 0;
 
+	int materialParam = StudioMesh_GetMaterialParam(m_pStudioHdr, pmesh);
+
 	m_pMaterialSystem->MatrixMode( MATERIAL_MODEL );
 	m_pMaterialSystem->LoadIdentity();
 
@@ -1768,47 +1841,14 @@ int CStudioRender::R_StudioDrawEyeball( mstudiomesh_t* pmesh, studiomeshdata_t* 
 	
 	// FIXME: We could compile a static vertex buffer in this case
 	// if there's no flexed verts.
-	// Gets at the vertex data - version-safe for v44+ models
-	mstudiovertex_t *pVertices = NULL;
-	if (m_pStudioHdr->IsV37())
-	{
-		// v37 models have embedded vertex data
-		pVertices = pmesh->Vertex(0);
-	}
-	else if (m_pStudioHdr->version >= STUDIO_VERSION_44)
-	{
-		// v44+ models use external VVD data
-		mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pmesh->pModel();
-		if (pModel44)
-		{
-			if (pModel44->vertexdata.pVertexData)
-			{
-				pVertices = (mstudiovertex_t*)pModel44->vertexdata.pVertexData + pmesh->vertexoffset;
-			}
-			else
-			{
-				DevWarning("v44+ model has NULL vertex data (5th): %s (model: %s)\n", m_pStudioHdr->name, pModel44->name);
-			}
-		}
-		else
-		{
-			DevWarning("v44+ model has NULL pModel44 (5th): %s\n", m_pStudioHdr->name);
-		}
-	}
-	else
-	{
-		// Fallback for other versions
-		pVertices = pmesh->Vertex(0);
-	}
+	mstudiovertex_v37_t *pVertices = pmesh->Vertex_v37(0);
 
 	R_StudioFlexVerts( pmesh );
 
 	m_pMaterialSystem->SetNumBoneWeights( 0 );
 
-	// Use version-safe accessor for eyeball and materialparam
-	int materialParam = StudioMesh_GetMaterialParam(m_pStudioHdr, pmesh);
-	mstudioeyeball_t *peyeball = StudioModel_GetEyeball(m_pStudioHdr, m_pSubModel, materialParam);
-
+	mstudioeyeball_t *peyeball = m_pSubModel->pEyeball(materialParam);
+	
 	if( !m_Config.bWireframe )
 	{
 		// Compute the glint procedural texture
@@ -1816,7 +1856,7 @@ int CStudioRender::R_StudioDrawEyeball( mstudiomesh_t* pmesh, studiomeshdata_t* 
 		IMaterialVar* pGlintVar = pMaterial->FindVar( "$glint", &found, false );
 		if (found)
 		{
-			R_StudioEyeballGlint( &m_EyeballState[materialParam], pGlintVar,
+			R_StudioEyeballGlint( &m_EyeballState[materialParam], pGlintVar, 
 				m_ViewRight, m_ViewUp, m_ViewOrigin );
 		}
 	}
@@ -1844,13 +1884,13 @@ int CStudioRender::R_StudioDrawEyeball( mstudiomesh_t* pmesh, studiomeshdata_t* 
 
 	// Compute the glint projection
 	matrix3x4_t glintMat;
-	ComputeGlintTextureProjection( &m_EyeballState[pmesh->materialparam], m_ViewRight, m_ViewUp, glintMat );
+	ComputeGlintTextureProjection( &m_EyeballState[materialParam], m_ViewRight, m_ViewUp, glintMat );
 
 	// Sets the material vars for the vertex shader
 	if( !m_Config.bWireframe )
-		SetEyeMaterialVars( pMaterial, peyeball, org, m_EyeballState[pmesh->materialparam].mat, glintMat );
+		SetEyeMaterialVars( pMaterial, peyeball, org, m_EyeballState[materialParam].mat, glintMat );
 
-	m_VertexCache.SetupComputation( pmesh, m_pStudioHdr );
+	m_VertexCache.SetupComputation( pmesh );
 
 	Vector	ambientvalues;
 	static lightpos_t lightpos[MAXLOCALLIGHTS];
@@ -1874,7 +1914,7 @@ int CStudioRender::R_StudioDrawEyeball( mstudiomesh_t* pmesh, studiomeshdata_t* 
 		for ( int i=0 ; i < pGroup->m_NumVertices ; ++i)
 		{
 			int n = pGroup->m_pGroupIndexToMeshIndex[i];
-			mstudiovertex_t	&vert = pVertices[n];
+			mstudiovertex_v37_t	&vert = pVertices[n];
 
 			CachedVertex_t* pWorldVert = m_VertexCache.CreateWorldVertex(n);
 
@@ -1885,19 +1925,17 @@ int CStudioRender::R_StudioDrawEyeball( mstudiomesh_t* pmesh, studiomeshdata_t* 
 				R_StudioTransform( pFlexVert->m_Position, &vert.m_BoneWeights, pWorldVert->m_Position );
 				R_StudioRotate( pFlexVert->m_Normal, &vert.m_BoneWeights, pWorldVert->m_Normal );
 				VectorNormalize( pWorldVert->m_Normal.Base() );
-				// NOTE: Relaxed tolerance from 1.05 to 1.10 for Source 2007+ model compatibility
-				Assert( pWorldVert->m_Normal.x >= -1.10f && pWorldVert->m_Normal.x <= 1.10f );
-				Assert( pWorldVert->m_Normal.y >= -1.10f && pWorldVert->m_Normal.y <= 1.10f );
-				Assert( pWorldVert->m_Normal.z >= -1.10f && pWorldVert->m_Normal.z <= 1.10f );
+				Assert( pWorldVert->m_Normal.x >= -1.05f && pWorldVert->m_Normal.x <= 1.05f );
+				Assert( pWorldVert->m_Normal.y >= -1.05f && pWorldVert->m_Normal.y <= 1.05f );
+				Assert( pWorldVert->m_Normal.z >= -1.05f && pWorldVert->m_Normal.z <= 1.05f );
 			}
 			else
 			{
 				R_StudioTransform( vert.m_vecPosition, &vert.m_BoneWeights, pWorldVert->m_Position );
 				R_StudioRotate( vert.m_vecNormal, &vert.m_BoneWeights, pWorldVert->m_Normal );
-				// NOTE: Relaxed tolerance from 1.05 to 1.10 for Source 2007+ model compatibility
-				Assert( pWorldVert->m_Normal.x >= -1.10f && pWorldVert->m_Normal.x <= 1.10f );
-				Assert( pWorldVert->m_Normal.y >= -1.10f && pWorldVert->m_Normal.y <= 1.10f );
-				Assert( pWorldVert->m_Normal.z >= -1.10f && pWorldVert->m_Normal.z <= 1.10f );
+				Assert( pWorldVert->m_Normal.x >= -1.05f && pWorldVert->m_Normal.x <= 1.05f );
+				Assert( pWorldVert->m_Normal.y >= -1.05f && pWorldVert->m_Normal.y <= 1.05f );
+				Assert( pWorldVert->m_Normal.z >= -1.05f && pWorldVert->m_Normal.z <= 1.05f );
 			}
 
 			// Don't bother to light in software when we've got vertex + pixel shaders.
@@ -2046,23 +2084,21 @@ void InsertRenderable( int mesh, T val, int count, int* pIndices, T* pValList )
 // Sorts the meshes
 //-----------------------------------------------------------------------------
 
-int CStudioRender::SortMeshes( int* pIndices, IMaterial **ppMaterials,
+int CStudioRender::SortMeshes( int* pIndices, IMaterial **ppMaterials, 
 	short* pskinref, Vector const& vforward, Vector const& r_origin )
 {
 	int numMeshes = 0;
-	// Use version-safe accessor for mesh count
-	int totalMeshes = StudioModel_GetNumMeshes(m_pStudioHdr, m_pSubModel);
-
 	if (m_bDrawTranslucentSubModels)
 	{
-//		float* pDist = (float*)_alloca( totalMeshes * sizeof(float) );
+//		float* pDist = (float*)_alloca( m_pSubModel->nummeshes * sizeof(float) );
+		int numStudioMeshes = StudioModel_GetNumMeshes(m_pStudioHdr, m_pSubModel);
 
 		// Sort each model piece by it's center, if it's translucent
-		for (int i = 0; i < totalMeshes; ++i)
+		for (int i = 0; i < numStudioMeshes; ++i)
 		{
-			// Don't add opaque materials - use version-safe mesh accessor
+			// Don't add opaque materials
 			mstudiomesh_t*	pmesh = StudioModel_GetMesh(m_pStudioHdr, m_pSubModel, i);
-			IMaterial *pMaterial = ppMaterials[pskinref[pmesh->material]];
+			IMaterial *pMaterial = ppMaterials[pskinref[StudioMesh_GetMaterial(m_pStudioHdr, pmesh)]];
 			if( !pMaterial || !pMaterial->IsTranslucent() )
 				continue;
 
@@ -2080,13 +2116,14 @@ int CStudioRender::SortMeshes( int* pIndices, IMaterial **ppMaterials,
 	}
 	else
 	{
-		IMaterial** ppMat = (IMaterial**)_alloca( totalMeshes * sizeof(IMaterial*) );
+		int numStudioMeshes = StudioModel_GetNumMeshes(m_pStudioHdr, m_pSubModel);
+		IMaterial** ppMat = (IMaterial**)_alloca( numStudioMeshes * sizeof(IMaterial*) );
 
-		// Sort by material type - use version-safe mesh accessor
-		for (int i = 0; i < totalMeshes; ++i)
+		// Sort by material type
+		for (int i = 0; i < numStudioMeshes; ++i)
 		{
 			mstudiomesh_t*	pmesh = StudioModel_GetMesh(m_pStudioHdr, m_pSubModel, i);
-			IMaterial *pMaterial = ppMaterials[pskinref[pmesh->material]];
+			IMaterial *pMaterial = ppMaterials[pskinref[StudioMesh_GetMaterial(m_pStudioHdr, pmesh)]];
 			if( !pMaterial )
 				continue;
 
@@ -2150,40 +2187,40 @@ int CStudioRender::R_StudioDrawPoints( int skin, void /*IClientEntity*/ *pClient
 			skin = 0;
 	}
 
-	// get skinref array - use version-safe accessor for v44+ models
+	// get skinref array
 	short *pskinref	= StudioHdr_GetSkinRef( m_pStudioHdr, 0 );
 	if ( skin > 0 && skin < StudioHdr_GetNumSkinFamilies(m_pStudioHdr) )
 	{
-		pskinref += ( skin * StudioHdr_GetNumSkinRef(m_pStudioHdr) );
+		pskinref = StudioHdr_GetSkinRef( m_pStudioHdr, skin * StudioHdr_GetNumSkinRef(m_pStudioHdr) );
 	}
 
 	// Compute all the bone matrices the way the material system wants it
-	for ( i = 0; i < m_pStudioHdr->numbones; i++)
+	for ( i = 0; i < StudioHdr_GetNumBones(m_pStudioHdr); i++)
 	{
 		BoneMatToMaterialMat( m_PoseToWorld[i], m_MaterialPoseToWorld[i] );
 	}
 
 	// this has to run here becuase it effects flex targets
-	// Use version-safe accessors for v44+ model compatibility
-	int numEyeballs = StudioModel_GetNumEyeballs(m_pStudioHdr, m_pSubModel);
+	int numEyeballs = StudioHdr_IsV44Plus(m_pStudioHdr) ? 0 : m_pSubModel->numeyeballs;
 	for ( i = 0; i < numEyeballs; i++)
 	{
-		R_StudioEyeballPosition( StudioModel_GetEyeball(m_pStudioHdr, m_pSubModel, i), &m_EyeballState[i] );
+		R_StudioEyeballPosition( m_pSubModel->pEyeball(i), &m_EyeballState[i] );
 	}
 
 	// FIXME: Activate sorting on a mesh level
-//	int* pIndices = (int*)_alloca( StudioModel_GetNumMeshes(m_pStudioHdr, m_pSubModel) * sizeof(int) );
+//	int* pIndices = (int*)_alloca( m_pSubModel->nummeshes * sizeof(int) ); 
 //	int numMeshes = SortMeshes( pIndices, ppMaterials, pskinref, vforward, r_origin );
 
-	// draw each mesh - use version-safe accessors for v44+ model compatibility
-	int numMeshes = StudioModel_GetNumMeshes(m_pStudioHdr, m_pSubModel);
-	for ( i = 0; i < numMeshes; ++i)
+	// draw each mesh
+	int numStudioMeshes = StudioModel_GetNumMeshes(m_pStudioHdr, m_pSubModel);
+	for ( i = 0; i < numStudioMeshes; ++i)
 	{
 		mstudiomesh_t	*pmesh		= StudioModel_GetMesh(m_pStudioHdr, m_pSubModel, i);
 		studiomeshdata_t *pMeshData = &m_pStudioMeshes[StudioMesh_GetMeshId(m_pStudioHdr, pmesh)];
 		Assert(pMeshData);
 
-		IMaterial* pMaterial = R_StudioSetupSkin( pskinref[ pmesh->material ], ppMaterials, pClientEntity );
+		int material = StudioMesh_GetMaterial(m_pStudioHdr, pmesh);
+		IMaterial* pMaterial = R_StudioSetupSkin( pskinref[ material ], ppMaterials, pClientEntity );
 		if( !pMaterial )
 			continue;
 
@@ -2191,7 +2228,7 @@ int CStudioRender::R_StudioDrawPoints( int skin, void /*IClientEntity*/ *pClient
 		char const *materialName = pMaterial->GetName();
 #endif
 
-		int materialFlags = (!m_pForcedMaterial) ? pMaterialFlags[pskinref[pmesh->material]] : 0;
+		int materialFlags = (!m_pForcedMaterial) ? pMaterialFlags[pskinref[material]] : 0;
 		bool translucent = pMaterial->IsTranslucent();
 
 		if( !m_Config.bWireframe )
@@ -2212,10 +2249,14 @@ int CStudioRender::R_StudioDrawPoints( int skin, void /*IClientEntity*/ *pClient
 
 		// The following are special cases that can't be covered with
 		// the normal static/dynamic methods due to optimization reasons
-		// Use version-safe accessor for materialtype (different offset in v44+)
 		switch (StudioMesh_GetMaterialType(m_pStudioHdr, pmesh))
 		{
 		case 1:	// eyeballs
+			if (StudioHdr_IsV44Plus(m_pStudioHdr))
+			{
+				numTrianglesRendered += R_StudioDrawMesh( pmesh, pMeshData, lighting, pMaterial, ppColorMeshes );
+				break;
+			}
 			if( m_bDrawTranslucentSubModels )
 				break;
 

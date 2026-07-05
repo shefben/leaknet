@@ -580,15 +580,6 @@ int Lua_SetConVarValue(lua_State *L)
 void RegisterLuaFileFunctions()
 {
 	// File operations
-	CLuaIntegration::RegisterFunction("_FileExists", Lua_FileExists, "Check if file exists. Syntax: <path>");
-	CLuaIntegration::RegisterFunction("_FileRead", Lua_FileRead, "Read file contents. Syntax: <path>");
-	CLuaIntegration::RegisterFunction("_FileWrite", Lua_FileWrite, "Write file contents. Syntax: <path> <content>");
-	CLuaIntegration::RegisterFunction("_FileAppend", Lua_FileAppend, "Append to file. Syntax: <path> <content>");
-	CLuaIntegration::RegisterFunction("_FileDelete", Lua_FileDelete, "Delete file. Syntax: <path>");
-	CLuaIntegration::RegisterFunction("_FileSize", Lua_FileSize, "Get file size. Syntax: <path>");
-	CLuaIntegration::RegisterFunction("_FileFind", Lua_FileFind, "Find files by pattern. Syntax: <pattern> [searchpath]");
-	CLuaIntegration::RegisterFunction("_FileIsDir", Lua_FileIsDir, "Check if path is directory. Syntax: <path>");
-	CLuaIntegration::RegisterFunction("_FileCreateDir", Lua_FileCreateDir, "Create directory. Syntax: <path>");
 
 	// Core utility functions (_GetCurrentMap is registered in lua_entity_funcs.cpp)
 	CLuaIntegration::RegisterFunction("_GetRule", Lua_GetRule, "Get gamerule value. Syntax: <rulename>");
@@ -607,4 +598,56 @@ void RegisterLuaFileFunctions()
 	CLuaIntegration::RegisterFunction("_ServerCommand", Lua_ServerCommand, "Execute server command. Syntax: <cmd>");
 	CLuaIntegration::RegisterFunction("_GetConVarValue", Lua_GetConVarValue, "Get convar value. Syntax: <name>");
 	CLuaIntegration::RegisterFunction("_SetConVarValue", Lua_SetConVarValue, "Set convar value. Syntax: <name> <value>");
+}
+
+//-----------------------------------------------------------------------------
+// Registers the file-funcs globals into the ACTIVE CLuaIntegration state, which
+// RegisterEngineBindings() points at the gamemode Lua state (s_pLuaState) before
+// calling this. Original gmod exposes these as plain globals in the gamemode state,
+// but bmod only registered them via RegisterLuaFileFunctions() into the separate
+// CLuaIntegration::Initialize state -- RegisterEngineBindings never invoked it -- so
+// they were NIL for gamemodes. That made e.g. MelonRacer's AddTimer(1,4,_PlaySound,...)
+// store a nil func, which errors every tick at includes/timers.lua:37 and, past
+// gmod_lua_maxerrors, disables the entire Lua system (and abandons the melon's physics
+// mid-lifecycle). _PrintMessage and _Msg are intentionally OMITTED here: the core
+// Register*Functions own those in the gamemode state and must keep winning (parity).
+//-----------------------------------------------------------------------------
+void RegisterLuaFileGlobalsForGamemode()
+{
+	CLuaIntegration::RegisterFunction("_GetRule", Lua_GetRule, "Get gamerule value. Syntax: <rulename>");
+	CLuaIntegration::RegisterFunction("_PrintMessageAll", Lua_PrintMessageAll, "Print message to all. Syntax: <msgtype> <msg>");
+	CLuaIntegration::RegisterFunction("_PlaySound", Lua_PlaySound, "Play sound. Syntax: <sound> [x] [y] [z] [vol] [pitch]");
+	CLuaIntegration::RegisterFunction("_PlaySoundPlayer", Lua_PlaySoundPlayer, "Play sound to player. Syntax: <playerid> <sound> [vol] [pitch]");
+	CLuaIntegration::RegisterFunction("_ScreenText", Lua_ScreenText, "Show screen text. Syntax: <playerid> <text> [x] [y] [holdtime]");
+	CLuaIntegration::RegisterFunction("_ForceFileConsistency", Lua_ForceFileConsistency, "Force file consistency. Syntax: <filename>");
+	CLuaIntegration::RegisterFunction("_MsgN", Lua_MsgN, "Print to console with newline. Syntax: <message>");
+	CLuaIntegration::RegisterFunction("_Warning", Lua_Warning, "Print warning. Syntax: <message>");
+	CLuaIntegration::RegisterFunction("_DevMsg", Lua_DevMsg, "Print developer message. Syntax: <message>");
+	CLuaIntegration::RegisterFunction("_ServerCommand", Lua_ServerCommand, "Execute server command. Syntax: <cmd>");
+	CLuaIntegration::RegisterFunction("_GetConVarValue", Lua_GetConVarValue, "Get convar value. Syntax: <name>");
+	CLuaIntegration::RegisterFunction("_SetConVarValue", Lua_SetConVarValue, "Set convar value. Syntax: <name> <value>");
+}
+
+//-----------------------------------------------------------------------------
+// The original gmod 9.0.4b registers file access as a "_file" table
+// (_file.Read/Write/Exists/Find/IsDir/Delete/CreateDir/Rename), NOT as _File* globals.
+// bmod's _File* globals only exist in the CLuaIntegration state; gamemode scripts run in
+// the CGModLuaSystem state, so this builds the _file table there to match the original.
+//-----------------------------------------------------------------------------
+void RegisterLuaFileTable(lua_State* L)
+{
+	if (!L)
+		return;
+
+	lua_newtable(L);
+	lua_pushcfunction(L, Lua_FileRead);      lua_setfield(L, -2, "Read");
+	lua_pushcfunction(L, Lua_FileWrite);     lua_setfield(L, -2, "Write");
+	lua_pushcfunction(L, Lua_FileAppend);    lua_setfield(L, -2, "Append");
+	lua_pushcfunction(L, Lua_FileExists);    lua_setfield(L, -2, "Exists");
+	lua_pushcfunction(L, Lua_FileFind);      lua_setfield(L, -2, "Find");
+	lua_pushcfunction(L, Lua_FileIsDir);     lua_setfield(L, -2, "IsDir");
+	lua_pushcfunction(L, Lua_FileDelete);    lua_setfield(L, -2, "Delete");
+	lua_pushcfunction(L, Lua_FileCreateDir); lua_setfield(L, -2, "CreateDir");
+	lua_pushcfunction(L, Lua_FileSize);      lua_setfield(L, -2, "Size");
+	lua_setglobal(L, "_file");
 }

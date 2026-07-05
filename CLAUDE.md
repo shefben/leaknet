@@ -6,6 +6,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 LeakNet is a refactored and enhanced version of the leaked Half-Life 2 beta source code from 2003. It's a complete game engine implementation that supports both client gameplay and dedicated server functionality, with modern build infrastructure and cross-platform compatibility.
 
+## CRITICAL: V44+ MODEL CODE ISOLATION REQUIREMENTS
+
+**THIS IS MANDATORY - NEVER VIOLATE THESE RULES:**
+
+1. **COMPLETE SEPARATION**: All v44+ model code MUST be 100% separate from v37 code:
+   - Separate header files (e.g., `studiohdr_v44.h`, NOT modifying `studio.h`)
+   - Separate source files (e.g., `bone_setup_v44.cpp`, NOT modifying `bone_setup.cpp`)
+   - Separate classes (e.g., `CIKContext_v44`, NOT modifying `CIKContext`)
+   - Separate functions (e.g., `InitPose_v44()`, NOT modifying `InitPose()`)
+   - Separate structs (e.g., `mstudiobone_v44_t`, NOT using `mstudiobone_t`)
+
+2. **NO V37 DEPENDENCIES**: v44+ files must NEVER:
+   - Include v37 headers like `studio.h`, `bone_setup.h`, etc.
+   - Use v37 structs/classes/functions
+   - Forward declare v37 types
+   - Have typedef aliases to v37 types
+   - Share ANY code with v37 implementation
+
+3. **SELF-CONTAINED V44+ HEADERS**:
+   - `studiohdr_v44.h` must define ALL its own types from scratch
+   - Include only foundation headers (mathlib, tier0, utlvector, etc.) - NEVER v37 model headers
+   - All v44+ types use `_v44` or `_v48` suffix
+   - Duplicate any needed structures with v44 suffix rather than reusing v37
+
+4. **FILE NAMING CONVENTION**:
+   - All v44+ files: `*_v44.h`, `*_v44.cpp`
+   - Classes: `CIKContext_v44`, `CBoneAccessor_v44`
+   - Structs: `studiohdr_v44_t`, `mstudiobone_v44_t`
+   - Functions: `InitPose_v44()`, `CalcBoneAdj_v44()`
+
+5. **RUNTIME VERSION DETECTION**: The engine detects model version at runtime and calls the appropriate v37 OR v44+ code path. Both systems coexist but NEVER share implementation code.
+
+**RATIONALE**: This allows the engine to load both v37 (HL2 beta 2003) and v44+ (Source 2004+) models simultaneously without conflicts. The two systems are completely independent implementations.
+
 ## Build System & Commands
 
 **IMPORTANT: Always use CMake for building. Never use MSBuild directly or pass MSBuild flags.**
@@ -214,11 +248,13 @@ The project includes a complete master server implementation:
 - Database backends (partially implemented)
 
 Master server functionality is included in "everything" builds but commented out portions suggest incomplete database integration.
-- the 2007 engine source code directory for reference: F:\back-ups\betahl2_codebases\SourceEngine2007-master\SourceEngine2007-master\src_main
-- clean leaknet codebase with v37 mdl support: F:\development\steam\emulator_bot\LeakNet
-- the location of the game and engine directory is: C:\anon-hl2\  with bmod located within C:\anon-hl2\bmod
-- only use runtime mdl version checking, never compile time.  the engine must support all model versions during gameplay.
-- only build as debug!
-- the working directory for the game is C:\anon-hl2\ and the bmod directory is C:\anon-hl2\bmod\
-- C:\anon-hl2\bmod\console.log
-- when implementing v44+ mdl support, remember to keep the code seperatre ted from v37 mdl code so the engine can load both types of models at the same time during runtime.  never use compile-time defines/if statements whewhen coding v44+ support
+
+## Project-Specific Notes
+
+- 2007 engine source code for v44+ reference: F:\back-ups\betahl2_codebases\SourceEngine2007-master\SourceEngine2007-master\src_main
+- Clean LeakNet codebase with v37 mdl support: F:\development\steam\emulator_bot\LeakNet
+- Game and engine directory: C:\anon-hl2\ with bmod located at C:\anon-hl2\bmod
+- Only use runtime mdl version checking, never compile time
+- Only build as debug!
+- Working directory: C:\anon-hl2\
+- Console log: C:\anon-hl2\bmod\console.log

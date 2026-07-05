@@ -26,6 +26,7 @@
 		SearchPaths
 		{
 			Game				|gameinfo_path|.
+			Game				|gameinfo_path|../hl2
 			Game				hl2
 		}
 	}

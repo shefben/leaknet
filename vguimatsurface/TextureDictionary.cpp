@@ -549,7 +549,14 @@ void CMatSystemTexture::SetMaterial( const char *pFileName )
 
 	if ( !bFound )
 	{
-		Msg( "--- Missing Vgui material %s\n", pFileName );
+		if ( pFileName && strlen(pFileName) > 0 )
+		{
+			Msg( "--- Missing Vgui material %s\n", pFileName );
+		}
+		else
+		{
+			Msg( "--- Missing Vgui material (empty or null filename)\n" );
+		}
 	}
 
 	SetMaterial( pMaterial );

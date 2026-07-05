@@ -12,6 +12,8 @@
 
 #include "cbase.h"
 #include "studio.h"
+#include "studiohdr_v44.h"  // Version-aware bone accessors for v44+
+#include "studio_helpers.h"  // Helper functions for studiohdr_t access
 #include "utlvector.h"
 #include "utldict.h"
 #include "vstdlib/strtools.h"
@@ -68,7 +70,7 @@ private:
 CModelLookupContext::CModelLookupContext(int group, const studiohdr_t *pStudioHdr)
 {
 	m_lookupIndex = -1;
-	if (group == 0 && pStudioHdr->numincludemodels)
+	if (group == 0 && StudioHdr_GetNumIncludeModels(pStudioHdr))
 	{
 		m_lookupIndex = g_ModelLookup.AddToTail();
 		g_ModelLookupIndex = g_ModelLookup.Count() - 1;
@@ -174,11 +176,14 @@ void virtualmodel_t::AppendModels( int group, const studiohdr_t *pStudioHdr )
 	// Determine quantity of valid include models in one pass
 	int j;
 	int nValidIncludes = 0;
-	for (j = 0; j < pStudioHdr->numincludemodels; j++)
+	for (j = 0; j < StudioHdr_GetNumIncludeModels(pStudioHdr); j++)
 	{
 		// Find model (increases ref count)
 		void *tmp = NULL;
-		const studiohdr_t *pTmpHdr = pStudioHdr->FindModel(&tmp, pStudioHdr->pModelGroup(j)->pszName());
+		mstudiomodelgroup_t *pModelGroup = StudioHdr_GetModelGroup(pStudioHdr, j);
+		if (!pModelGroup)
+			continue;
+		const studiohdr_t *pTmpHdr = pStudioHdr->FindModel(&tmp, pModelGroup->pszName());
 		if (pTmpHdr)
 		{
 			if (nValidIncludes >= ARRAYSIZE(list))
@@ -224,12 +229,12 @@ void virtualmodel_t::AppendSequences( int group, const studiohdr_t *pStudioHdr )
 	CUtlVector< virtualsequence_t > seq;
 	seq = m_seq;
 
-	m_group[group].masterSeq.SetCount(pStudioHdr->numlocalseq());
+	int numLocalSeq = StudioHdr_GetNumLocalSeq(pStudioHdr);
+	m_group[group].masterSeq.SetCount(numLocalSeq);
 
-	for (j = 0; j < pStudioHdr->numlocalseq(); j++)
+	for (j = 0; j < numLocalSeq; j++)
 	{
-		const mstudioseqdesc_t *seqdesc = pStudioHdr->pLocalSeqdesc(j);
-		const char *s1 = seqdesc->pszLabel();
+		const char *s1 = StudioSeqdesc_GetLabel(pStudioHdr, j);
 
 		if (HasLookupTable())
 		{
@@ -247,7 +252,7 @@ void virtualmodel_t::AppendSequences( int group, const studiohdr_t *pStudioHdr )
 				const studiohdr_t *hdr = m_group[seq[k].group].GetStudioHdr();
 				if (hdr)
 				{
-					const char *s2 = hdr->pLocalSeqdesc(seq[k].index)->pszLabel();
+					const char *s2 = StudioSeqdesc_GetLabel(hdr, seq[k].index);
 					if (!Q_stricmp(s1, s2))
 					{
 						break;
@@ -262,22 +267,22 @@ void virtualmodel_t::AppendSequences( int group, const studiohdr_t *pStudioHdr )
 			virtualsequence_t tmp;
 			tmp.group = group;
 			tmp.index = j;
-			tmp.flags = seqdesc->flags;
-			tmp.activity = seqdesc->GetActivity(pStudioHdr->version);
+			tmp.flags = StudioSeqdesc_GetFlags(pStudioHdr, j);
+			tmp.activity = StudioSeqdesc_GetActivity(pStudioHdr, j);
 			k = seq.AddToTail(tmp);
 		}
 		else
 		{
 			// Check if the existing sequence is forward-declared (STUDIO_OVERRIDE)
 			const studiohdr_t *existingHdr = m_group[seq[k].group].GetStudioHdr();
-			if (existingHdr && (existingHdr->pLocalSeqdesc(seq[k].index)->flags & STUDIO_OVERRIDE))
+			if (existingHdr && (StudioSeqdesc_GetFlags(existingHdr, seq[k].index) & STUDIO_OVERRIDE))
 			{
 				// The one in memory is a forward declared sequence, override it
 				virtualsequence_t tmp;
 				tmp.group = group;
 				tmp.index = j;
-				tmp.flags = seqdesc->flags;
-				tmp.activity = seqdesc->GetActivity(pStudioHdr->version);
+				tmp.flags = StudioSeqdesc_GetFlags(pStudioHdr, j);
+				tmp.activity = StudioSeqdesc_GetActivity(pStudioHdr, j);
 				seq[k] = tmp;
 			}
 		}
@@ -293,7 +298,7 @@ void virtualmodel_t::AppendSequences( int group, const studiohdr_t *pStudioHdr )
 			const studiohdr_t *hdr = m_group[seq[j].group].GetStudioHdr();
 			if (hdr)
 			{
-				const char *s1 = hdr->pLocalSeqdesc(seq[j].index)->pszLabel();
+				const char *s1 = StudioSeqdesc_GetLabel(hdr, seq[j].index);
 				GetSeqTable()->Insert(s1, j);
 			}
 		}
@@ -315,11 +320,12 @@ void virtualmodel_t::AppendAnimations( int group, const studiohdr_t *pStudioHdr 
 
 	int j, k;
 
-	m_group[group].masterAnim.SetCount(pStudioHdr->numlocalanim());
+	int numLocalAnim = StudioHdr_GetNumLocalAnims(pStudioHdr);
+	m_group[group].masterAnim.SetCount(numLocalAnim);
 
-	for (j = 0; j < pStudioHdr->numlocalanim(); j++)
+	for (j = 0; j < numLocalAnim; j++)
 	{
-		const char *s1 = pStudioHdr->pLocalAnimdesc(j)->pszName();
+		const char *s1 = StudioAnimdesc_GetName(pStudioHdr, j);
 
 		if (HasLookupTable())
 		{
@@ -337,7 +343,7 @@ void virtualmodel_t::AppendAnimations( int group, const studiohdr_t *pStudioHdr 
 				const studiohdr_t *hdr = m_group[anim[k].group].GetStudioHdr();
 				if (hdr)
 				{
-					const char *s2 = hdr->pLocalAnimdesc(anim[k].index)->pszName();
+					const char *s2 = StudioAnimdesc_GetName(hdr, anim[k].index);
 					if (!Q_stricmp(s1, s2))
 					{
 						break;
@@ -366,7 +372,7 @@ void virtualmodel_t::AppendAnimations( int group, const studiohdr_t *pStudioHdr 
 			const studiohdr_t *hdr = m_group[anim[j].group].GetStudioHdr();
 			if (hdr)
 			{
-				const char *s1 = hdr->pLocalAnimdesc(anim[j].index)->pszName();
+				const char *s1 = StudioAnimdesc_GetName(hdr, anim[j].index);
 				GetAnimTable()->Insert(s1, j);
 			}
 		}
@@ -378,6 +384,7 @@ void virtualmodel_t::AppendAnimations( int group, const studiohdr_t *pStudioHdr 
 //-----------------------------------------------------------------------------
 // AppendBonemap - Map bones between included model and base model
 // Includes parent bone mismatch validation
+// Version-aware: Works with both v37 and v44+ bone structures
 //-----------------------------------------------------------------------------
 void virtualmodel_t::AppendBonemap( int group, const studiohdr_t *pStudioHdr )
 {
@@ -388,15 +395,19 @@ void virtualmodel_t::AppendBonemap( int group, const studiohdr_t *pStudioHdr )
 		pBaseStudioHdr = pStudioHdr;
 	}
 
-	m_group[group].boneMap.SetCount(pBaseStudioHdr->numbones);
-	m_group[group].masterBone.SetCount(pStudioHdr->numbones);
+	// Get bone counts using version-aware accessor
+	int numBones = StudioHdr_GetNumBones(pStudioHdr);
+	int numBaseBones = StudioHdr_GetNumBones(pBaseStudioHdr);
+
+	m_group[group].boneMap.SetCount(numBaseBones);
+	m_group[group].masterBone.SetCount(numBones);
 
 	int j, k;
 
 	if (group == 0)
 	{
 		// Base model - bones map 1:1
-		for (j = 0; j < pStudioHdr->numbones; j++)
+		for (j = 0; j < numBones; j++)
 		{
 			m_group[group].boneMap[j] = j;
 			m_group[group].masterBone[j] = j;
@@ -405,41 +416,45 @@ void virtualmodel_t::AppendBonemap( int group, const studiohdr_t *pStudioHdr )
 	else
 	{
 		// Included model - map bones by name
-		for (j = 0; j < pBaseStudioHdr->numbones; j++)
+		for (j = 0; j < numBaseBones; j++)
 		{
 			m_group[group].boneMap[j] = -1;
 		}
 
-		for (j = 0; j < pStudioHdr->numbones; j++)
+		for (j = 0; j < numBones; j++)
 		{
-			const mstudiobone_t *pBone = pStudioHdr->pBone(j);
-			for (k = 0; k < pBaseStudioHdr->numbones; k++)
+			// Use version-aware bone name accessor
+			const char *szBoneName = StudioBone_GetName(pStudioHdr, j);
+			for (k = 0; k < numBaseBones; k++)
 			{
-				if (!Q_stricmp(pBone->pszName(), pBaseStudioHdr->pBone(k)->pszName()))
+				if (!Q_stricmp(szBoneName, StudioBone_GetName(pBaseStudioHdr, k)))
 				{
 					break;
 				}
 			}
 
-			if (k < pBaseStudioHdr->numbones)
+			if (k < numBaseBones)
 			{
 				m_group[group].masterBone[j] = k;
 				m_group[group].boneMap[k] = j;
 
-				// Validate parent bone matching
-				if ((pStudioHdr->pBone(j)->parent == -1) || (pBaseStudioHdr->pBone(k)->parent == -1))
+				// Validate parent bone matching using version-aware accessor
+				int parentJ = StudioBone_GetParent(pStudioHdr, j);
+				int parentK = StudioBone_GetParent(pBaseStudioHdr, k);
+
+				if ((parentJ == -1) || (parentK == -1))
 				{
-					if ((pStudioHdr->pBone(j)->parent != -1) || (pBaseStudioHdr->pBone(k)->parent != -1))
+					if ((parentJ != -1) || (parentK != -1))
 					{
 						Warning("%s/%s : mismatched parent bones on \"%s\"\n",
-							pBaseStudioHdr->name, pStudioHdr->name, pStudioHdr->pBone(j)->pszName());
+							pBaseStudioHdr->name, pStudioHdr->name, szBoneName);
 					}
 				}
-				else if (m_group[group].masterBone[pStudioHdr->pBone(j)->parent] !=
-				         m_group[0].masterBone[pBaseStudioHdr->pBone(k)->parent])
+				else if (m_group[group].masterBone[parentJ] !=
+				         m_group[0].masterBone[parentK])
 				{
 					Warning("%s/%s : mismatched parent bones on \"%s\"\n",
-						pBaseStudioHdr->name, pStudioHdr->name, pStudioHdr->pBone(j)->pszName());
+						pBaseStudioHdr->name, pStudioHdr->name, szBoneName);
 				}
 			}
 			else
@@ -453,6 +468,7 @@ void virtualmodel_t::AppendBonemap( int group, const studiohdr_t *pStudioHdr )
 //-----------------------------------------------------------------------------
 // AppendAttachments - Add attachments from included model
 // Sets BONE_USED_BY_ATTACHMENT flags on bones used by new attachments
+// Version-aware: Works with both v37 and v44+ models
 //-----------------------------------------------------------------------------
 void virtualmodel_t::AppendAttachments( int group, const studiohdr_t *pStudioHdr )
 {
@@ -463,14 +479,19 @@ void virtualmodel_t::AppendAttachments( int group, const studiohdr_t *pStudioHdr
 
 	int j, k, n;
 
-	m_group[group].masterAttachment.SetCount(pStudioHdr->numlocalattachments());
+	m_group[group].masterAttachment.SetCount(StudioHdr_GetNumAttachments(pStudioHdr));
 
-	for (j = 0; j < pStudioHdr->numlocalattachments(); j++)
+	for (j = 0; j < StudioHdr_GetNumAttachments(pStudioHdr); j++)
 	{
-		const mstudioattachment_t *pAttach = pStudioHdr->pLocalAttachment(j);
-
 		// Get the mapped bone index in the base model
-		n = m_group[group].masterBone[pAttach->bone];
+		int attachmentBone = StudioAttachment_GetBone(pStudioHdr, j);
+		if (attachmentBone < 0 || attachmentBone >= m_group[group].masterBone.Count())
+		{
+			m_group[group].masterAttachment[j] = -1;
+			continue;
+		}
+
+		n = m_group[group].masterBone[attachmentBone];
 
 		// Skip if the attachment's bone doesn't exist in the base model
 		if (n == -1)
@@ -479,7 +500,7 @@ void virtualmodel_t::AppendAttachments( int group, const studiohdr_t *pStudioHdr
 			continue;
 		}
 
-		const char *s1 = pAttach->pszName();
+		const char *s1 = StudioAttachment_GetName(pStudioHdr, j);
 
 		// Check for duplicate attachments
 		for (k = 0; k < numCheck; k++)
@@ -487,7 +508,7 @@ void virtualmodel_t::AppendAttachments( int group, const studiohdr_t *pStudioHdr
 			const studiohdr_t *hdr = m_group[attachment[k].group].GetStudioHdr();
 			if (hdr)
 			{
-				const char *s2 = hdr->pLocalAttachment(attachment[k].index)->pszName();
+				const char *s2 = StudioAttachment_GetName(hdr, attachment[k].index);
 				if (!Q_stricmp(s1, s2))
 				{
 					break;
@@ -504,17 +525,29 @@ void virtualmodel_t::AppendAttachments( int group, const studiohdr_t *pStudioHdr
 			k = attachment.AddToTail(tmp);
 
 			// Make sure bone flags are set so attachment calculates
+			// Use version-aware accessor to check flags
 			const studiohdr_t *pBaseHdr = m_group[0].GetStudioHdr();
-			if (pBaseHdr && (pBaseHdr->pBone(n)->flags & BONE_USED_BY_ATTACHMENT) == 0)
+			if (pBaseHdr && (StudioBone_GetFlags(pBaseHdr, n) & BONE_USED_BY_ATTACHMENT) == 0)
 			{
 				// Walk up the bone hierarchy setting the flag
 				int boneIndex = n;
 				while (boneIndex != -1)
 				{
-					// Note: We cast away const here because we need to modify bone flags
-					// This is how the original Source engine does it
-					mstudiobone_t *pBone = const_cast<mstudiobone_t*>(pBaseHdr->pBone(boneIndex));
-					pBone->flags |= BONE_USED_BY_ATTACHMENT;
+					// Set bone flags using version-aware approach
+					// We need to handle both v37 and v48 bone structures
+					if (pBaseHdr->version >= STUDIO_VERSION_44)
+					{
+						// v44+ uses mstudiobone_v44_t
+						mstudiobone_v44_t *pBone = const_cast<mstudiobone_v44_t*>(
+							((const studiohdr_v44_t*)pBaseHdr)->pBone(boneIndex));
+						pBone->flags |= BONE_USED_BY_ATTACHMENT;
+					}
+					else
+					{
+						// v37 uses mstudiobone_t
+						mstudiobone_t *pBone = const_cast<mstudiobone_t*>(pBaseHdr->pBone(boneIndex));
+						pBone->flags |= BONE_USED_BY_ATTACHMENT;
+					}
 
 					// Also update linear bone data if present
 					if (pBaseHdr->pLinearBones())
@@ -523,7 +556,8 @@ void virtualmodel_t::AppendAttachments( int group, const studiohdr_t *pStudioHdr
 						*pflags |= BONE_USED_BY_ATTACHMENT;
 					}
 
-					boneIndex = pBaseHdr->pBone(boneIndex)->parent;
+					// Get parent using version-aware accessor
+					boneIndex = StudioBone_GetParent(pBaseHdr, boneIndex);
 				}
 			}
 		}
@@ -547,11 +581,12 @@ void virtualmodel_t::AppendPoseParameters( int group, const studiohdr_t *pStudio
 
 	int j, k;
 
-	m_group[group].masterPose.SetCount(pStudioHdr->numlocalposeparameters());
+	int numLocalPoseParameters = StudioHdr_GetNumPoseParameters(pStudioHdr);
+	m_group[group].masterPose.SetCount(numLocalPoseParameters);
 
-	for (j = 0; j < pStudioHdr->numlocalposeparameters(); j++)
+	for (j = 0; j < numLocalPoseParameters; j++)
 	{
-		const char *s1 = pStudioHdr->pLocalPoseParameter(j)->pszName();
+		const char *s1 = StudioPoseParam_GetName(pStudioHdr, j);
 
 		// Check for duplicate pose parameters
 		for (k = 0; k < numCheck; k++)
@@ -559,7 +594,7 @@ void virtualmodel_t::AppendPoseParameters( int group, const studiohdr_t *pStudio
 			const studiohdr_t *hdr = m_group[pose[k].group].GetStudioHdr();
 			if (hdr)
 			{
-				const char *s2 = hdr->pLocalPoseParameter(pose[k].index)->pszName();
+				const char *s2 = StudioPoseParam_GetName(hdr, pose[k].index);
 				if (!Q_stricmp(s1, s2))
 				{
 					break;
@@ -579,12 +614,14 @@ void virtualmodel_t::AppendPoseParameters( int group, const studiohdr_t *pStudio
 		{
 			// Duplicate found - merge the dynamic range
 			// Reset start and end to fit full dynamic range of both
-			const mstudioposeparamdesc_t *pPose1 = pStudioHdr->pLocalPoseParameter(j);
+			const mstudioposeparamdesc_t *pPose1 = StudioHdr_GetPoseParameter(pStudioHdr, j);
 			const studiohdr_t *existingHdr = m_group[pose[k].group].GetStudioHdr();
 			if (existingHdr)
 			{
 				mstudioposeparamdesc_t *pPose2 = const_cast<mstudioposeparamdesc_t*>(
-					existingHdr->pLocalPoseParameter(pose[k].index));
+					StudioHdr_GetPoseParameter(existingHdr, pose[k].index));
+				if (!pPose1 || !pPose2)
+					continue;
 
 				float start = min(pPose2->end, min(pPose1->end, min(pPose2->start, pPose1->start)));
 				float end = max(pPose2->end, max(pPose1->end, max(pPose2->start, pPose1->start)));
@@ -684,9 +721,12 @@ void virtualmodel_t::AppendIKLocks( int group, const studiohdr_t *pStudioHdr )
 
 	int j, k;
 
-	for (j = 0; j < pStudioHdr->numlocalikautoplaylocks(); j++)
+	int numLocalIKAutoplayLocks = StudioHdr_GetNumIKAutoplayLocks(pStudioHdr);
+	for (j = 0; j < numLocalIKAutoplayLocks; j++)
 	{
-		const mstudioiklock_t *pLock = pStudioHdr->pLocalIKAutoplayLock(j);
+		const mstudioiklock_t *pLock = StudioHdr_GetIKAutoplayLock(pStudioHdr, j);
+		if (!pLock)
+			continue;
 		int chain1 = pLock->chain;
 
 		// Check for duplicate by chain index
@@ -695,7 +735,10 @@ void virtualmodel_t::AppendIKLocks( int group, const studiohdr_t *pStudioHdr )
 			const studiohdr_t *hdr = m_group[iklock[k].group].GetStudioHdr();
 			if (hdr)
 			{
-				int chain2 = hdr->pLocalIKAutoplayLock(iklock[k].index)->chain;
+				const mstudioiklock_t *pExistingLock = StudioHdr_GetIKAutoplayLock(hdr, iklock[k].index);
+				if (!pExistingLock)
+					continue;
+				int chain2 = pExistingLock->chain;
 				if (chain1 == chain2)
 				{
 					break;

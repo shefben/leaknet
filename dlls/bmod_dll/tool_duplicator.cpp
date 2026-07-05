@@ -6,6 +6,7 @@
 //=============================================================================
 
 #include "cbase.h"
+#include "gmod_gamemode.h"
 #include "weapon_tool.h"
 #include "player.h"
 #include "gamerules.h"
@@ -459,6 +460,23 @@ CBaseEntity *CToolDuplicator::CreateEntityFromInfo( DupeEntityInfo_t *pInfo, con
 	if ( pOwner )
 	{
 		pEntity->SetOwnerEntity( pOwner );
+	}
+
+	bool bIsRagdoll = pInfo->szClassName[0] && !Q_stricmp(pInfo->szClassName, "prop_ragdoll");
+	bool bIsProp = pInfo->szClassName[0] &&
+		(!Q_stricmp(pInfo->szClassName, "prop_physics") || !Q_stricmp(pInfo->szClassName, "physics_prop"));
+	if ( bIsRagdoll )
+	{
+		if ( !CGModGamemodeSystem::CanPlayerDuplicateRagdoll(pOwner, pEntity) )
+		{
+			UTIL_Remove(pEntity);
+			return NULL;
+		}
+	}
+	else if ( bIsProp && !CGModGamemodeSystem::CanPlayerDuplicateProp(pOwner, pEntity) )
+	{
+		UTIL_Remove(pEntity);
+		return NULL;
 	}
 
 	// Spawn the entity

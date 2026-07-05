@@ -18,6 +18,7 @@
 #include "filesystem.h"
 #include "KeyValues.h"
 #include "utlvector.h"
+#include "bmod_proppanel.h"
 
 //-----------------------------------------------------------------------------
 // Panel name definition
@@ -29,6 +30,7 @@
 //-----------------------------------------------------------------------------
 class CToolButtonsPanel;
 class CContextPanel;
+class CPropPanel;
 
 //-----------------------------------------------------------------------------
 // Simple viewport interface for spawn menu
@@ -168,22 +170,28 @@ public:
 	virtual void ApplySchemeSettings( vgui::IScheme *pScheme );
 	virtual void PerformLayout();
 	virtual void OnCommand( const char *command );
+	virtual void OnMouseWheeled( int delta );
 
 	// Context menu management
 	void ShowContext( const char *contextType );
 	void HideContext();
 	void LoadContextConfiguration();
 
+	// Prop panel access
+	CPropPanel *GetPropPanel() { return m_pPropPanel; }
+	void ReloadProps();
+
 private:
 	char			m_szCurrentContext[64];
 	bool			m_bContextVisible;
 	vgui::Panel		*m_pContextContent;
+	CPropPanel		*m_pPropPanel;			// Main prop spawn panel
 };
 
 //-----------------------------------------------------------------------------
 // Constants - matching Garry's Mod values
 //-----------------------------------------------------------------------------
-#define PANEL_SPAWNMENU			"spawnmenu"
+// Note: PANEL_SPAWNMENU is defined earlier as "SpawnMenuPanel"
 #define SPAWNMENU_SCHEME_FILE	"resource/SpawnMenuScheme.res"
 #define SPAWNMENU_SCHEME_NAME	"SpawnMenuScheme"
 #define TOOLBUTTONS_RES_FILE	"resource/ui/menu_toolbuttons.res"

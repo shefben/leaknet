@@ -1,5 +1,6 @@
 #include "cbase.h"
 #include "bone_setup.h"
+#include "studio_helpers.h"
 #include "physics_bone_follower.h"
 #include "vcollide_parse.h"
 
@@ -65,9 +66,10 @@ bool CBoneFollowerManager::CreatePhysicsFollower( physfollower_t &follow, const 
 		m_hOuter->GetBoneTransform( follow.boneIndex, boneToWorld );
 		MatrixAngles( boneToWorld, boneAngles, bonePosition );
 		follow.hFollower = CBoneFollower::Create( m_hOuter, STRING(m_hOuter->GetModelName()), solid, bonePosition, boneAngles );
+		return true;  // Successfully created bone follower
 	}
 
-	return false;
+	return false;  // Failed - bone not found
 }
 
 //-----------------------------------------------------------------------------
@@ -186,11 +188,11 @@ void CBoneFollower::DrawDebugGeometryOverlays()
 		{
 			pStudioHdr = (studiohdr_t *)modelinfo->GetModelExtraData( model );
 		}
-		for ( int i = 0; i < pStudioHdr->iHitboxCount(0); i++ )
+		for ( int i = 0; i < StudioHitboxSet_GetNumHitboxes(pStudioHdr, 0); i++ )
 		{
-			mstudiobbox_t *pbox = pStudioHdr->pHitbox( i, 0 );
-			mstudiobone_t *pBone = pStudioHdr->pBone( pbox->bone );
-			if ( pBone->physicsbone == m_solidIndex )
+			mstudiobbox_t *pbox = StudioHitboxSet_GetHitbox( pStudioHdr, 0, i );
+			// Use version-aware accessor for v37/v44+ compatibility
+			if ( pStudioHdr->GetBonePhysicsbone( pbox->bone ) == m_solidIndex )
 			{
 				NDebugOverlay::BoxAngles( GetAbsOrigin(), pbox->bbmin, pbox->bbmax, GetAbsAngles(), 255, 255, 0, 0 ,0);
 			}
@@ -283,9 +285,9 @@ void CBoneFollower::UpdateFollower( const Vector &position, const QAngle &orient
 		pStudioHdr = (studiohdr_t *)modelinfo->GetModelExtraData( GetModel() );
 	}
 
-	for ( int i = 0; i < pStudioHdr->iHitboxCount(0); i++ )
+	for ( int i = 0; i < StudioHitboxSet_GetNumHitboxes(pStudioHdr, 0); i++ )
 	{
-		mstudiobbox_t *pbox = pStudioHdr->pHitbox( i, 0 );
+		mstudiobbox_t *pbox = StudioHitboxSet_GetHitbox( pStudioHdr, 0, i );
 		// Use version-aware accessor for v37/v44+ compatibility
 		if ( pStudioHdr->GetBonePhysicsbone( pbox->bone ) == m_solidIndex )
 		{

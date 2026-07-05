@@ -25,6 +25,8 @@
 #include "ai_basenpc.h"		
 #include "weapon_physcannon.h"
 #include "globals.h"
+#include "gmod_gamemode.h"
+#include "gmod_lua.h"
 
 #include "effect_dispatch_data.h"
 #include "te_effect_dispatch.h"
@@ -111,6 +113,8 @@ void CHL2_Player::Precache( void )
 //-----------------------------------------------------------------------------
 void CHL2_Player::PreThink(void)
 {
+	CGModLuaSystem::RunFrameLuaThink();
+
 	CheckExplosionEffects();
 	if ( player_showpredictedposition.GetBool() )
 	{
@@ -401,6 +405,11 @@ bool CHL2_Player::HandleInteraction(int interactionType, void *data, CBaseCombat
 
 void CHL2_Player::PlayerRunCommand(CUserCmd *ucmd, IMoveHelper *moveHelper)
 {
+	if ( ucmd )
+	{
+		CGModLuaSystem::UpdatePlayerRawButtons( this, ucmd->buttons );
+	}
+
 	// Handle FL_FROZEN.
 	if ( m_afPhysicsFlags & PFLAG_ONBARNACLE )
 	{
@@ -446,7 +455,24 @@ void CHL2_Player::PlayerRunCommand(CUserCmd *ucmd, IMoveHelper *moveHelper)
 
 	//Msg("Player time: [ACTIVE: %f]\t[IDLE: %f]\n", m_flMoveTime, m_flIdleTime );
 
+	int nRawButtonsPressed = 0;
+	int nRawButtonsReleased = 0;
+	if ( ucmd )
+	{
+		const int nCommandButtons = ucmd->buttons;
+		const int nButtonsChanged = m_nButtons ^ nCommandButtons;
+		nRawButtonsPressed = nButtonsChanged & nCommandButtons;
+		nRawButtonsReleased = nButtonsChanged & ~nCommandButtons;
+	}
+
 	BaseClass::PlayerRunCommand( ucmd, moveHelper );
+
+	const int nButtonsPressed = m_afButtonPressed | nRawButtonsPressed;
+	const int nButtonsReleased = m_afButtonReleased | nRawButtonsReleased;
+	if ( nButtonsPressed || nButtonsReleased )
+	{
+		CGModGamemodeSystem::OnPlayerInput( this, nButtonsPressed, nButtonsReleased );
+	}
 }
 
 void CHL2_Player::Touch( CBaseEntity *pOther )
@@ -472,6 +498,14 @@ void CHL2_Player::Spawn(void)
 	SetModel( "models/player.mdl" );
     g_ulModelIndexPlayer = GetModelIndex();
 
+	const bool bGModGamemodeActive = CGModGamemodeSystem::GetActiveGamemode() != NULL;
+	if ( bGModGamemodeActive && GetTeamNumber() <= TEAM_UNASSIGNED )
+	{
+		bool bHandledDefaultTeam = CGModGamemodeSystem::PickDefaultSpawnTeam( this );
+		DevMsg( "GMod Gamemode System: PickDefaultSpawnTeam for player %d %s, team now %d\n",
+			entindex(), bHandledDefaultTeam ? "handled" : "not handled", GetTeamNumber() );
+	}
+
 	BaseClass::Spawn();
 
 	//
@@ -488,29 +522,55 @@ void CHL2_Player::Spawn(void)
 
 	SuitPower_SetCharge( 100 );
 
-	// BMod/GMod: Give default weapon loadout unless overridden by gamemode
-	// Standard GMod loadout: physgun, gravity gun, crowbar, pistol, etc.
-	GiveNamedItem( "weapon_physgun" );		// BMod/GMod physics gun
-	GiveNamedItem( "weapon_physcannon" );	// Gravity gun
-	GiveNamedItem( "weapon_crowbar" );		// Crowbar
-	GiveNamedItem( "weapon_pistol" );		// Pistol
-	GiveNamedItem( "weapon_357" );			// Revolver
-	GiveNamedItem( "weapon_smg1" );			// SMG
-	GiveNamedItem( "weapon_shotgun" );		// Shotgun
-	GiveNamedItem( "weapon_crossbow" );		// Crossbow
-	GiveNamedItem( "weapon_frag" );			// Grenades
-	GiveNamedItem( "weapon_slam" );			// SLAMs
-	GiveNamedItem( "weapon_rpg" );			// Rocket launcher
+	if ( bGModGamemodeActive )
+	{
+		// BaseClass::Spawn runs game rules first; strip that default inventory
+		// before handing item selection to the active legacy Lua gamemode.
+		RemoveAllItems( false );
+		EquipSuit();
+		SuitPower_SetCharge( 100 );
+		CGModGamemodeSystem::PlayerSpawnChooseModel( this );
 
-	// Give appropriate ammo
-	GiveAmmo( 150, "Pistol" );
-	GiveAmmo( 12, "357" );
-	GiveAmmo( 225, "SMG1" );
-	GiveAmmo( 32, "Buckshot" );
-	GiveAmmo( 10, "XBowBolt" );
-	GiveAmmo( 5, "Grenade" );
-	GiveAmmo( 3, "slam" );
-	GiveAmmo( 3, "RPG_Round" );
+		if ( GetTeamNumber() == TEAM_SPECTATOR )
+		{
+			if ( !IsObserver() )
+			{
+				StartObserverMode( GetAbsOrigin(), GetAbsAngles() );
+			}
+
+			SetObserverMode( OBS_MODE_ROAMING );
+		}
+		else
+		{
+			CGModGamemodeSystem::GiveDefaultItems( this );
+		}
+
+		CGModGamemodeSystem::OnPlayerSpawn( this );
+	}
+	else
+	{
+		// BMod/GMod fallback loadout when no Lua gamemode is active.
+		GiveNamedItem( "weapon_physgun" );
+		GiveNamedItem( "weapon_physcannon" );
+		GiveNamedItem( "weapon_crowbar" );
+		GiveNamedItem( "weapon_pistol" );
+		GiveNamedItem( "weapon_357" );
+		GiveNamedItem( "weapon_smg1" );
+		GiveNamedItem( "weapon_shotgun" );
+		GiveNamedItem( "weapon_crossbow" );
+		GiveNamedItem( "weapon_frag" );
+		GiveNamedItem( "weapon_slam" );
+		GiveNamedItem( "weapon_rpg" );
+
+		GiveAmmo( 150, "Pistol" );
+		GiveAmmo( 12, "357" );
+		GiveAmmo( 225, "SMG1" );
+		GiveAmmo( 32, "Buckshot" );
+		GiveAmmo( 10, "XBowBolt" );
+		GiveAmmo( 5, "Grenade" );
+		GiveAmmo( 3, "slam" );
+		GiveAmmo( 3, "RPG_Round" );
+	}
 
 	m_iNumSelectedNPCs = 0;
 }
@@ -1408,6 +1468,11 @@ void CHL2_Player::PlayerUse ( void )
 	// Found an object
 	if ( pUseEntity )
 	{
+#ifdef BMOD_DLL
+		if ( CGModGamemodeSystem::OnPlayerUseEntity(this, pUseEntity) )
+			return;
+#endif
+
 		//!!!UNDONE: traceline here to prevent +USEing buttons through walls			
 		int caps = pUseEntity->ObjectCaps();
 		variant_t emptyVariant;
@@ -1690,4 +1755,3 @@ int CHL2_Player::CalcWeaponProficiency( CBaseCombatWeapon *pWeapon )
 
 	return proficiency;
 }
-

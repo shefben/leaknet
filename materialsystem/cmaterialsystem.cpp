@@ -1700,7 +1700,14 @@ IMaterial* CMaterialSystem::FindMaterial( char const *pMaterialName, bool *pFoun
 				if ( m_MissingList.Find( missing ) == m_MissingList.InvalidIndex() )
 				{
 					m_MissingList.Insert( missing );
-					Warning( "material \"%s\" not found\n", name );
+					if ( strlen(name) == 0 )
+					{
+						Warning( "material with empty name not found (caller passed empty string)\n" );
+					}
+					else
+					{
+						Warning( "material \"%s\" not found\n", name );
+					}
 				}
 			}
 

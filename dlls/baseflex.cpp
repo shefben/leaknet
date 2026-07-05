@@ -25,6 +25,7 @@
 #include "baseflex.h"
 #include "filesystem.h"
 #include "studio.h"
+#include "studio_helpers.h"
 #include "choreoevent.h"
 #include "choreoscene.h"
 #include "vstdlib/random.h"
@@ -135,7 +136,9 @@ void CBaseFlex::SetFlexWeight( int index, float value )
 		if (! pstudiohdr)
 			return;
 
-		mstudioflexcontroller_t *pflexcontroller = pstudiohdr->pFlexcontroller( index );
+		mstudioflexcontroller_t *pflexcontroller = StudioHdr_GetFlexController( pstudiohdr, index );
+		if (!pflexcontroller)
+			return;
 
 		if (pflexcontroller->max != pflexcontroller->min)
 		{
@@ -160,7 +163,9 @@ float CBaseFlex::GetFlexWeight( int index )
 		if (! pstudiohdr)
 			return 0;
 
-		mstudioflexcontroller_t *pflexcontroller = pstudiohdr->pFlexcontroller( index );
+		mstudioflexcontroller_t *pflexcontroller = StudioHdr_GetFlexController( pstudiohdr, index );
+		if (!pflexcontroller)
+			return 0.0f;
 
 		if (pflexcontroller->max != pflexcontroller->min)
 		{
@@ -1485,5 +1490,4 @@ void CFlexCycler::ProcessExpressions( void )
 {
 	// Don't do anything since we handle facial stuff in Think()
 }
-
 

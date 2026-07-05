@@ -992,10 +992,18 @@ void IVP_Friction_System::ease_friction_forces()
 IVP_Contact_Point::~IVP_Contact_Point(){
     IVP_Environment *env = get_synapse(0)->get_object()->get_environment();
 
-    IVP_Synapse_Friction *syn0 = get_synapse(0);
-    syn0->get_object()->get_surface_manager()->remove_reference_to_ledge(syn0->edge->get_compact_ledge());
-    IVP_Synapse_Friction *syn1 = get_synapse(1);
-    syn1->get_object()->get_surface_manager()->remove_reference_to_ledge(syn1->edge->get_compact_ledge());
+    // LEDGE REFCOUNT FIX (2026-07): ~IVP_Contact_Point must NOT remove_reference_to_ledge here.
+    // Its ctor IVP_Contact_Point(IVP_Mindist*) never calls add_reference_to_ledge -- the IVP_Mindist
+    // that spawns this contact owns the ledge reference (add @ ivp_mindist.cxx:248/266, matching remove
+    // @ ivp_mindist.cxx:155/156, self-balanced +/-). These two unpaired removes drove a MOPP world
+    // ledge's refcount one below zero, freeing it early -> use-after-free / heap corruption -> the
+    // IVP_VHash::remove_elem CORE at melon (prop_physics) spawn. Harmless for POLY surfaces because
+    // add/remove_reference_to_ledge are no-ops there (ivp_surman_polygon.cxx:180-190) -- which is why
+    // it only surfaced after gm_melonrace's world was loaded as MOPP collision.
+    //   IVP_Synapse_Friction *syn0 = get_synapse(0);
+    //   syn0->get_object()->get_surface_manager()->remove_reference_to_ledge(syn0->edge->get_compact_ledge());
+    //   IVP_Synapse_Friction *syn1 = get_synapse(1);
+    //   syn1->get_object()->get_surface_manager()->remove_reference_to_ledge(syn1->edge->get_compact_ledge());
     {
 	IVP_Event_Friction event_friction;
         event_friction.environment= env;

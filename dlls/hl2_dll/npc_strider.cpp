@@ -24,6 +24,7 @@
 #include "bone_setup.h"
 #include "vcollide_parse.h"
 #include "studio.h"
+#include "studio_helpers.h"
 #include "physics_bone_follower.h"
 #include "ai_navigator.h"
 #include "ai_route.h"
@@ -1942,13 +1943,18 @@ void CNPC_Strider::MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, in
 static Vector GetAttachmentPositionInSpaceOfBone( studiohdr_t *pStudioHdr, const char *pAttachmentName, int outputBoneIndex )
 {
 	int attachment = Studio_FindAttachment( pStudioHdr, pAttachmentName );
+	if ( attachment < 0 )
+		return vec3_origin;
 
 	Vector localAttach;
-	mstudioattachment_t *pAttachment = StudioHdr_GetAttachment(pStudioHdr, attachment);
-	MatrixGetColumn( pAttachment->local, 3, localAttach );
+	const matrix3x4_t *pLocal = StudioAttachment_GetLocal(pStudioHdr, attachment);
+	int attachmentBone = StudioAttachment_GetBone(pStudioHdr, attachment);
+	if ( !pLocal || attachmentBone < 0 )
+		return vec3_origin;
+	MatrixGetColumn( *pLocal, 3, localAttach );
 
 	matrix3x4_t inputToOutputBone;
-	Studio_CalcBoneToBoneTransform( pStudioHdr, pAttachment->bone, outputBoneIndex, inputToOutputBone );
+	Studio_CalcBoneToBoneTransform( pStudioHdr, attachmentBone, outputBoneIndex, inputToOutputBone );
 	
 	Vector out;
 	VectorTransform( localAttach, inputToOutputBone, out );

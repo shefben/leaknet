@@ -1530,14 +1530,6 @@ void COM_ChangeGameDir( const char *pszGameDir )
 		COM_AddGameDirectory ( host_parms.basedir, pszGameDir );
 	}
 
-	// BarrysMod/GMod modcache support: Re-add modcache path when game dir changes
-	char modcache_dir[ MAX_OSPATH ];
-	Q_snprintf( modcache_dir, sizeof( modcache_dir ), "%s/%s/mods/-modcache", host_parms.basedir, pszGameDir );
-	if ( g_pFileSystem->IsDirectory( modcache_dir, NULL ) )
-	{
-		g_pFileSystem->AddSearchPath( modcache_dir, "GAME", PATH_ADD_TO_TAIL );
-	}
-
 	g_pFileSystem->AddSearchPath( pszGameDir, "PLATFORM" );
 
 	// Set LOGDIR to be something reasonable
@@ -1665,45 +1657,6 @@ void COM_InitFilesystem (void)
 	char dir[ MAX_OSPATH ];
 	Q_snprintf( dir, sizeof( dir ), "%s/%s", host_parms.basedir, pModDir );
 	g_pFileSystem->AddSearchPath( dir, "MOD", PATH_ADD_TO_TAIL );
-
-	// BarrysMod/GMod modcache support:
-	// Add mods/-modcache folder as a search path so materials, models, and maps
-	// from enabled mods can be loaded like normal game files.
-	// This matches Garry's Mod 9's mod loading system.
-	char modcache_dir[ MAX_OSPATH ];
-	Q_snprintf( modcache_dir, sizeof( modcache_dir ), "%s/%s/mods/-modcache", host_parms.basedir, pModDir );
-
-	// Check if the modcache directory exists before adding
-	if ( g_pFileSystem->IsDirectory( modcache_dir, NULL ) )
-	{
-		// Add modcache to GAME path so materials, models, maps can be found
-		g_pFileSystem->AddSearchPath( modcache_dir, "GAME", PATH_ADD_TO_TAIL );
-		g_pFileSystem->AddSearchPath( modcache_dir, "MOD", PATH_ADD_TO_TAIL );
-		Msg( "BarrysMod: Added modcache search path: %s\n", modcache_dir );
-	}
-	else
-	{
-		// Create the modcache directory hierarchy if it doesn't exist
-		g_pFileSystem->CreateDirHierarchy( "mods/-modcache/materials", "MOD" );
-		g_pFileSystem->CreateDirHierarchy( "mods/-modcache/models", "MOD" );
-		g_pFileSystem->CreateDirHierarchy( "mods/-modcache/maps", "MOD" );
-		g_pFileSystem->CreateDirHierarchy( "mods/-modcache/sound", "MOD" );
-
-		// Now add the paths
-		g_pFileSystem->AddSearchPath( modcache_dir, "GAME", PATH_ADD_TO_TAIL );
-		g_pFileSystem->AddSearchPath( modcache_dir, "MOD", PATH_ADD_TO_TAIL );
-		Msg( "BarrysMod: Created modcache directory: %s\n", modcache_dir );
-	}
-
-	// BarrysMod/GMod: Add mods/spawnicons folder for spawn menu icons
-	// This contains pre-rendered icons for spawnable props (materials/gmod/models/*.vmt)
-	char spawnicons_dir[ MAX_OSPATH ];
-	Q_snprintf( spawnicons_dir, sizeof( spawnicons_dir ), "%s/%s/mods/spawnicons", host_parms.basedir, pModDir );
-	if ( g_pFileSystem->IsDirectory( spawnicons_dir, NULL ) )
-	{
-		g_pFileSystem->AddSearchPath( spawnicons_dir, "GAME", PATH_ADD_TO_TAIL );
-		Msg( "BarrysMod: Added spawnicons search path: %s\n", spawnicons_dir );
-	}
 
 	// VXP: Init PLATFORM directory here, instead of GameUI
 	// This should be handy for hlds
@@ -2021,4 +1974,3 @@ void COM_Init ( void )
 	CharacterSetBuild( &g_BreakSetWindowsDisallowed, "\\/:*?\"<>|" );
 	CharacterSetBuild( &g_BreakSetWindowsDisallowedIncludingPunctuation, "\\/:*?\"<>|,;.?!" );
 }
-

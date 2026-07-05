@@ -6,7 +6,7 @@
 //=============================================================================
 
 #include "flexrenderdata.h"
-#include "studiohdr_v44.h"
+#include "studio_v37_compat.h"  // For StudioMesh_GetNumVertices
 
 
 //-----------------------------------------------------------------------------

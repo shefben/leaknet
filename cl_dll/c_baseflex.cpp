@@ -9,6 +9,7 @@
 #include "sentence.h"
 #include "hud_closecaption.h"
 #include "engine/ivmodelinfo.h"
+#include "studio_helpers.h"  // Helper functions for studiohdr_t access
 
 IMPLEMENT_CLIENTCLASS_DT(C_BaseFlex, DT_BaseFlex, CBaseFlex)
 	RecvPropArray(
@@ -101,16 +102,20 @@ void C_BaseFlex::RunFlexRules( float *dest )
 	}
 
 	// FIXME: this shouldn't be needed, flex without rules should be stripped in studiomdl
-	for (i = 0; i < hdr->numflexdesc; i++)
+	int numFlexDescs = StudioHdr_GetNumFlexDescs( hdr );
+	for (i = 0; i < numFlexDescs; i++)
 	{
 		dest[i] = 0;
 	}
 
-	for (i = 0; i < hdr->numflexrules; i++)
+	int numFlexRules = StudioHdr_GetNumFlexRules( hdr );
+	for (i = 0; i < numFlexRules; i++)
 	{
 		float stack[32];
 		int k = 0;
-		mstudioflexrule_t *prule = hdr->pFlexRule( i );
+		mstudioflexrule_t *prule = StudioHdr_GetFlexRule( hdr, i );
+		if ( !prule )
+			continue;
 
 		mstudioflexop_t *pops = prule->iFlexOp( 0 );
 
@@ -137,8 +142,9 @@ void C_BaseFlex::RunFlexRules( float *dest )
 			case STUDIO_CONST: stack[k] = pops->d.value; k++; break;
 			case STUDIO_FETCH1: 
 				{ 
-				int m = hdr->pFlexcontroller(pops->d.index)->link;
-				stack[k] = g_flexweight[m];
+				mstudioflexcontroller_t *pFlexController = StudioHdr_GetFlexController( hdr, pops->d.index );
+				int m = pFlexController ? pFlexController->link : -1;
+				stack[k] = ( m >= 0 && m < g_numflexcontrollers ) ? g_flexweight[m] : 0.0f;
 				k++; 
 				break;
 				}
@@ -276,7 +282,7 @@ void C_BaseFlex::SetViewTarget( void )
 		m_iEyeAttachment = -2;
 		for (int i = 0; i < StudioHdr_GetNumAttachments(hdr); i++)
 		{
-			if (_stricmp( StudioHdr_GetAttachment(hdr, i )->pszName(), "eyes" ) == 0)
+			if (_stricmp( StudioAttachment_GetName(hdr, i), "eyes" ) == 0)
 			{
 				m_iEyeAttachment = i;
 				break;
@@ -288,11 +294,14 @@ void C_BaseFlex::SetViewTarget( void )
 	{
 		Vector local;
 
-		mstudioattachment_t *patt = StudioHdr_GetAttachment(hdr, m_iEyeAttachment );
+		int attachmentBone = StudioAttachment_GetBone(hdr, m_iEyeAttachment);
+		const matrix3x4_t *pLocal = StudioAttachment_GetLocal(hdr, m_iEyeAttachment);
+		if ( !pLocal || attachmentBone < 0 )
+			return;
 
 		matrix3x4_t attToWorld;
 
-		ConcatTransforms( *modelrender->pBoneToWorld( patt->bone ), patt->local, attToWorld ); 
+		ConcatTransforms( *modelrender->pBoneToWorld( attachmentBone ), *pLocal, attToWorld ); 
 		VectorITransform( tmp, attToWorld, local );
 		
 		float flDist = local.Length();
@@ -729,26 +738,33 @@ void C_BaseFlex::SetupWeights( )
 	memset( g_flexweight, 0, sizeof( g_flexweight ) );
 
 	// FIXME: this should assert then, it's too complex a class for the model
-	if (hdr->numflexcontrollers == 0)
+	int numFlexControllers = StudioHdr_GetNumFlexControllers( hdr );
+	if (numFlexControllers == 0)
 		return;
 
 	int i, j;
 
 	// FIXME: shouldn't this happen at runtime?
 	// initialize the models local to global flex controller mappings
-	if (hdr->pFlexcontroller( 0 )->link == -1)
+	mstudioflexcontroller_t *pFirstFlexController = StudioHdr_GetFlexController( hdr, 0 );
+	if (pFirstFlexController && pFirstFlexController->link == -1)
 	{
-		for (i = 0; i < hdr->numflexcontrollers; i++)
+		for (i = 0; i < numFlexControllers; i++)
 		{
-			j = AddGlobalFlexController( hdr->pFlexcontroller( i )->pszName() );
-			hdr->pFlexcontroller( i )->link = j;
+			mstudioflexcontroller_t *pFlexController = StudioHdr_GetFlexController( hdr, i );
+			if ( !pFlexController )
+				continue;
+			j = AddGlobalFlexController( pFlexController->pszName() );
+			pFlexController->link = j;
 		}
 	}
 
 	// blend weights from server
-	for (i = 0; i < hdr->numflexcontrollers; i++)
+	for (i = 0; i < numFlexControllers; i++)
 	{
-		mstudioflexcontroller_t *pflex = hdr->pFlexcontroller( i );
+		mstudioflexcontroller_t *pflex = StudioHdr_GetFlexController( hdr, i );
+		if ( !pflex || pflex->link < 0 || pflex->link >= g_numflexcontrollers )
+			continue;
 
 		g_flexweight[pflex->link] = m_flexWeight[i];
 		// rescale
@@ -804,7 +820,7 @@ void C_BaseFlex::SetupWeights( )
 	}
 	*/
 
-	modelrender->SetFlexWeights( destweight, hdr->numflexdesc );
+	modelrender->SetFlexWeights( destweight, StudioHdr_GetNumFlexDescs( hdr ) );
 }
 
 

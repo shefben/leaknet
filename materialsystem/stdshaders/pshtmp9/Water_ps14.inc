@@ -1,0 +1,272 @@
+#if 0
+    ps_1_4
+
+#line 14 "F:\development\steam\emulator_bot\LeakNet-rewrite\materialsystem\stdshaders\Water_ps14.psh"
+    texld r3, t0
+
+#line 25
+    texld r1, t5
+    texcrd r0.xyz, t4.xyzz
+
+#line 31
+    mul r0.xy, r0, r3.w
+
+#line 48
+    phase
+
+#line 81
+    mov r0, c0
+
+// approximately 5 instruction slots used (3 texture, 2 arithmetic)
+#endif
+
+static unsigned int pixelShader_Water_ps14_0[] =
+{
+    0xffff0104, 0x003cfffe, 0x47554244, 0x00000028, 0x000000b8, 0x00000000, 
+    0x00000001, 0x00000084, 0x00000006, 0x00000088, 0x00000000, 0x00000000, 
+    0x00000000, 0x645c3a46, 0x6c657665, 0x656d706f, 0x735c746e, 0x6d616574, 
+    0x756d655c, 0x6f74616c, 0x6f625f72, 0x654c5c74, 0x654e6b61, 0x65722d74, 
+    0x74697277, 0x616d5c65, 0x69726574, 0x79736c61, 0x6d657473, 0x6474735c, 
+    0x64616873, 0x5c737265, 0x65746157, 0x73705f72, 0x702e3431, 0xab006873, 
+    0x00000028, 0x0000000e, 0x000000f8, 0x00000019, 0x00000104, 0x0000001b, 
+    0x00000110, 0x0000001f, 0x0000011c, 0x00000030, 0x0000012c, 0x00000051, 
+    0x00000130, 0x7263694d, 0x666f736f, 0x52282074, 0x33442029, 0x20395844, 
+    0x64616853, 0x41207265, 0x6d657373, 0x72656c62, 0x322e3920, 0x35392e34, 
+    0x36322e30, 0xab003635, 0x00000042, 0x800f0003, 0xb0e40000, 0x00000042, 
+    0x800f0001, 0xb0e40005, 0x00000040, 0x80070000, 0xb0a40004, 0x00000005, 
+    0x80030000, 0x80e40000, 0x80ff0003, 0x0000fffd, 0x00000001, 0x800f0000, 
+    0xa0e40000, 0x0000ffff
+};
+#if 0
+    ps_1_4
+
+#line 14 "F:\development\steam\emulator_bot\LeakNet-rewrite\materialsystem\stdshaders\Water_ps14.psh"
+    texld r3, t0
+
+#line 18
+    texcrd r4.xy, t1_dw.xyww
+
+#line 25
+    texld r1, t5
+    texcrd r0.xyz, t4.xyzz
+
+#line 31
+    mul r0.xy, r0, r3.w
+    mad r4.xy, r3_bx2, r0.x, r4
+
+#line 42
+    mov r4.z, c5
+
+#line 48
+    phase
+
+#line 52
+    texld r4, r4
+
+#line 61
+    dp3_sat r1.w, r3_bx2, r1_bx2
+
+#line 71
+    mul r4.xyz, r4, c4
+
+#line 74
+  + mul r0.w, 1-r1.w, 1-r1.w
+    mul r0.w, r0.w, r0.w
+    mul_sat r0.w, r0.w, 1-r1.w
+
+#line 89
+    mov r0, r4
+
+// approximately 13 instruction slots used (5 texture, 8 arithmetic)
+#endif
+
+static unsigned int pixelShader_Water_ps14_1[] =
+{
+    0xffff0104, 0x004efffe, 0x47554244, 0x00000028, 0x00000100, 0x00000000, 
+    0x00000001, 0x00000084, 0x0000000f, 0x00000088, 0x00000000, 0x00000000, 
+    0x00000000, 0x645c3a46, 0x6c657665, 0x656d706f, 0x735c746e, 0x6d616574, 
+    0x756d655c, 0x6f74616c, 0x6f625f72, 0x654c5c74, 0x654e6b61, 0x65722d74, 
+    0x74697277, 0x616d5c65, 0x69726574, 0x79736c61, 0x6d657473, 0x6474735c, 
+    0x64616873, 0x5c737265, 0x65746157, 0x73705f72, 0x702e3431, 0xab006873, 
+    0x00000028, 0x0000000e, 0x00000140, 0x00000012, 0x0000014c, 0x00000019, 
+    0x00000158, 0x0000001b, 0x00000164, 0x0000001f, 0x00000170, 0x00000021, 
+    0x00000180, 0x0000002a, 0x00000194, 0x00000030, 0x000001a0, 0x00000034, 
+    0x000001a4, 0x0000003d, 0x000001b0, 0x00000047, 0x000001c0, 0x0000004a, 
+    0x000001d0, 0x0000004b, 0x000001e0, 0x0000004c, 0x000001f0, 0x00000059, 
+    0x00000200, 0x7263694d, 0x666f736f, 0x52282074, 0x33442029, 0x20395844, 
+    0x64616853, 0x41207265, 0x6d657373, 0x72656c62, 0x322e3920, 0x35392e34, 
+    0x36322e30, 0xab003635, 0x00000042, 0x800f0003, 0xb0e40000, 0x00000040, 
+    0x80030004, 0xbaf40001, 0x00000042, 0x800f0001, 0xb0e40005, 0x00000040, 
+    0x80070000, 0xb0a40004, 0x00000005, 0x80030000, 0x80e40000, 0x80ff0003, 
+    0x00000004, 0x80030004, 0x84e40003, 0x80000000, 0x80e40004, 0x00000001, 
+    0x80040004, 0xa0e40005, 0x0000fffd, 0x00000042, 0x800f0004, 0x80e40004, 
+    0x00000008, 0x80180001, 0x84e40003, 0x84e40001, 0x00000005, 0x80070004, 
+    0x80e40004, 0xa0e40004, 0x40000005, 0x80080000, 0x86ff0001, 0x86ff0001, 
+    0x00000005, 0x80080000, 0x80ff0000, 0x80ff0000, 0x00000005, 0x80180000, 
+    0x80ff0000, 0x86ff0001, 0x00000001, 0x800f0000, 0x80e40004, 0x0000ffff
+};
+#if 0
+    ps_1_4
+
+#line 14 "F:\development\steam\emulator_bot\LeakNet-rewrite\materialsystem\stdshaders\Water_ps14.psh"
+    texld r3, t0
+
+#line 22
+    texcrd r2.xy, t2_dw.xyww
+
+#line 25
+    texld r1, t5
+    texcrd r0.xyz, t4.xyzz
+
+#line 31
+    mul r0.xy, r0, r3.w
+
+#line 37
+    mad r2.xy, r3_bx2, r0.y, r2
+
+#line 45
+    mov r2.z, c5
+
+#line 48
+    phase
+
+#line 56
+    texld r2, r2
+
+#line 66
+    mul r2.xyz, r2, c1
+
+#line 85
+    mov r0, r2
+
+// approximately 10 instruction slots used (5 texture, 5 arithmetic)
+#endif
+
+static unsigned int pixelShader_Water_ps14_2[] =
+{
+    0xffff0104, 0x0046fffe, 0x47554244, 0x00000028, 0x000000e0, 0x00000000, 
+    0x00000001, 0x00000084, 0x0000000b, 0x00000088, 0x00000000, 0x00000000, 
+    0x00000000, 0x645c3a46, 0x6c657665, 0x656d706f, 0x735c746e, 0x6d616574, 
+    0x756d655c, 0x6f74616c, 0x6f625f72, 0x654c5c74, 0x654e6b61, 0x65722d74, 
+    0x74697277, 0x616d5c65, 0x69726574, 0x79736c61, 0x6d657473, 0x6474735c, 
+    0x64616873, 0x5c737265, 0x65746157, 0x73705f72, 0x702e3431, 0xab006873, 
+    0x00000028, 0x0000000e, 0x00000120, 0x00000016, 0x0000012c, 0x00000019, 
+    0x00000138, 0x0000001b, 0x00000144, 0x0000001f, 0x00000150, 0x00000025, 
+    0x00000160, 0x0000002d, 0x00000174, 0x00000030, 0x00000180, 0x00000038, 
+    0x00000184, 0x00000042, 0x00000190, 0x00000055, 0x000001a0, 0x7263694d, 
+    0x666f736f, 0x52282074, 0x33442029, 0x20395844, 0x64616853, 0x41207265, 
+    0x6d657373, 0x72656c62, 0x322e3920, 0x35392e34, 0x36322e30, 0xab003635, 
+    0x00000042, 0x800f0003, 0xb0e40000, 0x00000040, 0x80030002, 0xbaf40002, 
+    0x00000042, 0x800f0001, 0xb0e40005, 0x00000040, 0x80070000, 0xb0a40004, 
+    0x00000005, 0x80030000, 0x80e40000, 0x80ff0003, 0x00000004, 0x80030002, 
+    0x84e40003, 0x80550000, 0x80e40002, 0x00000001, 0x80040002, 0xa0e40005, 
+    0x0000fffd, 0x00000042, 0x800f0002, 0x80e40002, 0x00000005, 0x80070002, 
+    0x80e40002, 0xa0e40001, 0x00000001, 0x800f0000, 0x80e40002, 0x0000ffff
+};
+#if 0
+    ps_1_4
+
+#line 14 "F:\development\steam\emulator_bot\LeakNet-rewrite\materialsystem\stdshaders\Water_ps14.psh"
+    texld r3, t0
+
+#line 18
+    texcrd r4.xy, t1_dw.xyww
+
+#line 22
+    texcrd r2.xy, t2_dw.xyww
+
+#line 25
+    texld r1, t5
+    texcrd r0.xyz, t4.xyzz
+
+#line 31
+    mul r0.xy, r0, r3.w
+    mad r4.xy, r3_bx2, r0.x, r4
+
+#line 37
+    mad r2.xy, r3_bx2, r0.y, r2
+
+#line 42
+    mov r4.z, c5
+
+#line 45
+    mov r2.z, c5
+
+#line 48
+    phase
+
+#line 52
+    texld r4, r4
+
+#line 56
+    texld r2, r2
+
+#line 61
+    dp3_sat r1.w, r3_bx2, r1_bx2
+
+#line 66
+    mul r2.xyz, r2, c1
+
+#line 71
+    mul r4.xyz, r4, c4
+
+#line 74
+  + mul r0.w, 1-r1.w, 1-r1.w
+    mul r0.w, r0.w, r0.w
+    mul_sat r0.w, r0.w, 1-r1.w
+
+#line 94
+    lrp r0, r0.w, r4, r2
+
+// approximately 18 instruction slots used (7 texture, 11 arithmetic)
+#endif
+
+static unsigned int pixelShader_Water_ps14_3[] =
+{
+    0xffff0104, 0x0058fffe, 0x47554244, 0x00000028, 0x00000128, 0x00000000, 
+    0x00000001, 0x00000084, 0x00000014, 0x00000088, 0x00000000, 0x00000000, 
+    0x00000000, 0x645c3a46, 0x6c657665, 0x656d706f, 0x735c746e, 0x6d616574, 
+    0x756d655c, 0x6f74616c, 0x6f625f72, 0x654c5c74, 0x654e6b61, 0x65722d74, 
+    0x74697277, 0x616d5c65, 0x69726574, 0x79736c61, 0x6d657473, 0x6474735c, 
+    0x64616873, 0x5c737265, 0x65746157, 0x73705f72, 0x702e3431, 0xab006873, 
+    0x00000028, 0x0000000e, 0x00000168, 0x00000012, 0x00000174, 0x00000016, 
+    0x00000180, 0x00000019, 0x0000018c, 0x0000001b, 0x00000198, 0x0000001f, 
+    0x000001a4, 0x00000021, 0x000001b4, 0x00000025, 0x000001c8, 0x0000002a, 
+    0x000001dc, 0x0000002d, 0x000001e8, 0x00000030, 0x000001f4, 0x00000034, 
+    0x000001f8, 0x00000038, 0x00000204, 0x0000003d, 0x00000210, 0x00000042, 
+    0x00000220, 0x00000047, 0x00000230, 0x0000004a, 0x00000240, 0x0000004b, 
+    0x00000250, 0x0000004c, 0x00000260, 0x0000005e, 0x00000270, 0x7263694d, 
+    0x666f736f, 0x52282074, 0x33442029, 0x20395844, 0x64616853, 0x41207265, 
+    0x6d657373, 0x72656c62, 0x322e3920, 0x35392e34, 0x36322e30, 0xab003635, 
+    0x00000042, 0x800f0003, 0xb0e40000, 0x00000040, 0x80030004, 0xbaf40001, 
+    0x00000040, 0x80030002, 0xbaf40002, 0x00000042, 0x800f0001, 0xb0e40005, 
+    0x00000040, 0x80070000, 0xb0a40004, 0x00000005, 0x80030000, 0x80e40000, 
+    0x80ff0003, 0x00000004, 0x80030004, 0x84e40003, 0x80000000, 0x80e40004, 
+    0x00000004, 0x80030002, 0x84e40003, 0x80550000, 0x80e40002, 0x00000001, 
+    0x80040004, 0xa0e40005, 0x00000001, 0x80040002, 0xa0e40005, 0x0000fffd, 
+    0x00000042, 0x800f0004, 0x80e40004, 0x00000042, 0x800f0002, 0x80e40002, 
+    0x00000008, 0x80180001, 0x84e40003, 0x84e40001, 0x00000005, 0x80070002, 
+    0x80e40002, 0xa0e40001, 0x00000005, 0x80070004, 0x80e40004, 0xa0e40004, 
+    0x40000005, 0x80080000, 0x86ff0001, 0x86ff0001, 0x00000005, 0x80080000, 
+    0x80ff0000, 0x80ff0000, 0x00000005, 0x80180000, 0x80ff0000, 0x86ff0001, 
+    0x00000012, 0x800f0000, 0x80ff0000, 0x80e40004, 0x80e40002, 0x0000ffff
+};
+static PrecompiledShaderByteCode_t Water_ps14_pixel_shaders[4] = 
+{
+	{ pixelShader_Water_ps14_0, sizeof( pixelShader_Water_ps14_0 ) },
+	{ pixelShader_Water_ps14_1, sizeof( pixelShader_Water_ps14_1 ) },
+	{ pixelShader_Water_ps14_2, sizeof( pixelShader_Water_ps14_2 ) },
+	{ pixelShader_Water_ps14_3, sizeof( pixelShader_Water_ps14_3 ) },
+};
+struct Water_ps14PixelShader_t : public PrecompiledShader_t
+{
+	Water_ps14PixelShader_t()
+	{
+		m_nFlags = SHADER_CUSTOM_ENUMERATION;
+		m_pByteCode = Water_ps14_pixel_shaders;
+		m_nShaderCount = 4;
+		m_pName = "Water_ps14";
+		GetShaderDLL()->InsertPrecompiledShader( PRECOMPILED_PIXEL_SHADER, this );
+	}
+};
+static Water_ps14PixelShader_t Water_ps14_PixelShaderInstance;

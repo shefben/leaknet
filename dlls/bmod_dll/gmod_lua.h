@@ -109,6 +109,9 @@ public:
     // Gamemode system integration
     static bool LoadGamemode(const char* pszGamemodeName);
     static void CallGamemodeFunction(const char* pszFunction);
+    static void RunFrameLuaThink();
+    static void UpdatePlayerRawButtons(CBasePlayer* pPlayer, int buttons);
+    static int GetPlayerRawButtons(CBasePlayer* pPlayer);
     static void SetGamemodeProperty(const char* pszProperty, const char* pszValue);
     static const char* GetGamemodeProperty(const char* pszProperty);
 
@@ -315,10 +318,14 @@ extern "C" {
     int lua_GModText_SetPos(lua_State* L);      // _GModText_SetPos(x, y)
     int lua_GModText_SetColor(lua_State* L);    // _GModText_SetColor(r, g, b, a)
     int lua_GModText_SetFade(lua_State* L);     // _GModText_SetFade(fadein, fadeout, holdtime)
+    int lua_GModText_SetTime(lua_State* L);     // _GModText_SetTime(holdtime, fadein, fadeout)
     int lua_GModText_SetText(lua_State* L);     // _GModText_SetText(text)
     int lua_GModText_SetEffect(lua_State* L);   // _GModText_SetEffect(effect)
     int lua_GModText_SetAlign(lua_State* L);    // _GModText_SetAlign(align)
+    int lua_GModText_SetEntity(lua_State* L);   // _GModText_SetEntity(entid)
+    int lua_GModText_SetEntityOffset(lua_State* L); // _GModText_SetEntityOffset(vector)
     int lua_GModText_Send(lua_State* L);        // _GModText_Send(playerid)
+    int lua_GModText_SendAnimate(lua_State* L); // _GModText_SendAnimate(playerid, id, scale, duration)
     int lua_GModText_Hide(lua_State* L);        // _GModText_Hide(playerid)
 
     // _GModRect_* global functions (GMod 9 screen rectangle display)
@@ -327,7 +334,10 @@ extern "C" {
     int lua_GModRect_SetSize(lua_State* L);     // _GModRect_SetSize(w, h)
     int lua_GModRect_SetColor(lua_State* L);    // _GModRect_SetColor(r, g, b, a)
     int lua_GModRect_SetID(lua_State* L);       // _GModRect_SetID(id)
+    int lua_GModRect_SetTime(lua_State* L);     // _GModRect_SetTime(hold, fadein, fadeout)
+    int lua_GModRect_SetDelay(lua_State* L);    // _GModRect_SetDelay(delay)
     int lua_GModRect_Send(lua_State* L);        // _GModRect_Send(playerid)
+    int lua_GModRect_SendAnimate(lua_State* L); // _GModRect_SendAnimate(playerid, id, x, y)
     int lua_GModRect_Hide(lua_State* L);        // _GModRect_Hide(playerid)
 }
 

@@ -21,6 +21,10 @@
 #include "utllinkedlist.h"
 #include "utlvector.h"
 #include "flexrenderdata.h"
+// v44+ independent model system
+#include "../engine/modelloader_v44.h"
+// Version-aware vertex access helpers
+#include "studio_v37_compat.h"
 
 
 //-----------------------------------------------------------------------------
@@ -28,6 +32,7 @@
 //-----------------------------------------------------------------------------
 class IMaterialSystem;
 class IMaterialSystemHardwareConfig;
+struct model_v44_t;  // v44+ independent model structure
 class ITexture;
 class CPixelWriter;
 class CMeshBuilder;
@@ -97,10 +102,22 @@ struct DecalVertex_t
 			return NULL;
 		}
 
-		// Use version-safe accessors for v44+ model compatibility
-		mstudiobodyparts_t *pBody = StudioHdr_GetBodypart( pHdr, m_Body );
-		mstudiomodel_t *pModel = pBody->pModel( m_Model );
-		return StudioModel_GetMesh( pHdr, pModel, m_Mesh );
+		// CRITICAL FIX: Must use completely separate code paths for v44 vs v37
+		// because studiohdr_t and studiohdr_v44_t have different field layouts!
+		if (pHdr->version >= STUDIO_VERSION_44)
+		{
+			studiohdr_v44_t *pHdr44 = (studiohdr_v44_t *)pHdr;
+			mstudiobodyparts_v44_t *pBody44 = pHdr44->pBodypart( m_Body );
+			mstudiomodel_v44_t *pModel44 = pBody44->pModel( m_Model );
+			mstudiomesh_v44_t *pMesh44 = pModel44->pMesh( m_Mesh );
+			return (mstudiomesh_t *)pMesh44;
+		}
+		else
+		{
+			mstudiobodyparts_t *pBody = pHdr->pBodypart( m_Body );
+			mstudiomodel_t *pModel = pBody->pModel( m_Model );
+			return pModel->pMesh( m_Mesh );
+		}
 	}
 
 	Vector m_Position;
@@ -133,6 +150,13 @@ public:
 		studiohdr_t		*pStudioHdr, 	// read from the mdl file.
 		void			*pVtxHdr, 		// read from the vtx file.(format OptimizedModel::FileHeader_t)
 		studiohwdata_t	*pHardwareData 
+		);
+
+	virtual bool LoadModelWithVertexData(
+		studiohdr_t		*pStudioHdr,
+		void			*pVtxHdr,
+		void			*pVvdHdr,
+		studiohwdata_t	*pHardwareData
 		);
 	
 	// since everything inside of pHardwareData is allocated in studiorender.dll, must be freed there.
@@ -324,6 +348,25 @@ private:
 		IMaterial **ppMaterials, int *pMaterialFlags, IMesh **ppColorMeshes );
 	int R_StudioDrawMesh( mstudiomesh_t* pmesh, studiomeshdata_t* pMeshData,
 		  				   StudioModelLighting_t lighting, IMaterial *pMaterial, IMesh **ppColorMeshes );
+
+	// v44+ independent rendering system functions
+	int R_StudioDrawPoints_v44( model_v44_t *pModel_v44, int skin, void *pClientEntity,
+							   IMaterial **ppMaterials, int *pMaterialFlags, IMesh **ppColorMeshes );
+	int R_StudioDrawMesh_v44_Simple( mstudiomesh_v44_t *pMesh_v44, IMaterial *pMaterial, StudioModelLighting_t lighting );
+
+	// v44+ specific rendering functions to avoid casting issues
+	int R_StudioDrawMesh_v44( mstudiomesh_v44_t* pmesh_v44, studiomeshdata_t* pMeshData,
+							 StudioModelLighting_t lighting, IMaterial *pMaterial, IMesh **ppColorMeshes );
+	int R_StudioDrawEyeball_v44( mstudiomesh_v44_t* pmesh_v44, studiomeshdata_t* pMeshData,
+								StudioModelLighting_t lighting, IMaterial *pMaterial );
+	int R_StudioDrawStaticMesh_v44( mstudiomesh_v44_t* pmesh_v44, studiomeshgroup_t* pGroup,
+								   StudioModelLighting_t lighting, float r_blend, IMaterial* pMaterial, IMesh **ppColorMeshes );
+	int R_StudioDrawDynamicMesh_v44( mstudiomesh_v44_t* pmesh_v44, studiomeshgroup_t* pGroup,
+									StudioModelLighting_t lighting, float r_blend, IMaterial* pMaterial );
+	void R_StudioFlexVerts_v44( mstudiomesh_v44_t* pmesh_v44 );
+	void R_StudioSoftwareProcessMesh_Normals_v44( mstudiomesh_v44_t* pmesh_v44, CMeshBuilder& meshBuilder,
+												 int numVertices, unsigned short* pGroupToMesh, StudioModelLighting_t lighting,
+												 bool doFlex, float r_blend, bool bNeedsTangentSpace );
 	int R_StudioRenderFinal( 
 		int skin, int body, int hitboxset, void /*IClientEntity*/ *pClientEntity,
 		IMaterial **ppMaterials, int *pMaterialFlags, IMesh **ppColorMeshes = NULL );
@@ -399,6 +442,11 @@ private:
 	inline void R_StudioTransform( Vector& in1, mstudioboneweight_t *pboneweight, Vector& out1 );
 	inline void R_StudioRotate( Vector& in1, mstudioboneweight_t *pboneweight, Vector& out1 );
 	inline void R_StudioRotate( Vector4D& in1, mstudioboneweight_t *pboneweight, Vector4D& out1 );
+
+	// v37-specific overloads - uses mstudioboneweight_v37_t (32 bytes with short bone[4])
+	inline void R_StudioTransform( Vector& in1, mstudioboneweight_v37_t *pboneweight, Vector& out1 );
+	inline void R_StudioRotate( Vector& in1, mstudioboneweight_v37_t *pboneweight, Vector& out1 );
+	inline void R_StudioRotate( Vector4D& in1, mstudioboneweight_v37_t *pboneweight, Vector4D& out1 );
 	inline void R_StudioEyeballNormal( mstudioeyeball_t const* peyeball, Vector& org, 
 									Vector& pos, Vector& normal );
 	void MaterialPlanerProjection( const matrix3x4_t& mat, int count, const Vector *psrcverts, Vector2D *pdesttexcoords );
@@ -455,10 +503,14 @@ private:
 	// Helper methods for decal projection, projects pose space vertex data
 	// into decal space
 	bool IsFrontFacing( const Vector& norm, mstudioboneweight_t *pboneweight );
+	// v37 overloads
+	bool IsFrontFacing( const Vector& norm, mstudioboneweight_v37_t *pboneweight );
 
 
 	// Helper methods associated with creating decal geometry
 	bool			TransformToDecalSpace( DecalBuildInfo_t& build, const Vector& pos, mstudioboneweight_t *pboneweight, Vector2D& uv );
+	// v37 overload
+	bool			TransformToDecalSpace( DecalBuildInfo_t& build, const Vector& pos, mstudioboneweight_v37_t *pboneweight, Vector2D& uv );
 	void			ProjectDecalOntoMesh( DecalBuildInfo_t& build );
 	int				ComputeClipFlags( DecalBuildVertexInfo_t* pVertexInfo, int i );
 	void			ConvertMeshVertexToDecalVertex( DecalBuildInfo_t& build, int meshIndex, DecalVertex_t& decalVertex );
@@ -510,6 +562,9 @@ private:
 	studiohdr_t *m_pStudioHdr;
 	mstudiomodel_t *m_pSubModel;
 	studiomeshdata_t *m_pStudioMeshes;
+
+	// v44+ independent model system
+	model_v44_t *m_pCurrentV44Model;  // Current v44+ model being rendered (NULL for v37 models)
 
 	float m_MaterialPoseToWorld[MAXSTUDIOBONES][4][4];	
 	Vector m_ViewTarget;
@@ -648,9 +703,19 @@ inline void CStudioRender::R_StudioRotate( Vector& in1, mstudioboneweight_t *pbo
 	// pose to world transforms. If we ever add scale, we'll need to
 	// multiply by the inverse transpose of the pose to world
 
+	// Validate input normal - fix for corrupted normals causing black rendering
+	if (!IsFinite(in1.x) || !IsFinite(in1.y) || !IsFinite(in1.z))
+	{
+		DevWarning("R_StudioRotate: Invalid input normal (%f, %f, %f), using default\n", in1.x, in1.y, in1.z);
+		in1.Init(0, 0, 1); // Default up vector
+	}
+
 	if (pboneweight->numbones == 1)
 	{
 		VectorRotate( in1, m_PoseToWorld[pboneweight->bone[0]], out1 );
+		// CRITICAL FIX: Always normalize single-bone transforms too
+		// This was causing black rendering for v37 models with single-bone normals
+		VectorNormalize( out1 );
 	}
 	else
 	{
@@ -664,6 +729,13 @@ inline void CStudioRender::R_StudioRotate( Vector& in1, mstudioboneweight_t *pbo
 			VectorMA( out1, pboneweight->weight[i], out2, out1 );
 		}
 		VectorNormalize( out1 );
+	}
+
+	// Final safety check - ensure normalized result is valid
+	if (!IsFinite(out1.x) || !IsFinite(out1.y) || !IsFinite(out1.z))
+	{
+		DevWarning("R_StudioRotate: Invalid output normal, using default\n");
+		out1.Init(0, 0, 1); // Default up vector
 	}
 }
 
@@ -671,10 +743,21 @@ inline void CStudioRender::R_StudioRotate( Vector4D& realIn1, mstudioboneweight_
 {
 	// garymcthack - god this sucks.
 	Vector in1( realIn1[0], realIn1[1], realIn1[2] );
+
+	// Validate input normal - fix for corrupted normals causing black rendering
+	if (!IsFinite(in1.x) || !IsFinite(in1.y) || !IsFinite(in1.z))
+	{
+		DevWarning("R_StudioRotate: Invalid input normal Vector4D (%f, %f, %f), using default\n", in1.x, in1.y, in1.z);
+		in1.Init(0, 0, 1); // Default up vector
+	}
+
 	Vector out1;
 	if (pboneweight->numbones == 1)
 	{
 		VectorRotate( in1, m_PoseToWorld[pboneweight->bone[0]], out1 );
+		// CRITICAL FIX: Always normalize single-bone transforms too
+		// This was causing black rendering for v37 models with single-bone normals
+		VectorNormalize( out1 );
 	}
 	else
 	{
@@ -689,6 +772,114 @@ inline void CStudioRender::R_StudioRotate( Vector4D& realIn1, mstudioboneweight_
 		}
 		VectorNormalize( out1 );
 	}
+
+	// Final safety check - ensure normalized result is valid
+	if (!IsFinite(out1.x) || !IsFinite(out1.y) || !IsFinite(out1.z))
+	{
+		DevWarning("R_StudioRotate: Invalid output normal Vector4D, using default\n");
+		out1.Init(0, 0, 1); // Default up vector
+	}
+
+	realOut1.Init( out1[0], out1[1], out1[2], realIn1[3] );
+}
+
+/*
+================
+R_StudioTransform - v37 overload
+Uses mstudioboneweight_v37_t which has short bone[4] instead of char bone[3]
+================
+*/
+inline void CStudioRender::R_StudioTransform( Vector& in1, mstudioboneweight_v37_t *pboneweight, Vector& out1 )
+{
+	Vector out2;
+	switch( pboneweight->numbones )
+	{
+	case 1:
+		VectorTransform( in1, m_PoseToWorld[pboneweight->bone[0]], out1 );
+		break;
+	default:
+		VectorFill( out1, 0 );
+		for (int i = 0; i < pboneweight->numbones; i++)
+		{
+			VectorTransform( in1, m_PoseToWorld[pboneweight->bone[i]], out2 );
+			VectorMA( out1, pboneweight->weight[i], out2, out1 );
+		}
+		break;
+	}
+}
+
+/*
+================
+R_StudioRotate - v37 overload
+Uses mstudioboneweight_v37_t which has short bone[4] instead of char bone[3]
+================
+*/
+inline void CStudioRender::R_StudioRotate( Vector& in1, mstudioboneweight_v37_t *pboneweight, Vector& out1 )
+{
+	// Validate input normal
+	if (!IsFinite(in1.x) || !IsFinite(in1.y) || !IsFinite(in1.z))
+	{
+		in1.Init(0, 0, 1);
+	}
+
+	if (pboneweight->numbones == 1)
+	{
+		VectorRotate( in1, m_PoseToWorld[pboneweight->bone[0]], out1 );
+		VectorNormalize( out1 );
+	}
+	else
+	{
+		Vector out2;
+		VectorFill( out1, 0 );
+		for (int i = 0; i < pboneweight->numbones; i++)
+		{
+			VectorRotate( in1, m_PoseToWorld[pboneweight->bone[i]], out2 );
+			VectorMA( out1, pboneweight->weight[i], out2, out1 );
+		}
+		VectorNormalize( out1 );
+	}
+
+	// Final safety check
+	if (!IsFinite(out1.x) || !IsFinite(out1.y) || !IsFinite(out1.z))
+	{
+		out1.Init(0, 0, 1);
+	}
+}
+
+inline void CStudioRender::R_StudioRotate( Vector4D& realIn1, mstudioboneweight_v37_t *pboneweight, Vector4D& realOut1 )
+{
+	Vector in1( realIn1[0], realIn1[1], realIn1[2] );
+
+	// Validate input normal
+	if (!IsFinite(in1.x) || !IsFinite(in1.y) || !IsFinite(in1.z))
+	{
+		in1.Init(0, 0, 1);
+	}
+
+	Vector out1;
+	if (pboneweight->numbones == 1)
+	{
+		VectorRotate( in1, m_PoseToWorld[pboneweight->bone[0]], out1 );
+		VectorNormalize( out1 );
+	}
+	else
+	{
+		Vector out2;
+		VectorFill( out1, 0 );
+		for (int i = 0; i < pboneweight->numbones; i++)
+		{
+			VectorRotate( in1, m_PoseToWorld[pboneweight->bone[i]], out2 );
+			VectorMA( out1, pboneweight->weight[i], out2, out1 );
+		}
+		VectorNormalize( out1 );
+	}
+
+	// Final safety check
+	if (!IsFinite(out1.x) || !IsFinite(out1.y) || !IsFinite(out1.z))
+	{
+		out1.Init(0, 0, 1);
+	}
+
 	realOut1.Init( out1[0], out1[1], out1[2], realIn1[3] );
 }
 
@@ -716,7 +907,7 @@ inline StudioModelLighting_t CStudioRender::R_StudioComputeLighting( IMaterial *
 	// FIXME: When we move software lighting into the material system, only need to
 	// test if it's vertex lit
 	assert( pMaterial );
-	bool doMouthLighting = materialFlags && (m_pStudioHdr->nummouths >= 1);
+	bool doMouthLighting = materialFlags && (StudioHdr_GetNumMouths(m_pStudioHdr) >= 1);
 
 	bool doSoftwareLighting = doMouthLighting ||
 		(pMaterial->IsVertexLit() && ( PerformSoftwareLighting() || pMaterial->NeedsSoftwareLighting() ) );

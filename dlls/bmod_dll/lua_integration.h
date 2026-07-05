@@ -66,7 +66,8 @@ public:
 
 	// Lua State Management
 	static lua_State* GetLuaState() { return m_pLuaState; }
-	static bool		IsInitialized() { return m_pLuaState != NULL; }
+	static void		SetLuaState(lua_State* L) { m_pLuaState = L; m_bInitialized = (L != NULL); }
+	static bool		IsInitialized() { return m_pLuaState != NULL && m_bInitialized; }
 
 	// Function Listing
 	static void		ListBinds();
@@ -133,5 +134,11 @@ void RegisterLuaPhysicsFunctions();
 void RegisterLuaFileFunctions();
 void RegisterLuaEffectFunctions();
 void RegisterLuaGameEventFunctions();
+// Registers the file-funcs globals (_PlaySound, _ScreenText, _GetRule, ...) into the ACTIVE
+// CLuaIntegration state. RegisterEngineBindings points that at the gamemode state and calls this
+// so gamemode scripts (e.g. MelonRacer's _PlaySound timer) resolve them instead of getting nil.
+void RegisterLuaFileGlobalsForGamemode();
+// Builds the original gmod "_file" table (_file.Read/Write/Exists/...) into the given state.
+void RegisterLuaFileTable(lua_State* L);
 
 #endif // LUA_INTEGRATION_H

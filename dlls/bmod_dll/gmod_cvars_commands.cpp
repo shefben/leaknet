@@ -171,7 +171,7 @@ void CC_GMod_OptionSelect(void)
 	// This is used by VGUI menus to report which option was selected
 	// Could trigger a Lua hook here
 }
-static ConCommand optionselect("optionselect", CC_GMod_OptionSelect, "Select a menu option");
+// optionselect is registered in gmod_system.cpp, where it dispatches to Lua.
 
 // lua_run - Run Lua code (server-side)
 void CC_Lua_Run(void)

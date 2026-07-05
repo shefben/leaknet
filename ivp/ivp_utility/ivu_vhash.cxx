@@ -154,7 +154,12 @@ void *IVP_VHash::remove_elem(const void *elem, unsigned int hash_index){
   IVP_VHash_Elem *e;
   for ( ; ; pos = (pos+1)&size_mm ){
     e = &elems[pos];
-    if (e->elem == 0) CORE; //return 0;
+    // Defense in depth (2026-07): restore Ipion's original graceful path (the trailing "//return 0;")
+    // instead of a hard CORE (int3) when an element is removed that isn't present. The real fix for
+    // the melon crash is the ledge-refcount balance in ivp_friction.cxx; this only prevents a
+    // remove-when-absent from int3-ing the debug build. NOTE: this does NOT make corruption safe -- if
+    // an element is genuinely missing here, something upstream already mismanaged the hash.
+    if (e->elem == 0) return 0;
     if ( (e->hash_index  | IVP_VHASH_TOUCH_BIT) != hash_index) continue;
     if ( compare((void *)e->elem, (void *)elem)== IVP_TRUE ){
 	break;

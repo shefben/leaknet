@@ -13,6 +13,7 @@
 //=============================================================================
 
 #include "cbase.h"
+#include "studio_helpers.h"
 #include "physics_prop_ragdoll.h"
 #include "npc_barnacle.h"
 #include "npcevent.h"
@@ -584,9 +585,9 @@ void CNPC_Barnacle::AttachTongueToTarget( CBaseEntity *pTouchEnt, Vector vecGrab
 			if ( pHdr )
 			{
 				int set = pAnimating->GetHitboxSet();
-				for( int i = 0; i < pHdr->iHitboxCount(set); i++ )
+				for( int i = 0; i < StudioHitboxSet_GetNumHitboxes(pHdr, set); i++ )
 				{
-					mstudiobbox_t *pBox = pHdr->pHitbox( i, set );
+					mstudiobbox_t *pBox = StudioHitboxSet_GetHitbox( pHdr, set, i );
 					if ( !pBox )
 						continue;
 					

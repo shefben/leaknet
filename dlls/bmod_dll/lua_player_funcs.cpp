@@ -12,9 +12,13 @@
 #include "hl2_player.h"
 #include "ammodef.h"
 #include "basecombatweapon.h"
+#include "weapon_parse.h"
 #include "recipientfilter.h"
 #include "usermessages.h"
 #include "gmod_gamemode.h"
+#include "gmod_lua.h"
+#include "gmod_swep.h"
+#include "shareddefs.h"  // OBS_MODE constants
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -22,6 +26,450 @@
 //=============================================================================
 // PLAYER FUNCTIONS
 //=============================================================================
+
+static void LuaPushVector(lua_State *L, const Vector& vec)
+{
+	lua_newtable(L);
+	lua_pushnumber(L, vec.x);
+	lua_setfield(L, -2, "x");
+	lua_pushnumber(L, vec.y);
+	lua_setfield(L, -2, "y");
+	lua_pushnumber(L, vec.z);
+	lua_setfield(L, -2, "z");
+}
+
+static CBaseCombatWeapon *LuaGetWeapon(lua_State *L, int index)
+{
+	int entIndex = CLuaUtility::GetInt(L, index);
+	CBaseEntity *pEntity = UTIL_EntityByIndex(entIndex);
+	return dynamic_cast<CBaseCombatWeapon *>(pEntity);
+}
+
+static FileWeaponInfo_t *LuaGetMutableWeaponInfo(CBaseCombatWeapon *pWeapon)
+{
+	if (!pWeapon)
+		return NULL;
+
+	return const_cast<FileWeaponInfo_t *>(&pWeapon->GetWpnData());
+}
+
+static SWEPData_t *LuaGetOrCreateSWEPData(CBaseCombatWeapon *pWeapon)
+{
+	if (!pWeapon)
+		return NULL;
+
+	const char *pszClassName = pWeapon->GetClassname();
+	if (!pszClassName || !pszClassName[0])
+		pszClassName = "weapon_scripted";
+
+	SWEPData_t *pData = CGModSWEPSystem::GetSWEPData(pszClassName);
+	if (pData)
+		return pData;
+
+	SWEPData_t data;
+	Q_strncpy(data.className, pszClassName, sizeof(data.className));
+	data.isRegistered = true;
+
+	int index = CGModSWEPSystem::s_SWEPRegistry.AddToTail(data);
+	return &CGModSWEPSystem::s_SWEPRegistry[index];
+}
+
+static bool LuaCallGlobalBool(lua_State *L, const char *pszFunction, bool &value)
+{
+	if (!L || !pszFunction || !pszFunction[0])
+		return false;
+
+	int stackTop = lua_gettop(L);
+	lua_getglobal(L, pszFunction);
+	if (!lua_isfunction(L, -1))
+	{
+		lua_settop(L, stackTop);
+		return false;
+	}
+
+	if (lua_pcall(L, 0, 1, 0) != 0)
+	{
+		CGModLuaSystem::HandleLuaError(L, pszFunction);
+		lua_settop(L, stackTop);
+		return false;
+	}
+
+	bool ok = lua_isboolean(L, -1) || lua_isnumber(L, -1);
+	if (ok)
+		value = lua_toboolean(L, -1) != 0;
+
+	lua_settop(L, stackTop);
+	return ok;
+}
+
+static bool LuaCallGlobalNumber(lua_State *L, const char *pszFunction, float &value)
+{
+	if (!L || !pszFunction || !pszFunction[0])
+		return false;
+
+	int stackTop = lua_gettop(L);
+	lua_getglobal(L, pszFunction);
+	if (!lua_isfunction(L, -1))
+	{
+		lua_settop(L, stackTop);
+		return false;
+	}
+
+	if (lua_pcall(L, 0, 1, 0) != 0)
+	{
+		CGModLuaSystem::HandleLuaError(L, pszFunction);
+		lua_settop(L, stackTop);
+		return false;
+	}
+
+	bool ok = lua_isnumber(L, -1);
+	if (ok)
+		value = (float)lua_tonumber(L, -1);
+
+	lua_settop(L, stackTop);
+	return ok;
+}
+
+static bool LuaCallGlobalString(lua_State *L, const char *pszFunction, char *pOut, int outSize)
+{
+	if (!L || !pszFunction || !pszFunction[0] || !pOut || outSize <= 0)
+		return false;
+
+	int stackTop = lua_gettop(L);
+	lua_getglobal(L, pszFunction);
+	if (!lua_isfunction(L, -1))
+	{
+		lua_settop(L, stackTop);
+		return false;
+	}
+
+	if (lua_pcall(L, 0, 1, 0) != 0)
+	{
+		CGModLuaSystem::HandleLuaError(L, pszFunction);
+		lua_settop(L, stackTop);
+		return false;
+	}
+
+	bool ok = lua_isstring(L, -1);
+	if (ok)
+		Q_strncpy(pOut, lua_tostring(L, -1), outSize);
+
+	lua_settop(L, stackTop);
+	return ok;
+}
+
+static bool LuaCallGlobalVector(lua_State *L, const char *pszFunction, Vector &value)
+{
+	if (!L || !pszFunction || !pszFunction[0])
+		return false;
+
+	int stackTop = lua_gettop(L);
+	lua_getglobal(L, pszFunction);
+	if (!lua_isfunction(L, -1))
+	{
+		lua_settop(L, stackTop);
+		return false;
+	}
+
+	if (lua_pcall(L, 0, 1, 0) != 0)
+	{
+		CGModLuaSystem::HandleLuaError(L, pszFunction);
+		lua_settop(L, stackTop);
+		return false;
+	}
+
+	bool ok = lua_istable(L, -1);
+	if (ok)
+	{
+		lua_getfield(L, -1, "x");
+		value.x = (float)lua_tonumber(L, -1);
+		lua_pop(L, 1);
+
+		lua_getfield(L, -1, "y");
+		value.y = (float)lua_tonumber(L, -1);
+		lua_pop(L, 1);
+
+		lua_getfield(L, -1, "z");
+		value.z = (float)lua_tonumber(L, -1);
+		lua_pop(L, 1);
+	}
+
+	lua_settop(L, stackTop);
+	return ok;
+}
+
+static void LuaApplyWeaponModels(CBaseCombatWeapon *pWeapon, FileWeaponInfo_t *pInfo)
+{
+	if (!pWeapon || !pInfo)
+		return;
+
+	if (pInfo->szViewModel[0])
+		pWeapon->m_iViewModelIndex = pWeapon->PrecacheModel(pInfo->szViewModel);
+
+	if (pInfo->szWorldModel[0])
+	{
+		pWeapon->m_iWorldModelIndex = pWeapon->PrecacheModel(pInfo->szWorldModel);
+		pWeapon->SetModel(pInfo->szWorldModel);
+	}
+}
+
+static void LuaApplyWeaponAmmo(CBaseCombatWeapon *pWeapon, FileWeaponInfo_t *pInfo)
+{
+	if (!pWeapon || !pInfo)
+		return;
+
+	if (pInfo->szAmmo1[0])
+		pWeapon->m_iPrimaryAmmoType = GetAmmoDef()->Index(pInfo->szAmmo1);
+	if (pInfo->szAmmo2[0])
+		pWeapon->m_iSecondaryAmmoType = GetAmmoDef()->Index(pInfo->szAmmo2);
+
+	if (pInfo->iMaxClip1 == WEAPON_NOCLIP)
+	{
+		pWeapon->m_iClip1 = WEAPON_NOCLIP;
+	}
+	else if (pWeapon->m_iClip1 == WEAPON_NOCLIP || pWeapon->m_iClip1 < 0)
+	{
+		pWeapon->m_iClip1 = min(pInfo->iDefaultClip1, pInfo->iMaxClip1);
+	}
+	else if (pWeapon->m_iClip1 > pInfo->iMaxClip1)
+	{
+		pWeapon->m_iClip1 = pInfo->iMaxClip1;
+	}
+
+	if (pInfo->iMaxClip2 == WEAPON_NOCLIP)
+	{
+		pWeapon->m_iClip2 = WEAPON_NOCLIP;
+	}
+	else if (pWeapon->m_iClip2 == WEAPON_NOCLIP || pWeapon->m_iClip2 < 0)
+	{
+		pWeapon->m_iClip2 = min(pInfo->iDefaultClip2, pInfo->iMaxClip2);
+	}
+	else if (pWeapon->m_iClip2 > pInfo->iMaxClip2)
+	{
+		pWeapon->m_iClip2 = pInfo->iMaxClip2;
+	}
+}
+
+static int LuaWeaponSoundIndex(const char *pszEventName)
+{
+	if (!pszEventName)
+		return SINGLE;
+
+	if (!Q_stricmp(pszEventName, "empty")) return EMPTY;
+	if (!Q_stricmp(pszEventName, "single") || !Q_stricmp(pszEventName, "single_shot")) return SINGLE;
+	if (!Q_stricmp(pszEventName, "single_npc")) return SINGLE_NPC;
+	if (!Q_stricmp(pszEventName, "double") || !Q_stricmp(pszEventName, "double_shot")) return WPN_DOUBLE;
+	if (!Q_stricmp(pszEventName, "double_npc")) return DOUBLE_NPC;
+	if (!Q_stricmp(pszEventName, "burst")) return BURST;
+	if (!Q_stricmp(pszEventName, "reload")) return RELOAD;
+	if (!Q_stricmp(pszEventName, "reload_npc")) return RELOAD_NPC;
+	if (!Q_stricmp(pszEventName, "melee_miss")) return MELEE_MISS;
+	if (!Q_stricmp(pszEventName, "melee_hit")) return MELEE_HIT;
+	if (!Q_stricmp(pszEventName, "melee_hit_world")) return MELEE_HIT_WORLD;
+	if (!Q_stricmp(pszEventName, "special1")) return SPECIAL1;
+	if (!Q_stricmp(pszEventName, "special2")) return SPECIAL2;
+	if (!Q_stricmp(pszEventName, "special3")) return SPECIAL3;
+
+	return SINGLE;
+}
+
+static void LuaUpdateSWEPVariables(lua_State *L, CBaseCombatWeapon *pWeapon)
+{
+	if (!L || !pWeapon)
+		return;
+
+	SWEPData_t *pData = LuaGetOrCreateSWEPData(pWeapon);
+	FileWeaponInfo_t *pInfo = LuaGetMutableWeaponInfo(pWeapon);
+	if (!pData || !pInfo)
+		return;
+
+	float numberValue = 0.0f;
+	bool boolValue = false;
+	Vector vectorValue = vec3_origin;
+
+	LuaCallGlobalString(L, "getClassName", pData->className, sizeof(pData->className));
+	LuaCallGlobalString(L, "getPrintName", pData->printName, sizeof(pData->printName));
+	LuaCallGlobalString(L, "getViewModel", pData->viewModel, sizeof(pData->viewModel));
+	LuaCallGlobalString(L, "getWorldModel", pData->worldModel, sizeof(pData->worldModel));
+	LuaCallGlobalString(L, "getHUDMaterial", pData->hudMaterial, sizeof(pData->hudMaterial));
+	LuaCallGlobalString(L, "getDeathIcon", pData->deathIcon, sizeof(pData->deathIcon));
+	LuaCallGlobalString(L, "getAnimPrefix", pData->animPrefix, sizeof(pData->animPrefix));
+	LuaCallGlobalString(L, "getPrimaryAmmoType", pData->primaryAmmoType, sizeof(pData->primaryAmmoType));
+	LuaCallGlobalString(L, "getSecondaryAmmoType", pData->secondaryAmmoType, sizeof(pData->secondaryAmmoType));
+
+	if (LuaCallGlobalNumber(L, "getDamage", numberValue)) pData->damage = (int)numberValue;
+	if (LuaCallGlobalNumber(L, "getDamageSecondary", numberValue)) pData->damageSecondary = (int)numberValue;
+	if (LuaCallGlobalNumber(L, "getPrimaryShotDelay", numberValue)) pData->primaryShotDelay = numberValue;
+	if (LuaCallGlobalNumber(L, "getSecondaryShotDelay", numberValue)) pData->secondaryShotDelay = numberValue;
+	if (LuaCallGlobalNumber(L, "getNumShotsPrimary", numberValue)) pData->numShotsPrimary = (int)numberValue;
+	if (LuaCallGlobalNumber(L, "getNumShotsSecondary", numberValue)) pData->numShotsSecondary = (int)numberValue;
+	if (LuaCallGlobalNumber(L, "getMaxClipPrimary", numberValue)) pData->maxClipPrimary = (int)numberValue;
+	if (LuaCallGlobalNumber(L, "getMaxClipSecondary", numberValue)) pData->maxClipSecondary = (int)numberValue;
+	if (LuaCallGlobalNumber(L, "getDefClipPrimary", numberValue)) pData->defClipPrimary = (int)numberValue;
+	if (LuaCallGlobalNumber(L, "getDefClipSecondary", numberValue)) pData->defClipSecondary = (int)numberValue;
+	if (LuaCallGlobalNumber(L, "getTracerFreqPrimary", numberValue)) pData->tracerFreqPrimary = (int)numberValue;
+	if (LuaCallGlobalNumber(L, "getTracerFreqSecondary", numberValue)) pData->tracerFreqSecondary = (int)numberValue;
+	if (LuaCallGlobalNumber(L, "getPrimaryScriptOverride", numberValue)) pData->primaryScriptOverride = (SWEPScriptOverride_t)(int)numberValue;
+	if (LuaCallGlobalNumber(L, "getSecondaryScriptOverride", numberValue)) pData->secondaryScriptOverride = (SWEPScriptOverride_t)(int)numberValue;
+	if (LuaCallGlobalNumber(L, "getWeaponFOV", numberValue)) pData->weaponFOV = (int)numberValue;
+	if (LuaCallGlobalNumber(L, "getWeaponSlot", numberValue)) pData->weaponSlot = (int)numberValue;
+	if (LuaCallGlobalNumber(L, "getWeaponSlotPos", numberValue)) pData->weaponSlotPos = (int)numberValue;
+
+	if (LuaCallGlobalBool(L, "getPrimaryIsAutomatic", boolValue)) pData->primaryIsAutomatic = boolValue;
+	if (LuaCallGlobalBool(L, "getSecondaryIsAutomatic", boolValue)) pData->secondaryIsAutomatic = boolValue;
+	if (LuaCallGlobalBool(L, "getWeaponSwapHands", boolValue)) pData->weaponSwapHands = boolValue;
+	if (LuaCallGlobalBool(L, "getFiresUnderwater", boolValue)) pData->firesUnderwater = boolValue;
+	if (LuaCallGlobalBool(L, "getReloadsSingly", boolValue)) pData->reloadsSingly = boolValue;
+
+	if (LuaCallGlobalVector(L, "getBulletSpread", vectorValue)) pData->bulletSpread = vectorValue;
+	if (LuaCallGlobalVector(L, "getBulletSpreadSecondary", vectorValue)) pData->bulletSpreadSecondary = vectorValue;
+	if (LuaCallGlobalVector(L, "getViewKick", vectorValue)) pData->viewKick = vectorValue;
+	if (LuaCallGlobalVector(L, "getViewKickSecondary", vectorValue)) pData->viewKickSecondary = vectorValue;
+	if (LuaCallGlobalVector(L, "getViewKickRandom", vectorValue)) pData->viewKickRandom = vectorValue;
+	if (LuaCallGlobalVector(L, "getViewKickRandomSecondary", vectorValue)) pData->viewKickRandomSecondary = vectorValue;
+
+	Q_strncpy(pInfo->szPrintName, pData->printName, sizeof(pInfo->szPrintName));
+	Q_strncpy(pInfo->szViewModel, pData->viewModel, sizeof(pInfo->szViewModel));
+	Q_strncpy(pInfo->szWorldModel, pData->worldModel, sizeof(pInfo->szWorldModel));
+	Q_strncpy(pInfo->szAnimationPrefix, pData->animPrefix, sizeof(pInfo->szAnimationPrefix));
+	Q_strncpy(pInfo->szAmmo1, pData->primaryAmmoType, sizeof(pInfo->szAmmo1));
+	Q_strncpy(pInfo->szAmmo2, pData->secondaryAmmoType, sizeof(pInfo->szAmmo2));
+	pInfo->iSlot = pData->weaponSlot;
+	pInfo->iPosition = pData->weaponSlotPos;
+	pInfo->iMaxClip1 = pData->maxClipPrimary;
+	pInfo->iMaxClip2 = pData->maxClipSecondary;
+	pInfo->iDefaultClip1 = pData->defClipPrimary;
+	pInfo->iDefaultClip2 = pData->defClipSecondary;
+
+	pWeapon->m_bFiresUnderwater = pData->firesUnderwater;
+	pWeapon->m_bReloadsSingly = pData->reloadsSingly;
+
+	LuaApplyWeaponModels(pWeapon, pInfo);
+	LuaApplyWeaponAmmo(pWeapon, pInfo);
+}
+
+static int LuaGetGlobalInt(lua_State *L, const char *name, int defaultValue)
+{
+	int stackTop = lua_gettop(L);
+	lua_getglobal(L, name);
+	int value = lua_isnumber(L, -1) ? (int)lua_tonumber(L, -1) : defaultValue;
+	lua_settop(L, stackTop);
+	return value;
+}
+
+static int LuaObserverModeToSource(lua_State *L, int mode)
+{
+	if (mode == 0)
+		return OBS_MODE_NONE;
+	if (mode == 1)
+		return OBS_MODE_FIXED;
+	if (mode == 2)
+		return OBS_MODE_FIXED;
+	if (mode == 3)
+		return OBS_MODE_IN_EYE;
+	if (mode == 4)
+		return OBS_MODE_CHASE;
+	if (mode == 5)
+		return OBS_MODE_ROAMING;
+
+	if (mode == LuaGetGlobalInt(L, "OBS_MODE_FIXED", OBS_MODE_FIXED))
+		return OBS_MODE_FIXED;
+	if (mode == LuaGetGlobalInt(L, "OBS_MODE_IN_EYE", OBS_MODE_IN_EYE))
+		return OBS_MODE_IN_EYE;
+	if (mode == LuaGetGlobalInt(L, "OBS_MODE_CHASE", OBS_MODE_CHASE))
+		return OBS_MODE_CHASE;
+	if (mode == LuaGetGlobalInt(L, "OBS_MODE_ROAMING", OBS_MODE_ROAMING))
+		return OBS_MODE_ROAMING;
+	return mode;
+}
+
+static const char *LuaPlayerName(CBasePlayer *pPlayer)
+{
+	const char *name = pPlayer ? STRING(pPlayer->pl.netname) : "";
+	return name ? name : "";
+}
+
+static int SourceTeamToGModTeam( int iTeam )
+{
+	switch ( iTeam )
+	{
+	case TEAM_UNASSIGNED:
+		return 0;
+	case TEAM_SPECTATOR:
+		return 1;
+	default:
+		return ( iTeam > TEAM_SPECTATOR ) ? iTeam - 1 : iTeam;
+	}
+}
+
+static int GModTeamToSourceTeam( int iTeam )
+{
+	switch ( iTeam )
+	{
+	case 0:
+		return TEAM_UNASSIGNED;
+	case 1:
+		return TEAM_SPECTATOR;
+	default:
+		return iTeam + 1;
+	}
+}
+
+static void LuaPushPlayerInfoField(lua_State *L, CBasePlayer *pPlayer, const char *field)
+{
+	if (!field)
+	{
+		lua_pushnil(L);
+		return;
+	}
+
+	if (!pPlayer)
+	{
+		if (!Q_stricmp(field, "connected"))
+			lua_pushboolean(L, false);
+		else
+			lua_pushnil(L);
+		return;
+	}
+
+	if (!Q_stricmp(field, "connected"))
+		lua_pushboolean(L, true);
+	else if (!Q_stricmp(field, "name"))
+		lua_pushstring(L, LuaPlayerName(pPlayer));
+	else if (!Q_stricmp(field, "userid"))
+		lua_pushnumber(L, engine->GetPlayerUserId(pPlayer->edict()));
+	else if (!Q_stricmp(field, "ping"))
+		lua_pushnumber(L, 0);
+	else if (!Q_stricmp(field, "packetloss"))
+		lua_pushnumber(L, 0);
+	else if (!Q_stricmp(field, "kills"))
+		lua_pushnumber(L, pPlayer->FragCount());
+	else if (!Q_stricmp(field, "deaths"))
+		lua_pushnumber(L, pPlayer->DeathCount());
+	else if (!Q_stricmp(field, "team"))
+		lua_pushnumber(L, SourceTeamToGModTeam( pPlayer->GetTeamNumber() ));
+	else if (!Q_stricmp(field, "alive"))
+		lua_pushboolean(L, pPlayer->IsAlive());
+	else if (!Q_stricmp(field, "health"))
+		lua_pushnumber(L, pPlayer->GetHealth());
+	else if (!Q_stricmp(field, "armor"))
+		lua_pushnumber(L, pPlayer->ArmorValue());
+	else if (!Q_stricmp(field, "model"))
+		lua_pushstring(L, STRING(pPlayer->GetModelName()));
+	else if (!Q_stricmp(field, "networkid"))
+		lua_pushstring(L, "UNKNOWN");
+	else if (!Q_stricmp(field, "entindex"))
+		lua_pushnumber(L, pPlayer->entindex());
+	else if (!Q_stricmp(field, "weapon"))
+	{
+		CBaseCombatWeapon *pWeapon = pPlayer->GetActiveWeapon();
+		lua_pushstring(L, pWeapon ? pWeapon->GetClassname() : "none");
+	}
+	else
+	{
+		lua_pushstring(L, "<Not Found>");
+	}
+}
 
 // _PlayerFreeze - Freeze/unfreeze player
 int Lua_PlayerFreeze(lua_State *L)
@@ -31,7 +479,7 @@ int Lua_PlayerFreeze(lua_State *L)
 
 	CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
 	if (!pPlayer)
-		return CLuaUtility::LuaError(L, "_PlayerFreeze: Invalid player ID");
+		return 0;
 
 	if (freeze)
 		pPlayer->AddFlag(FL_FROZEN);
@@ -71,13 +519,11 @@ int Lua_PlayerGetShootPos(lua_State *L)
 		return CLuaUtility::LuaError(L, "_PlayerGetShootPos: Invalid player ID");
 
 	Vector pos = pPlayer->EyePosition();
-	lua_pushnumber(L, pos.x);
-	lua_pushnumber(L, pos.y);
-	lua_pushnumber(L, pos.z);
-	return 3;
+	LuaPushVector(L, pos);
+	return 1;
 }
 
-// _PlayerGetShootAng - Get player eye angles
+// _PlayerGetShootAng - Get player shoot forward vector
 int Lua_PlayerGetShootAng(lua_State *L)
 {
 	int playerID = CLuaUtility::GetInt(L, 1);
@@ -86,10 +532,10 @@ int Lua_PlayerGetShootAng(lua_State *L)
 		return CLuaUtility::LuaError(L, "_PlayerGetShootAng: Invalid player ID");
 
 	QAngle ang = pPlayer->EyeAngles();
-	lua_pushnumber(L, ang.x);
-	lua_pushnumber(L, ang.y);
-	lua_pushnumber(L, ang.z);
-	return 3;
+	Vector forward;
+	AngleVectors(ang, &forward);
+	LuaPushVector(L, forward);
+	return 1;
 }
 
 // _PlayerGetActiveWeapon - Get player's active weapon
@@ -262,13 +708,13 @@ int Lua_PlayerRemoveWeapon(lua_State *L)
 int Lua_PlayerChangeTeam(lua_State *L)
 {
 	int playerID = CLuaUtility::GetInt(L, 1);
-	int teamNum = CLuaUtility::GetInt(L, 2);
+	int teamNum = GModTeamToSourceTeam( CLuaUtility::GetInt(L, 2) );
 
 	CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
 	if (!pPlayer)
 		return CLuaUtility::LuaError(L, "_PlayerChangeTeam: Invalid player ID");
 
-	pPlayer->ChangeTeam(teamNum);
+	CGModGamemodeSystem::ChangePlayerTeam(pPlayer, teamNum);
 	return 0;
 }
 
@@ -320,21 +766,26 @@ int Lua_PlayerAddDeath(lua_State *L)
 int Lua_PlayerInfo(lua_State *L)
 {
 	int playerID = CLuaUtility::GetInt(L, 1);
+	const char *field = lua_gettop(L) >= 2 ? CLuaUtility::GetString(L, 2, NULL) : NULL;
 	CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
+
+	if (field)
+	{
+		LuaPushPlayerInfoField(L, pPlayer, field);
+		return 1;
+	}
+
 	if (!pPlayer)
 	{
 		lua_pushnil(L);
 		return 1;
 	}
 
-	// Return a table with player info
+	// Compatibility form for newer callers that ask for the whole table.
 	lua_newtable(L);
 
-	// HL2 beta uses pl.netname (string_t) instead of GetPlayerName()
-	const char *playerName = STRING(pPlayer->pl.netname);
-
 	lua_pushstring(L, "name");
-	lua_pushstring(L, playerName ? playerName : "");
+	lua_pushstring(L, LuaPlayerName(pPlayer));
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "health");
@@ -346,11 +797,23 @@ int Lua_PlayerInfo(lua_State *L)
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "team");
-	lua_pushnumber(L, (lua_Number)pPlayer->GetTeamNumber());
+	lua_pushnumber(L, (lua_Number)SourceTeamToGModTeam( pPlayer->GetTeamNumber() ));
 	lua_settable(L, -3);
 
 	lua_pushstring(L, "alive");
 	lua_pushboolean(L, pPlayer->IsAlive());
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "connected");
+	lua_pushboolean(L, true);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "kills");
+	lua_pushnumber(L, (lua_Number)pPlayer->FragCount());
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "deaths");
+	lua_pushnumber(L, (lua_Number)pPlayer->DeathCount());
 	lua_settable(L, -3);
 
 	return 1;
@@ -363,7 +826,7 @@ int Lua_PlayerInfo(lua_State *L)
 // _TeamAddScore - Add to team score
 int Lua_TeamAddScore(lua_State *L)
 {
-	int teamNum = CLuaUtility::GetInt(L, 1);
+	int teamNum = GModTeamToSourceTeam( CLuaUtility::GetInt(L, 1) );
 	int score = CLuaUtility::GetInt(L, 2);
 
 	// Use CGModGamemodeSystem which has proper team support
@@ -375,7 +838,7 @@ int Lua_TeamAddScore(lua_State *L)
 // _TeamSetScore - Set team score
 int Lua_TeamSetScore(lua_State *L)
 {
-	int teamNum = CLuaUtility::GetInt(L, 1);
+	int teamNum = GModTeamToSourceTeam( CLuaUtility::GetInt(L, 1) );
 	int score = CLuaUtility::GetInt(L, 2);
 
 	// Use CGModGamemodeSystem which has proper team support
@@ -386,7 +849,7 @@ int Lua_TeamSetScore(lua_State *L)
 // _TeamNumPlayers - Get number of players on team
 int Lua_TeamNumPlayers(lua_State *L)
 {
-	int teamNum = CLuaUtility::GetInt(L, 1);
+	int teamNum = GModTeamToSourceTeam( CLuaUtility::GetInt(L, 1) );
 
 	CTeam *pTeam = GetGlobalTeam(teamNum);
 	if (!pTeam)
@@ -402,7 +865,7 @@ int Lua_TeamNumPlayers(lua_State *L)
 // _TeamScore - Get team score
 int Lua_TeamScore(lua_State *L)
 {
-	int teamNum = CLuaUtility::GetInt(L, 1);
+	int teamNum = GModTeamToSourceTeam( CLuaUtility::GetInt(L, 1) );
 
 	// Use CGModGamemodeSystem which has proper team support
 	int score = CGModGamemodeSystem::GetTeamScore(teamNum);
@@ -528,36 +991,100 @@ int Lua_PlayerSilentKill(lua_State *L)
 }
 
 // _PlayerSpectatorStart - Start spectating
+// GMod syntax: _PlayerSpectatorStart(playerid, obs_mode)
+// Accepts either current Source observer constants or beta Lua constants.
 int Lua_PlayerSpectatorStart(lua_State *L)
 {
 	int playerID = CLuaUtility::GetInt(L, 1);
+	int obsMode = LuaObserverModeToSource(L, CLuaUtility::GetInt(L, 2, OBS_MODE_CHASE)); // Default to chase cam
 
 	CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
 	if (!pPlayer)
 		return CLuaUtility::LuaError(L, "_PlayerSpectatorStart: Invalid player ID");
 
-	// Put player into observer mode (HL2 beta uses position/angle based observer)
+	static int s_nLoggedSpectatorStart = 0;
+	if (s_nLoggedSpectatorStart < 8)
+	{
+		DevMsg("GMod Lua: _PlayerSpectatorStart player %d mode %d\n", playerID, obsMode);
+		++s_nLoggedSpectatorStart;
+	}
+
+	// Put player into observer mode
 	pPlayer->StartObserverMode(pPlayer->GetAbsOrigin(), pPlayer->GetAbsAngles());
+
+	// Set the specific observer mode
+	pPlayer->SetObserverMode(obsMode);
+
 	return 0;
 }
 
-// _PlayerSpectatorTarget - Set spectator target
+// _PlayerSpectatorTarget - Set spectator target (can target ANY entity, not just players)
+// GMod syntax: _PlayerSpectatorTarget(playerid, entityid)
+// This is critical for MelonRacer where players spectate their watermelon prop
 int Lua_PlayerSpectatorTarget(lua_State *L)
 {
 	int playerID = CLuaUtility::GetInt(L, 1);
 	int targetID = CLuaUtility::GetInt(L, 2);
 
 	CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
-	CBasePlayer *pTarget = UTIL_PlayerByIndex(targetID);
 	if (!pPlayer)
 		return CLuaUtility::LuaError(L, "_PlayerSpectatorTarget: Invalid player ID");
 
+	// Get target as ANY entity (not just player) - required for MelonRacer watermelon spectating
+	CBaseEntity *pTarget = UTIL_EntityByIndex(targetID);
 	if (pTarget)
 	{
-		pPlayer->SetObserverTarget(pTarget);
-		// HL2 beta uses position/angle based observer
-		pPlayer->StartObserverMode(pTarget->GetAbsOrigin(), pTarget->GetAbsAngles());
+		// ORDER MATTERS. The camera only chases the melon in OBS_MODE_CHASE; OBS_MODE_ROAMING/FIXED
+		// copy the player's OWN EyePosition (its buried, at-spawn origin) -- that is why the chase-cam
+		// sat in the ground and never followed the prop. SetObserverMode(CHASE) -> CheckObserverSettings
+		// validates m_hObserverTarget and, if it is not yet valid, FORCES the player to ROAMING. And
+		// StartObserverMode() resets m_bAllowNonPlayerObserverTarget to false, which invalidates a melon
+		// (non-player) target. So we must: (1) only StartObserverMode if not already observing (else it
+		// wipes the allowance), (2) set the allowed target FIRST, (3) THEN switch to CHASE -- now the
+		// target is valid so CHASE sticks instead of collapsing to ROAMING.
+		if ( !pPlayer->IsObserver() )
+		{
+			pPlayer->StartObserverMode(pPlayer->GetAbsOrigin(), pPlayer->GetAbsAngles());
+		}
+
+		pPlayer->m_bAllowNonPlayerObserverTarget = !pTarget->IsPlayer();
+		if (!pPlayer->SetObserverTarget(pTarget))
+		{
+			pPlayer->m_bAllowNonPlayerObserverTarget = !pTarget->IsPlayer();
+			pPlayer->m_hObserverTarget.Set(pTarget);
+		}
+
+		if (pPlayer->m_iObserverMode != OBS_MODE_CHASE && pPlayer->m_iObserverMode != OBS_MODE_IN_EYE)
+		{
+			pPlayer->SetObserverMode(OBS_MODE_CHASE);
+		}
+
+		static int s_nLoggedSpectatorTarget = 0;
+		if (s_nLoggedSpectatorTarget < 8)
+		{
+			DevMsg("GMod Lua: _PlayerSpectatorTarget player %d target %d (%s)\n",
+				playerID, targetID, pTarget->GetClassname());
+			++s_nLoggedSpectatorTarget;
+		}
 	}
+	return 0;
+}
+
+// _PlayerSetChaseCamDistance - Set chase cam distance for spectator mode
+int Lua_PlayerSetChaseCamDistance(lua_State *L)
+{
+	int playerID = CLuaUtility::GetInt(L, 1);
+	float distance = CLuaUtility::GetFloat(L, 2, 96.0f);
+
+	CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
+	if (!pPlayer)
+		return CLuaUtility::LuaError(L, "_PlayerSetChaseCamDistance: Invalid player ID");
+
+	// Clamp distance to reasonable values
+	if (distance < 10.0f) distance = 10.0f;
+	if (distance > 500.0f) distance = 500.0f;
+
+	pPlayer->m_flChaseCamDistance = distance;
 	return 0;
 }
 
@@ -602,8 +1129,10 @@ int Lua_PlayerIsKeyDown(lua_State *L)
 		return 1;
 	}
 
-	// Check if button is pressed
-	bool isDown = (pPlayer->m_nButtons & key) != 0;
+	// Source observer/movement code can clear m_nButtons after processing.
+	// GMod Lua wants the raw command button state for this frame.
+	int rawButtons = CGModLuaSystem::GetPlayerRawButtons(pPlayer);
+	bool isDown = ((rawButtons | pPlayer->m_nButtons) & key) != 0;
 	lua_pushboolean(L, isDown);
 	return 1;
 }
@@ -632,7 +1161,7 @@ int Lua_PlayerShowScoreboard(lua_State *L)
 // _TeamSetName - Set team name
 int Lua_TeamSetName(lua_State *L)
 {
-	int teamNum = CLuaUtility::GetInt(L, 1);
+	int teamNum = GModTeamToSourceTeam( CLuaUtility::GetInt(L, 1) );
 	const char *name = CLuaUtility::GetString(L, 2);
 
 	// Use CGModGamemodeSystem which has proper team name support
@@ -688,34 +1217,259 @@ int Lua_SpawnSWEP(lua_State *L)
 	return 1;
 }
 
-// _SWEPUpdateVariables - Update SWEP variables (stub)
+// _SWEPUpdateVariables - refresh runtime SWEP data from Lua getter functions
 int Lua_SWEPUpdateVariables(lua_State *L)
 {
-	int entIndex = CLuaUtility::GetInt(L, 1);
-	// SWEP variable update would be handled by SWEP system
+	CBaseCombatWeapon *pWeapon = LuaGetWeapon(L, 1);
+	if (!pWeapon)
+		return CLuaUtility::LuaError(L, "_SWEPUpdateVariables: Invalid weapon ID");
+
+	LuaUpdateSWEPVariables(L, pWeapon);
 	return 0;
 }
 
 // _SWEPUseAmmo - Use ammo from SWEP
 int Lua_SWEPUseAmmo(lua_State *L)
 {
-	int playerID = CLuaUtility::GetInt(L, 1);
-	int amount = CLuaUtility::GetInt(L, 2, 1);
+	CBaseCombatWeapon *pWeapon = LuaGetWeapon(L, 1);
+	int ammoSlot = CLuaUtility::GetInt(L, 2, 0);
+	int amount = CLuaUtility::GetInt(L, 3, 1);
 
-	CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
-	if (!pPlayer)
-		return CLuaUtility::LuaError(L, "_SWEPUseAmmo: Invalid player ID");
-
-	CBaseCombatWeapon *pWeapon = pPlayer->GetActiveWeapon();
-	if (pWeapon)
+	if (!pWeapon)
 	{
-		// Remove ammo from current weapon
-		int ammoType = pWeapon->GetPrimaryAmmoType();
-		if (ammoType >= 0)
-		{
-			pPlayer->RemoveAmmo(amount, ammoType);
-		}
+		CBasePlayer *pPlayer = UTIL_PlayerByIndex(CLuaUtility::GetInt(L, 1));
+		if (pPlayer)
+			pWeapon = pPlayer->GetActiveWeapon();
 	}
+
+	if (!pWeapon)
+		return CLuaUtility::LuaError(L, "_SWEPUseAmmo: Invalid weapon ID");
+
+	if (amount <= 0)
+		return 0;
+
+	CBaseCombatCharacter *pOwnerCharacter = pWeapon->GetOwner();
+	CBasePlayer *pPlayer = pOwnerCharacter ? ToBasePlayer(pOwnerCharacter) : NULL;
+
+	if (ammoSlot == 1)
+	{
+		if (pWeapon->m_iClip2 != WEAPON_NOCLIP)
+			pWeapon->m_iClip2 = max(0, pWeapon->m_iClip2 - amount);
+		else if (pPlayer && pWeapon->GetSecondaryAmmoType() >= 0)
+			pPlayer->RemoveAmmo(amount, pWeapon->GetSecondaryAmmoType());
+	}
+	else
+	{
+		if (pWeapon->m_iClip1 != WEAPON_NOCLIP)
+			pWeapon->m_iClip1 = max(0, pWeapon->m_iClip1 - amount);
+		else if (pPlayer && pWeapon->GetPrimaryAmmoType() >= 0)
+			pPlayer->RemoveAmmo(amount, pWeapon->GetPrimaryAmmoType());
+	}
+
+	return 0;
+}
+
+// _SWEPRunString - execute Lua in the current SWEP context
+int Lua_SWEPRunString(lua_State *L)
+{
+	const char *pszCode = CLuaUtility::GetString(L, lua_gettop(L) >= 2 ? 2 : 1, NULL);
+	if (!pszCode || !pszCode[0])
+		return 0;
+
+	CGModLuaSystem::ExecuteString(pszCode);
+	return 0;
+}
+
+// _swep.GetClipAmmo / __swep_GetClipAmmo
+int Lua_swep_GetClipAmmo(lua_State *L)
+{
+	CBaseCombatWeapon *pWeapon = LuaGetWeapon(L, 1);
+	int ammoSlot = CLuaUtility::GetInt(L, 2, 0);
+
+	if (!pWeapon)
+	{
+		lua_pushinteger(L, 0);
+		return 1;
+	}
+
+	int clip = (ammoSlot == 1) ? (int)pWeapon->m_iClip2 : (int)pWeapon->m_iClip1;
+	lua_pushinteger(L, clip);
+	return 1;
+}
+
+// _swep.SetClipAmmo / __swep_SetClipAmmo
+int Lua_swep_SetClipAmmo(lua_State *L)
+{
+	CBaseCombatWeapon *pWeapon = LuaGetWeapon(L, 1);
+	int ammoSlot = CLuaUtility::GetInt(L, 2, 0);
+	int amount = CLuaUtility::GetInt(L, 3, 0);
+
+	if (!pWeapon)
+		return CLuaUtility::LuaError(L, "_swep.SetClipAmmo: Invalid weapon ID");
+
+	if (ammoSlot == 1)
+		pWeapon->m_iClip2 = amount;
+	else
+		pWeapon->m_iClip1 = amount;
+
+	return 0;
+}
+
+// _swep.GetDeathIcon / __swep_GetDeathIcon
+int Lua_swep_GetDeathIcon(lua_State *L)
+{
+	CBaseCombatWeapon *pWeapon = LuaGetWeapon(L, 1);
+	if (!pWeapon)
+	{
+		lua_pushnil(L);
+		return 1;
+	}
+
+	SWEPData_t *pData = LuaGetOrCreateSWEPData(pWeapon);
+	if (pData && pData->deathIcon[0])
+	{
+		lua_pushstring(L, pData->deathIcon);
+		return 1;
+	}
+
+	lua_pushnil(L);
+	return 1;
+}
+
+int Lua_WeaponSetModel(lua_State *L)
+{
+	CBaseCombatWeapon *pWeapon = LuaGetWeapon(L, 1);
+	const char *pszViewModel = CLuaUtility::GetString(L, 2, "");
+	const char *pszWorldModel = CLuaUtility::GetString(L, 3, pszViewModel);
+
+	if (!pWeapon)
+		return CLuaUtility::LuaError(L, "_WeaponSetModel: Invalid weapon ID");
+
+	FileWeaponInfo_t *pInfo = LuaGetMutableWeaponInfo(pWeapon);
+	SWEPData_t *pData = LuaGetOrCreateSWEPData(pWeapon);
+	if (!pInfo || !pData)
+		return 0;
+
+	if (pszViewModel && pszViewModel[0])
+	{
+		Q_strncpy(pInfo->szViewModel, pszViewModel, sizeof(pInfo->szViewModel));
+		Q_strncpy(pData->viewModel, pszViewModel, sizeof(pData->viewModel));
+	}
+	if (pszWorldModel && pszWorldModel[0])
+	{
+		Q_strncpy(pInfo->szWorldModel, pszWorldModel, sizeof(pInfo->szWorldModel));
+		Q_strncpy(pData->worldModel, pszWorldModel, sizeof(pData->worldModel));
+	}
+
+	LuaApplyWeaponModels(pWeapon, pInfo);
+	return 0;
+}
+
+int Lua_WeaponSetSlot(lua_State *L)
+{
+	CBaseCombatWeapon *pWeapon = LuaGetWeapon(L, 1);
+	int slot = CLuaUtility::GetInt(L, 2, 0);
+	int slotPos = CLuaUtility::GetInt(L, 3, 0);
+
+	if (!pWeapon)
+		return CLuaUtility::LuaError(L, "_WeaponSetSlot: Invalid weapon ID");
+
+	FileWeaponInfo_t *pInfo = LuaGetMutableWeaponInfo(pWeapon);
+	SWEPData_t *pData = LuaGetOrCreateSWEPData(pWeapon);
+	if (pInfo)
+	{
+		pInfo->iSlot = slot;
+		pInfo->iPosition = slotPos;
+	}
+	if (pData)
+	{
+		pData->weaponSlot = slot;
+		pData->weaponSlotPos = slotPos;
+	}
+
+	return 0;
+}
+
+int Lua_WeaponSetSound(lua_State *L)
+{
+	CBaseCombatWeapon *pWeapon = LuaGetWeapon(L, 1);
+	const char *pszEventName = CLuaUtility::GetString(L, 2, "single_shot");
+	const char *pszSoundName = CLuaUtility::GetString(L, 3, "");
+
+	if (!pWeapon)
+		return CLuaUtility::LuaError(L, "_WeaponSetSound: Invalid weapon ID");
+	if (!pszSoundName || !pszSoundName[0])
+		return 0;
+
+	FileWeaponInfo_t *pInfo = LuaGetMutableWeaponInfo(pWeapon);
+	if (!pInfo)
+		return 0;
+
+	int soundIndex = LuaWeaponSoundIndex(pszEventName);
+	if (soundIndex >= 0 && soundIndex < NUM_SHOOT_SOUND_TYPES)
+		Q_strncpy(pInfo->aShootSounds[soundIndex], pszSoundName, sizeof(pInfo->aShootSounds[soundIndex]));
+
+	return 0;
+}
+
+int Lua_WeaponSetFOV(lua_State *L)
+{
+	CBaseCombatWeapon *pWeapon = LuaGetWeapon(L, 1);
+	int fov = CLuaUtility::GetInt(L, 2, 70);
+
+	if (!pWeapon)
+		return CLuaUtility::LuaError(L, "_WeaponSetFOV: Invalid weapon ID");
+
+	SWEPData_t *pData = LuaGetOrCreateSWEPData(pWeapon);
+	if (pData)
+		pData->weaponFOV = fov;
+
+	return 0;
+}
+
+int Lua_WeaponFlipHands(lua_State *L)
+{
+	CBaseCombatWeapon *pWeapon = LuaGetWeapon(L, 1);
+	bool flip = CLuaUtility::GetBool(L, 2, true);
+
+	if (!pWeapon)
+		return CLuaUtility::LuaError(L, "_WeaponFlipHands: Invalid weapon ID");
+
+	SWEPData_t *pData = LuaGetOrCreateSWEPData(pWeapon);
+	if (pData)
+		pData->weaponSwapHands = flip;
+
+	return 0;
+}
+
+int Lua_WeaponSetDamage(lua_State *L)
+{
+	CBaseCombatWeapon *pWeapon = LuaGetWeapon(L, 1);
+	int damage = CLuaUtility::GetInt(L, 2, 0);
+	int secondary = CLuaUtility::GetInt(L, 3, 0);
+
+	if (!pWeapon)
+		return CLuaUtility::LuaError(L, "_WeaponSetDamage: Invalid weapon ID");
+
+	SWEPData_t *pData = LuaGetOrCreateSWEPData(pWeapon);
+	if (pData)
+	{
+		if (secondary)
+			pData->damageSecondary = damage;
+		else
+			pData->damage = damage;
+	}
+
+	return 0;
+}
+
+int Lua_WeaponSetup(lua_State *L)
+{
+	CBaseCombatWeapon *pWeapon = LuaGetWeapon(L, 1);
+	if (!pWeapon)
+		return CLuaUtility::LuaError(L, "_WeaponSetup: Invalid weapon ID");
+
+	LuaUpdateSWEPVariables(L, pWeapon);
 	return 0;
 }
 
@@ -1029,6 +1783,135 @@ int Lua_PlayerLastHitGroup(lua_State *L)
 	return 1;
 }
 
+// _PlayerOption - Trigger a named client option/menu for the player with a timeout.
+// Original gmod nets an option name + expiry (curtime+value) to the client, which then
+// opens the matching menu (e.g. "ChooseTeam"). bmod sends it as a reliable usermessage;
+// the client (gmod_usermessages.cpp) dispatches the option name to the right menu.
+// Syntax: _PlayerOption( playerid, optionName, timeout )
+int Lua_PlayerOption(lua_State *L)
+{
+	int playerID = CLuaUtility::GetInt(L, 1);
+	const char *optionName = CLuaUtility::GetString(L, 2);
+	float value = CLuaUtility::GetFloat(L, 3, 0.0f);
+
+	CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
+	if (!pPlayer || !optionName || !*optionName)
+		return 0;
+
+	CSingleUserRecipientFilter filter(pPlayer);
+	filter.MakeReliable();
+	UserMessageBegin(filter, "GModPlayerOption");
+		WRITE_STRING(optionName);
+		WRITE_FLOAT(value);
+	MessageEnd();
+	return 0;
+}
+
+// _PlayerPreferredModel - Returns the player's preferred model string.
+// bmod has no separate "preferred model" field, so we return the current player model.
+int Lua_PlayerPreferredModel(lua_State *L)
+{
+	int playerID = CLuaUtility::GetInt(L, 1);
+	CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
+	const char *model = (pPlayer && pPlayer->GetModelName() != NULL_STRING)
+		? STRING(pPlayer->GetModelName()) : "";
+	lua_pushstring(L, model);
+	return 1;
+}
+
+// _PlayerViewModelSequence / _PlayerSetWeaponSequence - play an animation sequence on the
+// player's active view/weapon model. Best-effort: resolve the sequence by name and set it.
+int Lua_PlayerViewModelSequence(lua_State *L)
+{
+	int playerID = CLuaUtility::GetInt(L, 1);
+	const char *seqName = CLuaUtility::GetString(L, 2);
+	CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
+	if (!pPlayer || !seqName || !*seqName)
+		return 0;
+	CBaseViewModel *pVM = pPlayer->GetViewModel();
+	if (pVM)
+	{
+		int seq = pVM->LookupSequence(seqName);
+		if (seq >= 0)
+			pVM->SetSequence(seq);
+	}
+	return 0;
+}
+
+int Lua_PlayerSetWeaponSequence(lua_State *L)
+{
+	int playerID = CLuaUtility::GetInt(L, 1);
+	const char *seqName = CLuaUtility::GetString(L, 2);
+	CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
+	if (!pPlayer || !seqName || !*seqName)
+		return 0;
+	CBaseCombatWeapon *pWeapon = pPlayer->GetActiveWeapon();
+	if (pWeapon)
+	{
+		int seq = pWeapon->LookupSequence(seqName);
+		if (seq >= 0)
+			pWeapon->SetSequence(seq);
+	}
+	return 0;
+}
+
+// The following mirror original gmod globals that no shipped content exercises; they are
+// implemented best-effort (correct where a direct beta-engine equivalent exists, otherwise
+// they safely consume their args) so the registered surface matches and scripts never nil-call.
+
+// _PlayerShowCrosshair( playerid, bShow ) - crosshair visibility is a client-side concern;
+// registered so scripts don't nil-call. (Unused by shipped content.)
+int Lua_PlayerShowCrosshair(lua_State *L)
+{
+	(void)UTIL_PlayerByIndex(CLuaUtility::GetInt(L, 1));
+	return 0;
+}
+
+// _PlayerSetDrawWorldModel( playerid, bDraw ) - weapon world-model draw is a client-render
+// concern on this engine; registered so scripts don't nil-call. (Unused by shipped content.)
+int Lua_PlayerSetDrawWorldModel(lua_State *L)
+{
+	(void)UTIL_PlayerByIndex(CLuaUtility::GetInt(L, 1));
+	return 0;
+}
+
+// _PlayerSetVecDuck( playerid, vector ) - duck view offset. Consumed (no beta netvar).
+int Lua_PlayerSetVecDuck(lua_State *L)
+{
+	(void)UTIL_PlayerByIndex(CLuaUtility::GetInt(L, 1));
+	return 0;
+}
+
+// _PlayerDetonateTripmines( playerid ) - detonate the player's placed SLAM tripmines.
+int Lua_PlayerDetonateTripmines(lua_State *L)
+{
+	int playerID = CLuaUtility::GetInt(L, 1);
+	CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
+	if (!pPlayer)
+		return 0;
+	CBaseEntity *pEnt = NULL;
+	while ((pEnt = gEntList.FindEntityByClassname(pEnt, "npc_satchel")) != NULL)
+	{
+		if (pEnt->GetOwnerEntity() == pPlayer)
+			pEnt->Use(pPlayer, pPlayer, USE_ON, 0.0f);
+	}
+	return 0;
+}
+
+// _PlayerWeaponTranslateSequence( playerid, seq ) - returns the (identity) translated sequence.
+int Lua_PlayerWeaponTranslateSequence(lua_State *L)
+{
+	lua_pushinteger(L, CLuaUtility::GetInt(L, 2, 0));
+	return 1;
+}
+
+// _WeaponScriptedAssign - SWEP scripted-weapon assignment hook. Registered for surface parity;
+// bmod's SWEP assignment happens through _SpawnSWEP/_PlayerGiveSWEP. (Unused by shipped content.)
+int Lua_WeaponScriptedAssign(lua_State *L)
+{
+	return 0;
+}
+
 //=============================================================================
 // REGISTRATION
 //=============================================================================
@@ -1043,15 +1926,15 @@ void RegisterLuaPlayerFunctions()
 	CLuaIntegration::RegisterFunction("_PlayerSilentKill", Lua_PlayerSilentKill, "Kill player silently. Syntax: <playerid>");
 
 	// Player properties
-	CLuaIntegration::RegisterFunction("_PlayerGetShootPos", Lua_PlayerGetShootPos, "Get player eye position. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_PlayerGetShootAng", Lua_PlayerGetShootAng, "Get player eye angles. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerGetShootPos", Lua_PlayerGetShootPos, "Get player eye position vector. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerGetShootAng", Lua_PlayerGetShootAng, "Get player shoot forward vector. Syntax: <playerid>");
 	CLuaIntegration::RegisterFunction("_PlayerGetActiveWeapon", Lua_PlayerGetActiveWeapon, "Get player's active weapon. Syntax: <playerid>");
 	CLuaIntegration::RegisterFunction("_PlayerSetHealth", Lua_PlayerSetHealth, "Set player health. Syntax: <playerid> <health>");
 	CLuaIntegration::RegisterFunction("_PlayerSetArmor", Lua_PlayerSetArmor, "Set player armor. Syntax: <playerid> <armor>");
 	CLuaIntegration::RegisterFunction("_PlayerSetMaxSpeed", Lua_PlayerSetMaxSpeed, "Set player max speed. Syntax: <playerid> <speed>");
 	CLuaIntegration::RegisterFunction("_PlayerSetModel", Lua_PlayerSetModel_New, "Set player model. Syntax: <playerid> <modelpath>");
 	CLuaIntegration::RegisterFunction("_PlayerSetFOV", Lua_PlayerSetFOV, "Set player FOV. Syntax: <playerid> <fov> [rate]");
-	CLuaIntegration::RegisterFunction("_PlayerInfo", Lua_PlayerInfo, "Get player info table. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerInfo", Lua_PlayerInfo, "Get player info. Syntax: <playerid> [field]");
 	CLuaIntegration::RegisterFunction("_PlayerIsKeyDown", Lua_PlayerIsKeyDown, "Check if key pressed. Syntax: <playerid> <key>");
 	CLuaIntegration::RegisterFunction("_PlayerStopZooming", Lua_PlayerStopZooming, "Stop zoom effect. Syntax: <playerid>");
 
@@ -1068,6 +1951,7 @@ void RegisterLuaPlayerFunctions()
 	// Spectator
 	CLuaIntegration::RegisterFunction("_PlayerSpectatorStart", Lua_PlayerSpectatorStart, "Start spectating. Syntax: <playerid>");
 	CLuaIntegration::RegisterFunction("_PlayerSpectatorTarget", Lua_PlayerSpectatorTarget, "Set spectator target. Syntax: <playerid> <targetid>");
+	CLuaIntegration::RegisterFunction("_PlayerSetChaseCamDistance", Lua_PlayerSetChaseCamDistance, "Set chase cam distance. Syntax: <playerid> <distance>");
 
 	// UI
 	CLuaIntegration::RegisterFunction("_PlayerShowScoreboard", Lua_PlayerShowScoreboard, "Show scoreboard. Syntax: <playerid> [show]");
@@ -1094,7 +1978,29 @@ void RegisterLuaPlayerFunctions()
 	// SWEP functions
 	CLuaIntegration::RegisterFunction("_SpawnSWEP", Lua_SpawnSWEP, "Spawn SWEP. Syntax: <swepclass> <x> <y> <z>");
 	CLuaIntegration::RegisterFunction("_SWEPUpdateVariables", Lua_SWEPUpdateVariables, "Update SWEP variables. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_SWEPUseAmmo", Lua_SWEPUseAmmo, "Use SWEP ammo. Syntax: <playerid> [amount]");
+	CLuaIntegration::RegisterFunction("_SWEPUseAmmo", Lua_SWEPUseAmmo, "Use SWEP ammo. Syntax: <weaponid> <slot> [amount]");
+	CLuaIntegration::RegisterFunction("_SWEPRunString", Lua_SWEPRunString, "Run Lua for SWEP compatibility. Syntax: <weaponid> <code>");
+	CLuaIntegration::RegisterFunction("_SWEPSetSound", Lua_WeaponSetSound, "Set SWEP sound. Syntax: <weaponid> <event> <sound>");
+	CLuaIntegration::RegisterFunction("_WeaponSetModel", Lua_WeaponSetModel, "Set weapon models. Syntax: <weaponid> <viewmodel> [worldmodel]");
+	CLuaIntegration::RegisterFunction("_WeaponSetSlot", Lua_WeaponSetSlot, "Set weapon slot. Syntax: <weaponid> <slot> [position]");
+	CLuaIntegration::RegisterFunction("_WeaponSetSound", Lua_WeaponSetSound, "Set weapon sound. Syntax: <weaponid> <event> <sound>");
+	CLuaIntegration::RegisterFunction("_WeaponSetFOV", Lua_WeaponSetFOV, "Set weapon FOV metadata. Syntax: <weaponid> <fov>");
+	CLuaIntegration::RegisterFunction("_WeaponFlipHands", Lua_WeaponFlipHands, "Set weapon hand flip metadata. Syntax: <weaponid> <flip>");
+	CLuaIntegration::RegisterFunction("_WeaponSetDamage", Lua_WeaponSetDamage, "Set weapon damage metadata. Syntax: <weaponid> <damage> [secondary]");
+	CLuaIntegration::RegisterFunction("_WeaponSetup", Lua_WeaponSetup, "Apply weapon setup from Lua getters. Syntax: <weaponid>");
+
+	lua_State *pLuaState = CGModLuaSystem::GetLuaState();
+	if (pLuaState)
+	{
+		lua_newtable(pLuaState);
+		lua_pushcfunction(pLuaState, Lua_swep_GetClipAmmo);
+		lua_setfield(pLuaState, -2, "GetClipAmmo");
+		lua_pushcfunction(pLuaState, Lua_swep_SetClipAmmo);
+		lua_setfield(pLuaState, -2, "SetClipAmmo");
+		lua_pushcfunction(pLuaState, Lua_swep_GetDeathIcon);
+		lua_setfield(pLuaState, -2, "GetDeathIcon");
+		lua_setglobal(pLuaState, "_swep");
+	}
 
 	// Additional GMod 9 compatibility functions
 	CLuaIntegration::RegisterFunction("_PlayerGod", Lua_PlayerGod, "Toggle god mode. Syntax: <playerid> [enable]");
@@ -1114,9 +2020,17 @@ void RegisterLuaPlayerFunctions()
 	CLuaIntegration::RegisterFunction("_PlayerShowPanel", Lua_PlayerShowPanel, "Show VGUI panel. Syntax: <playerid> <panel> [show]");
 	CLuaIntegration::RegisterFunction("_PlayerLastHitGroup", Lua_PlayerLastHitGroup, "Get last hit group. Syntax: <playerid>");
 
+	// Functions the original gmod registers that shipped content uses (were missing)
+	CLuaIntegration::RegisterFunction("_PlayerOption", Lua_PlayerOption, "Trigger a named client option/menu. Syntax: <playerid> <name> <timeout>");
+	CLuaIntegration::RegisterFunction("_PlayerPreferredModel", Lua_PlayerPreferredModel, "Get player preferred model. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerViewModelSequence", Lua_PlayerViewModelSequence, "Play viewmodel sequence. Syntax: <playerid> <sequence>");
+	CLuaIntegration::RegisterFunction("_PlayerSetWeaponSequence", Lua_PlayerSetWeaponSequence, "Play weapon sequence. Syntax: <playerid> <sequence>");
+	CLuaIntegration::RegisterFunction("_PlayerShowCrosshair", Lua_PlayerShowCrosshair, "Show/hide crosshair. Syntax: <playerid> <bool>");
+	CLuaIntegration::RegisterFunction("_PlayerSetDrawWorldModel", Lua_PlayerSetDrawWorldModel, "Set weapon world model draw. Syntax: <playerid> <bool>");
+	CLuaIntegration::RegisterFunction("_PlayerSetVecDuck", Lua_PlayerSetVecDuck, "Set duck view offset. Syntax: <playerid> <vector3>");
+	CLuaIntegration::RegisterFunction("_PlayerDetonateTripmines", Lua_PlayerDetonateTripmines, "Detonate player's tripmines. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerWeaponTranslateSequence", Lua_PlayerWeaponTranslateSequence, "Translate weapon sequence. Syntax: <playerid> <seq>");
+	CLuaIntegration::RegisterFunction("_WeaponScriptedAssign", Lua_WeaponScriptedAssign, "SWEP scripted assign hook.");
+
 	// Aliases for GMod script compatibility (underscore style)
-	CLuaIntegration::RegisterFunction("_player_ShowPanel", Lua_PlayerShowPanel, "Show VGUI panel. Syntax: <playerid> <panel> [show]");
-	CLuaIntegration::RegisterFunction("_player_GetFlashlight", Lua_PlayerGetFlashlight, "Get flashlight state. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_player_SetFlashlight", Lua_PlayerSetFlashlight, "Toggle flashlight. Syntax: <playerid> [enable]");
-	CLuaIntegration::RegisterFunction("_player_LastHitGroup", Lua_PlayerLastHitGroup, "Get last hit group. Syntax: <playerid>");
 }

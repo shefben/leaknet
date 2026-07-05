@@ -142,9 +142,28 @@ public:
     static void OnRoundStart();
     static void OnRoundEnd();
     static void OnPlayerConnect(CBasePlayer* pPlayer);
+    static void OnPlayerConnect(const char* pszName, const char* pszAddress, const char* pszSteamID);
     static void OnPlayerDisconnect(CBasePlayer* pPlayer);
+    static void OnPlayerDisconnect(const char* pszName, int iUserID, const char* pszAddress, const char* pszSteamID, const char* pszReason);
+    static void OnPlayerInitialSpawn(CBasePlayer* pPlayer);
+    static void OnPlayerActive(CBasePlayer* pPlayer);
     static void OnPlayerSpawn(CBasePlayer* pPlayer);
+    static void OnPlayerChangeTeam(const char* pszName, int iUserID, int iNewTeam, int iOldTeam);
+    static void OnPlayerNameChange(int iUserID, const char* pszNewName, const char* pszOldName);
+    static void OnPlayerHurt(int iUserID, int iNewHealth, int iAttacker);
+    static void OnPlayerKilled(int iUserID, int iAttacker, const char* pszWeapon);
+    static bool OnPlayerSay(CBasePlayer* pPlayer, const char* pszText, bool bTeamOnly, char* pszOutText, int iOutTextSize);
+    static bool OnPlayerUseEntity(CBasePlayer* pPlayer, CBaseEntity* pEntity);
+    static void OnNPCKilled(int iKillerID, CBaseEntity* pKilled, CBaseEntity* pInflictor);
+    static void OnPlayerInput(CBasePlayer* pPlayer, int buttonsPressed, int buttonsReleased);
     static void OnPlayerDeath(CBasePlayer* pPlayer, CBaseEntity* pKiller);
+    static bool CanPlayerSpawnProp(CBasePlayer* pPlayer, const char* pszModelName);
+    static void OnPlayerPropSpawned(CBasePlayer* pPlayer, CBaseEntity* pProp);
+    static bool CanPlayerSpawnRagdoll(CBasePlayer* pPlayer, const char* pszModelName);
+    static void OnPlayerRagdollSpawned(CBasePlayer* pPlayer, CBaseEntity* pRagdoll);
+    static bool CanPlayerDuplicateProp(CBasePlayer* pPlayer, CBaseEntity* pProp);
+    static bool CanPlayerDuplicateRagdoll(CBasePlayer* pPlayer, CBaseEntity* pRagdoll);
+    static void OnPropBreak(CBaseEntity* pBreaker, CBaseEntity* pProp);
     static void OnPlayerChangeTeam(CBasePlayer* pPlayer, int newTeam);
     static void OnPlayerChat(CBasePlayer* pPlayer, const char* pszMessage);
 
@@ -152,6 +171,9 @@ public:
     static void CallGamemodeFunction(const char* pszFunction);
     static void CallGamemodeFunctionWithPlayer(const char* pszFunction, CBasePlayer* pPlayer);
     static void CallGamemodeFunctionWithArgs(const char* pszFunction, const char* pszArgs);
+    static bool PickDefaultSpawnTeam(CBasePlayer* pPlayer);
+    static void PlayerSpawnChooseModel(CBasePlayer* pPlayer);
+    static void GiveDefaultItems(CBasePlayer* pPlayer);
 
     // Game rules functions
     static void SetTargetIDRules(TargetIDRules_t rules);

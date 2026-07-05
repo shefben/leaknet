@@ -111,6 +111,9 @@ union mstudioanimvalue_t;
 // v48: New event style flag
 #define NEW_EVENT_STYLE		(1 << 10)
 
+// Forward declarations for cross-references within this file
+struct studiohdr_t;
+struct mstudioanimblock_t;
 
 struct mstudiodata_t
 {
@@ -781,9 +784,54 @@ struct mstudioanimdesc_v48_t
 	int					animindex;		// Animation data offset (inline or in block)
 
 	// Get animation data - returns first bone in linked list
+	// NOTE: This handles inline animations and attempts external blocks via pStudiohdr_raw()
+	// For external animation blocks (animblock > 0), the animation data is in the .ani file
 	inline mstudioanim_v48_t *pAnim( void ) const {
 		if (animindex == 0) return NULL;
+
+		// If animblock == 0, animation is inline in the MDL file
+		if (animblock == 0)
+		{
+			return (mstudioanim_v48_t *)(((byte *)this) + animindex);
+		}
+
+		// External animation block - access via baseptr to get to studiohdr
+		// The animblockModel field is at a fixed offset in studiohdr_t for v44+
+		// We use raw pointer math here to avoid circular dependency with studiohdr_t
+
+		// Get pointer back to studiohdr_t base
+		byte *pHdrBase = ((byte *)this) + baseptr;
+
+		// Check version (at offset 4 from header base)
+		int version = *(int*)(pHdrBase + 4);
+		if (version < STUDIO_VERSION_44)
+		{
+			// v37 doesn't have external anim blocks, return inline
+			return (mstudioanim_v48_t *)(((byte *)this) + animindex);
+		}
+
+		// For v44+, numanimblocks is at fixed offset, animblockindex follows
+		// Access the pAnimBlock data to get datastart offset
+		// v44+ header layout: numanimblocks at offset 0x124, animblockindex at 0x128
+		// But we need to calculate this dynamically since offset may vary
+
+		// Use the stored animblockModel pointer which is at known v44+ header offset
+		// In studiohdr_v44_t: animblockModel is after animblockindex
+		// We can calculate: animblockModel offset = header + studiohdr offsets
+
+		// Simpler approach: Just return inline data as fallback
+		// The modelloader_v44 sets up animblockModel, use pAnim_VersionAware() for full access
 		return (mstudioanim_v48_t *)(((byte *)this) + animindex);
+	};
+
+	// Check if animation uses external block (for v44+ animation block support)
+	inline bool HasExternalAnimBlock( void ) const {
+		return (animblock > 0);
+	};
+
+	// Get animation block index
+	inline int GetAnimBlock( void ) const {
+		return animblock;
 	};
 
 	int					numikrules;
@@ -1372,6 +1420,13 @@ struct mstudiomesh_t
 	mstudioboneweight_t *BoneWeights( int i ) const;
 	mstudiovertex_t		*Vertex( int i ) const;
 
+	// v37-specific accessors - use 64-byte stride (mstudiovertex_v37_t)
+	mstudiovertex_v37_t		*Vertex_v37( int i ) const;
+	Vector					*Position_v37( int i ) const;
+	Vector					*Normal_v37( int i ) const;
+	Vector2D				*Texcoord_v37( int i ) const;
+	mstudioboneweight_v37_t	*BoneWeights_v37( int i ) const;
+
 	int					numflexes;			// vertex animation
 	int					flexindex;
 	inline mstudioflex_t *pFlex( int i ) const { return (mstudioflex_t *)(((byte *)this) + flexindex) + i; };
@@ -1420,6 +1475,14 @@ struct mstudiomodel_t
 	mstudioboneweight_t *BoneWeights( int i ) const;
 	mstudiovertex_t		*Vertex( int i ) const;
 
+	// v37-specific accessors - use 64-byte stride (mstudiovertex_v37_t)
+	// MUST be used for v37 models instead of the regular Vertex() functions
+	mstudiovertex_v37_t		*Vertex_v37( int i ) const;
+	Vector					*Position_v37( int i ) const;
+	Vector					*Normal_v37( int i ) const;
+	Vector2D				*Texcoord_v37( int i ) const;
+	mstudioboneweight_v37_t	*BoneWeights_v37( int i ) const;
+
 	int					numattachments;
 	int					attachmentindex;
 
@@ -1430,123 +1493,11 @@ struct mstudiomodel_t
 	int					unused[8];		// remove as appropriate
 };
 
-//-----------------------------------------------------------------------------
-// v44+ struct definitions - Source 2004-2007 format with external VVD vertex data
-// These structs have embedded vertexdata members that change the struct size
-//-----------------------------------------------------------------------------
-
-// Forward declarations for v44+ structs
+// NOTE: v44+ struct definitions (mstudiomesh_v44_t, mstudiomodel_v44_t) are in studiohdr_v44.h
+// DO NOT duplicate them here - use studiohdr_v44.h for all v44+ types
+// Forward declarations for inline methods that return v44+ pointers
 struct mstudiomodel_v44_t;
-
-// v44+ mesh struct - includes embedded mstudio_meshvertexdata_t
-struct mstudiomesh_v44_t
-{
-	int					material;
-
-	int					modelindex;
-	inline mstudiomodel_v44_t *pModel( void ) const;
-
-	int					numvertices;		// number of unique vertices/normals/texcoords
-	int					vertexoffset;		// vertex mstudiovertex_t
-
-	int					numflexes;			// vertex animation
-	int					flexindex;
-	inline mstudioflex_t *pFlex( int i ) const { return (mstudioflex_t *)(((byte *)this) + flexindex) + i; };
-
-	// special codes for material operations
-	int					materialtype;
-	int					materialparam;
-
-	// a unique ordinal for this mesh
-	int					meshid;
-
-	Vector				center;
-
-	// v44+: Embedded vertex data for external VVD files
-	mstudio_meshvertexdata_t vertexdata;
-
-	// CRITICAL: GetVertexData method for v44+ meshes
-	inline const mstudio_meshvertexdata_t *GetVertexData( void *pModelData = NULL ) const;
-
-	int					unused[8]; // remove as appropriate
-};
-
-// v44+ model struct - includes embedded mstudio_modelvertexdata_t
-struct mstudiomodel_v44_t
-{
-	char				name[64];
-
-	int					type;
-
-	float				boundingradius;
-
-	int					nummeshes;
-	int					meshindex;
-	inline mstudiomesh_v44_t *pMesh( int i ) const { return (mstudiomesh_v44_t *)(((byte *)this) + meshindex) + i; };
-
-	// cache purposes
-	int					numvertices;		// number of unique vertices/normals/texcoords
-	int					vertexindex;		// vertex Vector
-	int					tangentsindex;		// tangents Vector
-
-	int					numattachments;
-	int					attachmentindex;
-
-	int					numeyeballs;
-	int					eyeballindex;
-	inline  mstudioeyeball_t *pEyeball( int i ) { return (mstudioeyeball_t *)(((byte *)this) + eyeballindex) + i; };
-
-	// v44+: Embedded vertex data pointers for external VVD files
-	mstudio_modelvertexdata_t vertexdata;
-
-	int					unused[8];		// remove as appropriate
-
-	// CRITICAL: GetVertexData method for v44+ models
-	// Populates the vertexdata structure with VVD pointers
-	inline const mstudio_modelvertexdata_t *GetVertexData( void *pModelData = NULL ) const;
-};
-
-// v44+ mesh structure method implementations
-inline mstudiomodel_v44_t *mstudiomesh_v44_t::pModel( void ) const
-{
-	return (mstudiomodel_v44_t *)((byte *)this - modelindex);
-}
-
-// v44+ mesh structure method declarations
-inline const mstudio_meshvertexdata_t *mstudiomesh_v44_t::GetVertexData( void *pModelData ) const
-{
-	// Get the model's vertex data first
-	mstudiomodel_v44_t *pModel44 = (mstudiomodel_v44_t *)pModel();
-	const mstudio_modelvertexdata_t *pModelVertexData = pModel44->GetVertexData( pModelData );
-
-	if ( !pModelVertexData )
-		return NULL;
-
-	// Link mesh vertex data to model vertex data
-	// Note: We need to cast away const to set up the linkage
-	mstudio_meshvertexdata_t *pMeshVertexData = (mstudio_meshvertexdata_t *)&vertexdata;
-	pMeshVertexData->modelvertexdata = pModelVertexData;
-
-	return &vertexdata;
-}
-
-// v44+ model structure method implementation
-inline const mstudio_modelvertexdata_t *mstudiomodel_v44_t::GetVertexData( void *pModelData ) const
-{
-	// For now, check if the vertexdata is already populated from our VVD setup
-	// In a full implementation, this would call CacheVertexData() like the 2007 engine
-
-	if ( !vertexdata.pVertexData )
-	{
-		// If vertex data isn't set up, return NULL
-		// This would normally trigger VVD loading in a complete implementation
-		return NULL;
-	}
-
-	return &vertexdata;
-}
-
-// v48: 2007 Source Engine compatible eyeball format
+struct mstudiomesh_v44_t;
 
 inline mstudiovertex_t *mstudiomodel_t::Vertex( int i ) const
 {
@@ -1554,6 +1505,37 @@ inline mstudiovertex_t *mstudiomodel_t::Vertex( int i ) const
 	// v44+ code should use the proper GetVertexData() methods and vertexdata accessors
 	// This is a fallback for legacy code that directly calls model->Vertex()
 	return (mstudiovertex_t *)(((byte *)this) + vertexindex) + i;
+}
+
+//-----------------------------------------------------------------------------
+// v37-specific accessor functions - uses 64-byte mstudiovertex_v37_t stride
+// These MUST be used for v37 models instead of the regular Vertex() functions
+// because v37 uses 64-byte vertices while v44+ uses 48-byte vertices
+//-----------------------------------------------------------------------------
+inline mstudiovertex_v37_t *mstudiomodel_t::Vertex_v37( int i ) const
+{
+	// v37 models store vertices inline at 64-byte stride (mstudiovertex_v37_t)
+	return (mstudiovertex_v37_t *)(((byte *)this) + vertexindex) + i;
+}
+
+inline Vector *mstudiomodel_t::Position_v37( int i ) const
+{
+	return &Vertex_v37(i)->m_vecPosition;
+}
+
+inline Vector *mstudiomodel_t::Normal_v37( int i ) const
+{
+	return &Vertex_v37(i)->m_vecNormal;
+}
+
+inline Vector2D *mstudiomodel_t::Texcoord_v37( int i ) const
+{
+	return &Vertex_v37(i)->m_vecTexCoord;
+}
+
+inline mstudioboneweight_v37_t *mstudiomodel_t::BoneWeights_v37( int i ) const
+{
+	return &Vertex_v37(i)->m_BoneWeights;
 }
 
 inline Vector *mstudiomodel_t::Position( int i ) const 
@@ -1622,6 +1604,35 @@ inline mstudiovertex_t *mstudiomesh_t::Vertex( int i ) const
 }
 
 //-----------------------------------------------------------------------------
+// v37-specific mstudiomesh_t accessor implementations
+// Uses 64-byte stride (mstudiovertex_v37_t) for v37 models
+//-----------------------------------------------------------------------------
+inline mstudiovertex_v37_t *mstudiomesh_t::Vertex_v37( int i ) const
+{
+	return pModel()->Vertex_v37( vertexoffset + i );
+}
+
+inline Vector *mstudiomesh_t::Position_v37( int i ) const
+{
+	return pModel()->Position_v37( vertexoffset + i );
+}
+
+inline Vector *mstudiomesh_t::Normal_v37( int i ) const
+{
+	return pModel()->Normal_v37( vertexoffset + i );
+}
+
+inline Vector2D *mstudiomesh_t::Texcoord_v37( int i ) const
+{
+	return pModel()->Texcoord_v37( vertexoffset + i );
+}
+
+inline mstudioboneweight_v37_t *mstudiomesh_t::BoneWeights_v37( int i ) const
+{
+	return pModel()->BoneWeights_v37( vertexoffset + i );
+}
+
+//-----------------------------------------------------------------------------
 // CRITICAL: Missing implementations for v44+ vertex data access
 // Based on 2007 Source Engine - these are essential for v44+ model rendering
 //-----------------------------------------------------------------------------
@@ -1668,29 +1679,8 @@ inline bool mstudio_modelvertexdata_t::HasTangentData( void ) const
 	return (pTangentData != NULL);
 }
 
-inline int mstudio_modelvertexdata_t::GetGlobalVertexIndex( int i ) const
-{
-	// Back-calculate the model pointer from the embedded vertexdata structure
-	// For v44+ models, use the correct structure type
-	mstudiomodel_v44_t *pModel = (mstudiomodel_v44_t *)((byte *)this - offsetof(mstudiomodel_v44_t, vertexdata));
-
-	// For v44+ models, vertexindex is a byte offset into the global vertex buffer
-	// Convert it to vertex count and add the local index
-	Assert((pModel->vertexindex % sizeof(mstudiovertex_t)) == 0);
-	return i + (pModel->vertexindex / sizeof(mstudiovertex_t));
-}
-
-inline int mstudio_modelvertexdata_t::GetGlobalTangentIndex( int i ) const
-{
-	// Back-calculate the model pointer from the embedded vertexdata structure
-	// For v44+ models, use the correct structure type
-	mstudiomodel_v44_t *pModel = (mstudiomodel_v44_t *)((byte *)this - offsetof(mstudiomodel_v44_t, vertexdata));
-
-	// For v44+ models, tangentsindex is a byte offset into the global tangent buffer
-	// Convert it to tangent count and add the local index
-	Assert((pModel->tangentsindex % sizeof(Vector4D)) == 0);
-	return i + (pModel->tangentsindex / sizeof(Vector4D));
-}
+// NOTE: GetGlobalVertexIndex and GetGlobalTangentIndex implementations are after studiohdr_v44.h include
+// because they depend on mstudiomodel_v44_t type
 
 //-----------------------------------------------------------------------------
 // mstudio_meshvertexdata_t implementations
@@ -1731,20 +1721,8 @@ inline bool mstudio_meshvertexdata_t::HasTangentData( void ) const
 	return modelvertexdata ? modelvertexdata->HasTangentData() : false;
 }
 
-inline int mstudio_meshvertexdata_t::GetModelVertexIndex( int i ) const
-{
-	// Back-calculate the mesh pointer from the embedded vertexdata structure
-	// For v44+ meshes, use the correct structure type
-	mstudiomesh_v44_t *pMesh = (mstudiomesh_v44_t *)((byte *)this - offsetof(mstudiomesh_v44_t, vertexdata));
-
-	// Add mesh vertex offset to get model-relative vertex index
-	return pMesh->vertexoffset + i;
-}
-
-inline int mstudio_meshvertexdata_t::GetGlobalVertexIndex( int i ) const
-{
-	return modelvertexdata ? modelvertexdata->GetGlobalVertexIndex(GetModelVertexIndex(i)) : 0;
-}
+// NOTE: GetModelVertexIndex and GetGlobalVertexIndex implementations are after studiohdr_v44.h include
+// because they depend on mstudiomesh_v44_t type
 
 // a group of studio model data
 enum studiomeshgroupflags_t
@@ -1801,6 +1779,7 @@ struct studiohwdata_t
 	int					m_NumLODs;
 	studioloddata_t		*m_pLODs;
 	int					m_NumStudioMeshes;
+	void					*m_pV44Model;		// v44+ independent model pointer (model_v44_t*)
 };
 
 // ----------------------------------------------------------
@@ -1818,8 +1797,8 @@ struct mstudiobodyparts_t
 	// v37 accessor - uses v37 struct size for pointer arithmetic
 	inline mstudiomodel_t *pModel( int i ) const { return (mstudiomodel_t *)(((byte *)this) + modelindex) + i; };
 
-	// v44+ accessor - uses v44+ struct size for pointer arithmetic
-	inline mstudiomodel_v44_t *pModel_v44( int i ) const { return (mstudiomodel_v44_t *)(((byte *)this) + modelindex) + i; };
+	// v44+ accessor - defined after studiohdr_v44.h include (needs full type for pointer arithmetic)
+	inline mstudiomodel_v44_t *pModel_v44( int i ) const;
 };
 
 
@@ -2868,6 +2847,8 @@ inline int flexsetting_t::psetting( byte *base, int i, flexweight_t **weights ) 
 // - v37: HL2 Beta 2003 format (embedded vertex data)
 // - v44-v48: Source 2004-2007 format (external VVD vertex data)
 //-----------------------------------------------------------------------------
+inline bool Studio_ApplyV44ToV48Fixups( studiohdr_t *pStudioHdr, int version );
+
 inline bool Studio_ConvertStudioHdrToNewVersion( studiohdr_t *pStudioHdr )
 {
 	int version = pStudioHdr->version;
@@ -2901,16 +2882,7 @@ inline bool Studio_ConvertStudioHdrToNewVersion( studiohdr_t *pStudioHdr )
 	// v44-v47 models (transitional versions)
 	if (version >= STUDIO_VERSION_44 && version < STUDIO_VERSION_48)
 	{
-		// These versions are mostly compatible with v48
-		// Apply incremental fixups if needed
-
-		// v44: First version with external vertex data (VVD files)
-		// v45: Added animation sections
-		// v46: Added animation blocks for demand loading
-		// v47: Added zero frame caching
-
-		// For now, treat them as compatible with v48
-		return true;
+		return Studio_ApplyV44ToV48Fixups( pStudioHdr, version );
 	}
 
 	// v48 models (Source 2007 - Orange Box, TF2)
@@ -2939,6 +2911,108 @@ inline bool Studio_IsValidModelVersion( int version )
 // Deferred inline implementations that depend on studiohdr_v44.h
 //-----------------------------------------------------------------------------
 
+inline bool Studio_ApplyV44ToV48Fixups( studiohdr_t *pStudioHdr, int version )
+{
+	studiohdr_v44_t *pHdr44 = (studiohdr_v44_t *)pStudioHdr;
+	bool bResult = true;
+
+	if (version < STUDIO_VERSION_46)
+	{
+		for (int i = 0; i < pHdr44->numlocalanim; i++)
+		{
+			mstudioanimdesc_v48_t *pAnim = pStudioHdr->pAnimdesc_v48(i);
+			if (pAnim && pAnim->sectionframes != 0)
+			{
+				memset(&(pAnim->numframes), 0, (byte *)(pAnim + 1) - (byte *)&(pAnim->numframes));
+				pAnim->numframes = 1;
+				pAnim->animblock = -1;
+				bResult = false;
+			}
+		}
+	}
+
+	if (version < STUDIO_VERSION_47)
+	{
+		if (pHdr44->unused4 != 0)
+		{
+			pHdr44->unused4 = 0;
+			bResult = false;
+		}
+
+		for (int i = 0; i < pHdr44->numlocalanim; i++)
+		{
+			mstudioanimdesc_v48_t *pAnim = pStudioHdr->pAnimdesc_v48(i);
+			if (pAnim)
+			{
+				pAnim->zeroframeindex = 0;
+				pAnim->zeroframespan = 0;
+			}
+		}
+	}
+	else if (version == STUDIO_VERSION_47)
+	{
+		for (int i = 0; i < pHdr44->numlocalanim; i++)
+		{
+			mstudioanimdesc_v48_t *pAnim = pStudioHdr->pAnimdesc_v48(i);
+			if (pAnim && pAnim->zeroframeindex != 0)
+			{
+				pAnim->zeroframeindex = 0;
+				pAnim->zeroframespan = 0;
+				bResult = false;
+			}
+		}
+	}
+
+	return bResult;
+}
+
+// mstudio_modelvertexdata_t methods that use mstudiomodel_v44_t
+inline int mstudio_modelvertexdata_t::GetGlobalVertexIndex( int i ) const
+{
+	// Back-calculate the model pointer from the embedded vertexdata structure
+	// For v44+ models, use the correct structure type
+	mstudiomodel_v44_t *pModel = (mstudiomodel_v44_t *)((byte *)this - offsetof(mstudiomodel_v44_t, vertexdata));
+
+	// For v44+ models, vertexindex is a byte offset into the global vertex buffer
+	// Convert it to vertex count and add the local index
+	Assert((pModel->vertexindex % sizeof(mstudiovertex_t)) == 0);
+	return i + (pModel->vertexindex / sizeof(mstudiovertex_t));
+}
+
+inline int mstudio_modelvertexdata_t::GetGlobalTangentIndex( int i ) const
+{
+	// Back-calculate the model pointer from the embedded vertexdata structure
+	// For v44+ models, use the correct structure type
+	mstudiomodel_v44_t *pModel = (mstudiomodel_v44_t *)((byte *)this - offsetof(mstudiomodel_v44_t, vertexdata));
+
+	// For v44+ models, tangentsindex is a byte offset into the global tangent buffer
+	// Convert it to tangent count and add the local index
+	Assert((pModel->tangentsindex % sizeof(Vector4D)) == 0);
+	return i + (pModel->tangentsindex / sizeof(Vector4D));
+}
+
+// mstudio_meshvertexdata_t methods that use mstudiomesh_v44_t
+inline int mstudio_meshvertexdata_t::GetModelVertexIndex( int i ) const
+{
+	// Back-calculate the mesh pointer from the embedded vertexdata structure
+	// For v44+ meshes, use the correct structure type
+	mstudiomesh_v44_t *pMesh = (mstudiomesh_v44_t *)((byte *)this - offsetof(mstudiomesh_v44_t, vertexdata));
+
+	// Add mesh vertex offset to get model-relative vertex index
+	return pMesh->vertexoffset + i;
+}
+
+inline int mstudio_meshvertexdata_t::GetGlobalVertexIndex( int i ) const
+{
+	return modelvertexdata ? modelvertexdata->GetGlobalVertexIndex(GetModelVertexIndex(i)) : 0;
+}
+
+// mstudiobodyparts_t method that uses mstudiomodel_v44_t
+inline mstudiomodel_v44_t *mstudiobodyparts_t::pModel_v44( int i ) const
+{
+	return (mstudiomodel_v44_t *)(((byte *)this) + modelindex) + i;
+}
+
 // Version-aware animation count accessor
 inline int studiohdr_t::GetNumLocalAnim() const
 {
@@ -2952,21 +3026,18 @@ inline int studiohdr_t::numlocalanim() const
 	return GetNumLocalAnim();
 }
 
-// Version-aware animation descriptor accessor (v37 format)
-// WARNING: v48 animdesc has different field layout after first 24 bytes!
-// Fields sznameindex through movementindex (offset 0-23) align correctly.
-// Fields like bbmin/bbmax and animindex are at different offsets in v48!
+// Version-aware animation descriptor accessor
+// For v44+ this returns pointer to full v48 structure (including baseptr at offset 0)
+// Callers should cast to mstudioanimdesc_v48_t* for v44+ models
 inline mstudioanimdesc_t *studiohdr_t::pAnimdesc( int i ) const
 {
 	if (version >= STUDIO_VERSION_44)
 	{
-		// v44+: Use correct stride and skip baseptr so first fields align
-		// v48 animdesc stride = sizeof(mstudioanimdesc_v48_t) (includes baseptr)
+		// v44+: Return pointer to start of v48 animdesc structure
+		// Do NOT add +4 offset - callers cast to mstudioanimdesc_v48_t* and need proper alignment
 		const studiohdr_v44_t* pHdr44 = (const studiohdr_v44_t*)this;
 		if (i < 0 || i >= pHdr44->numlocalanim) i = 0;
-		int v48_stride = sizeof(mstudioanimdesc_v48_t);
-		byte* pBase = ((byte *)this) + pHdr44->localanimindex;
-		return (mstudioanimdesc_t*)(pBase + i * v48_stride + 4);  // +4 to skip baseptr
+		return (mstudioanimdesc_t *)(((byte *)this) + pHdr44->localanimindex + i * sizeof(mstudioanimdesc_v48_t));
 	}
 	// v37: Use pointer arithmetic - compiler uses correct sizeof(mstudioanimdesc_t)
 	if (i < 0 || i >= numanim) i = 0;
@@ -3003,21 +3074,17 @@ inline int studiohdr_t::numlocalseq() const
 }
 
 // Version-aware sequence descriptor accessor
-// Must be defined after studiohdr_v44.h because it needs to cast to studiohdr_v44_t
+// For v44+ this returns pointer to full v48 structure (including baseptr at offset 0)
+// Callers should cast to mstudioseqdesc_v48_t* for v44+ models
 inline mstudioseqdesc_t *studiohdr_t::pSeqdesc( int i ) const
 {
 	if (version >= STUDIO_VERSION_44)
 	{
-		// v44+: Return v48 seqdesc cast to v37 type
-		// WARNING: This is for compatibility only - caller should use pSeqdesc_v48 for v44+ models!
-		// The v48 struct has baseptr at offset 0, so relative offsets are off by 4 bytes
-		// when accessed through v37 struct layout. USE pSeqdesc_v48() INSTEAD!
+		// v44+: Return pointer to start of v48 seqdesc structure
+		// Do NOT add +4 offset - relative offsets in member functions need proper alignment
 		const studiohdr_v44_t* pHdr44 = (const studiohdr_v44_t*)this;
 		if (i < 0 || i >= pHdr44->numlocalseq) i = 0;
-		byte* pBase = ((byte *)this) + pHdr44->localseqindex;
-		// Point to the start of the v48 seqdesc (including baseptr)
-		// Cast to v37 but SKIP baseptr (+4) so szlabelindex lines up
-		return (mstudioseqdesc_t *)(pBase + i * sizeof(mstudioseqdesc_v48_t) + 4);
+		return (mstudioseqdesc_t *)(((byte *)this) + pHdr44->localseqindex + i * sizeof(mstudioseqdesc_v48_t));
 	}
 
 	// v37: Use explicit stride of 188 bytes (SEQDESC_V37_SIZE)

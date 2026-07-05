@@ -11,6 +11,7 @@
 #include "tier0/vprof.h"
 #include "soundinfo.h"
 #include "studiohdr_v44.h"
+#include "studio_helpers.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -169,9 +170,9 @@ void  C_NPC_Hydra::StandardBlendingRules( Vector pos[], Quaternion q[], float cu
 
 	// check for changing model memory requirements
 	bool bNewlyInited = false;
-	if (m_numHydraBones != hdr->numbones)
+	if (m_numHydraBones != StudioHdr_GetNumBones(hdr))
 	{
-		m_numHydraBones = hdr->numbones;
+		m_numHydraBones = StudioHdr_GetNumBones(hdr);
 
 		// build root animation
 		float	poseparam[MAXSTUDIOPOSEPARAM];
@@ -391,4 +392,3 @@ bool C_NPC_Hydra::GetSoundSpatialization( SpatializationInfo_t& info )
 
 	return bret;
 }
-

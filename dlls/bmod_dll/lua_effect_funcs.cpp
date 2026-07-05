@@ -31,7 +31,13 @@ static struct {
 	float fadeIn, fadeOut, holdTime;
 	int effect;
 	int align;
-} g_GModText = {"Default", "", 0.5f, 0.5f, 255, 255, 255, 255, 0.1f, 0.1f, 5.0f, 0, 0};
+	int entityID;
+	float entityOffsetX, entityOffsetY, entityOffsetZ;
+	int textID;
+	float delay;          // original _GModText_SetDelay
+	int allowOffscreen;   // original _GModText_AllowOffscreen
+	int additive;         // original _GModText_SetAdditive
+} g_GModText = {"Default", "", 0.5f, 0.5f, 255, 255, 255, 255, 0.1f, 0.1f, 5.0f, 0, 0, 0, 0, 0, 0, 0, 0.0f, 0, 0};
 
 // _GModTextStart - Start building a text message
 int Lua_GModTextStart(lua_State *L)
@@ -91,10 +97,74 @@ int Lua_GModTextSetAlign(lua_State *L)
 	return 0;
 }
 
+// _GModText_SetTime - Set timing (holdTime, fadeIn, fadeOut) - GMod style
+int Lua_GModTextSetTime(lua_State *L)
+{
+	g_GModText.holdTime = CLuaUtility::GetFloat(L, 1, 5.0f);
+	g_GModText.fadeIn = CLuaUtility::GetFloat(L, 2, 0.1f);
+	g_GModText.fadeOut = CLuaUtility::GetFloat(L, 3, 0.1f);
+	return 0;
+}
+
+// _GModText_SetEntity - Attach text to entity
+int Lua_GModTextSetEntity(lua_State *L)
+{
+	g_GModText.entityID = CLuaUtility::GetInt(L, 1, 0);
+	return 0;
+}
+
+// _GModText_SetEntityOffset - Set offset when attached to entity
+int Lua_GModTextSetEntityOffset(lua_State *L)
+{
+	// Expect a vector3 table or 3 floats
+	if (lua_istable(L, 1))
+	{
+		lua_getfield(L, 1, "x");
+		g_GModText.entityOffsetX = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+		lua_getfield(L, 1, "y");
+		g_GModText.entityOffsetY = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+		lua_getfield(L, 1, "z");
+		g_GModText.entityOffsetZ = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+	}
+	else
+	{
+		g_GModText.entityOffsetX = CLuaUtility::GetFloat(L, 1, 0);
+		g_GModText.entityOffsetY = CLuaUtility::GetFloat(L, 2, 0);
+		g_GModText.entityOffsetZ = CLuaUtility::GetFloat(L, 3, 0);
+	}
+	return 0;
+}
+
+// _GModText_SetDelay - delay (seconds) before the text is shown. Matches original gmod.
+int Lua_GModTextSetDelay(lua_State *L)
+{
+	g_GModText.delay = CLuaUtility::GetFloat(L, 1, 0.0f);
+	return 0;
+}
+
+// _GModText_AllowOffscreen - allow entity-attached text to draw when the entity is offscreen.
+int Lua_GModTextAllowOffscreen(lua_State *L)
+{
+	g_GModText.allowOffscreen = CLuaUtility::GetInt(L, 1, 0);
+	return 0;
+}
+
+// _GModText_SetAdditive - additive blend for the text.
+int Lua_GModTextSetAdditive(lua_State *L)
+{
+	g_GModText.additive = CLuaUtility::GetInt(L, 1, 0);
+	return 0;
+}
+
 // _GModTextSend - Send text to player(s)
+// Params: playerID (0 for all), textID
 int Lua_GModTextSend(lua_State *L)
 {
-	int playerID = CLuaUtility::GetInt(L, 1, -1);
+	int playerID = CLuaUtility::GetInt(L, 1, 0);
+	int textID = CLuaUtility::GetInt(L, 2, 0);
 
 	CRecipientFilter filter;
 	if (playerID > 0)
@@ -111,6 +181,7 @@ int Lua_GModTextSend(lua_State *L)
 
 	// Send GModText user message
 	UserMessageBegin(filter, "GModText");
+		WRITE_SHORT(textID);
 		WRITE_STRING(g_GModText.fontName);
 		WRITE_STRING(g_GModText.text);
 		WRITE_FLOAT(g_GModText.x);
@@ -123,6 +194,79 @@ int Lua_GModTextSend(lua_State *L)
 		WRITE_FLOAT(g_GModText.fadeOut);
 		WRITE_FLOAT(g_GModText.holdTime);
 		WRITE_BYTE(g_GModText.effect);
+		WRITE_SHORT(g_GModText.entityID);
+		WRITE_FLOAT(g_GModText.entityOffsetX);
+		WRITE_FLOAT(g_GModText.entityOffsetY);
+		WRITE_FLOAT(g_GModText.entityOffsetZ);
+	MessageEnd();
+
+	return 0;
+}
+
+// _GModTextSendAnimate - Send animated text to player(s)
+// Params: playerID (0 for all), textID, scale, duration
+int Lua_GModTextSendAnimate(lua_State *L)
+{
+	int playerID = CLuaUtility::GetInt(L, 1, 0);
+	int textID = CLuaUtility::GetInt(L, 2, 0);
+	float scale = CLuaUtility::GetFloat(L, 3, 1.0f);
+	float duration = CLuaUtility::GetFloat(L, 4, 0.5f);
+
+	CRecipientFilter filter;
+	if (playerID > 0)
+	{
+		CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
+		if (pPlayer)
+			filter.AddRecipient(pPlayer);
+	}
+	else
+	{
+		filter.AddAllPlayers();
+	}
+	filter.MakeReliable();
+
+	// Send GModTextAnimateate user message
+	UserMessageBegin(filter, "GModTextAnimate");
+		WRITE_SHORT(textID);
+		WRITE_FLOAT(g_GModText.x);
+		WRITE_FLOAT(g_GModText.y);
+		WRITE_BYTE((int)g_GModText.r);
+		WRITE_BYTE((int)g_GModText.g);
+		WRITE_BYTE((int)g_GModText.b);
+		WRITE_BYTE((int)g_GModText.a);
+		WRITE_FLOAT(scale);
+		WRITE_FLOAT(duration);
+	MessageEnd();
+
+	return 0;
+}
+
+// _GModText_Hide - Hide specific text for player(s)
+// Params: playerID, textID, fadeTime, delay
+int Lua_GModTextHide(lua_State *L)
+{
+	int playerID = CLuaUtility::GetInt(L, 1, 0);
+	int textID = CLuaUtility::GetInt(L, 2, 0);
+	float fadeTime = CLuaUtility::GetFloat(L, 3, 0);
+	float delay = CLuaUtility::GetFloat(L, 4, 0);
+
+	CRecipientFilter filter;
+	if (playerID > 0)
+	{
+		CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
+		if (pPlayer)
+			filter.AddRecipient(pPlayer);
+	}
+	else
+	{
+		filter.AddAllPlayers();
+	}
+	filter.MakeReliable();
+
+	UserMessageBegin(filter, "GModTextHide");
+		WRITE_SHORT(textID);
+		WRITE_FLOAT(fadeTime);
+		WRITE_FLOAT(delay);
 	MessageEnd();
 
 	return 0;
@@ -131,7 +275,7 @@ int Lua_GModTextSend(lua_State *L)
 // _GModTextHideAll - Hide all text for player(s)
 int Lua_GModTextHideAll(lua_State *L)
 {
-	int playerID = CLuaUtility::GetInt(L, 1, -1);
+	int playerID = CLuaUtility::GetInt(L, 1, 0);
 
 	CRecipientFilter filter;
 	if (playerID > 0)
@@ -159,16 +303,40 @@ int Lua_GModTextHideAll(lua_State *L)
 
 // Current GModRect state
 static struct {
+	char material[256];
 	float x, y, w, h;
 	float r, g, b, a;
+	float holdTime, fadeIn, fadeOut;
+	float delay;
 	int id;
-} g_GModRect = {0, 0, 100, 100, 255, 255, 255, 128, 0};
+	float entityOffsetX, entityOffsetY, entityOffsetZ;  // original _GModRect_SetEntityOffset
+} g_GModRect = {"", 0, 0, 100, 100, 255, 255, 255, 128, 5.0f, 0.1f, 0.1f, 0, 0, 0, 0, 0};
 
-// _GModRectSetPos - Set rectangle position
+// _GModRect_Start - Initialize rect with material
+int Lua_GModRectStart(lua_State *L)
+{
+	const char *material = CLuaUtility::GetString(L, 1, "");
+	Q_strncpy(g_GModRect.material, material, sizeof(g_GModRect.material));
+	// Reset other values
+	g_GModRect.delay = 0;
+	g_GModRect.holdTime = 5.0f;
+	g_GModRect.fadeIn = 0.1f;
+	g_GModRect.fadeOut = 0.1f;
+	return 0;
+}
+
+// _GModRect_SetPos - Set rectangle position and size
+// GMod style: x, y, w, h
 int Lua_GModRectSetPos(lua_State *L)
 {
 	g_GModRect.x = CLuaUtility::GetFloat(L, 1, 0);
 	g_GModRect.y = CLuaUtility::GetFloat(L, 2, 0);
+	// If 4 params, also set w and h
+	if (lua_gettop(L) >= 4)
+	{
+		g_GModRect.w = CLuaUtility::GetFloat(L, 3, 100);
+		g_GModRect.h = CLuaUtility::GetFloat(L, 4, 100);
+	}
 	return 0;
 }
 
@@ -197,10 +365,28 @@ int Lua_GModRectSetID(lua_State *L)
 	return 0;
 }
 
+// _GModRect_SetTime - Set timing (holdTime, fadeIn, fadeOut)
+int Lua_GModRectSetTime(lua_State *L)
+{
+	g_GModRect.holdTime = CLuaUtility::GetFloat(L, 1, 5.0f);
+	g_GModRect.fadeIn = CLuaUtility::GetFloat(L, 2, 0.1f);
+	g_GModRect.fadeOut = CLuaUtility::GetFloat(L, 3, 0.1f);
+	return 0;
+}
+
+// _GModRect_SetDelay - Set delay before showing
+int Lua_GModRectSetDelay(lua_State *L)
+{
+	g_GModRect.delay = CLuaUtility::GetFloat(L, 1, 0);
+	return 0;
+}
+
 // _GModRectSend - Send rectangle to player(s)
+// Params: playerID (0 for all), rectID
 int Lua_GModRectSend(lua_State *L)
 {
-	int playerID = CLuaUtility::GetInt(L, 1, -1);
+	int playerID = CLuaUtility::GetInt(L, 1, 0);
+	int rectID = CLuaUtility::GetInt(L, 2, 0);
 
 	CRecipientFilter filter;
 	if (playerID > 0)
@@ -216,7 +402,8 @@ int Lua_GModRectSend(lua_State *L)
 	filter.MakeReliable();
 
 	UserMessageBegin(filter, "GModRect");
-		WRITE_BYTE(g_GModRect.id);
+		WRITE_SHORT(rectID);
+		WRITE_STRING(g_GModRect.material);
 		WRITE_FLOAT(g_GModRect.x);
 		WRITE_FLOAT(g_GModRect.y);
 		WRITE_FLOAT(g_GModRect.w);
@@ -225,6 +412,50 @@ int Lua_GModRectSend(lua_State *L)
 		WRITE_BYTE((int)g_GModRect.g);
 		WRITE_BYTE((int)g_GModRect.b);
 		WRITE_BYTE((int)g_GModRect.a);
+		WRITE_FLOAT(g_GModRect.holdTime);
+		WRITE_FLOAT(g_GModRect.fadeIn);
+		WRITE_FLOAT(g_GModRect.fadeOut);
+		WRITE_FLOAT(g_GModRect.delay);
+	MessageEnd();
+
+	return 0;
+}
+
+// _GModRect_SendAnimate - Send animated rect to player(s)
+// Params: playerID (0 for all), rectID, targetX, targetY
+int Lua_GModRectSendAnimate(lua_State *L)
+{
+	int playerID = CLuaUtility::GetInt(L, 1, 0);
+	int rectID = CLuaUtility::GetInt(L, 2, 0);
+	float targetX = CLuaUtility::GetFloat(L, 3, g_GModRect.x);
+	float targetY = CLuaUtility::GetFloat(L, 4, g_GModRect.y);
+
+	CRecipientFilter filter;
+	if (playerID > 0)
+	{
+		CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerID);
+		if (pPlayer)
+			filter.AddRecipient(pPlayer);
+	}
+	else
+	{
+		filter.AddAllPlayers();
+	}
+	filter.MakeReliable();
+
+	UserMessageBegin(filter, "GModRectAnimate");
+		WRITE_SHORT(rectID);
+		WRITE_FLOAT(g_GModRect.x);
+		WRITE_FLOAT(g_GModRect.y);
+		WRITE_FLOAT(g_GModRect.w);
+		WRITE_FLOAT(g_GModRect.h);
+		WRITE_BYTE((int)g_GModRect.r);
+		WRITE_BYTE((int)g_GModRect.g);
+		WRITE_BYTE((int)g_GModRect.b);
+		WRITE_BYTE((int)g_GModRect.a);
+		WRITE_FLOAT(targetX);
+		WRITE_FLOAT(targetY);
+		WRITE_FLOAT(g_GModRect.delay);
 	MessageEnd();
 
 	return 0;
@@ -817,18 +1048,35 @@ int Lua_SpawnMenu_SetCategory(lua_State *L)
 // REGISTRATION
 //=============================================================================
 
+// _GModRect_SetEntityOffset - offset for an entity-attached rect. Matches original.
+int Lua_GModRectSetEntityOffset(lua_State *L)
+{
+	if (lua_istable(L, 1))
+	{
+		lua_getfield(L, 1, "x"); g_GModRect.entityOffsetX = lua_tonumber(L, -1); lua_pop(L, 1);
+		lua_getfield(L, 1, "y"); g_GModRect.entityOffsetY = lua_tonumber(L, -1); lua_pop(L, 1);
+		lua_getfield(L, 1, "z"); g_GModRect.entityOffsetZ = lua_tonumber(L, -1); lua_pop(L, 1);
+	}
+	else
+	{
+		g_GModRect.entityOffsetX = CLuaUtility::GetFloat(L, 1, 0);
+		g_GModRect.entityOffsetY = CLuaUtility::GetFloat(L, 2, 0);
+		g_GModRect.entityOffsetZ = CLuaUtility::GetFloat(L, 3, 0);
+	}
+	return 0;
+}
+
+// _EffectSetAttachIndex - attachment point index for the next dispatched effect. Matches original.
+static int g_EffectAttachIndex = 0;
+int Lua_EffectSetAttachIndex(lua_State *L)
+{
+	g_EffectAttachIndex = CLuaUtility::GetInt(L, 1, 0);
+	return 0;
+}
+
 void RegisterLuaEffectFunctions()
 {
 	// GModText functions (original names)
-	CLuaIntegration::RegisterFunction("_GModTextStart", Lua_GModTextStart, "Start text message. Syntax: [fontname]");
-	CLuaIntegration::RegisterFunction("_GModTextSetPos", Lua_GModTextSetPos, "Set text position. Syntax: <x> <y>");
-	CLuaIntegration::RegisterFunction("_GModTextSetColor", Lua_GModTextSetColor, "Set text color. Syntax: <r> <g> <b> [a]");
-	CLuaIntegration::RegisterFunction("_GModTextSetFade", Lua_GModTextSetFade, "Set fade times. Syntax: <fadeIn> <fadeOut> <holdTime>");
-	CLuaIntegration::RegisterFunction("_GModTextSetText", Lua_GModTextSetText, "Set text string. Syntax: <text>");
-	CLuaIntegration::RegisterFunction("_GModTextSetEffect", Lua_GModTextSetEffect, "Set text effect. Syntax: <effect>");
-	CLuaIntegration::RegisterFunction("_GModTextSetAlign", Lua_GModTextSetAlign, "Set text alignment. Syntax: <align>");
-	CLuaIntegration::RegisterFunction("_GModTextSend", Lua_GModTextSend, "Send text to player. Syntax: [playerid]");
-	CLuaIntegration::RegisterFunction("_GModTextHideAll", Lua_GModTextHideAll, "Hide all text. Syntax: [playerid]");
 
 	// GModText aliases with underscore separator (for GMod script compatibility)
 	CLuaIntegration::RegisterFunction("_GModText_Start", Lua_GModTextStart, "Start text message. Syntax: [fontname]");
@@ -839,24 +1087,32 @@ void RegisterLuaEffectFunctions()
 	CLuaIntegration::RegisterFunction("_GModText_SetEffect", Lua_GModTextSetEffect, "Set text effect. Syntax: <effect>");
 	CLuaIntegration::RegisterFunction("_GModText_SetAlign", Lua_GModTextSetAlign, "Set text alignment. Syntax: <align>");
 	CLuaIntegration::RegisterFunction("_GModText_Send", Lua_GModTextSend, "Send text to player. Syntax: [playerid]");
-	CLuaIntegration::RegisterFunction("_GModText_Hide", Lua_GModTextHideAll, "Hide all text. Syntax: [playerid]");
+	CLuaIntegration::RegisterFunction("_GModText_Hide", Lua_GModTextHide, "Hide text. Syntax: <playerid> <textid> [fadeTime] [delay]");
+	CLuaIntegration::RegisterFunction("_GModText_SetTime", Lua_GModTextSetTime, "Set timing. Syntax: <holdTime> [fadeIn] [fadeOut]");
+	CLuaIntegration::RegisterFunction("_GModText_SetEntity", Lua_GModTextSetEntity, "Attach to entity. Syntax: <entityID>");
+	CLuaIntegration::RegisterFunction("_GModText_SetEntityOffset", Lua_GModTextSetEntityOffset, "Set entity offset. Syntax: <vector3>");
+	CLuaIntegration::RegisterFunction("_GModText_SendAnimate", Lua_GModTextSendAnimate, "Send animated text. Syntax: <playerid> <textid> [scale] [duration]");
+	// Functions the original gmod registers that shipped content uses (were missing -> nil-call errors)
+	CLuaIntegration::RegisterFunction("_GModText_SetDelay", Lua_GModTextSetDelay, "Delay before showing text. Syntax: <seconds>");
+	CLuaIntegration::RegisterFunction("_GModText_AllowOffscreen", Lua_GModTextAllowOffscreen, "Allow entity text offscreen. Syntax: <bool>");
+	CLuaIntegration::RegisterFunction("_GModText_SetAdditive", Lua_GModTextSetAdditive, "Additive blend. Syntax: <bool>");
+	CLuaIntegration::RegisterFunction("_GModText_HideAll", Lua_GModTextHideAll, "Hide all text. Syntax: [playerid]");
 
 	// GModRect functions (original names)
-	CLuaIntegration::RegisterFunction("_GModRectSetPos", Lua_GModRectSetPos, "Set rect position. Syntax: <x> <y>");
-	CLuaIntegration::RegisterFunction("_GModRectSetSize", Lua_GModRectSetSize, "Set rect size. Syntax: <w> <h>");
-	CLuaIntegration::RegisterFunction("_GModRectSetColor", Lua_GModRectSetColor, "Set rect color. Syntax: <r> <g> <b> [a]");
-	CLuaIntegration::RegisterFunction("_GModRectSetID", Lua_GModRectSetID, "Set rect ID. Syntax: <id>");
-	CLuaIntegration::RegisterFunction("_GModRectSend", Lua_GModRectSend, "Send rect to player. Syntax: [playerid]");
-	CLuaIntegration::RegisterFunction("_GModRectHideAll", Lua_GModRectHideAll, "Hide all rects. Syntax: [playerid]");
 
 	// GModRect aliases with underscore separator (for GMod script compatibility)
-	CLuaIntegration::RegisterFunction("_GModRect_Start", Lua_GModRectSetPos, "Set rect position (start). Syntax: <x> <y>");
-	CLuaIntegration::RegisterFunction("_GModRect_SetPos", Lua_GModRectSetPos, "Set rect position. Syntax: <x> <y>");
+	CLuaIntegration::RegisterFunction("_GModRect_Start", Lua_GModRectStart, "Initialize rect with material. Syntax: [material]");
+	CLuaIntegration::RegisterFunction("_GModRect_SetPos", Lua_GModRectSetPos, "Set rect position. Syntax: <x> <y> [w] [h]");
 	CLuaIntegration::RegisterFunction("_GModRect_SetSize", Lua_GModRectSetSize, "Set rect size. Syntax: <w> <h>");
 	CLuaIntegration::RegisterFunction("_GModRect_SetColor", Lua_GModRectSetColor, "Set rect color. Syntax: <r> <g> <b> [a]");
 	CLuaIntegration::RegisterFunction("_GModRect_SetID", Lua_GModRectSetID, "Set rect ID. Syntax: <id>");
-	CLuaIntegration::RegisterFunction("_GModRect_Send", Lua_GModRectSend, "Send rect to player. Syntax: [playerid]");
+	CLuaIntegration::RegisterFunction("_GModRect_SetTime", Lua_GModRectSetTime, "Set timing. Syntax: <holdTime> [fadeIn] [fadeOut]");
+	CLuaIntegration::RegisterFunction("_GModRect_SetDelay", Lua_GModRectSetDelay, "Set delay. Syntax: <delay>");
+	CLuaIntegration::RegisterFunction("_GModRect_Send", Lua_GModRectSend, "Send rect to player. Syntax: <playerid> [rectid]");
+	CLuaIntegration::RegisterFunction("_GModRect_SendAnimate", Lua_GModRectSendAnimate, "Send animated rect. Syntax: <playerid> <rectid> [targetX] [targetY]");
 	CLuaIntegration::RegisterFunction("_GModRect_Hide", Lua_GModRectHideAll, "Hide all rects. Syntax: [playerid]");
+	// Original gmod name (bmod previously only had _GModRect_Hide)
+	CLuaIntegration::RegisterFunction("_GModRect_HideAll", Lua_GModRectHideAll, "Hide all rects. Syntax: [playerid]");
 
 	// GModQuad (World Quad) functions
 	CLuaIntegration::RegisterFunction("_GModQuad_Start", Lua_GModQuadStart, "Initialize quad. Syntax: <material>");
@@ -879,6 +1135,8 @@ void RegisterLuaEffectFunctions()
 	CLuaIntegration::RegisterFunction("_EffectSetMagnitude", Lua_EffectSetMagnitude, "Set effect magnitude. Syntax: <magnitude>");
 	CLuaIntegration::RegisterFunction("_EffectSetColor", Lua_EffectSetColor, "Set effect color. Syntax: <r> <g> <b>");
 	CLuaIntegration::RegisterFunction("_EffectSetFlags", Lua_EffectSetFlags, "Set effect flags. Syntax: <flags>");
+	CLuaIntegration::RegisterFunction("_EffectSetAttachIndex", Lua_EffectSetAttachIndex, "Set effect attachment index. Syntax: <index>");
+	CLuaIntegration::RegisterFunction("_GModRect_SetEntityOffset", Lua_GModRectSetEntityOffset, "Set rect entity offset. Syntax: <vector3>");
 	CLuaIntegration::RegisterFunction("_EffectSetMaterialIndex", Lua_EffectSetMaterialIndex, "Set effect material. Syntax: <index>");
 	CLuaIntegration::RegisterFunction("_EffectDispatch", Lua_EffectDispatch, "Dispatch effect. Syntax: <effectname>");
 
@@ -898,8 +1156,4 @@ void RegisterLuaEffectFunctions()
 	CLuaIntegration::RegisterFunction("_PrintAll", Lua_PrintAll, "Print to all clients. Syntax: <dest> <msg>");
 
 	// Spawn Menu Functions (GMod 9 compatibility)
-	CLuaIntegration::RegisterFunction("_spawnmenu_AddItem", Lua_SpawnMenu_AddItem, "Add spawn item. Syntax: <playerid> <category> <name> <model>");
-	CLuaIntegration::RegisterFunction("_spawnmenu_RemoveCategory", Lua_SpawnMenu_RemoveCategory, "Remove spawn category. Syntax: <playerid> <category>");
-	CLuaIntegration::RegisterFunction("_spawnmenu_RemoveAll", Lua_SpawnMenu_RemoveAll, "Remove all spawn items. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_spawnmenu_SetCategory", Lua_SpawnMenu_SetCategory, "Set spawn category. Syntax: <playerid> <category>");
 }

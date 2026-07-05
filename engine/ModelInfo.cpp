@@ -24,6 +24,7 @@
 #include "lightcache.h"
 #include "istudiorender.h"
 #include "studiohdr_v44.h"
+#include "utlvector.h"
 
 
 //-----------------------------------------------------------------------------
@@ -358,7 +359,33 @@ const char *CModelInfo::GetModelKeyValueText( const model_t *model )
 	if (!pStudioHdr)
 		return NULL;
 
-	return pStudioHdr->KeyValueText();
+	if ( StudioHdr_IsV44Plus( pStudioHdr ) )
+	{
+		Con_DPrintf("GetModelKeyValueText: Skipping v44+ model %s (handled by independent system)\n", model->name);
+		return NULL;
+	}
+
+	if ( pStudioHdr->length <= 0 )
+		return NULL;
+
+	const int keyValueIndex = pStudioHdr->keyvalueindex;
+	const int keyValueSize = pStudioHdr->keyvaluesize;
+	if ( keyValueSize <= 0 )
+		return NULL;
+
+	if ( keyValueIndex <= 0 || keyValueIndex > pStudioHdr->length || keyValueSize > pStudioHdr->length - keyValueIndex )
+	{
+		Con_DPrintf("GetModelKeyValueText: Ignoring invalid keyvalue range for %s (index %d, size %d, length %d)\n",
+			model->name, keyValueIndex, keyValueSize, pStudioHdr->length );
+		return NULL;
+	}
+
+	static CUtlVector<char> s_ModelKeyValueText;
+	s_ModelKeyValueText.SetSize( keyValueSize + 1 );
+	Q_memcpy( s_ModelKeyValueText.Base(), (const char *)pStudioHdr + keyValueIndex, keyValueSize );
+	s_ModelKeyValueText[keyValueSize] = 0;
+
+	return s_ModelKeyValueText.Base();
 }
 
 //-----------------------------------------------------------------------------

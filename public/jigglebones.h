@@ -1,0 +1,86 @@
+//========= Copyright (c) 1996-2005, Valve Corporation, All rights reserved. ============//
+// Purpose: Jiggle bone physics simulation
+// From 2007 Source Engine for v44+ model support
+// Author: Michael Booth, Turtle Rock Studios
+//=============================================================================//
+
+#ifndef JIGGLEBONES_H
+#define JIGGLEBONES_H
+#ifdef _WIN32
+#pragma once
+#endif
+
+#include "mathlib/mathlib.h"
+#include "utllinkedlist.h"
+#include "studiohdr_v44.h"  // For mstudiojigglebone_t (v44+ isolated)
+
+//-----------------------------------------------------------------------------
+// JiggleData - Instance-specific jiggle bone state
+//-----------------------------------------------------------------------------
+struct JiggleData
+{
+	void Init( int initBone, float currenttime, const Vector &initBasePos, const Vector &initTipPos )
+	{
+		bone = initBone;
+
+		lastUpdate = currenttime;
+
+		basePos = initBasePos;
+		baseLastPos = basePos;
+		baseVel.Init();
+		baseAccel.Init();
+
+		tipPos = initTipPos;
+		tipVel.Init();
+		tipAccel.Init();
+	}
+
+	int bone;
+
+	float lastUpdate;		// based on gpGlobals->realtime
+
+	Vector basePos;			// position of the base of the jiggle bone
+	Vector baseLastPos;
+	Vector baseVel;
+	Vector baseAccel;
+
+	Vector tipPos;			// position of the tip of the jiggle bone
+	Vector tipVel;
+	Vector tipAccel;
+};
+
+//-----------------------------------------------------------------------------
+// CJiggleBones - Manages jiggle bone physics simulation
+//-----------------------------------------------------------------------------
+class CJiggleBones
+{
+public:
+	JiggleData * GetJiggleData( int bone, float currenttime, const Vector &initBasePos, const Vector &initTipPos );
+	void BuildJiggleTransformations( int boneIndex, float currenttime, const mstudiojigglebone_t *jiggleParams, const matrix3x4_t &goalMX, matrix3x4_t &boneMX );
+
+	CUtlLinkedList< JiggleData > m_jiggleBoneState;
+};
+
+//-----------------------------------------------------------------------------
+// GetJiggleData - Find or create jiggle data for a bone
+//-----------------------------------------------------------------------------
+inline JiggleData * CJiggleBones::GetJiggleData( int bone, float currenttime, const Vector &initBasePos, const Vector &initTipPos )
+{
+	// Look for existing data for this bone
+	for ( int i = m_jiggleBoneState.Head(); i != m_jiggleBoneState.InvalidIndex(); i = m_jiggleBoneState.Next(i) )
+	{
+		if ( m_jiggleBoneState[i].bone == bone )
+		{
+			return &m_jiggleBoneState[i];
+		}
+	}
+
+	// Create new jiggle data for this bone
+	JiggleData data;
+	data.Init( bone, currenttime, initBasePos, initTipPos );
+
+	int idx = m_jiggleBoneState.AddToHead( data );
+	return &m_jiggleBoneState[idx];
+}
+
+#endif // JIGGLEBONES_H

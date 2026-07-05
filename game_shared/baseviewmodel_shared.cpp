@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -272,7 +272,11 @@ void CBaseViewModel::SetWeaponModel( const char *modelname, CBaseCombatWeapon *w
 	if ( str != m_sVMName )
 	{
 		m_sVMName = str;
+
+		bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+		CBaseEntity::SetAllowPrecache( true );
 		SetModel( STRING( m_sVMName ) );
+		CBaseEntity::SetAllowPrecache( bAllowPrecache );
 
 		// Create any vgui control panels associated with the weapon
 		SpawnControlPanels();

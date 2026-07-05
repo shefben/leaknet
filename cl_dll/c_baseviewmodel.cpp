@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: Client side view model implementation. Responsible for drawing
 //			the view model.
@@ -7,6 +7,7 @@
 //=============================================================================
 #include "cbase.h"
 #include "c_baseviewmodel.h"
+#include "studio_helpers.h"
 #include "model_types.h"
 #include "hud.h"
 #include "view_shared.h"
@@ -137,11 +138,17 @@ bool C_BaseViewModel::Interpolate( float currentTime )
 // Purpose: Render the weapon. Draw the Viewmodel if the weapon's being carried
 //			by this player, otherwise draw the worldmodel.
 //-----------------------------------------------------------------------------
+static ConVar r_viewmodel_debug("r_viewmodel_debug", "0", 0, "Debug viewmodel rendering (1=basic, 2=verbose)");
+
 int C_BaseViewModel::DrawModel( int flags )
 {
 //	return 0;
 	if ( !m_bReadyToDraw )
+	{
+		if (r_viewmodel_debug.GetInt() >= 1)
+			DevMsg("C_BaseViewModel::DrawModel - not ready to draw\n");
 		return 0;
+	}
 
 	// Don't draw if we're hiding the weapons
 	if ( gHUD.IsHidden( HIDEHUD_WEAPONS ) )
@@ -179,6 +186,39 @@ int C_BaseViewModel::DrawModel( int flags )
 	}
 
 	int ret;
+
+	// Debug output for viewmodel rendering
+	if (r_viewmodel_debug.GetInt() >= 1)
+	{
+		const model_t *pModel = GetModel();
+		studiohdr_t *pHdr = pModel ? modelinfo->GetStudiomodel(pModel) : NULL;
+		DevMsg("C_BaseViewModel::DrawModel - model: %s, version: %d, flags: 0x%x\n",
+			pHdr ? pHdr->name : "NULL",
+			pHdr ? pHdr->version : -1,
+			flags);
+
+		// CRITICAL DEBUG: Check for v44+ viewmodel vertex data issues
+		if (pHdr && pHdr->version >= 44)
+		{
+			DevMsg("  v44+ viewmodel: pVertexBase = %p\n", pHdr->pVertexBase);
+
+			// Check first model's vertex data
+			if (StudioHdr_GetNumBodyparts(pHdr) > 0)
+			{
+				mstudiobodyparts_t *pBodyPart = StudioHdr_GetBodypart(pHdr, 0);
+				if (pBodyPart && StudioBodypart_GetNumModels(pHdr, pBodyPart) > 0)
+				{
+					mstudiomodel_v44_t *pModel44 = (mstudiomodel_v44_t*)StudioBodypart_GetModel(pHdr, pBodyPart, 0);
+					if (pModel44)
+					{
+						DevMsg("  Model[0]: vertexdata.pVertexData = %p, vertexindex = %d\n",
+							pModel44->vertexdata.pVertexData, pModel44->vertexindex);
+					}
+				}
+			}
+		}
+	}
+
 	// If the local player's overriding the viewmodel rendering, let him do it
 	if ( pPlayer && pPlayer->IsOverridingViewmodel() )
 	{
@@ -187,6 +227,12 @@ int C_BaseViewModel::DrawModel( int flags )
 	else
 	{
 		ret = BaseClass::DrawModel( flags );
+	}
+
+	// Debug output for return value
+	if (r_viewmodel_debug.GetInt() >= 2)
+	{
+		DevMsg("C_BaseViewModel::DrawModel - returned %d\n", ret);
 	}
 
 	// Now that we've rendered, reset the animation restart flag

@@ -242,8 +242,7 @@ void CNetworkStringTableServer::SendClientUpdate( client_t *client, bf_write *ms
 	// Write out the header (2007 protocol)
 	msg->WriteByte( svc_updatestringtable );
 
-	// 2007 protocol: Table ID (5 bits for up to 32 tables)
-	msg->WriteUBitLong( GetTableId(), 5 );
+	msg->WriteUBitLong( GetTableId(), Q_log2( MAX_TABLES ) );
 
 	// 2007 protocol: Number of changed entries
 	if ( changedEntries.Count() == 1 )

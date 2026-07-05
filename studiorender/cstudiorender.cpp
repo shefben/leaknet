@@ -48,6 +48,7 @@ CStudioRender::CStudioRender()
 	m_pStudioHdr = NULL;
 	m_pStudioMeshes = NULL;
 	m_pSubModel = NULL;
+	m_pCurrentV44Model = NULL;
 	m_pGlintTexture = NULL;
 	m_GlintWidth = 0;
 	m_GlintHeight = 0;
@@ -227,42 +228,59 @@ static int R_StudioAssignMeshIDs( studiohdr_t *pStudioHdr )
 	// Runtime version check - engine must support all model versions
 	bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
 
-	// Iterate over every body part...
-	for ( i = 0; i < StudioHdr_GetNumBodyparts(pStudioHdr); i++ )
+	if (bIsV44Plus)
 	{
-		mstudiobodyparts_t* pBodyPart = StudioHdr_GetBodypart(pStudioHdr, i);
+		// v44+ path: MUST use v44 types with correct struct offsets
+		// Cannot use v37 studiohdr_t methods - they read from wrong offsets
+		studiohdr_v44_t *pStudioHdr44 = (studiohdr_v44_t *)pStudioHdr;
 
-		// Iterate over every submodel...
-		for (j = 0; j < pBodyPart->nummodels; ++j)
+		// Iterate over every body part...
+		for ( i = 0; i < pStudioHdr44->numbodyparts; i++ )
 		{
-			// Get nummeshes using correct struct based on MDL version
-			int nummeshes;
-			if (bIsV44Plus)
+			mstudiobodyparts_v44_t* pBodyPart44 = pStudioHdr44->pBodypart(i);
+			if (!pBodyPart44)
+				continue;
+
+			// Iterate over every submodel...
+			for (j = 0; j < pBodyPart44->nummodels; ++j)
 			{
-				mstudiomodel_v44_t* pModel44 = pBodyPart->pModel_v44(j);
-				nummeshes = pModel44->nummeshes;
+				mstudiomodel_v44_t* pModel44 = pBodyPart44->pModel(j);
+				if (!pModel44)
+					continue;
+
+				// Iterate over all the meshes....
+				for (k = 0; k < pModel44->nummeshes; ++k)
+				{
+					mstudiomesh_v44_t* pMesh44 = pModel44->pMesh(k);
+					if (pMesh44)
+						pMesh44->meshid = id++;
+				}
 			}
-			else
+		}
+	}
+	else
+	{
+		// v37 path: Use v37 types
+		// Iterate over every body part...
+		for ( i = 0; i < StudioHdr_GetNumBodyparts(pStudioHdr); i++ )
+		{
+			mstudiobodyparts_t* pBodyPart = StudioHdr_GetBodypart(pStudioHdr, i);
+			if (!pBodyPart)
+				continue;
+
+			// Iterate over every submodel...
+			for (j = 0; j < pBodyPart->nummodels; ++j)
 			{
 				mstudiomodel_t* pModel37 = pBodyPart->pModel(j);
-				nummeshes = pModel37->nummeshes;
-			}
+				if (!pModel37)
+					continue;
 
-			// Iterate over all the meshes....
-			for (k = 0; k < nummeshes; ++k)
-			{
-				// Assign mesh ID using correct struct based on MDL version
-				if (bIsV44Plus)
+				// Iterate over all the meshes....
+				for (k = 0; k < pModel37->nummeshes; ++k)
 				{
-					mstudiomodel_v44_t* pModel44 = pBodyPart->pModel_v44(j);
-					mstudiomesh_v44_t* pMesh44 = pModel44->pMesh(k);
-					pMesh44->meshid = id++;
-				}
-				else
-				{
-					mstudiomodel_t* pModel37 = pBodyPart->pModel(j);
 					mstudiomesh_t* pMesh37 = pModel37->pMesh(k);
-					pMesh37->meshid = id++;
+					if (pMesh37)
+						pMesh37->meshid = id++;
 				}
 			}
 		}
@@ -329,30 +347,53 @@ bool CStudioRender::LoadModel(
 	// Runtime version check - engine must support all model versions
 	bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
 
-	int bodyPartID;
-	for( bodyPartID = 0; bodyPartID < StudioHdr_GetNumBodyparts(pStudioHdr); bodyPartID++ )
+	if (bIsV44Plus)
 	{
-		mstudiobodyparts_t *pBodyPart = StudioHdr_GetBodypart(pStudioHdr, bodyPartID );
-		int modelID;
-		for( modelID = 0; modelID < pBodyPart->nummodels; modelID++ )
+		// v44+ path: MUST use v44 types with correct struct offsets
+		// Cannot use v37 studiohdr_t methods - they read from wrong offsets
+		studiohdr_v44_t *pStudioHdr44 = (studiohdr_v44_t *)pStudioHdr;
+		int bodyPartID;
+		for( bodyPartID = 0; bodyPartID < pStudioHdr44->numbodyparts; bodyPartID++ )
 		{
-			// Get numvertices using correct struct based on MDL version
-			int numvertices;
-			if (bIsV44Plus)
+			mstudiobodyparts_v44_t *pBodyPart44 = pStudioHdr44->pBodypart(bodyPartID);
+			if (!pBodyPart44)
+				continue;
+			int modelID;
+			for( modelID = 0; modelID < pBodyPart44->nummodels; modelID++ )
 			{
-				mstudiomodel_v44_t *pModel44 = pBodyPart->pModel_v44( modelID );
-				numvertices = pModel44->numvertices;
+				mstudiomodel_v44_t *pModel44 = pBodyPart44->pModel(modelID);
+				if (!pModel44)
+					continue;
+				int numvertices = pModel44->numvertices;
+				int vertID;
+				for( vertID = 0; vertID < numvertices; vertID++ )
+				{
+					// Tangent validation - disabled for now
+				}
 			}
-			else
+		}
+	}
+	else
+	{
+		// v37 path: Use v37 types
+		int bodyPartID;
+		for( bodyPartID = 0; bodyPartID < StudioHdr_GetNumBodyparts(pStudioHdr); bodyPartID++ )
+		{
+			mstudiobodyparts_t *pBodyPart = StudioHdr_GetBodypart(pStudioHdr, bodyPartID);
+			if (!pBodyPart)
+				continue;
+			int modelID;
+			for( modelID = 0; modelID < pBodyPart->nummodels; modelID++ )
 			{
-				mstudiomodel_t *pModel37 = pBodyPart->pModel( modelID );
-				numvertices = pModel37->numvertices;
-			}
-			int vertID;
-			for( vertID = 0; vertID < numvertices; vertID++ )
-			{
-//				Vector4D *pTangentS = pModel->TangentS( vertID );
-//				Assert( pTangentS->w == -1.0f || pTangentS->w == 1.0f );
+				mstudiomodel_t *pModel37 = pBodyPart->pModel(modelID);
+				if (!pModel37)
+					continue;
+				int numvertices = pModel37->numvertices;
+				int vertID;
+				for( vertID = 0; vertID < numvertices; vertID++ )
+				{
+					// Tangent validation - disabled for now
+				}
 			}
 		}
 	}
@@ -361,6 +402,23 @@ bool CStudioRender::LoadModel(
 	pHardwareData->m_NumStudioMeshes = R_StudioAssignMeshIDs( pStudioHdr );
 	return Mod_LoadStudioModelVertexData( pStudioHdr, pVtxHdr, pHardwareData->m_NumStudioMeshes,
 		&pHardwareData->m_NumLODs, &pHardwareData->m_pLODs );
+}
+
+bool CStudioRender::LoadModelWithVertexData(
+	studiohdr_t *pStudioHdr,
+	void *pVtxHdr,
+	void *pVvdHdr,
+	studiohwdata_t *pHardwareData
+	)
+{
+	if (pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44 && !pVvdHdr)
+	{
+		Con_DPrintf( "--ERROR-- : v%d model %s requires external VVD data\n",
+			pStudioHdr->version, pStudioHdr->name );
+		return false;
+	}
+
+	return LoadModel( pStudioHdr, pVtxHdr, pHardwareData );
 }
 
 void CStudioRender::UnloadModel( studiohwdata_t *pHardwareData )
@@ -674,16 +732,34 @@ void CStudioRender::ComputePoseToWorld( studiohdr_t *pStudioHdr )
 { 
 
 	// convert bone to world transformations into pose to world transformations
+	// CRITICAL: v37 bones are 192 bytes, v48 bones are 216 bytes - must use correct accessor!
+	bool bIsV48 = (pStudioHdr->version >= STUDIO_VERSION_44);
+
 	for (int i = 0; i < pStudioHdr->numbones; i++)
 	{
-		mstudiobone_t *pCurBone = pStudioHdr->pBone(i);
+		// Use version-aware bone accessor to get correct stride
+		int boneFlags;
+		const matrix3x4_t *pPoseToBone;
+
+		if (bIsV48)
+		{
+			mstudiobone_v48_t *pCurBone48 = pStudioHdr->pBone_v48(i);
+			boneFlags = pCurBone48->flags;
+			pPoseToBone = &pCurBone48->poseToBone;
+		}
+		else
+		{
+			mstudiobone_t *pCurBone = pStudioHdr->pBone(i);
+			boneFlags = pCurBone->flags;
+			pPoseToBone = &pCurBone->poseToBone;
+		}
 
 		// Pretransform
 
-		if( !( pCurBone->flags & ( BONE_SCREEN_ALIGN_SPHERE | BONE_SCREEN_ALIGN_CYLINDER )))
+		if( !( boneFlags & ( BONE_SCREEN_ALIGN_SPHERE | BONE_SCREEN_ALIGN_CYLINDER )))
 		{
 
-			ConcatTransforms( m_BoneToWorld[ i ], pCurBone->poseToBone, m_PoseToWorld[ i ] );
+			ConcatTransforms( m_BoneToWorld[ i ], *pPoseToBone, m_PoseToWorld[ i ] );
 		}
 		// If this bone is screen aligned, then generate a PoseToWorld matrix that billboards the bone
 		else 
@@ -703,7 +779,22 @@ void CStudioRender::ComputePoseToWorld( studiohdr_t *pStudioHdr )
 
 void CStudioRender::ScreenAlignBone( studiohdr_t *pStudioHdr, int i )
 {
-	mstudiobone_t *pCurBone = pStudioHdr->pBone(i);
+	// CRITICAL: v37 bones are 192 bytes, v48 bones are 216 bytes - must use correct accessor!
+	int boneFlags;
+	const matrix3x4_t *pPoseToBone;
+
+	if (pStudioHdr->version >= STUDIO_VERSION_44)
+	{
+		mstudiobone_v48_t *pCurBone48 = pStudioHdr->pBone_v48(i);
+		boneFlags = pCurBone48->flags;
+		pPoseToBone = &pCurBone48->poseToBone;
+	}
+	else
+	{
+		mstudiobone_t *pCurBone = pStudioHdr->pBone(i);
+		boneFlags = pCurBone->flags;
+		pPoseToBone = &pCurBone->poseToBone;
+	}
 
 	// Grab the world translation:
 	Vector vT( m_BoneToWorld[i][0][3], m_BoneToWorld[i][1][3], m_BoneToWorld[i][2][3] );
@@ -711,17 +802,17 @@ void CStudioRender::ScreenAlignBone( studiohdr_t *pStudioHdr, int i )
 	//m_pMaterialSystem->GetMatrix( MATERIAL_VIEW, &matView );
 
 	// Construct the coordinate frame:
-	// Initialized to get rid of compiler 
+	// Initialized to get rid of compiler
 	Vector vX, vY, vZ;
 
-	if( pCurBone->flags & BONE_SCREEN_ALIGN_SPHERE )
+	if( boneFlags & BONE_SCREEN_ALIGN_SPHERE )
 	{
 		vX = m_ViewOrigin - vT;		    VectorNormalize(vX);
 		vZ = Vector(0,0,1);
 		vY = vZ.Cross(vX);				VectorNormalize(vY);
 		vZ = vX.Cross(vY);				VectorNormalize(vZ);
-	} 
-	else if( pCurBone->flags & BONE_SCREEN_ALIGN_CYLINDER )
+	}
+	else if( boneFlags & BONE_SCREEN_ALIGN_CYLINDER )
 	{
 		vX.Init(m_BoneToWorld[i][0][0], m_BoneToWorld[i][1][0], m_BoneToWorld[i][2][0] );
 		vZ = m_ViewOrigin - vT;			VectorNormalize(vZ);
@@ -729,11 +820,11 @@ void CStudioRender::ScreenAlignBone( studiohdr_t *pStudioHdr, int i )
 		vZ = vX.Cross(vY);				VectorNormalize(vZ);
 	}
 
-	matrix3x4_t matBoneBillboard( 
-		vX.x, vY.x, vZ.x, vT.x, 
-		vX.y, vY.y, vZ.y, vT.y, 
+	matrix3x4_t matBoneBillboard(
+		vX.x, vY.x, vZ.x, vT.x,
+		vX.y, vY.y, vZ.y, vT.y,
 		vX.z, vY.z, vZ.z, vT.z );
-	ConcatTransforms( matBoneBillboard, pCurBone->poseToBone, m_PoseToWorld[ i ] );
+	ConcatTransforms( matBoneBillboard, *pPoseToBone, m_PoseToWorld[ i ] );
 }
 
 #ifdef _WIN32
@@ -838,6 +929,24 @@ int CStudioRender::DrawModel( DrawModelInfo_t& info, Vector const& origin, int *
 	m_VertexCache.StartModel();
 
 	m_pStudioHdr = info.m_pStudioHdr;
+
+	// v44+ models are loaded through the normal VVD path and render through the normal pipeline.
+	// The m_pV44Model field can be used if the independent v44+ model system is active,
+	// but for now v44+ models use the standard rendering with VVD vertex data.
+	m_pCurrentV44Model = NULL;
+	if (info.m_pHardwareData->m_pV44Model)
+	{
+		// Independent v44+ model system is active for this model
+		model_v44_t* pModel_v44 = (model_v44_t*)info.m_pHardwareData->m_pV44Model;
+		if (pModel_v44->pStudioHdr && pModel_v44->pStudioHdr->version >= STUDIO_VERSION_44)
+		{
+			m_pCurrentV44Model = pModel_v44;
+			Con_DPrintf("CStudioRender: Using independent v44+ model: %s (v%d)\n",
+				pModel_v44->name, pModel_v44->pStudioHdr->version);
+		}
+	}
+
+
 	m_pStudioMeshes = info.m_pHardwareData->m_pLODs[lod].m_pMeshData;
 	int retVal = R_StudioRenderModel( info.m_Skin, info.m_Body, info.m_HitboxSet, info.m_pClientEntity,
 		info.m_pHardwareData->m_pLODs[lod].ppMaterials, 

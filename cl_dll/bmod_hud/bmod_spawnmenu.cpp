@@ -6,6 +6,7 @@
 
 #include "cbase.h"
 #include "bmod_spawnmenu.h"
+#include "bmod_proppanel.h"
 #include <vgui/IVGui.h>
 #include <vgui/ISurface.h>
 #include <vgui/IScheme.h>
@@ -182,7 +183,10 @@ void CClientSpawnDialog::CreateToolButtonsPanel()
 	m_pToolButtonsPanel->SetSize( 238, m_nConsoleHeight - 20 );
 	m_pToolButtonsPanel->SetPos( 10, 10 );
 	m_pToolButtonsPanel->SetVisible( true );
-	m_pToolButtonsPanel->SetMouseInputEnabled( false );
+	m_pToolButtonsPanel->SetMouseInputEnabled( true );
+
+	// Propagate scheme to child panel
+	m_pToolButtonsPanel->SetScheme( GetScheme() );
 }
 
 //-----------------------------------------------------------------------------
@@ -195,7 +199,10 @@ void CClientSpawnDialog::CreateContextPanel()
 	m_pContextPanel->SetSize( 510, m_nConsoleHeight - 20 );
 	m_pContextPanel->SetPos( 270, 10 );
 	m_pContextPanel->SetVisible( true );
-	m_pContextPanel->SetMouseInputEnabled( false );
+	m_pContextPanel->SetMouseInputEnabled( true );
+
+	// Propagate scheme to child panel
+	m_pContextPanel->SetScheme( GetScheme() );
 }
 
 //-----------------------------------------------------------------------------
@@ -386,6 +393,7 @@ void CClientSpawnDialog::ReloadSpawnMenu()
 	if ( m_pContextPanel )
 	{
 		m_pContextPanel->LoadContextConfiguration();
+		m_pContextPanel->ReloadProps();
 	}
 }
 
@@ -644,6 +652,10 @@ void CToolButtonsPanel::CreateToolButton( int toolID, const char *toolName, cons
 	newButton.pButton = new vgui::Button( this, buttonName, toolName );
 	newButton.pButton->SetCommand( command );
 	newButton.pButton->SetVisible( true );
+	newButton.pButton->SetMouseInputEnabled( true );
+
+	// Set scheme from parent to ensure text renders properly
+	newButton.pButton->SetScheme( GetScheme() );
 
 	// Set tooltip
 	newButton.pButton->SetTooltip( description );
@@ -696,6 +708,13 @@ CContextPanel::CContextPanel( vgui::Panel *parent, const char *panelName )
 	m_szCurrentContext[0] = '\0';
 	m_bContextVisible = false;
 	m_pContextContent = NULL;
+	m_pPropPanel = NULL;
+
+	// Create the prop panel as the main content
+	// Note: CPropPanel loads its own scheme in its constructor
+	m_pPropPanel = new CPropPanel( this, "PropPanel" );
+	m_pPropPanel->SetVisible( true );
+	m_pPropPanel->SetMouseInputEnabled( true );
 
 	LoadContextConfiguration();
 }
@@ -708,6 +727,10 @@ CContextPanel::~CContextPanel()
 	if ( m_pContextContent )
 	{
 		m_pContextContent->MarkForDeletion();
+	}
+	if ( m_pPropPanel )
+	{
+		m_pPropPanel->MarkForDeletion();
 	}
 }
 
@@ -732,6 +755,34 @@ void CContextPanel::PerformLayout()
 	if ( m_pContextContent )
 	{
 		m_pContextContent->SetBounds( 5, 5, GetWide() - 10, GetTall() - 10 );
+	}
+
+	// Size the prop panel to fill the context area
+	if ( m_pPropPanel )
+	{
+		m_pPropPanel->SetBounds( 5, 5, GetWide() - 10, GetTall() - 10 );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Mouse wheel scrolling - forward to prop panel
+//-----------------------------------------------------------------------------
+void CContextPanel::OnMouseWheeled( int delta )
+{
+	if ( m_pPropPanel )
+	{
+		m_pPropPanel->OnMouseWheeled( delta );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Reload props
+//-----------------------------------------------------------------------------
+void CContextPanel::ReloadProps()
+{
+	if ( m_pPropPanel )
+	{
+		m_pPropPanel->ReloadProps();
 	}
 }
 

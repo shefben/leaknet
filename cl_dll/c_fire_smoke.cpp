@@ -11,6 +11,7 @@
 #include "glow_overlay.h"
 #include "clienteffectprecachesystem.h"
 #include "studio.h"
+#include "studio_helpers.h"
 #include "bone_setup.h"
 #include "engine/ivmodelinfo.h"
 #include "view.h"
@@ -991,13 +992,14 @@ void C_EntityFlame::AttachToHitBoxes( void )
 		return;
 	}
 
-	mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( pAnimating->m_nHitboxSet );
+	mstudiohitboxset_t *set = StudioHdr_GetHitboxSet( pStudioHdr, pAnimating->m_nHitboxSet );
 	if ( !set )
 	{
 		return;
 	}
 
-	if ( !set->numhitboxes )
+	int numHitboxes = StudioHitboxSet_GetNumHitboxes( pStudioHdr, pAnimating->m_nHitboxSet );
+	if ( !numHitboxes )
 	{
 		return;
 	}
@@ -1020,13 +1022,15 @@ void C_EntityFlame::AttachToHitBoxes( void )
 	// Sort the hitboxes by volume.
 	//
 	HitboxVolume_t hitboxvolume[MAXSTUDIOBONES];
-	for ( int i = 0; i < set->numhitboxes; i++ )
+	for ( int i = 0; i < numHitboxes; i++ )
 	{
-		mstudiobbox_t *pBox = set->pHitbox(i);
+		mstudiobbox_t *pBox = StudioHitboxSet_GetHitboxFromPtr( pStudioHdr, set, i );
+		if ( !pBox )
+			continue;
 		hitboxvolume[i].nIndex = i;
 		hitboxvolume[i].flVolume = CalcBoxVolume(pBox->bbmin, pBox->bbmax);
 	}
-	qsort(hitboxvolume, set->numhitboxes, sizeof(hitboxvolume[0]), (int (__cdecl *)(const void *, const void *))SortHitboxVolumes);
+	qsort(hitboxvolume, numHitboxes, sizeof(hitboxvolume[0]), (int (__cdecl *)(const void *, const void *))SortHitboxVolumes);
 
 	//
 	// Attach fire to the hitboxes.
@@ -1037,15 +1041,17 @@ void C_EntityFlame::AttachToHitBoxes( void )
 		// Pick the 5 biggest hitboxes, or random ones if there are less than 5 hitboxes,
 		// then pick random ones after that.
 		//
-		if (( i < 5 ) && ( i < set->numhitboxes ))
+		if (( i < 5 ) && ( i < numHitboxes ))
 		{
 			m_nHitbox[i] = hitboxvolume[i].nIndex;
 		}
 		else
 		{
-			m_nHitbox[i] = random->RandomInt( 0, set->numhitboxes - 1 );
+			m_nHitbox[i] = random->RandomInt( 0, numHitboxes - 1 );
 		}
-		mstudiobbox_t *pBox = set->pHitbox(m_nHitbox[i]);
+		mstudiobbox_t *pBox = StudioHitboxSet_GetHitboxFromPtr( pStudioHdr, set, m_nHitbox[i] );
+		if ( !pBox )
+			continue;
 
 		m_pFireSmoke[i] = new C_FireSmoke;
 
@@ -1130,13 +1136,13 @@ void C_EntityFlame::UpdateHitBoxFlames( void )
 		return;
 	}
 
-	mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( pAnimating->m_nHitboxSet );
+	mstudiohitboxset_t *set = StudioHdr_GetHitboxSet( pStudioHdr, pAnimating->m_nHitboxSet );
 	if ( !set )
 	{
 		return;
 	}
 
-	if ( !set->numhitboxes )
+	if ( !StudioHitboxSet_GetNumHitboxes( pStudioHdr, pAnimating->m_nHitboxSet ) )
 	{
 		return;
 	}
@@ -1210,7 +1216,7 @@ void C_EntityFlame::UpdateHitBoxFlames( void )
 //			return;
 //		}
 //
-//		mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( pAnimating->m_nHitboxSet );
+//		mstudiohitboxset_t *set = StudioHdr_GetHitboxSet( pStudioHdr, pAnimating->m_nHitboxSet );
 //		if ( !set )
 //		{
 //			return;

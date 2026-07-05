@@ -249,6 +249,7 @@ public:
 	bool			m_fOnTarget;		//Is the crosshair on a target?
 	
 	int				m_iObserverMode;	// if in spectator mode != 0
+	float			m_flChaseCamDistance;	// Chase camera distance (GMod)
 	EHANDLE			m_hObserverTarget; 
 	
 	char			m_szAnimExtension[32];

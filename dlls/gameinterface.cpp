@@ -59,6 +59,7 @@
 #include "eventlog.h"
 #include "engine/ISharedModelLoader.h"
 #ifdef BMOD_DLL
+#include "gmod_gamemode.h"
 #include "bmod_dll/lua_integration.h"
 #endif
 
@@ -1004,6 +1005,12 @@ void CServerGameClients::ClientActive( edict_t *pEdict )
 	CBasePlayer *pPlayer = ( CBasePlayer * )CBaseEntity::Instance( pEdict );
 	CSoundEnvelopeController::GetController().CheckLoopingSoundsForPlayer( pPlayer );
 	SceneManager_ClientActive( pPlayer );
+#ifdef BMOD_DLL
+	if ( pPlayer )
+	{
+		CGModGamemodeSystem::OnPlayerActive( pPlayer );
+	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1475,5 +1482,4 @@ void MessageWriteBits( const void *pIn, int nBits )
 
 	g_pMsgBuffer->WriteBits( pIn, nBits );
 }
-
 

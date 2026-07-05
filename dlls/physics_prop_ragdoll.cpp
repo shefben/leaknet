@@ -7,6 +7,7 @@
 #include "cbase.h"
 #include "baseanimating.h"
 #include "studio.h"
+#include "studio_helpers.h"
 #include "physics.h"
 #include "physics_saverestore.h"
 #include "ai_basenpc.h"
@@ -309,7 +310,8 @@ void CRagdollProp::SetupBones( matrix3x4_t *pBoneToWorld, int boneMask )
 {
 	studiohdr_t *pStudioHdr = GetModelPtr( );
 	bool sim[MAXSTUDIOBONES];
-	memset( sim, 0, pStudioHdr->numbones );
+	int numBones = StudioHdr_GetNumBones(pStudioHdr);
+	memset( sim, 0, numBones );
 
 	int i;
 
@@ -322,7 +324,7 @@ void CRagdollProp::SetupBones( matrix3x4_t *pBoneToWorld, int boneMask )
 	}
 
 	// Use version-aware accessor for v37/v44+ bone structure compatibility
-	for ( i = 0; i < pStudioHdr->numbones; i++ )
+	for ( i = 0; i < numBones; i++ )
 	{
 		if ( sim[i] )
 			continue;

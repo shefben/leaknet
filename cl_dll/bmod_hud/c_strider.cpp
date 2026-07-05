@@ -15,6 +15,7 @@
 #include "iefx.h"
 #include "dlight.h"
 #include "bone_setup.h"
+#include "studio_helpers.h"
 #include "c_rope.h"
 #include "fx_line.h"
 #include "c_sprite.h"
@@ -652,8 +653,9 @@ void C_Strider::ClientThink()
 	if (!pStudioHdr)
 		goto doneWithComputation;
 
-	set = pStudioHdr->pHitboxSet( m_nHitboxSet );
-	if ( !set || !set->numhitboxes )
+	set = StudioHdr_GetHitboxSet( pStudioHdr, m_nHitboxSet );
+	int numHitboxes = StudioHitboxSet_GetNumHitboxes( pStudioHdr, m_nHitboxSet );
+	if ( !set || !numHitboxes )
 		goto doneWithComputation;
 
 	boneMask = BONE_USED_BY_HITBOX | BONE_USED_BY_ATTACHMENT;
@@ -676,9 +678,11 @@ void C_Strider::ClientThink()
 
 	MatrixInvert( EntityToWorldTransform(), worldToStrider );
 
-	for ( i = 0; i < set->numhitboxes; i++ )
+	for ( i = 0; i < numHitboxes; i++ )
 	{
-		mstudiobbox_t *pbox = set->pHitbox(i);
+		mstudiobbox_t *pbox = StudioHitboxSet_GetHitboxFromPtr( pStudioHdr, set, i );
+		if ( !pbox )
+			continue;
 		ConcatTransforms( worldToStrider, *hitboxbones[i], hitboxToStrider );
 
 		TransformAABB( *hitboxbones[i], pbox->bbmin, pbox->bbmax, vecBoxAbsMins, vecBoxAbsMaxs );

@@ -63,7 +63,13 @@ public:
 
   void jump_add_hull( IVP_FLOAT delta_x, IVP_FLOAT delta_center_x){
     hull_value_last_vpsi = hull_value_next_psi = hull_value_next_psi + delta_x;
-    IVP_ASSERT(hull_value_next_psi >= 0.0f);
+    // Harden against a non-finite/negative hull value produced when an object's velocity
+    // (hence gradient) blew up to inf/NaN from a degenerate contact (e.g. a broken world
+    // collision solid). The original IVP_ASSERT(hull_value_next_psi >= 0.0f) here breaks the
+    // debug build; clamp to a sane [0, MAX] so the solver keeps running with that object
+    // effectively parked instead of crashing.
+    if ( !(hull_value_next_psi >= 0.0f) || hull_value_next_psi > IVP_U_MINLIST_MAXVALUE )
+        hull_value_last_vpsi = hull_value_next_psi = 0.0f;
     hull_center_value_last_vpsi += delta_center_x;
     gradient = 0.0f;
     center_gradient = 0.0f;

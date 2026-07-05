@@ -1177,6 +1177,14 @@ void IVP_Contact_Point::get_material_info(IVP_Material *mtl[2]) {
 	    IVP_Environment *env = get_synapse(0)->get_object()->get_environment();
 	  mtl[k] = env->get_material_manager()->get_material_by_index(0,mat_index);  // @@@@@
 	}
+	if ( !mtl[k] )
+	{
+	    // The NDEBUG physics/IVP build compiles out the IVP_ASSERT below, so a NULL material
+	    // would null-deref in IVP_Material_Manager::get_elasticity()/get_friction_factor().
+	    // Never hand a NULL to the contact solver: fall back to a neutral default material.
+	    static IVP_Material_Simple ivp_default_contact_material(0.5f, 0.5f);
+	    mtl[k] = &ivp_default_contact_material;
+	}
 	IVP_ASSERT(mtl[k]);
     }
 }

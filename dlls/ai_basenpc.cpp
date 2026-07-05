@@ -5,6 +5,9 @@
 //=============================================================================
 
 #include "cbase.h"
+#ifdef BMOD_DLL
+#include "bmod_dll/gmod_gamemode.h"
+#endif
 
 #include "ai_basenpc.h"
 #include "fmtstr.h"
@@ -346,6 +349,13 @@ void CAI_BaseNPC::Event_Killed( const CTakeDamageInfo &info )
 	{
 		SetTouch( NULL );
 	}
+
+#ifdef BMOD_DLL
+	CBaseEntity* pAttacker = info.GetAttacker();
+	CBasePlayer* pKillerPlayer = dynamic_cast<CBasePlayer*>(pAttacker);
+	int iKillerID = pKillerPlayer ? pKillerPlayer->entindex() : (pAttacker ? pAttacker->entindex() : 0);
+	CGModGamemodeSystem::OnNPCKilled(iKillerID, this, info.GetInflictor());
+#endif
 
 	BaseClass::Event_Killed( info );
 

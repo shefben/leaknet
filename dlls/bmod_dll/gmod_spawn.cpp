@@ -30,7 +30,13 @@ static void SpawnPropModel( CBasePlayer *pPlayer, const char *model )
 
 	if ( engine )
 	{
-		engine->PrecacheModel( model );
+		int modelIndex = engine->PrecacheModel( model );
+		if ( modelIndex <= 0 )
+		{
+			// Model precache failed (likely table overflow) - fail gracefully
+			Warning( "gm_spawn: Failed to precache model '%s' - too many models precached\n", model );
+			return;
+		}
 	}
 
 	Vector forward;

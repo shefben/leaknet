@@ -26,7 +26,7 @@
 #define	MAX_LIGHTSTYLES			(1<<MAX_LIGHTSTYLE_INDEX_BITS)
 
 // Resource counts;
-#define MAX_MODEL_INDEX_BITS	10   // sent as a short
+#define MAX_MODEL_INDEX_BITS	11   // sent as a short - increased from 10 to 11 (2048 models)
 #define	MAX_MODELS				(1<<MAX_MODEL_INDEX_BITS)
 #define MAX_SOUND_INDEX_BITS	13
 #define	MAX_SOUNDS				(1<<MAX_SOUND_INDEX_BITS)

@@ -15,6 +15,7 @@
 #include "saverestore_utlvector.h"
 #include "keyvalues.h"
 #include "studio.h"
+#include "studio_helpers.h"
 #include "bone_setup.h"
 #include "collisionutils.h"
 #include "animation.h"
@@ -448,14 +449,17 @@ int CBaseServerVehicle::GetEntryAnimForPoint( const Vector &vecEyePoint )
 	if (!pStudioHdr)
 		return 0;
 	int iHitboxSet = FindHitboxSetByName( pStudioHdr, "entryboxes" );
-	mstudiohitboxset_t *set = pStudioHdr->pHitboxSet( iHitboxSet );
-	if ( !set || !set->numhitboxes )
+	mstudiohitboxset_t *set = StudioHdr_GetHitboxSet( pStudioHdr, iHitboxSet );
+	int numHitboxes = StudioHitboxSet_GetNumHitboxes( pStudioHdr, iHitboxSet );
+	if ( !set || !numHitboxes )
 		return 0;
 
 	// Loop through the hitboxes and find out which one we're in
-	for ( int i = 0; i < set->numhitboxes; i++ )
+	for ( int i = 0; i < numHitboxes; i++ )
 	{
-		mstudiobbox_t *pbox = set->pHitbox( i );
+		mstudiobbox_t *pbox = StudioHitboxSet_GetHitboxFromPtr( pStudioHdr, set, i );
+		if ( !pbox )
+			continue;
 
 		Vector vecPosition;
 		QAngle vecAngles;

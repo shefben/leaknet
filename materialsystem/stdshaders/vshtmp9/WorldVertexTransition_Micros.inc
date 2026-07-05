@@ -1,0 +1,164 @@
+#if 0
+    vs_1_1
+
+#line 9 "F:\development\steam\emulator_bot\LeakNet-rewrite\materialsystem\stdshaders\vshtmp9\vshtmp9\vertexShader_WorldVertexTransition_Micros_none_none_none_none_0_rangefog.tmp"
+    dcl_position v0
+    dcl_color v5
+    dcl_texcoord v7
+    dcl_texcoord1 v8
+
+#line 22
+    dp4 r1.x, v0, c8
+    dp4 r1.y, v0, c9
+    dp4 r1.z, v0, c10
+    dp4 r1.w, v0, c11
+    mov oPos, r1
+    dp4 r0.z, v0, c44
+
+#line 38
+    mad oFog, -r1.z, c16.w, c16.x
+
+#line 46
+    mov oD0, v5
+    dp4 oT0.x, v7, c90
+    dp4 oT0.y, v7, c91
+    dp4 oT1.x, v7, c92
+    dp4 oT1.y, v7, c93
+    mov oT2, v8
+    dp4 oT3.x, v7, c94
+    dp4 oT3.y, v7, c95
+
+// approximately 15 instruction slots used
+#endif
+
+ static unsigned int vertexShader_WorldVertexTransition_Micros_none_none_none_none_0_rangefog[] =
+{
+    0xfffe0101, 0x006afffe, 0x47554244, 0x00000028, 0x00000170, 0x00000000, 
+    0x00000001, 0x000000d4, 0x00000013, 0x000000d8, 0x00000000, 0x00000000, 
+    0x00000000, 0x645c3a46, 0x6c657665, 0x656d706f, 0x735c746e, 0x6d616574, 
+    0x756d655c, 0x6f74616c, 0x6f625f72, 0x654c5c74, 0x654e6b61, 0x65722d74, 
+    0x74697277, 0x616d5c65, 0x69726574, 0x79736c61, 0x6d657473, 0x6474735c, 
+    0x64616873, 0x5c737265, 0x74687376, 0x5c39706d, 0x74687376, 0x5c39706d, 
+    0x74726576, 0x68537865, 0x72656461, 0x726f575f, 0x6556646c, 0x78657472, 
+    0x6e617254, 0x69746973, 0x4d5f6e6f, 0x6f726369, 0x6f6e5f73, 0x6e5f656e, 
+    0x5f656e6f, 0x656e6f6e, 0x6e6f6e5f, 0x5f305f65, 0x676e6172, 0x676f6665, 
+    0x706d742e, 0xababab00, 0x00000028, 0x00000009, 0x000001b0, 0x0000000a, 
+    0x000001bc, 0x0000000b, 0x000001c8, 0x0000000c, 0x000001d4, 0x00000016, 
+    0x000001e0, 0x00000017, 0x000001f0, 0x00000018, 0x00000200, 0x00000019, 
+    0x00000210, 0x0000001a, 0x00000220, 0x0000001b, 0x0000022c, 0x00000026, 
+    0x0000023c, 0x0000002e, 0x00000250, 0x0000002f, 0x0000025c, 0x00000030, 
+    0x0000026c, 0x00000031, 0x0000027c, 0x00000032, 0x0000028c, 0x00000033, 
+    0x0000029c, 0x00000034, 0x000002a8, 0x00000035, 0x000002b8, 0x7263694d, 
+    0x666f736f, 0x52282074, 0x33442029, 0x20395844, 0x64616853, 0x41207265, 
+    0x6d657373, 0x72656c62, 0x322e3920, 0x35392e34, 0x36322e30, 0xab003635, 
+    0x0000001f, 0x80000000, 0x900f0000, 0x0000001f, 0x8000000a, 0x900f0005, 
+    0x0000001f, 0x80000005, 0x900f0007, 0x0000001f, 0x80010005, 0x900f0008, 
+    0x00000009, 0x80010001, 0x90e40000, 0xa0e40008, 0x00000009, 0x80020001, 
+    0x90e40000, 0xa0e40009, 0x00000009, 0x80040001, 0x90e40000, 0xa0e4000a, 
+    0x00000009, 0x80080001, 0x90e40000, 0xa0e4000b, 0x00000001, 0xc00f0000, 
+    0x80e40001, 0x00000009, 0x80040000, 0x90e40000, 0xa0e4002c, 0x00000004, 
+    0xc00f0001, 0x81aa0001, 0xa0ff0010, 0xa0000010, 0x00000001, 0xd00f0000, 
+    0x90e40005, 0x00000009, 0xe0010000, 0x90e40007, 0xa0e4005a, 0x00000009, 
+    0xe0020000, 0x90e40007, 0xa0e4005b, 0x00000009, 0xe0010001, 0x90e40007, 
+    0xa0e4005c, 0x00000009, 0xe0020001, 0x90e40007, 0xa0e4005d, 0x00000001, 
+    0xe00f0002, 0x90e40008, 0x00000009, 0xe0010003, 0x90e40007, 0xa0e4005e, 
+    0x00000009, 0xe0020003, 0x90e40007, 0xa0e4005f, 0x0000ffff
+};
+#if 0
+    vs_1_1
+
+#line 9 "F:\development\steam\emulator_bot\LeakNet-rewrite\materialsystem\stdshaders\vshtmp9\vshtmp9\vertexShader_WorldVertexTransition_Micros_none_none_none_none_0_heightfog.tmp"
+    dcl_position v0
+    dcl_color v5
+    dcl_texcoord v7
+    dcl_texcoord1 v8
+
+#line 22
+    dp4 r1.x, v0, c8
+    dp4 r1.y, v0, c9
+    dp4 r1.z, v0, c10
+    dp4 r1.w, v0, c11
+    mov oPos, r1
+    dp4 r0.z, v0, c44
+
+#line 46
+    add r2.xy, c2.wzzz, -r0.z
+
+#line 51
+    max r2.x, r2.x, c0.x
+    rcp r2.z, r2.y
+    mul r2.w, r2.x, r2.z
+
+#line 62
+    mul r2.w, r2.w, r1.z
+    mad oFog, -r2.w, c16.w, c16.y
+
+#line 77
+    mov oD0, v5
+    dp4 oT0.x, v7, c90
+    dp4 oT0.y, v7, c91
+    dp4 oT1.x, v7, c92
+    dp4 oT1.y, v7, c93
+    mov oT2, v8
+    dp4 oT3.x, v7, c94
+    dp4 oT3.y, v7, c95
+
+// approximately 20 instruction slots used
+#endif
+
+ static unsigned int vertexShader_WorldVertexTransition_Micros_none_none_none_none_0_heightfog[] =
+{
+    0xfffe0101, 0x0074fffe, 0x47554244, 0x00000028, 0x00000198, 0x00000000, 
+    0x00000001, 0x000000d4, 0x00000018, 0x000000d8, 0x00000000, 0x00000000, 
+    0x00000000, 0x645c3a46, 0x6c657665, 0x656d706f, 0x735c746e, 0x6d616574, 
+    0x756d655c, 0x6f74616c, 0x6f625f72, 0x654c5c74, 0x654e6b61, 0x65722d74, 
+    0x74697277, 0x616d5c65, 0x69726574, 0x79736c61, 0x6d657473, 0x6474735c, 
+    0x64616873, 0x5c737265, 0x74687376, 0x5c39706d, 0x74687376, 0x5c39706d, 
+    0x74726576, 0x68537865, 0x72656461, 0x726f575f, 0x6556646c, 0x78657472, 
+    0x6e617254, 0x69746973, 0x4d5f6e6f, 0x6f726369, 0x6f6e5f73, 0x6e5f656e, 
+    0x5f656e6f, 0x656e6f6e, 0x6e6f6e5f, 0x5f305f65, 0x67696568, 0x6f667468, 
+    0x6d742e67, 0xabab0070, 0x00000028, 0x00000009, 0x000001d8, 0x0000000a, 
+    0x000001e4, 0x0000000b, 0x000001f0, 0x0000000c, 0x000001fc, 0x00000016, 
+    0x00000208, 0x00000017, 0x00000218, 0x00000018, 0x00000228, 0x00000019, 
+    0x00000238, 0x0000001a, 0x00000248, 0x0000001b, 0x00000254, 0x0000002e, 
+    0x00000264, 0x00000033, 0x00000274, 0x00000035, 0x00000284, 0x00000036, 
+    0x00000290, 0x0000003e, 0x000002a0, 0x00000040, 0x000002b0, 0x0000004d, 
+    0x000002c4, 0x0000004e, 0x000002d0, 0x0000004f, 0x000002e0, 0x00000050, 
+    0x000002f0, 0x00000051, 0x00000300, 0x00000052, 0x00000310, 0x00000053, 
+    0x0000031c, 0x00000054, 0x0000032c, 0x7263694d, 0x666f736f, 0x52282074, 
+    0x33442029, 0x20395844, 0x64616853, 0x41207265, 0x6d657373, 0x72656c62, 
+    0x322e3920, 0x35392e34, 0x36322e30, 0xab003635, 0x0000001f, 0x80000000, 
+    0x900f0000, 0x0000001f, 0x8000000a, 0x900f0005, 0x0000001f, 0x80000005, 
+    0x900f0007, 0x0000001f, 0x80010005, 0x900f0008, 0x00000009, 0x80010001, 
+    0x90e40000, 0xa0e40008, 0x00000009, 0x80020001, 0x90e40000, 0xa0e40009, 
+    0x00000009, 0x80040001, 0x90e40000, 0xa0e4000a, 0x00000009, 0x80080001, 
+    0x90e40000, 0xa0e4000b, 0x00000001, 0xc00f0000, 0x80e40001, 0x00000009, 
+    0x80040000, 0x90e40000, 0xa0e4002c, 0x00000002, 0x80030002, 0xa0ab0002, 
+    0x81aa0000, 0x0000000b, 0x80010002, 0x80000002, 0xa0000000, 0x00000006, 
+    0x80040002, 0x80550002, 0x00000005, 0x80080002, 0x80000002, 0x80aa0002, 
+    0x00000005, 0x80080002, 0x80ff0002, 0x80aa0001, 0x00000004, 0xc00f0001, 
+    0x81ff0002, 0xa0ff0010, 0xa0550010, 0x00000001, 0xd00f0000, 0x90e40005, 
+    0x00000009, 0xe0010000, 0x90e40007, 0xa0e4005a, 0x00000009, 0xe0020000, 
+    0x90e40007, 0xa0e4005b, 0x00000009, 0xe0010001, 0x90e40007, 0xa0e4005c, 
+    0x00000009, 0xe0020001, 0x90e40007, 0xa0e4005d, 0x00000001, 0xe00f0002, 
+    0x90e40008, 0x00000009, 0xe0010003, 0x90e40007, 0xa0e4005e, 0x00000009, 
+    0xe0020003, 0x90e40007, 0xa0e4005f, 0x0000ffff
+};
+static PrecompiledShaderByteCode_t WorldVertexTransition_Micros_vertex_shaders[] = {
+{ 	vertexShader_WorldVertexTransition_Micros_none_none_none_none_0_rangefog, sizeof( 	vertexShader_WorldVertexTransition_Micros_none_none_none_none_0_rangefog ) },
+{ 	vertexShader_WorldVertexTransition_Micros_none_none_none_none_0_heightfog, sizeof( 	vertexShader_WorldVertexTransition_Micros_none_none_none_none_0_heightfog ) },
+};
+struct WorldVertexTransition_Micros_VertexShader_t : public PrecompiledShader_t
+{
+	WorldVertexTransition_Micros_VertexShader_t()
+	{
+		m_nFlags = 0;
+		m_nFlags |= SHADER_USES_HEIGHT_FOG;
+		m_nFlags |= SHADER_USES_MODEL_MATRIX;
+		m_pByteCode = WorldVertexTransition_Micros_vertex_shaders;
+		m_pName = "WorldVertexTransition_Micros";
+		m_nShaderCount = 2;
+		GetShaderDLL()->InsertPrecompiledShader( PRECOMPILED_VERTEX_SHADER, this );
+	}
+};
+static WorldVertexTransition_Micros_VertexShader_t WorldVertexTransition_Micros_VertexShaderInstance;

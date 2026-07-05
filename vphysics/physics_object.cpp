@@ -587,6 +587,12 @@ void CPhysicsObject::ApplyForceCenter( const Vector &forceVector )
 	tmp.k[1] = clamp( tmp.k[1], -MAX_SPEED, MAX_SPEED );
 	tmp.k[2] = clamp( tmp.k[2], -MAX_SPEED, MAX_SPEED );
 	m_pObject->async_add_speed_object_ws( &tmp );
+	// A physics prop sleeps once it settles; a sleeping object never simulates the queued async speed,
+	// so the applied force is silently discarded and the object never moves. ApplyForceOffset and
+	// ApplyTorqueCenter both Wake() after applying force -- ApplyForceCenter was the only force
+	// function missing it, which is why MelonRacer's _phys.ApplyForceCenter never rolled the (asleep)
+	// melon even though the force was being applied every frame.
+	Wake();
 }
 
 void CPhysicsObject::ApplyForceOffset( const Vector &forceVector, const Vector &worldPosition )

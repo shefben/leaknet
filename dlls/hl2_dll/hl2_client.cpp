@@ -21,6 +21,9 @@
 */
 
 #include "cbase.h"
+#ifdef BMOD_DLL
+#include "bmod_dll/gmod_gamemode.h"
+#endif
 #include "hl2_player.h"
 #include "hl2_gamerules.h"
 #include "gamerules.h"
@@ -53,6 +56,9 @@ void ClientPutInServer( edict_t *pEdict, const char *playername )
 	pPlayer->InitialSpawn();
 	pPlayer->PlayerData()->netname = AllocPooledString( playername );
 	pPlayer->Spawn();
+#ifdef BMOD_DLL
+	CGModGamemodeSystem::OnPlayerInitialSpawn(pPlayer);
+#endif
 }
 
 /*
@@ -173,4 +179,3 @@ CGameRules *InstallGameRules( void )
 		}
 	}
 }
-

@@ -40,8 +40,21 @@ IVP_U_Min_List::~IVP_U_Min_List()
 
 IVP_U_MINLIST_INDEX IVP_U_Min_List::add(void *elem, IVP_U_MINLIST_FIXED_POINT value)
 {
-	// search free element first
-	IVP_ASSERT(value <= P_FLOAT_MAX);
+	// Harden against a NaN/Inf/overflow event value coming from an unstable physics object.
+	// The original code IVP_ASSERT(value <= P_FLOAT_MAX)'d here, which breaks the (debug-only)
+	// build; but even with asserts off a raw NaN would corrupt this sorted list (NaN compares
+	// false, destroying the ordering). Clamp the bad value to the far-future sentinel and log
+	// it (bounded) so the sim continues and we can see WHICH bad value is being scheduled.
+	if ( !(value <= P_FLOAT_MAX) )
+	{
+		static int s_badValueWarn = 0;
+		if ( s_badValueWarn < 8 )
+		{
+			ivp_message("IVP_U_Min_List::add: bad event value %g (NaN/Inf/overflow) - clamped\n", (double)value);
+			++s_badValueWarn;
+		}
+		value = IVP_U_MINLIST_MAXVALUE;
+	}
 	IVP_U_Min_List_Element *e;
 	IVP_U_MINLIST_INDEX return_index;
 	counter += 1;

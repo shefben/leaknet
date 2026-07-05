@@ -118,22 +118,6 @@ bool Mod_LoadStudioModel (model_t *mod, void *buffer, bool zerostructure )
 	// Early debug
 	Warning("Mod_LoadStudioModel ENTER: %s, v=%d, id=0x%x\n", mod->name, phdr->version, phdr->id);
 
-	// VXP: For debugger
-#ifdef _DEBUG
-	// Disabled: unsafe struct access for v44+ models
-	// phdr->pSeqgroup(0)->pszLabel();
-	// phdr->pSeqgroup(0)->pszName();
-
-#if STUDIO_VERSION == 37
-	if ( phdr->version <= STUDIO_VERSION_37 )
-	{
-		phdr->pSeqdesc(0)->anim(0, 0);
-		phdr->pSeqdesc(0)->pBlends();
-	}
-	phdr->pAnimgroup(0);
-#endif // STUDIO_VERSION == 37
-#endif // _DEBUG
-
 	if ( !Studio_ConvertStudioHdrToNewVersion( phdr ) )
 	{
 		memset( phdr, 0, sizeof( studiohdr_t ));

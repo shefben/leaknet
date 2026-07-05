@@ -23,6 +23,37 @@ ConVar gmod_mod_enabled("gmod_mod_enabled", "1", FCVAR_GAMEDLL, "Enable/disable 
 ConVar gmod_mod_debug("gmod_mod_debug", "0", FCVAR_GAMEDLL, "Debug mod system");
 ConVar gmod_mod_autoload("gmod_mod_autoload", "1", FCVAR_GAMEDLL, "Automatically load mods on startup");
 
+static void AddGModModCacheSearchPaths()
+{
+    static bool s_bSearchPathsAdded = false;
+    if (s_bSearchPathsAdded || !filesystem || !engine)
+        return;
+
+    filesystem->CreateDirHierarchy("mods/-modcache/materials", "MOD");
+    filesystem->CreateDirHierarchy("mods/-modcache/models", "MOD");
+    filesystem->CreateDirHierarchy("mods/-modcache/maps", "MOD");
+    filesystem->CreateDirHierarchy("mods/-modcache/sound", "MOD");
+
+    char gameDir[MAX_PATH];
+    gameDir[0] = '\0';
+    engine->GetGameDir(gameDir);
+
+    if (!gameDir[0])
+        return;
+
+    char modcacheDir[MAX_PATH];
+    Q_snprintf(modcacheDir, sizeof(modcacheDir), "%s/%s", gameDir, "mods/-modcache");
+
+    if (!filesystem->IsDirectory(modcacheDir, NULL))
+        return;
+
+    filesystem->AddSearchPath(modcacheDir, "GAME", PATH_ADD_TO_TAIL);
+    filesystem->AddSearchPath(modcacheDir, "MOD", PATH_ADD_TO_TAIL);
+    s_bSearchPathsAdded = true;
+
+    DevMsg("GMod Mod System: Added modcache search path: %s\n", modcacheDir);
+}
+
 //-----------------------------------------------------------------------------
 // Helper function to get player from console command
 //-----------------------------------------------------------------------------
@@ -48,6 +79,8 @@ bool CGModModSystem::Init()
     s_ModRegistry.Purge();
     Q_strncpy(s_ModCachePath, "mods/-modcache/modcache.txt", sizeof(s_ModCachePath)); // Discovered from IDA: 0x24242ff0
     s_bModCacheLoaded = false;
+
+    AddGModModCacheSearchPaths();
 
     if (gmod_mod_autoload.GetBool())
     {

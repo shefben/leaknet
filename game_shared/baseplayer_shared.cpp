@@ -715,6 +715,7 @@ void CBasePlayer::ResetObserverMode()
 #ifndef CLIENT_DLL
 	m_iObserverLastMode = OBS_MODE_ROAMING;
 	m_bForcedObserverMode = false;
+	m_bAllowNonPlayerObserverTarget = false;
 	m_hObserverTarget = NULL;
 	m_afPhysicsFlags &= ~PFLAG_OBSERVER;
 #endif

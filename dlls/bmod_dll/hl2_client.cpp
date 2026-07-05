@@ -21,6 +21,7 @@
 */
 
 #include "cbase.h"
+#include "gmod_gamemode.h"
 #include "hl2_player.h"
 #include "hl2_gamerules.h"
 #include "gamerules.h"
@@ -53,6 +54,7 @@ void ClientPutInServer( edict_t *pEdict, const char *playername )
 	pPlayer->InitialSpawn();
 	pPlayer->PlayerData()->netname = AllocPooledString( playername );
 	pPlayer->Spawn();
+	CGModGamemodeSystem::OnPlayerInitialSpawn(pPlayer);
 }
 
 /*
@@ -164,4 +166,3 @@ CGameRules *InstallGameRules( void )
 		return pEnt;
 	}
 }
-

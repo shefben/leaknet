@@ -200,6 +200,7 @@ public:
 
 	// Parse changed field info (original 2003 protocol)
 	void					ParseUpdate( void );
+	void					ParseUpdate2007( int nEntries );
 
 	void					SetStringChangedCallback( void *object, pfnStringChanged changeFunc );
 
@@ -475,6 +476,72 @@ void CNetworkStringTableClient::ParseUpdate( void )
 		else
 		{
 			// Grow the table (entryindex must be the next empty slot)
+			Assert( entryIndex == GetNumStrings() );
+			AddString( pName, nBytes, pUserData );
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Parse string update using the 2007 delta-encoded payload wrapper
+//-----------------------------------------------------------------------------
+void CNetworkStringTableClient::ParseUpdate2007( int nEntries )
+{
+	int lastEntry = -1;
+	int entryBits = GetEntryBits();
+
+	for ( int nEntry = 0; nEntry < nEntries; nEntry++ )
+	{
+		int entryIndex;
+		if ( MSG_ReadOneBit() )
+		{
+			entryIndex = lastEntry + 1;
+		}
+		else
+		{
+			entryIndex = MSG_ReadBitLong( entryBits );
+		}
+
+		if ( entryIndex < 0 || entryIndex >= GetMaxEntries() )
+		{
+			Host_Error( "Server sent bogus string index %i for table %s\n", entryIndex, GetTableName() );
+			return;
+		}
+		lastEntry = entryIndex;
+
+		const char *pName = ( entryIndex < GetNumStrings() ) ? GetString( entryIndex ) : "";
+		if ( MSG_ReadOneBit() )
+		{
+			if ( MSG_ReadOneBit() )
+			{
+				Host_Error( "String table update for %s used unsupported substring compression\n", GetTableName() );
+				return;
+			}
+			pName = MSG_ReadString();
+		}
+
+		unsigned char tempbuf[ CNetworkStringTableItem::MAX_USERDATA_SIZE ];
+		const void *pUserData = NULL;
+		int nBytes = 0;
+
+		if ( MSG_ReadOneBit() )
+		{
+			nBytes = MSG_ReadBitLong( CNetworkStringTableItem::MAX_USERDATA_BITS );
+			ErrorIfNot( nBytes <= sizeof( tempbuf ),
+				("CNetworkStringTableClient::ParseUpdate2007: message too large (%d bytes).", nBytes)
+			);
+
+			MSG_GetReadBuf()->ReadBytes( tempbuf, nBytes );
+			pUserData = tempbuf;
+		}
+
+		if ( entryIndex < GetNumStrings() )
+		{
+			SetString( entryIndex, pName );
+			SetStringUserData( entryIndex, nBytes, pUserData );
+		}
+		else
+		{
 			Assert( entryIndex == GetNumStrings() );
 			AddString( pName, nBytes, pUserData );
 		}
@@ -772,7 +839,41 @@ void CNetworkStringTableContainerClient::ParseUpdate( void )
 	CNetworkStringTableClient *table = m_Tables[ tableId ];
 	assert( table );
 
-	table->ParseUpdate();
+	// Server updates use the 2007-style wrapper:
+	// table id, single/multiple entry count, payload bit length, then the
+	// original entry stream parsed by CNetworkStringTableClient::ParseUpdate.
+	bool bMultipleEntries = MSG_ReadOneBit() ? true : false;
+	int nEntries = 1;
+	if ( bMultipleEntries )
+	{
+		nEntries = MSG_ReadBitLong( 16 );
+	}
+
+	int nDataBits = MSG_ReadBitLong( 20 );
+	if ( nEntries < 0 || nDataBits < 0 || nDataBits > MSG_GetReadBuf()->GetNumBitsLeft() )
+	{
+		Host_Error( "String table update for %s has bogus entry count %i or bit length %i\n",
+			table->GetTableName(), nEntries, nDataBits );
+		return;
+	}
+
+	int nPayloadStart = MSG_GetReadBuf()->GetNumBitsRead();
+	int nPayloadEnd = nPayloadStart + nDataBits;
+
+	table->ParseUpdate2007( nEntries );
+
+	int nBitsRead = MSG_GetReadBuf()->GetNumBitsRead();
+	if ( nBitsRead > nPayloadEnd )
+	{
+		Host_Error( "String table update for %s overread payload (%i > %i bits)\n",
+			table->GetTableName(), nBitsRead - nPayloadStart, nDataBits );
+		return;
+	}
+
+	if ( nBitsRead < nPayloadEnd )
+	{
+		MSG_GetReadBuf()->Seek( nPayloadEnd );
+	}
 }
 
 //-----------------------------------------------------------------------------

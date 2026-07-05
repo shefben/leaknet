@@ -7,6 +7,7 @@
 
 #include "cbase.h"
 #include "studiohdr_v44.h"
+#include "studio_helpers.h"  // Helper functions for studiohdr_t access
 
 #if 0
 
@@ -87,7 +88,8 @@ void C_AI_BaseHumanoid::StandardBlendingRules( Vector pos[], Quaternion q[], flo
 #if 0
 	float		poseparam[MAXSTUDIOPOSEPARAM];
 
-	if (m_nSequence >=  hdr->numseq) 
+	// CRITICAL: Use version-aware accessor - numseq is v37 field, v44+ uses numlocalseq
+	if (m_nSequence >= hdr->GetNumLocalSeq())
 	{
 		m_nSequence = 0;
 	}
@@ -146,7 +148,7 @@ void C_AI_BaseHumanoid::StandardBlendingRules( Vector pos[], Quaternion q[], flo
 				fWeight = 1;
 			SlerpBones( hdr, q, pos, pseqdesc, q2, pos2, fWeight );
 
-			engine->Con_NPrintf( 10 + i, "%30s %6.2f : %6.2f", pseqdesc->pszLabel(), fCycle, fWeight );
+			engine->Con_NPrintf( 10 + i, "%30s %6.2f : %6.2f", StudioSeqdesc_GetLabel( hdr, m_Layer[i][2].nSequence ), fCycle, fWeight );
 		}
 		else
 		{

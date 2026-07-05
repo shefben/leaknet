@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -605,6 +605,9 @@ void CBaseCombatWeapon::Equip( CBaseCombatCharacter *pOwner )
 #if !defined( CLIENT_DLL )
 	UTIL_Relink( this );
 	VPhysicsDestroyObject();
+
+	bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+	CBaseEntity::SetAllowPrecache( true );
 #endif
 
 	if ( pOwner->IsPlayer() )
@@ -615,6 +618,10 @@ void CBaseCombatWeapon::Equip( CBaseCombatCharacter *pOwner )
 	{
 		SetModel( GetWorldModel() );
 	}
+
+#if !defined( CLIENT_DLL )
+	CBaseEntity::SetAllowPrecache( bAllowPrecache );
+#endif
 }
 
 void CBaseCombatWeapon::SetActivity( Activity act, float duration ) 

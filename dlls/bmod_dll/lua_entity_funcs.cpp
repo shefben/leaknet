@@ -6,6 +6,7 @@
 //=============================================================================//
 
 #include "cbase.h"
+#include "gmod_gamemode.h"
 #include "lua_integration.h"
 #include "player.h"
 #include "filesystem.h"
@@ -26,6 +27,44 @@
 // ENTITY FUNCTIONS
 //=============================================================================
 
+static void LuaPushVector(lua_State *L, const Vector& vec)
+{
+	lua_newtable(L);
+	lua_pushnumber(L, vec.x);
+	lua_setfield(L, -2, "x");
+	lua_pushnumber(L, vec.y);
+	lua_setfield(L, -2, "y");
+	lua_pushnumber(L, vec.z);
+	lua_setfield(L, -2, "z");
+}
+
+static bool LuaGetVector(lua_State *L, int index, Vector& vec)
+{
+	if (lua_istable(L, index))
+	{
+		lua_getfield(L, index, "x");
+		lua_getfield(L, index, "y");
+		lua_getfield(L, index, "z");
+
+		vec.x = (float)lua_tonumber(L, -3);
+		vec.y = (float)lua_tonumber(L, -2);
+		vec.z = (float)lua_tonumber(L, -1);
+
+		lua_pop(L, 3);
+		return true;
+	}
+
+	if (lua_gettop(L) >= index + 2 && lua_isnumber(L, index))
+	{
+		vec.x = CLuaUtility::GetFloat(L, index);
+		vec.y = CLuaUtility::GetFloat(L, index + 1);
+		vec.z = CLuaUtility::GetFloat(L, index + 2);
+		return true;
+	}
+
+	return false;
+}
+
 // _EntGetPos - Get entity position
 int Lua_EntGetPos(lua_State *L)
 {
@@ -35,25 +74,24 @@ int Lua_EntGetPos(lua_State *L)
 		return CLuaUtility::LuaError(L, "_EntGetPos: Invalid entity");
 
 	Vector pos = pEntity->GetAbsOrigin();
-	lua_pushnumber(L, pos.x);
-	lua_pushnumber(L, pos.y);
-	lua_pushnumber(L, pos.z);
-	return 3;
+	LuaPushVector(L, pos);
+	return 1;
 }
 
 // _EntSetPos - Set entity position
 int Lua_EntSetPos(lua_State *L)
 {
 	int entIndex = CLuaUtility::GetInt(L, 1);
-	float x = CLuaUtility::GetFloat(L, 2);
-	float y = CLuaUtility::GetFloat(L, 3);
-	float z = CLuaUtility::GetFloat(L, 4);
+	Vector pos;
 
 	CBaseEntity *pEntity = UTIL_EntityByIndex(entIndex);
 	if (!pEntity)
 		return CLuaUtility::LuaError(L, "_EntSetPos: Invalid entity");
 
-	pEntity->SetAbsOrigin(Vector(x, y, z));
+	if (!LuaGetVector(L, 2, pos))
+		return CLuaUtility::LuaError(L, "_EntSetPos: Expected vector3 or x,y,z");
+
+	pEntity->SetAbsOrigin(pos);
 	return 0;
 }
 
@@ -66,25 +104,24 @@ int Lua_EntGetAng(lua_State *L)
 		return CLuaUtility::LuaError(L, "_EntGetAng: Invalid entity");
 
 	QAngle ang = pEntity->GetAbsAngles();
-	lua_pushnumber(L, ang.x);
-	lua_pushnumber(L, ang.y);
-	lua_pushnumber(L, ang.z);
-	return 3;
+	LuaPushVector(L, Vector(ang.x, ang.y, ang.z));
+	return 1;
 }
 
 // _EntSetAng - Set entity angles
 int Lua_EntSetAng(lua_State *L)
 {
 	int entIndex = CLuaUtility::GetInt(L, 1);
-	float pitch = CLuaUtility::GetFloat(L, 2);
-	float yaw = CLuaUtility::GetFloat(L, 3);
-	float roll = CLuaUtility::GetFloat(L, 4);
+	Vector ang;
 
 	CBaseEntity *pEntity = UTIL_EntityByIndex(entIndex);
 	if (!pEntity)
 		return CLuaUtility::LuaError(L, "_EntSetAng: Invalid entity");
 
-	pEntity->SetAbsAngles(QAngle(pitch, yaw, roll));
+	if (!LuaGetVector(L, 2, ang))
+		return CLuaUtility::LuaError(L, "_EntSetAng: Expected vector3 or pitch,yaw,roll");
+
+	pEntity->SetAbsAngles(QAngle(ang.x, ang.y, ang.z));
 	return 0;
 }
 
@@ -97,25 +134,24 @@ int Lua_EntGetVelocity(lua_State *L)
 		return CLuaUtility::LuaError(L, "_EntGetVelocity: Invalid entity");
 
 	Vector vel = pEntity->GetAbsVelocity();
-	lua_pushnumber(L, vel.x);
-	lua_pushnumber(L, vel.y);
-	lua_pushnumber(L, vel.z);
-	return 3;
+	LuaPushVector(L, vel);
+	return 1;
 }
 
 // _EntSetVelocity - Set entity velocity
 int Lua_EntSetVelocity(lua_State *L)
 {
 	int entIndex = CLuaUtility::GetInt(L, 1);
-	float x = CLuaUtility::GetFloat(L, 2);
-	float y = CLuaUtility::GetFloat(L, 3);
-	float z = CLuaUtility::GetFloat(L, 4);
+	Vector vel;
 
 	CBaseEntity *pEntity = UTIL_EntityByIndex(entIndex);
 	if (!pEntity)
 		return CLuaUtility::LuaError(L, "_EntSetVelocity: Invalid entity");
 
-	pEntity->SetAbsVelocity(Vector(x, y, z));
+	if (!LuaGetVector(L, 2, vel))
+		return CLuaUtility::LuaError(L, "_EntSetVelocity: Expected vector3 or x,y,z");
+
+	pEntity->SetAbsVelocity(vel);
 	return 0;
 }
 
@@ -129,10 +165,8 @@ int Lua_EntGetForwardVector(lua_State *L)
 
 	Vector forward;
 	AngleVectors(pEntity->GetAbsAngles(), &forward);
-	lua_pushnumber(L, forward.x);
-	lua_pushnumber(L, forward.y);
-	lua_pushnumber(L, forward.z);
-	return 3;
+	LuaPushVector(L, forward);
+	return 1;
 }
 
 // _EntGetRightVector - Get entity right vector
@@ -145,10 +179,8 @@ int Lua_EntGetRightVector(lua_State *L)
 
 	Vector forward, right;
 	AngleVectors(pEntity->GetAbsAngles(), &forward, &right, NULL);
-	lua_pushnumber(L, right.x);
-	lua_pushnumber(L, right.y);
-	lua_pushnumber(L, right.z);
-	return 3;
+	LuaPushVector(L, right);
+	return 1;
 }
 
 // _EntGetUpVector - Get entity up vector
@@ -161,10 +193,8 @@ int Lua_EntGetUpVector(lua_State *L)
 
 	Vector forward, right, up;
 	AngleVectors(pEntity->GetAbsAngles(), &forward, &right, &up);
-	lua_pushnumber(L, up.x);
-	lua_pushnumber(L, up.y);
-	lua_pushnumber(L, up.z);
-	return 3;
+	LuaPushVector(L, up);
+	return 1;
 }
 
 // _EntCreate - Create a new entity
@@ -174,7 +204,13 @@ int Lua_EntCreate(lua_State *L)
 	if (!classname || !*classname)
 		return CLuaUtility::LuaError(L, "_EntCreate: Invalid classname");
 
-	CBaseEntity *pEntity = CreateEntityByName(classname);
+	const char *sourceClassname = classname;
+	if (Q_stricmp(classname, "physics_prop") == 0)
+	{
+		sourceClassname = "prop_physics";
+	}
+
+	CBaseEntity *pEntity = CreateEntityByName(sourceClassname);
 	if (!pEntity)
 	{
 		lua_pushnil(L);
@@ -193,7 +229,41 @@ int Lua_EntSpawn(lua_State *L)
 	if (!pEntity)
 		return CLuaUtility::LuaError(L, "_EntSpawn: Invalid entity");
 
+	CBasePlayer *pPlayer = dynamic_cast<CBasePlayer*>(pEntity);
+	if (pPlayer)
+	{
+		bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+		CBaseEntity::SetAllowPrecache(true);
+		pPlayer->Spawn();
+		CBaseEntity::SetAllowPrecache(bAllowPrecache);
+		DevMsg("GMod Lua: _EntSpawn respawned player %d on team %d\n", entIndex, pPlayer->GetTeamNumber());
+		return 0;
+	}
+
+	bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+	const char* pszClassname = pEntity->GetClassname();
+	const char* pszModelName = STRING(pEntity->GetModelName());
+	bool bIsProp = pszClassname && !Q_stricmp(pszClassname, "prop_physics");
+	bool bIsRagdoll = pszClassname && !Q_stricmp(pszClassname, "prop_ragdoll");
+	CBasePlayer* pOwnerPlayer = dynamic_cast<CBasePlayer*>(pEntity->GetOwnerEntity());
+	if (!pOwnerPlayer)
+		pOwnerPlayer = dynamic_cast<CBasePlayer*>(UTIL_GetCommandClient());
+
+	if ((bIsProp && !CGModGamemodeSystem::CanPlayerSpawnProp(pOwnerPlayer, pszModelName)) ||
+		(bIsRagdoll && !CGModGamemodeSystem::CanPlayerSpawnRagdoll(pOwnerPlayer, pszModelName)))
+	{
+		UTIL_Remove(pEntity);
+		return 0;
+	}
+
+	CBaseEntity::SetAllowPrecache(true);
 	DispatchSpawn(pEntity);
+	CBaseEntity::SetAllowPrecache(bAllowPrecache);
+
+	if (bIsProp)
+		CGModGamemodeSystem::OnPlayerPropSpawned(pOwnerPlayer, pEntity);
+	else if (bIsRagdoll)
+		CGModGamemodeSystem::OnPlayerRagdollSpawned(pOwnerPlayer, pEntity);
 	return 0;
 }
 
@@ -255,7 +325,11 @@ int Lua_EntSetModel(lua_State *L)
 	if (!pEntity)
 		return CLuaUtility::LuaError(L, "_EntSetModel: Invalid entity");
 
+	bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+	CBaseEntity::SetAllowPrecache(true);
+	pEntity->KeyValue("model", model);
 	pEntity->SetModel(model);
+	CBaseEntity::SetAllowPrecache(bAllowPrecache);
 	return 0;
 }
 
@@ -1043,6 +1117,87 @@ int Lua_GetCurrentMap(lua_State *L)
 	return 1;
 }
 
+// IsPlayer - Check if entity index is a valid player
+// GMod 9 helper function used by gamemodes like melonracer
+int Lua_IsPlayer(lua_State *L)
+{
+	int entIndex = CLuaUtility::GetInt(L, 1, 0);
+
+	// Player indices are 1-based and must be within valid range
+	if (entIndex <= 0 || entIndex > gpGlobals->maxClients)
+	{
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	CBasePlayer *pPlayer = UTIL_PlayerByIndex(entIndex);
+	lua_pushboolean(L, pPlayer != NULL);
+	return 1;
+}
+
+// IsValid - Check if entity index is a valid entity
+// GMod 9 helper function
+int Lua_IsValid(lua_State *L)
+{
+	int entIndex = CLuaUtility::GetInt(L, 1, 0);
+
+	if (entIndex <= 0)
+	{
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	CBaseEntity *pEntity = UTIL_EntityByIndex(entIndex);
+	lua_pushboolean(L, pEntity != NULL);
+	return 1;
+}
+
+// _EntGetGroundEntity - returns the entity's ground entity index (0 if none). Matches original.
+int Lua_EntGetGroundEntity(lua_State *L)
+{
+	int entIndex = CLuaUtility::GetInt(L, 1);
+	CBaseEntity *pEntity = UTIL_EntityByIndex(entIndex);
+	CBaseEntity *pGround = pEntity ? pEntity->GetGroundEntity() : NULL;
+	lua_pushinteger(L, pGround ? pGround->entindex() : 0);
+	return 1;
+}
+
+// _EntSetGroundEntity - set the entity's ground entity (arg2 index; <=0 = none). Matches original.
+int Lua_EntSetGroundEntity(lua_State *L)
+{
+	int entIndex = CLuaUtility::GetInt(L, 1);
+	int groundIndex = CLuaUtility::GetInt(L, 2, -1);
+	CBaseEntity *pEntity = UTIL_EntityByIndex(entIndex);
+	if (!pEntity)
+		return 0;
+	CBaseEntity *pGround = (groundIndex > 0) ? UTIL_EntityByIndex(groundIndex) : NULL;
+	pEntity->SetGroundEntity(pGround);
+	return 0;
+}
+
+// _EntGetMoveCollide - returns the entity's MoveCollide type. Matches original (ent+544).
+int Lua_EntGetMoveCollide(lua_State *L)
+{
+	int entIndex = CLuaUtility::GetInt(L, 1);
+	CBaseEntity *pEntity = UTIL_EntityByIndex(entIndex);
+	lua_pushinteger(L, pEntity ? (int)pEntity->GetMoveCollide() : 0);
+	return 1;
+}
+
+// _EntitySetPhysicsAttacker - attribute a breakable's physics damage to a player.
+// Original casts to CBreakableProp; bmod records it via SetOwnerEntity as a best-effort
+// so damage attribution works without depending on the beta CBreakableProp layout.
+int Lua_EntitySetPhysicsAttacker(lua_State *L)
+{
+	int entIndex = CLuaUtility::GetInt(L, 1);
+	int playerIndex = CLuaUtility::GetInt(L, 2);
+	CBaseEntity *pEntity = UTIL_EntityByIndex(entIndex);
+	CBasePlayer *pPlayer = UTIL_PlayerByIndex(playerIndex);
+	if (pEntity && pPlayer)
+		pEntity->SetOwnerEntity(pPlayer);
+	return 0;
+}
+
 //=============================================================================
 // REGISTRATION
 //=============================================================================
@@ -1050,12 +1205,20 @@ int Lua_GetCurrentMap(lua_State *L)
 void RegisterLuaEntityFunctions()
 {
 	// Position/Angles
-	CLuaIntegration::RegisterFunction("_EntGetPos", Lua_EntGetPos, "Returns entity position as x,y,z. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntSetPos", Lua_EntSetPos, "Set entity position. Syntax: <entindex> <x> <y> <z>");
-	CLuaIntegration::RegisterFunction("_EntGetAng", Lua_EntGetAng, "Returns entity angles as pitch,yaw,roll. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntSetAng", Lua_EntSetAng, "Set entity angles. Syntax: <entindex> <pitch> <yaw> <roll>");
-	CLuaIntegration::RegisterFunction("_EntGetVelocity", Lua_EntGetVelocity, "Returns entity velocity as x,y,z. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntSetVelocity", Lua_EntSetVelocity, "Set entity velocity. Syntax: <entindex> <x> <y> <z>");
+	CLuaIntegration::RegisterFunction("_EntGetPos", Lua_EntGetPos, "Returns entity position as vector3. Syntax: <entindex>");
+	CLuaIntegration::RegisterFunction("_EntSetPos", Lua_EntSetPos, "Set entity position. Syntax: <entindex> <vector3|x y z>");
+	CLuaIntegration::RegisterFunction("_EntGetAng", Lua_EntGetAng, "Returns entity angles as vector3. Syntax: <entindex>");
+	CLuaIntegration::RegisterFunction("_EntSetAng", Lua_EntSetAng, "Set entity angles. Syntax: <entindex> <vector3|pitch yaw roll>");
+	// Original gmod angle-object variants (same behavior as _EntGetAng/_EntSetAng here)
+	CLuaIntegration::RegisterFunction("_EntGetAngAngle", Lua_EntGetAng, "Returns entity angles. Syntax: <entindex>");
+	CLuaIntegration::RegisterFunction("_EntSetAngAngle", Lua_EntSetAng, "Set entity angles. Syntax: <entindex> <angle>");
+	// Ground entity / move collide (were missing vs original)
+	CLuaIntegration::RegisterFunction("_EntGetGroundEntity", Lua_EntGetGroundEntity, "Get ground entity index. Syntax: <entindex>");
+	CLuaIntegration::RegisterFunction("_EntSetGroundEntity", Lua_EntSetGroundEntity, "Set ground entity. Syntax: <entindex> <groundindex>");
+	CLuaIntegration::RegisterFunction("_EntGetMoveCollide", Lua_EntGetMoveCollide, "Get move collide type. Syntax: <entindex>");
+	CLuaIntegration::RegisterFunction("_EntitySetPhysicsAttacker", Lua_EntitySetPhysicsAttacker, "Attribute physics damage to a player. Syntax: <entindex> <playerid>");
+	CLuaIntegration::RegisterFunction("_EntGetVelocity", Lua_EntGetVelocity, "Returns entity velocity as vector3. Syntax: <entindex>");
+	CLuaIntegration::RegisterFunction("_EntSetVelocity", Lua_EntSetVelocity, "Set entity velocity. Syntax: <entindex> <vector3|x y z>");
 	CLuaIntegration::RegisterFunction("_EntGetForwardVector", Lua_EntGetForwardVector, "Returns entity forward vector. Syntax: <entindex>");
 	CLuaIntegration::RegisterFunction("_EntGetRightVector", Lua_EntGetRightVector, "Returns entity right vector. Syntax: <entindex>");
 	CLuaIntegration::RegisterFunction("_EntGetUpVector", Lua_EntGetUpVector, "Returns entity up vector. Syntax: <entindex>");
@@ -1120,18 +1283,8 @@ void RegisterLuaEntityFunctions()
 	CLuaIntegration::RegisterFunction("_EntitiesFindInSphere", Lua_EntitiesFindInSphere, "Find entity in sphere. Syntax: <x> <y> <z> <radius> [startindex]");
 
 	// NPC Functions (GMod 9 compatibility)
-	CLuaIntegration::RegisterFunction("_npc_ExitScriptedSequence", Lua_NPC_ExitScriptedSequence, "Exit from scripted sequence. Syntax: <ent>");
-	CLuaIntegration::RegisterFunction("_npc_SetSchedule", Lua_NPC_SetSchedule, "Set NPC schedule. Syntax: <ent> <sched>");
-	CLuaIntegration::RegisterFunction("_npc_SetLastPosition", Lua_NPC_SetLastPosition, "Set NPC last position. Syntax: <ent> <x> <y> <z>");
-	CLuaIntegration::RegisterFunction("_npc_AddRelationship", Lua_NPC_AddRelationship, "Add NPC relationship. Syntax: <ent> <targetent> <disposition> <priority>");
 
 	// Utility Functions (GMod 9 compatibility)
-	CLuaIntegration::RegisterFunction("_util_PlayerByName", Lua_Util_PlayerByName, "Find player by name. Syntax: <name>");
-	CLuaIntegration::RegisterFunction("_util_PlayerByUserId", Lua_Util_PlayerByUserId, "Find player by userid. Syntax: <userid>");
-	CLuaIntegration::RegisterFunction("_util_EntsInBox", Lua_Util_EntsInBox, "Find entities in box. Syntax: <minx> <miny> <minz> <maxx> <maxy> <maxz>");
-	CLuaIntegration::RegisterFunction("_util_DropToFloor", Lua_Util_DropToFloor, "Drop entity to floor. Syntax: <ent>");
-	CLuaIntegration::RegisterFunction("_util_ScreenShake", Lua_Util_ScreenShake, "Shake screen. Syntax: <x> <y> <z> <amp> <freq> <dur> [radius]");
-	CLuaIntegration::RegisterFunction("_util_PointAtEntity", Lua_Util_PointAtEntity, "Find entity at point. Syntax: <x> <y> <z>");
 
 	// System Utility Functions
 	CLuaIntegration::RegisterFunction("_GetNextMap", Lua_GetNextMap, "Get next map name.");
@@ -1139,4 +1292,8 @@ void RegisterLuaEntityFunctions()
 	CLuaIntegration::RegisterFunction("_GetModPath", Lua_GetModPath, "Get mod folder path.");
 	CLuaIntegration::RegisterFunction("_IsLinux", Lua_IsLinux, "Check if running on Linux.");
 	CLuaIntegration::RegisterFunction("_IsDedicatedServer", Lua_IsDedicatedServer, "Check if dedicated server.");
+
+	// GMod 9 Helper Functions
+	CLuaIntegration::RegisterFunction("IsPlayer", Lua_IsPlayer, "Check if entity is a player. Syntax: <entindex>");
+	CLuaIntegration::RegisterFunction("IsValid", Lua_IsValid, "Check if entity is valid. Syntax: <entindex>");
 }

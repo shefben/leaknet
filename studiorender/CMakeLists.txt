@@ -19,6 +19,16 @@ BEGIN_SRC( STUDIORENDER_SOURCE_FILES "Source Files" )
 			"r_studiodraw.cpp"
 			"r_studioflex.cpp"
 			"r_studiogettriangles.cpp"
+
+			# v44+ isolated files - DISABLED: have 2007+ engine dependencies needing port work
+			# These files use CMatRenderContextPtr, FindVarFast, and other 2007+ APIs
+			# The main v44 support is in the core files with v44/v37 code path splits
+			#"r_studio_v44.cpp"
+			#"r_studiodecal_v44.cpp"
+			#"r_studiodecal_helpers_v44.cpp"
+			#"r_studiodraw_v44.cpp"
+			#"r_studiodraw_helpers_v44.cpp"
+			#"r_studioflex_v44.cpp"
 			"r_studiolight.cpp"
 			"studiostats.cpp"
 		#}

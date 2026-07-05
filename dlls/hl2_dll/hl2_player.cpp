@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose:		Player for HL2.
 //
@@ -7,6 +7,8 @@
 
 #include "cbase.h"
 #include "hl2_player.h"
+#include "gmod_gamemode.h"
+#include "gmod_lua.h"
 #include "gamerules.h"
 #include "trains.h"
 #include "basehlcombatweapon_shared.h"
@@ -227,7 +229,14 @@ void CHL2_Player::PreThink(void)
 
 	CheckSuitUpdate();
 
-	if (m_lifeState >= LIFE_DYING)
+	// GMod parity: StartObserverMode() flags a chase-cam observer LIFE_DEAD (see CBasePlayer::
+	// StartObserverMode, "Can't be dead, otherwise movement doesn't work right") while it stays on
+	// a playing team. An observer is NOT a respawnable corpse: retail gmod never auto-respawns one.
+	// Without this guard, PlayerDeathThink() auto-respawns the observer every frame a movement key
+	// is held (mp_forcerespawn=1), which in MelonRacer spawns a fresh melon per frame -> melon pile
+	// -> vphysics IVP_VHash use-after-free. The racer rejoins ONLY via eventKeyPressed(fire) ->
+	// _EntSpawn. Route only genuinely dead, non-observer players into the death/respawn machinery.
+	if (m_lifeState >= LIFE_DYING && !IsObserver())
 	{
 		PlayerDeathThink();
 		return;
@@ -401,6 +410,31 @@ bool CHL2_Player::HandleInteraction(int interactionType, void *data, CBaseCombat
 
 void CHL2_Player::PlayerRunCommand(CUserCmd *ucmd, IMoveHelper *moveHelper)
 {
+	// GMod: cache this frame's raw command buttons so Lua _PlayerIsKeyDown works
+	// even while the player is in observer/chase mode (movement code clears m_nButtons).
+	if ( ucmd )
+	{
+		// MelonRacer rolls the melon from _PlayerIsKeyDown(IN_FORWARD/IN_BACK) while the player is a
+		// chase-cam observer. Synthesize the movement button bits from the analog forward/side move so
+		// the gamemode still sees them even if the raw IN_FORWARD/IN_BACK bit does not survive the
+		// observer input path. (Harmless for live players: forwardmove!=0 already implies IN_FORWARD.)
+		int gmodButtons = ucmd->buttons;
+		if ( ucmd->forwardmove > 1.0f )       gmodButtons |= IN_FORWARD;
+		else if ( ucmd->forwardmove < -1.0f ) gmodButtons |= IN_BACK;
+		if ( ucmd->sidemove > 1.0f )          gmodButtons |= IN_MOVERIGHT;
+		else if ( ucmd->sidemove < -1.0f )    gmodButtons |= IN_MOVELEFT;
+		CGModLuaSystem::UpdatePlayerRawButtons( this, gmodButtons );
+
+		// TEMP diagnostic: confirm what movement input actually reaches the server for the observer.
+		static int s_gmodInputDbg = 0;
+		if ( s_gmodInputDbg < 40 && ( ucmd->buttons != 0 || ucmd->forwardmove != 0.0f || ucmd->sidemove != 0.0f ) )
+		{
+			DevMsg( "GMod Input DBG: obs=%d rawbtn=%d fwd=%.0f side=%.0f -> synthbtn=%d\n",
+				IsObserver() ? 1 : 0, ucmd->buttons, ucmd->forwardmove, ucmd->sidemove, gmodButtons );
+			++s_gmodInputDbg;
+		}
+	}
+
 	// Handle FL_FROZEN.
 	if ( m_afPhysicsFlags & PFLAG_ONBARNACLE )
 	{
@@ -446,7 +480,29 @@ void CHL2_Player::PlayerRunCommand(CUserCmd *ucmd, IMoveHelper *moveHelper)
 
 	//Msg("Player time: [ACTIVE: %f]\t[IDLE: %f]\n", m_flMoveTime, m_flIdleTime );
 
+	// GMod: capture the button press/release deltas from the raw command, because
+	// BaseClass::PlayerRunCommand can clear m_afButtonPressed/Released before we bridge them.
+	int nRawButtonsPressed = 0;
+	int nRawButtonsReleased = 0;
+	if ( ucmd )
+	{
+		const int nCommandButtons = ucmd->buttons;
+		const int nButtonsChanged = m_nButtons ^ nCommandButtons;
+		nRawButtonsPressed = nButtonsChanged & nCommandButtons;
+		nRawButtonsReleased = nButtonsChanged & ~nCommandButtons;
+	}
+
 	BaseClass::PlayerRunCommand( ucmd, moveHelper );
+
+	// GMod: forward key press/release transitions to the active Lua gamemode
+	// (eventKeyPressed / eventKeyReleased). Required for MelonRacer fire-to-join
+	// and the IN_ATTACK2 chase-cam-distance control.
+	const int nButtonsPressed = m_afButtonPressed | nRawButtonsPressed;
+	const int nButtonsReleased = m_afButtonReleased | nRawButtonsReleased;
+	if ( nButtonsPressed || nButtonsReleased )
+	{
+		CGModGamemodeSystem::OnPlayerInput( this, nButtonsPressed, nButtonsReleased );
+	}
 }
 
 void CHL2_Player::Touch( CBaseEntity *pOther )
@@ -469,8 +525,38 @@ void CHL2_Player::Touch( CBaseEntity *pOther )
 //-----------------------------------------------------------------------------
 void CHL2_Player::Spawn(void)
 {
+	// Re-entrancy guard against infinite recursion -> stack overflow (c00000fd) when spawning.
+	// A GMod gamemode's spawn hooks run synchronously from inside Spawn(): BaseClass::Spawn()
+	// fires the "player_spawn" event and OnPlayerSpawn() calls Lua eventPlayerSpawn(), and the
+	// gamemode can synchronously re-enter this same player's Spawn() (e.g. MelonRacer joins the
+	// race via eventKeyPressed -> _EntSpawn(player) -> Spawn(), and other respawn/team paths).
+	// pPlayer->Spawn() is virtual so every re-entry funnels through here. Original gmod never
+	// re-runs Spawn() re-entrantly. If we are already inside THIS player's Spawn(), skip the
+	// nested call: the outermost Spawn completes fully (the melon + chase-cam are set by the
+	// eventPlayerSpawn body, which still runs), so behavior is preserved. save/restore keeps it
+	// correct even if two different players' spawns were ever nested.
+	static int s_nSpawningPlayerIndex = 0;
+	if ( s_nSpawningPlayerIndex == entindex() )
+	{
+		DevMsg( "CHL2_Player::Spawn: skipped re-entrant spawn of player %d (would overflow the stack)\n", entindex() );
+		return;
+	}
+	const int nPrevSpawningPlayer = s_nSpawningPlayerIndex;
+	s_nSpawningPlayerIndex = entindex();
+
 	SetModel( "models/player.mdl" );
     g_ulModelIndexPlayer = GetModelIndex();
+
+	// GMod: let the active gamemode pick the spawn team BEFORE the base spawn placement.
+	// MelonRacer's PickDefaultSpawnTeam() forces TEAM_SPECTATOR so the player joins the
+	// race by pressing fire (eventKeyPressed) rather than spawning as an armed player.
+	const bool bGModGamemodeActive = CGModGamemodeSystem::GetActiveGamemode() != NULL;
+	if ( bGModGamemodeActive && GetTeamNumber() <= TEAM_UNASSIGNED )
+	{
+		bool bHandledDefaultTeam = CGModGamemodeSystem::PickDefaultSpawnTeam( this );
+		DevMsg( "GMod Gamemode System: PickDefaultSpawnTeam for player %d %s, team now %d\n",
+			entindex(), bHandledDefaultTeam ? "handled" : "not handled", GetTeamNumber() );
+	}
 
 	BaseClass::Spawn();
 
@@ -484,7 +570,37 @@ void CHL2_Player::Spawn(void)
 
 	SuitPower_SetCharge( 100 );
 
+	if ( bGModGamemodeActive )
+	{
+		// BaseClass::Spawn runs the HL2 rules first; replace those defaults with
+		// the active GMod gamemode's Lua-controlled spawn behavior.
+		RemoveAllItems( false );
+		EquipSuit();
+		SuitPower_SetCharge( 100 );
+
+		CGModGamemodeSystem::PlayerSpawnChooseModel( this );
+
+		if ( GetTeamNumber() == TEAM_SPECTATOR )
+		{
+			// Spectators observe until they press fire to join; no default loadout.
+			if ( !IsObserver() )
+			{
+				StartObserverMode( GetAbsOrigin(), GetAbsAngles() );
+			}
+			SetObserverMode( OBS_MODE_ROAMING );
+		}
+		else
+		{
+			CGModGamemodeSystem::GiveDefaultItems( this );
+		}
+
+		CGModGamemodeSystem::OnPlayerSpawn( this );
+	}
+
 	m_iNumSelectedNPCs = 0;
+
+	// Clear the re-entrancy guard set at the top of this function.
+	s_nSpawningPlayerIndex = nPrevSpawningPlayer;
 }
 
 //-----------------------------------------------------------------------------
@@ -1380,6 +1496,11 @@ void CHL2_Player::PlayerUse ( void )
 	// Found an object
 	if ( pUseEntity )
 	{
+#ifdef BMOD_DLL
+		if ( CGModGamemodeSystem::OnPlayerUseEntity(this, pUseEntity) )
+			return;
+#endif
+
 		//!!!UNDONE: traceline here to prevent +USEing buttons through walls			
 		int caps = pUseEntity->ObjectCaps();
 		variant_t emptyVariant;

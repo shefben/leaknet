@@ -22,6 +22,7 @@
 #include "tier0/vprof.h"
 #include "engine/ivmodelinfo.h"
 #include "materialsystem/imesh.h"
+#include "studio_helpers.h"
 
 
 //-----------------------------------------------------------------------------
@@ -316,7 +317,7 @@ bool CBaseStaticModel::SetupBones( matrix3x4_t *pBoneToWorldOut, int nMaxBones, 
 
 	// Just copy it on down baby
 	studiohdr_t *pStudioHdr = modelinfo->GetStudiomodel( m_pModel );
-	for (int i = 0; i < pStudioHdr->numbones; i++) 
+	for (int i = 0; i < StudioHdr_GetNumBones(pStudioHdr); i++) 
 	{
 		MatrixCopy( parentTransform, pBoneToWorldOut[i] );
 	}

@@ -152,6 +152,7 @@ END_RECV_TABLE()
 		RecvPropFloat		( RECVINFO( m_flConstraintSpeedFactor )),
 
 		RecvPropInt			( RECVINFO( m_iObserverMode) ),
+		RecvPropFloat		( RECVINFO( m_flChaseCamDistance) ),
 		RecvPropEHandle		( RECVINFO( m_hObserverTarget) ),
 
 		RecvPropInt			( RECVINFO( m_nWaterLevel ) ),
@@ -949,14 +950,14 @@ void C_BasePlayer::GetChaseCamView(Vector& eyeOrigin, QAngle& eyeAngles)
 
 	VectorNormalize( forward );
 
-	VectorMA(origin, -96.0f, forward, viewpoint );
+	VectorMA(origin, -m_flChaseCamDistance, forward, viewpoint );
 	
 	UTIL_TraceLine( origin, viewpoint, MASK_SOLID_BRUSHONLY, NULL, COLLISION_GROUP_NONE, &tr );
 
 	if (tr.fraction < 1.0)
 	{
 		// step 4 units away from wall to avoid clipping flaws
-		VectorMA(origin, -(96.0f * tr.fraction - 4.0), forward, viewpoint );
+		VectorMA(origin, -(m_flChaseCamDistance * tr.fraction - 4.0), forward, viewpoint );
 	}
 
 	VectorCopy( viewangles, eyeAngles );
