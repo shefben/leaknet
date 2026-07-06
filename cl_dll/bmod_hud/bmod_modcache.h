@@ -76,6 +76,8 @@ private:
 
 	// Recursively copy directory contents
 	void CopyDirectoryToCache( const char *szModFolder, const char *szSubDir );
+	void ClearDirectoryFiles( const char *szRelativeDir );
+	void ClearCachedContent();
 
 	CUtlVector<ModEntry_t> m_Mods;
 	bool m_bInitialized;

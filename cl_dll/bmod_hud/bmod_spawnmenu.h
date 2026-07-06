@@ -140,11 +140,28 @@ protected:
 	void CreateToolButton( int toolID, const char *toolName, const char *description );
 
 private:
+	struct LoadedMenuFile_t
+	{
+		char szName[160];
+	};
+
+	void ClearToolButtons();
+	void LoadToolButtonsFromFile( const char *fileName );
+	void LoadToolButtonsFromDirectory( const char *directory, bool bSkipDefault, CUtlVector<LoadedMenuFile_t> &loadedFiles );
+	bool HasLoadedMenuFile( CUtlVector<LoadedMenuFile_t> &loadedFiles, const char *fileName );
+	void MarkLoadedMenuFile( CUtlVector<LoadedMenuFile_t> &loadedFiles, const char *fileName );
+	void CreateMenuLabel( const char *labelText );
+	void CreateMenuButton( const char *buttonText, const char *command, bool bDoubleHeight );
+
 	struct ToolButton_t
 	{
+		vgui::Panel		*pPanel;
 		vgui::Button	*pButton;
 		int				toolID;
-		char			szName[64];
+		bool			bIsLabel;
+		bool			bDoubleHeight;
+		char			szName[128];
+		char			szCommand[256];
 		char			szDescription[256];
 	};
 
@@ -152,8 +169,8 @@ private:
 	int							m_nCurrentToolMode;
 
 	// Tool button arrays - matches Garry's Mod structure
-	vgui::Button				*m_pToolButtons[20];	// Up to 20 tool buttons
-	bool						m_bButtonStates[20];	// Button states
+	vgui::Button				*m_pToolButtons[64];
+	bool						m_bButtonStates[64];
 };
 
 //-----------------------------------------------------------------------------
@@ -182,6 +199,14 @@ public:
 	void ReloadProps();
 
 private:
+	bool LoadContextPanel( const char *contextType );
+	bool LoadContextPanelFile( const char *fileName, const char *contextType );
+	bool LoadContextPanelFromDirectory( const char *directory, const char *contextType );
+	void AddContextLabel( const char *text, int &x, int &y, int &rowTall, int tall = 18 );
+	void AddContextButton( const char *text, const char *command, int &x, int &y, int &rowTall, int columns );
+	void AddContextKeyValueButtons( KeyValues *pControl, int &x, int &y, int &rowTall, int columns );
+	void ClearContextContent();
+
 	char			m_szCurrentContext[64];
 	bool			m_bContextVisible;
 	vgui::Panel		*m_pContextContent;

@@ -13,9 +13,33 @@
 #include "recipientfilter.h"
 #include "usermessages.h"
 #include "soundent.h"
+#include "engine/IEngineSound.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+static bool LuaSoundNameIsRawSample(const char *soundName)
+{
+	if (!soundName || !*soundName)
+		return false;
+
+	const char *extension = Q_strrchr(soundName, '.');
+	if (!extension)
+		return false;
+
+	return Q_stricmp(extension, ".wav") == 0 || Q_stricmp(extension, ".mp3") == 0;
+}
+
+static void LuaPrecacheSoundName(const char *soundName)
+{
+	if (!soundName || !*soundName)
+		return;
+
+	if (LuaSoundNameIsRawSample(soundName))
+		enginesound->PrecacheSound(soundName);
+	else
+		CBaseEntity::PrecacheScriptSound(soundName);
+}
 
 //=============================================================================
 // GMODTEXT FUNCTIONS
@@ -39,11 +63,25 @@ static struct {
 	int additive;         // original _GModText_SetAdditive
 } g_GModText = {"Default", "", 0.5f, 0.5f, 255, 255, 255, 255, 0.1f, 0.1f, 5.0f, 0, 0, 0, 0, 0, 0, 0, 0.0f, 0, 0};
 
+static const char *ResolveGModTextFontName(const char *fontName)
+{
+	if (!fontName || !*fontName)
+		return "Default";
+
+	if (!Q_stricmp(fontName, "ImpactMassive") || !Q_stricmp(fontName, "TrebuchetMassive"))
+		return "DefaultShadow";
+
+	if (!Q_strnicmp(fontName, "Impact", 6) || !Q_strnicmp(fontName, "Trebuchet", 9))
+		return "DefaultShadow";
+
+	return fontName;
+}
+
 // _GModTextStart - Start building a text message
 int Lua_GModTextStart(lua_State *L)
 {
 	const char *font = CLuaUtility::GetString(L, 1, "Default");
-	Q_strncpy(g_GModText.fontName, font, sizeof(g_GModText.fontName));
+	Q_strncpy(g_GModText.fontName, ResolveGModTextFontName(font), sizeof(g_GModText.fontName));
 	g_GModText.text[0] = '\0';
 	return 0;
 }
@@ -819,6 +857,7 @@ int Lua_EmitSound(lua_State *L)
 	Vector pos(x, y, z);
 
 	// HL2 beta uses simpler EmitSound API without EmitSound_t struct
+	LuaPrecacheSoundName(soundName);
 	CPASAttenuationFilter filter(pos);
 	CBaseEntity::EmitSound(filter, 0, CHAN_AUTO, soundName, volume, SNDLVL_NORM, 0, pitch, &pos);
 	return 0;
@@ -829,7 +868,7 @@ int Lua_PrecacheSound(lua_State *L)
 {
 	const char *soundName = CLuaUtility::GetString(L, 1);
 	if (soundName && *soundName)
-		CBaseEntity::PrecacheScriptSound(soundName);
+		LuaPrecacheSoundName(soundName);
 	return 0;
 }
 

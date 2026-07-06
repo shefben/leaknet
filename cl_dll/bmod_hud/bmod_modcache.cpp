@@ -149,14 +149,20 @@ void CModCacheManager::Initialize()
 	g_pFullFilesystem->CreateDirHierarchy( "mods/-modcache/models", "MOD" );
 	g_pFullFilesystem->CreateDirHierarchy( "mods/-modcache/maps", "MOD" );
 	g_pFullFilesystem->CreateDirHierarchy( "mods/-modcache/sound", "MOD" );
+	g_pFullFilesystem->CreateDirHierarchy( "mods/-modcache/settings", "MOD" );
+	g_pFullFilesystem->CreateDirHierarchy( "mods/-modcache/lua", "MOD" );
+	g_pFullFilesystem->CreateDirHierarchy( "mods/-modcache/scripts", "MOD" );
+	g_pFullFilesystem->CreateDirHierarchy( "mods/-modcache/resource", "MOD" );
+	g_pFullFilesystem->CreateDirHierarchy( "mods/-modcache/cfg", "MOD" );
+	g_pFullFilesystem->CreateDirHierarchy( "mods/-modcache/particles", "MOD" );
 
 	AddModCacheSearchPaths();
 
-	// Load saved mod states
-	LoadModStates();
-
 	// Scan for available mods
 	ScanForMods();
+
+	LoadModStates();
+	RefreshModCache();
 
 	m_bInitialized = true;
 
@@ -375,6 +381,15 @@ void CModCacheManager::CopyModToCache( const char *szFolderName )
 	// Copy sound
 	CopyDirectoryToCache( szFolderName, "sound" );
 
+	// Copy GMod data/config folders. These feed menu_props, context panels,
+	// level lists, NPC weapon presets, SWEPs, weapon scripts, and UI resources.
+	CopyDirectoryToCache( szFolderName, "settings" );
+	CopyDirectoryToCache( szFolderName, "lua" );
+	CopyDirectoryToCache( szFolderName, "scripts" );
+	CopyDirectoryToCache( szFolderName, "resource" );
+	CopyDirectoryToCache( szFolderName, "cfg" );
+	CopyDirectoryToCache( szFolderName, "particles" );
+
 	// Copy the icon if it exists
 	if ( pMod->szIcon[0] )
 	{
@@ -396,12 +411,61 @@ void CModCacheManager::RemoveModFromCache( const char *szFolderName )
 	Msg( "BarrysMod: RemoveModFromCache not fully implemented\n" );
 }
 
+void CModCacheManager::ClearDirectoryFiles( const char *szRelativeDir )
+{
+	char searchPath[256];
+	Q_snprintf( searchPath, sizeof( searchPath ), "%s/*", szRelativeDir );
+
+	FileFindHandle_t findHandle = FILESYSTEM_INVALID_FIND_HANDLE;
+	const char *pFileName = g_pFullFilesystem->FindFirst( searchPath, &findHandle );
+	while ( pFileName )
+	{
+		if ( Q_strcmp( pFileName, "." ) != 0 && Q_strcmp( pFileName, ".." ) != 0 )
+		{
+			char childPath[256];
+			Q_snprintf( childPath, sizeof( childPath ), "%s/%s", szRelativeDir, pFileName );
+
+			if ( g_pFullFilesystem->IsDirectory( childPath, "MOD" ) )
+			{
+				ClearDirectoryFiles( childPath );
+			}
+			else
+			{
+				g_pFullFilesystem->RemoveFile( childPath, "MOD" );
+			}
+		}
+
+		pFileName = g_pFullFilesystem->FindNext( findHandle );
+	}
+
+	if ( findHandle != FILESYSTEM_INVALID_FIND_HANDLE )
+	{
+		g_pFullFilesystem->FindClose( findHandle );
+	}
+}
+
+void CModCacheManager::ClearCachedContent()
+{
+	ClearDirectoryFiles( "mods/-modcache/materials" );
+	ClearDirectoryFiles( "mods/-modcache/models" );
+	ClearDirectoryFiles( "mods/-modcache/maps" );
+	ClearDirectoryFiles( "mods/-modcache/sound" );
+	ClearDirectoryFiles( "mods/-modcache/settings" );
+	ClearDirectoryFiles( "mods/-modcache/lua" );
+	ClearDirectoryFiles( "mods/-modcache/scripts" );
+	ClearDirectoryFiles( "mods/-modcache/resource" );
+	ClearDirectoryFiles( "mods/-modcache/cfg" );
+	ClearDirectoryFiles( "mods/-modcache/particles" );
+}
+
 void CModCacheManager::RefreshModCache()
 {
 	Msg( "BarrysMod: Refreshing mod cache...\n" );
 
 	// Rescan for mods
 	ScanForMods();
+	LoadModStates();
+	ClearCachedContent();
 
 	// Copy all enabled mods to cache
 	for ( int i = 0; i < m_Mods.Count(); i++ )

@@ -60,6 +60,20 @@ CGModMessageManager *g_pGModMessageManager = NULL;
 static CGModMessage *s_pCurrentMessage = NULL;
 static CGModRect *s_pCurrentRect = NULL;
 
+static const char *ResolveGModTextFontName(const char *fontName)
+{
+	if (!fontName || !*fontName)
+		return "Default";
+
+	if (!Q_stricmp(fontName, "ImpactMassive") || !Q_stricmp(fontName, "TrebuchetMassive"))
+		return "DefaultShadow";
+
+	if (!Q_strnicmp(fontName, "Impact", 6) || !Q_strnicmp(fontName, "Trebuchet", 9))
+		return "DefaultShadow";
+
+	return fontName;
+}
+
 //=============================================================================
 // GMOD MESSAGE CLASS
 //=============================================================================
@@ -111,7 +125,9 @@ void CGModMessage::ApplySchemeSettings(IScheme *pScheme)
 {
 	BaseClass::ApplySchemeSettings(pScheme);
 
-	m_hFont = pScheme->GetFont(m_szFont, true);
+	m_hFont = pScheme->GetFont(ResolveGModTextFontName(m_szFont), true);
+	if (m_hFont == INVALID_FONT)
+		m_hFont = pScheme->GetFont("DefaultShadow", true);
 	if (m_hFont == INVALID_FONT)
 		m_hFont = pScheme->GetFont("Default", true);
 
@@ -231,7 +247,7 @@ void CGModMessage::SetFont(const char *fontName)
 {
 	if (fontName)
 	{
-		Q_strncpy(m_szFont, fontName, sizeof(m_szFont));
+		Q_strncpy(m_szFont, ResolveGModTextFontName(fontName), sizeof(m_szFont));
 		InvalidateLayout();
 	}
 }
@@ -450,8 +466,8 @@ void CGModMessage::UpdatePosition()
 //-----------------------------------------------------------------------------
 void CGModMessage::UpdateFromEntity()
 {
-	C_BaseEntity *pEntity = ClientEntityList().GetEnt(m_iEntityIndex);
-	if (!pEntity)
+	C_BaseEntity *pEntity = ClientEntityList().GetBaseEntity(m_iEntityIndex);
+	if (!pEntity || pEntity->IsDormant())
 		return;
 
 	int screenX, screenY;

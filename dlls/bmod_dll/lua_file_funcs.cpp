@@ -11,6 +11,7 @@
 #include "player.h"
 #include "recipientfilter.h"
 #include "usermessages.h"
+#include "engine/IEngineSound.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -18,6 +19,29 @@
 //=============================================================================
 // FILE FUNCTIONS
 //=============================================================================
+
+static bool LuaSoundNameIsRawSample(const char *soundName)
+{
+	if (!soundName || !*soundName)
+		return false;
+
+	const char *extension = Q_strrchr(soundName, '.');
+	if (!extension)
+		return false;
+
+	return Q_stricmp(extension, ".wav") == 0 || Q_stricmp(extension, ".mp3") == 0;
+}
+
+static void LuaPrecacheSoundName(const char *soundName)
+{
+	if (!soundName || !*soundName)
+		return;
+
+	if (LuaSoundNameIsRawSample(soundName))
+		enginesound->PrecacheSound(soundName);
+	else
+		CBaseEntity::PrecacheScriptSound(soundName);
+}
 
 // Allowed paths for Lua file access (sandboxed)
 static bool IsPathAllowed(const char *path)
@@ -321,7 +345,14 @@ int Lua_FileCreateDir(lua_State *L)
 // Note: Lua_GetCurrentMap is already defined in lua_entity_funcs.cpp
 //=============================================================================
 
-// _GetRule - Get gamerule value (stub - returns nil for unknown rules)
+static int Lua_PushConVarBoolRule(lua_State *L, const char *conVarName, bool defaultValue)
+{
+	const ConVar *pConVar = cvar->FindVar(conVarName);
+	lua_pushboolean(L, pConVar ? (pConVar->GetInt() != 0) : defaultValue);
+	return 1;
+}
+
+// _GetRule - Get GMod 9 gamerule values backed by server convars.
 int Lua_GetRule(lua_State *L)
 {
 	const char *ruleName = CLuaUtility::GetString(L, 1);
@@ -335,20 +366,64 @@ int Lua_GetRule(lua_State *L)
 	if (Q_stricmp(ruleName, "maxplayers") == 0)
 	{
 		lua_pushinteger(L, gpGlobals->maxClients);
+		return 1;
 	}
 	else if (Q_stricmp(ruleName, "maptime") == 0)
 	{
 		lua_pushnumber(L, gpGlobals->curtime);
+		return 1;
 	}
 	else if (Q_stricmp(ruleName, "timelimit") == 0)
 	{
 		const ConVar *pConVar = cvar->FindVar("mp_timelimit");
 		lua_pushnumber(L, pConVar ? pConVar->GetFloat() : 0);
+		return 1;
 	}
 	else if (Q_stricmp(ruleName, "fraglimit") == 0)
 	{
 		const ConVar *pConVar = cvar->FindVar("mp_fraglimit");
 		lua_pushinteger(L, pConVar ? pConVar->GetInt() : 0);
+		return 1;
+	}
+	else if (Q_stricmp(ruleName, "Teamplay") == 0)
+	{
+		return Lua_PushConVarBoolRule(L, "mp_teamplay", false);
+	}
+	else if (Q_stricmp(ruleName, "SpawnWithAllWeapons") == 0)
+	{
+		return Lua_PushConVarBoolRule(L, "gm_sv_allweapons", true);
+	}
+	else if (Q_stricmp(ruleName, "AllowPhysgun") == 0)
+	{
+		return Lua_PushConVarBoolRule(L, "gm_sv_allowphysgun", true);
+	}
+	else if (Q_stricmp(ruleName, "AllowMultigun") == 0)
+	{
+		return Lua_PushConVarBoolRule(L, "gm_sv_allowmultigun", true);
+	}
+	else if (Q_stricmp(ruleName, "AllowIgnite") == 0)
+	{
+		return Lua_PushConVarBoolRule(L, "gm_sv_allowignite", true);
+	}
+	else if (Q_stricmp(ruleName, "AllowNPC") == 0)
+	{
+		return Lua_PushConVarBoolRule(L, "gm_sv_allownpc", true);
+	}
+	else if (Q_stricmp(ruleName, "AllowSpawning") == 0)
+	{
+		return Lua_PushConVarBoolRule(L, "gm_sv_allowspawning", true);
+	}
+	else if (Q_stricmp(ruleName, "PlayerDamage") == 0)
+	{
+		return Lua_PushConVarBoolRule(L, "gm_sv_playerdamage", true);
+	}
+	else if (Q_stricmp(ruleName, "PvPDamage") == 0)
+	{
+		return Lua_PushConVarBoolRule(L, "gm_sv_pvpdamage", true);
+	}
+	else if (Q_stricmp(ruleName, "TeamDamage") == 0)
+	{
+		return Lua_PushConVarBoolRule(L, "gm_sv_teamdamage", false);
 	}
 	else
 	{
@@ -404,6 +479,8 @@ int Lua_PlaySound(lua_State *L)
 
 	Vector pos(x, y, z);
 
+	LuaPrecacheSoundName(soundName);
+
 	CPASAttenuationFilter filter(pos);
 	CBaseEntity::EmitSound(filter, 0, CHAN_AUTO, soundName, volume, SNDLVL_NORM, 0, pitch, &pos);
 	return 0;
@@ -426,6 +503,7 @@ int Lua_PlaySoundPlayer(lua_State *L)
 
 	CSingleUserRecipientFilter filter(pPlayer);
 	Vector pos = pPlayer->GetAbsOrigin();
+	LuaPrecacheSoundName(soundName);
 	CBaseEntity::EmitSound(filter, pPlayer->entindex(), CHAN_AUTO, soundName, volume, SNDLVL_NORM, 0, pitch, &pos);
 	return 0;
 }

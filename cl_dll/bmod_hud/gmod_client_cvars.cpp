@@ -48,15 +48,15 @@ static void ForwardCommandToServer()
 		return;
 
 	char cmd[512];
-	cmd[0] = '\0';
+	Q_strncpy( cmd, "cmd", sizeof( cmd ) );
 	for ( int i = 0; i < argc; ++i )
 	{
 		const char *arg = engine->Cmd_Argv( i );
 		if ( !arg )
 			continue;
-		if ( i > 0 )
-			strncat( cmd, " ", sizeof( cmd ) - strlen(cmd) - 1 );
-		strncat( cmd, arg, sizeof( cmd ) - strlen(cmd) - 1 );
+
+		Q_strncat( cmd, " ", sizeof( cmd ) );
+		Q_strncat( cmd, arg, sizeof( cmd ) );
 	}
 
 	g_bForwarding = true;
@@ -125,12 +125,12 @@ CON_COMMAND( gm_spawn_model, "Spawn a model (auto-selects prop or ragdoll)" )
 
 	if ( bRagdoll )
 	{
-		char cmd[512]; Q_snprintf(cmd, sizeof(cmd), "gmod_makeragdoll %s", model);
+		char cmd[512]; Q_snprintf(cmd, sizeof(cmd), "cmd gmod_makeragdoll %s", model);
 		engine->ClientCmd_Unrestricted(cmd);
 	}
 	else
 	{
-		char cmd[512]; Q_snprintf(cmd, sizeof(cmd), "gmod_makeprop %s", model);
+		char cmd[512]; Q_snprintf(cmd, sizeof(cmd), "cmd gmod_makeprop %s", model);
 		engine->ClientCmd_Unrestricted(cmd);
 	}
 }

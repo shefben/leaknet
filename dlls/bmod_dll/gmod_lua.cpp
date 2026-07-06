@@ -1519,7 +1519,10 @@ int lua_PlayerSpectatorStart(lua_State* L)
         ++s_nLoggedSpectatorStart;
     }
 
-    pPlayer->StartObserverMode(pPlayer->GetAbsOrigin(), pPlayer->GetAbsAngles());
+    if ( !pPlayer->IsObserver() )
+    {
+        pPlayer->StartObserverMode(pPlayer->GetAbsOrigin(), pPlayer->GetAbsAngles());
+    }
     pPlayer->SetObserverMode(obsmode);
     return 0;
 }
@@ -1549,16 +1552,22 @@ int lua_PlayerSpectatorTarget(lua_State* L)
     int targetid = (int)lua_tonumber(L, 2);
 
     CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerid);
-    CBaseEntity* pTarget = UTIL_EntityByIndex(targetid);
     if (!pPlayer)
         return 0;
 
+    if (targetid <= 0)
+    {
+        pPlayer->m_hObserverTarget.Set(NULL);
+        pPlayer->m_bAllowNonPlayerObserverTarget = false;
+        return 0;
+    }
+
+    CBaseEntity* pTarget = UTIL_EntityByIndex(targetid);
     if (pTarget)
     {
-        if (pPlayer->m_iObserverMode != OBS_MODE_CHASE && pPlayer->m_iObserverMode != OBS_MODE_IN_EYE)
+        if (!pPlayer->IsObserver())
         {
             pPlayer->StartObserverMode(pPlayer->GetAbsOrigin(), pPlayer->GetAbsAngles());
-            pPlayer->SetObserverMode(OBS_MODE_CHASE);
         }
 
         pPlayer->m_bAllowNonPlayerObserverTarget = !pTarget->IsPlayer();
@@ -1568,10 +1577,15 @@ int lua_PlayerSpectatorTarget(lua_State* L)
             pPlayer->m_hObserverTarget.Set(pTarget);
         }
 
+        if (pPlayer->m_iObserverMode != OBS_MODE_CHASE && pPlayer->m_iObserverMode != OBS_MODE_IN_EYE)
+        {
+            pPlayer->SetObserverMode(OBS_MODE_CHASE);
+        }
+
         static int s_nLoggedSpectatorTarget = 0;
         if (s_nLoggedSpectatorTarget < 8)
         {
-            DevMsg("GMod Lua: _PlayerSpectatorTarget player %d target %d (%s)\n",
+            DevMsg("GMod Lua CORE: _PlayerSpectatorTarget player %d target %d (%s)\n",
                 playerid, targetid, pTarget->GetClassname());
             ++s_nLoggedSpectatorTarget;
         }
@@ -3369,13 +3383,24 @@ static struct GModText_t {
     float entityOffsetX, entityOffsetY, entityOffsetZ;
 } s_GModText = {"Default", "", 0.5f, 0.5f, 255, 255, 255, 255, 0.1f, 0.1f, 5.0f, 0, 0, 0, 0, 0, 0};
 
+static const char *ResolveGModTextFontName(const char *fontName)
+{
+    if (!fontName || !*fontName)
+        return "Default";
+
+    if (!Q_stricmp(fontName, "ImpactMassive") || !Q_stricmp(fontName, "TrebuchetMassive"))
+        return "DefaultShadow";
+
+    if (!Q_strnicmp(fontName, "Impact", 6) || !Q_strnicmp(fontName, "Trebuchet", 9))
+        return "DefaultShadow";
+
+    return fontName;
+}
+
 int lua_GModText_Start(lua_State* L)
 {
     const char* font = lua_gettop(L) >= 1 ? lua_tostring(L, 1) : "Default";
-    if (font)
-        Q_strncpy(s_GModText.fontName, font, sizeof(s_GModText.fontName));
-    else
-        Q_strncpy(s_GModText.fontName, "Default", sizeof(s_GModText.fontName));
+    Q_strncpy(s_GModText.fontName, ResolveGModTextFontName(font), sizeof(s_GModText.fontName));
     s_GModText.text[0] = '\0';
     s_GModText.entityID = 0;
     s_GModText.entityOffsetX = 0.0f;

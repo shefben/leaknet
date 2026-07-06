@@ -28,6 +28,76 @@ using namespace vgui;
 // Renamed to g_pFullFilesystem to avoid conflict with vgui2::filesystem()
 #define g_pFullFilesystem (::filesystem)
 
+static bool BM_IsSpecialFindName( const char *pFileName )
+{
+	return ( !pFileName || !pFileName[0] ||
+		Q_strcmp( pFileName, "." ) == 0 ||
+		Q_strcmp( pFileName, ".." ) == 0 );
+}
+
+static void BM_BuildCategoryNameFromFileName( const char *pFileName, char *pOutName, int outNameSize )
+{
+	Q_strncpy( pOutName, pFileName ? pFileName : "", outNameSize );
+
+	char *dot = Q_strrchr( pOutName, '.' );
+	if ( dot )
+		*dot = '\0';
+
+	for ( int i = 0; pOutName[i]; i++ )
+	{
+		if ( pOutName[i] == '_' )
+			pOutName[i] = ' ';
+	}
+}
+
+static bool BM_HasPropCategory( CUtlVector<PropCategory_t> &categories, const char *pDisplayName )
+{
+	for ( int i = 0; i < categories.Count(); i++ )
+	{
+		if ( Q_stricmp( categories[i].szName, pDisplayName ) == 0 )
+			return true;
+	}
+
+	return false;
+}
+
+static void BM_AddPropCategoryFile( CUtlVector<PropCategory_t> &categories, const char *pDirectory, const char *pFileName )
+{
+	if ( BM_IsSpecialFindName( pFileName ) || Q_stricmp( pFileName, "complete_dump.txt" ) == 0 )
+		return;
+
+	char displayName[64];
+	BM_BuildCategoryNameFromFileName( pFileName, displayName, sizeof( displayName ) );
+	if ( BM_HasPropCategory( categories, displayName ) )
+		return;
+
+	PropCategory_t cat;
+	Q_strncpy( cat.szName, displayName, sizeof( cat.szName ) );
+	Q_snprintf( cat.szFilePath, sizeof( cat.szFilePath ), "%s/%s", pDirectory, pFileName );
+	cat.bLoaded = false;
+
+	categories.AddToTail( cat );
+}
+
+static void BM_LoadPropCategoriesFromDirectory( CUtlVector<PropCategory_t> &categories, const char *pDirectory )
+{
+	char searchPath[256];
+	Q_snprintf( searchPath, sizeof( searchPath ), "%s/*.txt", pDirectory );
+
+	FileFindHandle_t findHandle = FILESYSTEM_INVALID_FIND_HANDLE;
+	const char *pFileName = g_pFullFilesystem->FindFirst( searchPath, &findHandle );
+	while ( pFileName )
+	{
+		BM_AddPropCategoryFile( categories, pDirectory, pFileName );
+		pFileName = g_pFullFilesystem->FindNext( findHandle );
+	}
+
+	if ( findHandle != FILESYSTEM_INVALID_FIND_HANDLE )
+	{
+		g_pFullFilesystem->FindClose( findHandle );
+	}
+}
+
 //=============================================================================
 // CPropItemButton Implementation
 //=============================================================================
@@ -51,11 +121,6 @@ CPropItemButton::CPropItemButton( Panel *parent, const char *panelName, const Pr
 	{
 		SetSize( PROP_BUTTON_WIDTH_TEXT, PROP_BUTTON_HEIGHT_TEXT );
 	}
-
-	// Set command to spawn the prop
-	char cmd[512];
-	Q_snprintf( cmd, sizeof(cmd), "%s %s", entry.szCommand, entry.szModelPath );
-	SetCommand( cmd );
 
 	SetVisible( true );
 	SetMouseInputEnabled( true );
@@ -796,41 +861,9 @@ void CPropCategoryList::LoadCategories()
 		}
 	}
 
-	// Scan for .txt files in settings/menu_props/
-	FileFindHandle_t findHandle;
-	const char *pFilename = g_pFullFilesystem->FindFirst( "settings/menu_props/*.txt", &findHandle );
-
-	while ( pFilename )
-	{
-		// Skip complete_dump.txt
-		if ( Q_stricmp( pFilename, "complete_dump.txt" ) != 0 )
-		{
-			PropCategory_t cat;
-			memset( &cat, 0, sizeof(cat) );
-
-			// Extract category name from filename (remove .txt)
-			Q_strncpy( cat.szName, pFilename, sizeof(cat.szName) );
-			char *dot = Q_strrchr( cat.szName, '.' );
-			if ( dot )
-				*dot = '\0';
-
-			// Make display name prettier (replace underscores with spaces)
-			for ( int i = 0; cat.szName[i]; i++ )
-			{
-				if ( cat.szName[i] == '_' )
-					cat.szName[i] = ' ';
-			}
-
-			// Store full path
-			Q_snprintf( cat.szFilePath, sizeof(cat.szFilePath), "settings/menu_props/%s", pFilename );
-			cat.bLoaded = false;
-
-			m_Categories.AddToTail( cat );
-		}
-
-		pFilename = g_pFullFilesystem->FindNext( findHandle );
-	}
-	g_pFullFilesystem->FindClose( findHandle );
+	// Scan base GMod prop categories and enabled mod categories copied into -modcache.
+	BM_LoadPropCategoriesFromDirectory( m_Categories, "settings/menu_props" );
+	BM_LoadPropCategoriesFromDirectory( m_Categories, "mods/-modcache/settings/menu_props" );
 
 	Msg( "Loaded %d prop categories\n", m_Categories.Count() );
 
@@ -956,6 +989,7 @@ CPropPanel::CPropPanel( Panel *parent, const char *panelName )
 	m_pCategoryList->SetVisible( true );
 	m_pCategoryList->SetScheme( scheme );
 	m_pCategoryList->SetMouseInputEnabled( true );
+	m_pCategoryList->AddActionSignalTarget( this );
 
 	// Create prop grid on right
 	m_pPropGrid = new CPropGridPanel( this, "PropGrid" );
@@ -971,6 +1005,15 @@ CPropPanel::CPropPanel( Panel *parent, const char *panelName )
 
 	// Load categories
 	m_pCategoryList->LoadCategories();
+	PropCategory_t *pInitialCategory = m_pCategoryList->GetCategory( m_pCategoryList->GetSelectedCategory() );
+	if ( !pInitialCategory )
+	{
+		pInitialCategory = m_pCategoryList->GetCategory( 0 );
+	}
+	if ( pInitialCategory )
+	{
+		m_pPropGrid->SetCategory( pInitialCategory );
+	}
 
 	SetMouseInputEnabled( true );
 }

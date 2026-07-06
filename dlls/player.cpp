@@ -503,6 +503,26 @@ void CBasePlayer::SetupVisibility( unsigned char *pvs, unsigned char *pas )
 
 	engine->AddOriginToPVS( org );
 
+	if ( IsObserver() )
+	{
+		CBaseEntity *pTarget = GetObserverTarget();
+		if ( pTarget )
+		{
+			const Vector vecTargetPVS = pTarget->IsPlayer() ? pTarget->EyePosition() : pTarget->WorldSpaceCenter();
+			engine->AddOriginToPVS( vecTargetPVS );
+		}
+	}
+
+	if ( m_vecAdditionalPVSOrigin != vec3_origin )
+	{
+		engine->AddOriginToPVS( m_vecAdditionalPVSOrigin );
+	}
+
+	if ( m_vecCameraPVSOrigin != vec3_origin )
+	{
+		engine->AddOriginToPVS( m_vecCameraPVSOrigin );
+	}
+
 	// FIXME:  Re-enable later?
 	//	*pas = NULL;
 }
@@ -1788,6 +1808,9 @@ bool CBasePlayer::StartObserverMode( Vector vecPosition, QAngle vecViewAngle )
 	SnapEyeAngles( vecViewAngle );
 
 	SetMoveType( MOVETYPE_OBSERVER );
+	SetAbsVelocity( vec3_origin );
+	SetBaseVelocity( vec3_origin );
+	m_Local.m_flFallVelocity = 0.0f;
 	// SetModelIndex( 0 );
 
 	RemoveFlag( FL_DUCKING );

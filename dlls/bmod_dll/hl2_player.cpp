@@ -495,6 +495,18 @@ void CHL2_Player::Touch( CBaseEntity *pOther )
 //-----------------------------------------------------------------------------
 void CHL2_Player::Spawn(void)
 {
+	// Legacy GMod Lua can synchronously re-enter player spawn from spawn hooks
+	// (_EntSpawn/_PlayerRespawn). Skip same-player nested calls; the outer
+	// Spawn is already completing the real spawn and Lua hook work.
+	static int s_nSpawningPlayerIndex = 0;
+	if ( s_nSpawningPlayerIndex == entindex() )
+	{
+		DevMsg( "CHL2_Player::Spawn: skipped re-entrant spawn of player %d (would overflow stack)\n", entindex() );
+		return;
+	}
+	const int nPrevSpawningPlayer = s_nSpawningPlayerIndex;
+	s_nSpawningPlayerIndex = entindex();
+
 	SetModel( "models/player.mdl" );
     g_ulModelIndexPlayer = GetModelIndex();
 
@@ -573,6 +585,7 @@ void CHL2_Player::Spawn(void)
 	}
 
 	m_iNumSelectedNPCs = 0;
+	s_nSpawningPlayerIndex = nPrevSpawningPlayer;
 }
 
 //-----------------------------------------------------------------------------

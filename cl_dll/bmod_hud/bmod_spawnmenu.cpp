@@ -12,6 +12,9 @@
 #include <vgui/IScheme.h>
 #include <vgui/KeyCode.h>
 #include <vgui_controls/Button.h>
+#include <vgui_controls/CheckButton.h>
+#include <vgui_controls/ComboBox.h>
+#include <vgui_controls/Label.h>
 #include <vgui_controls/Panel.h>
 #include <vgui_controls/Frame.h>
 #include <vgui_controls/EditablePanel.h>
@@ -26,6 +29,13 @@
 #include "tier0/memdbgon.h"
 
 extern ConVar gm_toolweapon;
+
+static bool BM_IsSpecialFindName( const char *pFileName )
+{
+	return ( !pFileName || !pFileName[0] ||
+		Q_strcmp( pFileName, "." ) == 0 ||
+		Q_strcmp( pFileName, ".." ) == 0 );
+}
 
 //-----------------------------------------------------------------------------
 // Console variables matching Garry's Mod
@@ -68,6 +78,21 @@ CON_COMMAND( gm_makecompletespawnlist, "Creates a complete spawn list" )
 	if ( g_pSpawnMenu )
 	{
 		g_pSpawnMenu->ScanPropsRecursive( path );
+	}
+}
+
+CON_COMMAND( gm_context, "Show a GMod build-menu context panel" )
+{
+	if ( engine->Cmd_Argc() < 2 )
+	{
+		Msg( "Usage: gm_context <context>\n" );
+		return;
+	}
+
+	if ( g_pSpawnMenu && g_pSpawnMenu->GetContextPanel() )
+	{
+		g_pSpawnMenu->ShowPanel( true );
+		g_pSpawnMenu->GetContextPanel()->ShowContext( engine->Cmd_Argv( 1 ) );
 	}
 }
 
@@ -277,8 +302,7 @@ void CClientSpawnDialog::LoadGModMenuConfiguration()
 	}
 	filesystem->FindClose( findHandle );
 
-	// Load tool buttons resource file (2003 compatible)
-	LoadControlSettings( TOOLBUTTONS_RES_FILE );
+	// Tool entries are loaded directly from settings/menu_main/*.txt by CToolButtonsPanel.
 }
 
 //-----------------------------------------------------------------------------
@@ -506,7 +530,7 @@ CToolButtonsPanel::CToolButtonsPanel( vgui::Panel *parent, const char *panelName
 	m_nCurrentToolMode = TOOL_NONE;
 
 	// Initialize tool button arrays
-	for ( int i = 0; i < 20; i++ )
+	for ( int i = 0; i < ARRAYSIZE( m_pToolButtons ); i++ )
 	{
 		m_pToolButtons[i] = NULL;
 		m_bButtonStates[i] = false;
@@ -520,15 +544,7 @@ CToolButtonsPanel::CToolButtonsPanel( vgui::Panel *parent, const char *panelName
 //-----------------------------------------------------------------------------
 CToolButtonsPanel::~CToolButtonsPanel()
 {
-	// Cleanup tool buttons
-	for ( int i = 0; i < m_ToolButtons.Count(); i++ )
-	{
-		if ( m_ToolButtons[i].pButton )
-		{
-			m_ToolButtons[i].pButton->MarkForDeletion();
-		}
-	}
-	m_ToolButtons.RemoveAll();
+	ClearToolButtons();
 }
 
 //-----------------------------------------------------------------------------
@@ -549,24 +565,53 @@ void CToolButtonsPanel::PerformLayout()
 {
 	BaseClass::PerformLayout();
 
-	// Layout tool buttons in a grid
-	int buttonWidth = 32;
-	int buttonHeight = 32;
-	int spacing = 4;
-	int buttonsPerRow = (GetWide() - spacing) / (buttonWidth + spacing);
+	int y = 4;
+	const int x = 4;
+	const int width = GetWide() - 8;
+	const int spacing = 1;
+	const int buttonWidth = ( width - spacing ) / 2;
+	int currentX = x;
+	int rowHeight = 0;
 
 	for ( int i = 0; i < m_ToolButtons.Count(); i++ )
 	{
-		if ( m_ToolButtons[i].pButton )
+		if ( !m_ToolButtons[i].pPanel )
+			continue;
+
+		if ( m_ToolButtons[i].bIsLabel || m_ToolButtons[i].bDoubleHeight )
 		{
-			int row = i / buttonsPerRow;
-			int col = i % buttonsPerRow;
+			if ( currentX != x )
+			{
+				y += rowHeight + spacing;
+				currentX = x;
+				rowHeight = 0;
+			}
 
-			int x = spacing + col * (buttonWidth + spacing);
-			int y = spacing + row * (buttonHeight + spacing);
-
-			m_ToolButtons[i].pButton->SetBounds( x, y, buttonWidth, buttonHeight );
+			const int height = m_ToolButtons[i].bIsLabel ? 17 : 34;
+			m_ToolButtons[i].pPanel->SetBounds( x, y, width, height );
+			y += height + spacing;
+			continue;
 		}
+
+		const int height = 16;
+		m_ToolButtons[i].pPanel->SetBounds( currentX, y, buttonWidth, height );
+
+		if ( currentX == x )
+		{
+			currentX = x + buttonWidth + spacing;
+			rowHeight = height;
+		}
+		else
+		{
+			y += height + spacing;
+			currentX = x;
+			rowHeight = 0;
+		}
+	}
+
+	if ( currentX != x )
+	{
+		y += rowHeight + spacing;
 	}
 }
 
@@ -575,19 +620,32 @@ void CToolButtonsPanel::PerformLayout()
 //-----------------------------------------------------------------------------
 void CToolButtonsPanel::OnCommand( const char *command )
 {
-	// Check if command is a tool selection
-	if ( Q_strnicmp( command, "tool_", 5 ) == 0 )
+	if ( Q_strnicmp( command, "menu_entry_", 11 ) == 0 )
+	{
+		int entryIndex = atoi( command + 11 );
+		if ( entryIndex >= 0 && entryIndex < m_ToolButtons.Count() )
+		{
+			ToolButton_t &entry = m_ToolButtons[entryIndex];
+			if ( entry.szCommand[0] )
+			{
+				if ( entry.toolID >= 0 )
+				{
+					SetToolMode( entry.toolID );
+				}
+
+				char fullCommand[512];
+				Q_snprintf( fullCommand, sizeof(fullCommand), "%s\n", entry.szCommand );
+				engine->ClientCmd( fullCommand );
+			}
+		}
+	}
+	else if ( Q_strnicmp( command, "tool_", 5 ) == 0 )
 	{
 		int toolID = atoi( command + 5 );
 		SetToolMode( toolID );
 
-		// Ensure tool weapon is selected before switching modes (matches gmod behavior)
-		engine->ClientCmd( "gm_toolweapon 1" );
-		gm_toolweapon.SetValue( 1 );
-
-		// Send tool mode command to server
 		char toolCommand[64];
-		Q_snprintf( toolCommand, sizeof(toolCommand), "gm_toolmode %d", toolID );
+		Q_snprintf( toolCommand, sizeof(toolCommand), "gm_toolmode %d\n", toolID );
 		engine->ClientCmd( toolCommand );
 	}
 	else
@@ -596,40 +654,214 @@ void CToolButtonsPanel::OnCommand( const char *command )
 	}
 }
 
+static int BM_ExtractToolModeFromCommand( const char *command )
+{
+	const char *toolMode = Q_strstr( command, "gm_toolmode" );
+	if ( !toolMode )
+		return -1;
+
+	toolMode += Q_strlen( "gm_toolmode" );
+	while ( *toolMode == ' ' || *toolMode == '\t' )
+	{
+		toolMode++;
+	}
+
+	return atoi( toolMode );
+}
+
+void CToolButtonsPanel::ClearToolButtons()
+{
+	for ( int i = 0; i < m_ToolButtons.Count(); i++ )
+	{
+		if ( m_ToolButtons[i].pPanel )
+		{
+			m_ToolButtons[i].pPanel->MarkForDeletion();
+		}
+	}
+
+	m_ToolButtons.RemoveAll();
+	for ( int i = 0; i < ARRAYSIZE( m_pToolButtons ); i++ )
+	{
+		m_pToolButtons[i] = NULL;
+		m_bButtonStates[i] = false;
+	}
+	m_nCurrentToolMode = TOOL_NONE;
+}
+
+void CToolButtonsPanel::CreateMenuLabel( const char *labelText )
+{
+	ToolButton_t newEntry;
+	memset( &newEntry, 0, sizeof(newEntry) );
+	newEntry.toolID = -1;
+	newEntry.bIsLabel = true;
+	Q_strncpy( newEntry.szName, labelText ? labelText : "", sizeof(newEntry.szName) );
+
+	char labelName[64];
+	Q_snprintf( labelName, sizeof(labelName), "BuildMenuLabel%d", m_ToolButtons.Count() );
+
+	vgui::Label *pLabel = new vgui::Label( this, labelName, newEntry.szName );
+	pLabel->SetContentAlignment( vgui::Label::a_west );
+	pLabel->SetTextInset( 2, 0 );
+	pLabel->SetFgColor( Color( 230, 230, 170, 255 ) );
+	pLabel->SetBgColor( Color( 0, 0, 0, 0 ) );
+	pLabel->SetPaintBackgroundEnabled( false );
+	pLabel->SetMouseInputEnabled( false );
+	pLabel->SetScheme( GetScheme() );
+
+	newEntry.pPanel = pLabel;
+	m_ToolButtons.AddToTail( newEntry );
+}
+
+void CToolButtonsPanel::CreateMenuButton( const char *buttonText, const char *command, bool bDoubleHeight )
+{
+	ToolButton_t newEntry;
+	memset( &newEntry, 0, sizeof(newEntry) );
+	newEntry.toolID = BM_ExtractToolModeFromCommand( command ? command : "" );
+	newEntry.bIsLabel = false;
+	newEntry.bDoubleHeight = bDoubleHeight;
+	Q_strncpy( newEntry.szName, buttonText ? buttonText : "", sizeof(newEntry.szName) );
+	Q_strncpy( newEntry.szCommand, command ? command : "", sizeof(newEntry.szCommand) );
+	Q_strncpy( newEntry.szDescription, newEntry.szCommand, sizeof(newEntry.szDescription) );
+
+	char buttonName[64];
+	Q_snprintf( buttonName, sizeof(buttonName), "BuildMenuButton%d", m_ToolButtons.Count() );
+
+	char menuCommand[64];
+	Q_snprintf( menuCommand, sizeof(menuCommand), "menu_entry_%d", m_ToolButtons.Count() );
+
+	newEntry.pButton = new vgui::Button( this, buttonName, newEntry.szName );
+	newEntry.pPanel = newEntry.pButton;
+	newEntry.pButton->SetCommand( menuCommand );
+	newEntry.pButton->SetTooltip( newEntry.szCommand );
+	newEntry.pButton->SetContentAlignment( vgui::Label::a_west );
+	newEntry.pButton->SetTextInset( 4, 0 );
+	newEntry.pButton->SetVisible( true );
+	newEntry.pButton->SetMouseInputEnabled( true );
+	newEntry.pButton->SetScheme( GetScheme() );
+
+	m_ToolButtons.AddToTail( newEntry );
+
+	if ( newEntry.toolID >= 0 && newEntry.toolID < ARRAYSIZE( m_pToolButtons ) )
+	{
+		m_pToolButtons[newEntry.toolID] = newEntry.pButton;
+	}
+}
+
+void CToolButtonsPanel::LoadToolButtonsFromFile( const char *fileName )
+{
+	KeyValues *pConfig = new KeyValues( "GModMenu" );
+	if ( !pConfig->LoadFromFile( filesystem, fileName, "MOD" ) )
+	{
+		pConfig->deleteThis();
+		return;
+	}
+
+	KeyValues *pClear = pConfig->FindKey( "clear" );
+	if ( pClear && pClear->GetInt() != 0 )
+	{
+		ClearToolButtons();
+	}
+
+	KeyValues *pMenu = pConfig->FindKey( "menu" );
+	if ( pMenu )
+	{
+		for ( KeyValues *pEntry = pMenu->GetFirstSubKey(); pEntry; pEntry = pEntry->GetNextKey() )
+		{
+			const char *rawName = pEntry->GetName();
+			const char *entryCommand = pEntry->GetString();
+			if ( !rawName || !rawName[0] )
+				continue;
+
+			bool bDoubleHeight = false;
+			if ( rawName[0] == '~' || rawName[0] == '@' )
+			{
+				CreateMenuLabel( rawName + 1 );
+				continue;
+			}
+			else if ( rawName[0] == '#' )
+			{
+				bDoubleHeight = true;
+				rawName++;
+			}
+
+			CreateMenuButton( rawName, entryCommand, bDoubleHeight );
+		}
+	}
+
+	pConfig->deleteThis();
+}
+
+bool CToolButtonsPanel::HasLoadedMenuFile( CUtlVector<LoadedMenuFile_t> &loadedFiles, const char *fileName )
+{
+	for ( int i = 0; i < loadedFiles.Count(); i++ )
+	{
+		if ( Q_stricmp( loadedFiles[i].szName, fileName ) == 0 )
+			return true;
+	}
+
+	return false;
+}
+
+void CToolButtonsPanel::MarkLoadedMenuFile( CUtlVector<LoadedMenuFile_t> &loadedFiles, const char *fileName )
+{
+	LoadedMenuFile_t loadedFile;
+	Q_strncpy( loadedFile.szName, fileName ? fileName : "", sizeof( loadedFile.szName ) );
+	loadedFiles.AddToTail( loadedFile );
+}
+
+void CToolButtonsPanel::LoadToolButtonsFromDirectory( const char *directory, bool bSkipDefault, CUtlVector<LoadedMenuFile_t> &loadedFiles )
+{
+	char searchPath[256];
+	Q_snprintf( searchPath, sizeof( searchPath ), "%s/*.txt", directory );
+
+	FileFindHandle_t findHandle = FILESYSTEM_INVALID_FIND_HANDLE;
+	const char *pFilename = filesystem->FindFirst( searchPath, &findHandle );
+	while ( pFilename )
+	{
+		if ( !BM_IsSpecialFindName( pFilename ) )
+		{
+			bool bIsDefault = ( Q_stricmp( pFilename, "default.txt" ) == 0 );
+			if ( !( bSkipDefault && bIsDefault ) && !HasLoadedMenuFile( loadedFiles, pFilename ) )
+			{
+				char fullPath[256];
+				Q_snprintf( fullPath, sizeof( fullPath ), "%s/%s", directory, pFilename );
+				LoadToolButtonsFromFile( fullPath );
+				MarkLoadedMenuFile( loadedFiles, pFilename );
+			}
+		}
+
+		pFilename = filesystem->FindNext( findHandle );
+	}
+
+	if ( findHandle != FILESYSTEM_INVALID_FIND_HANDLE )
+	{
+		filesystem->FindClose( findHandle );
+	}
+}
+
 //-----------------------------------------------------------------------------
 // Load tool buttons - matches Garry's Mod tool system
 //-----------------------------------------------------------------------------
 void CToolButtonsPanel::LoadToolButtons()
 {
-	// Clear existing buttons
-	for ( int i = 0; i < m_ToolButtons.Count(); i++ )
+	ClearToolButtons();
+
+	CUtlVector<LoadedMenuFile_t> loadedFiles;
+	LoadToolButtonsFromFile( DEFAULT_CONFIG_FILE );
+	MarkLoadedMenuFile( loadedFiles, "default.txt" );
+	LoadToolButtonsFromDirectory( "settings/menu_main", true, loadedFiles );
+	LoadToolButtonsFromDirectory( "mods/-modcache/settings/menu_main", true, loadedFiles );
+
+	if ( m_ToolButtons.Count() == 0 )
 	{
-		if ( m_ToolButtons[i].pButton )
-		{
-			m_ToolButtons[i].pButton->MarkForDeletion();
-		}
+		CreateToolButton( 0, "Rope", "gm_toolmode 0; gm_context rope;" );
+		CreateToolButton( 1, "Elastic", "gm_toolmode 1; gm_context spring;" );
+		CreateToolButton( 2, "Weld", "gm_toolmode 2; gm_context weld;" );
+		CreateToolButton( 3, "Ballsocket", "gm_toolmode 3; gm_context ballsocket;" );
+		CreateToolButton( 4, "Pulley", "gm_toolmode 4; gm_context pulley;" );
 	}
-	m_ToolButtons.RemoveAll();
 
-	// Create default tool buttons matching Garry's Mod
-	CreateToolButton( TOOL_GUN, "Gun", "Gun tool for shooting" );
-	CreateToolButton( TOOL_PHYSGUN, "Physgun", "Physics manipulation tool" );
-	CreateToolButton( TOOL_CAMERA, "Camera", "Camera tool for screenshots" );
-	CreateToolButton( TOOL_NPC, "NPC", "NPC spawning tool" );
-	CreateToolButton( TOOL_NEXTBOT, "NextBot", "NextBot spawning tool" );
-	CreateToolButton( TOOL_MATERIAL, "Material", "Material application tool" );
-	CreateToolButton( TOOL_COLOR, "Color", "Color modification tool" );
-	CreateToolButton( TOOL_PAINT, "Paint", "Paint tool" );
-	CreateToolButton( TOOL_INFLATOR, "Inflator", "Size modification tool" );
-	CreateToolButton( TOOL_DUPLICATOR, "Duplicator", "Entity duplication tool" );
-	CreateToolButton( TOOL_CONSTRAINER, "Constrainer", "Constraint creation tool" );
-	CreateToolButton( TOOL_AXIS, "Axis", "Axis constraint tool" );
-	CreateToolButton( TOOL_BALLSOCKET, "BallSocket", "Ball socket constraint tool" );
-	CreateToolButton( TOOL_ROPE, "Rope", "Rope constraint tool" );
-	CreateToolButton( TOOL_PULLEY, "Pulley", "Pulley constraint tool" );
-
-	// Set default tool mode
-	SetToolMode( TOOL_PHYSGUN );
+	InvalidateLayout();
 }
 
 //-----------------------------------------------------------------------------
@@ -637,35 +869,19 @@ void CToolButtonsPanel::LoadToolButtons()
 //-----------------------------------------------------------------------------
 void CToolButtonsPanel::CreateToolButton( int toolID, const char *toolName, const char *description )
 {
-	ToolButton_t newButton;
-	newButton.toolID = toolID;
-	Q_strncpy( newButton.szName, toolName, sizeof(newButton.szName) );
-	Q_strncpy( newButton.szDescription, description, sizeof(newButton.szDescription) );
+	char toolCommand[256];
+	Q_snprintf( toolCommand, sizeof(toolCommand), "gm_toolmode %d", toolID );
+	CreateMenuButton( toolName, toolCommand, false );
 
-	// Create the button
-	char buttonName[64];
-	Q_snprintf( buttonName, sizeof(buttonName), "ToolButton%d", toolID );
-
-	char command[64];
-	Q_snprintf( command, sizeof(command), "tool_%d", toolID );
-
-	newButton.pButton = new vgui::Button( this, buttonName, toolName );
-	newButton.pButton->SetCommand( command );
-	newButton.pButton->SetVisible( true );
-	newButton.pButton->SetMouseInputEnabled( true );
-
-	// Set scheme from parent to ensure text renders properly
-	newButton.pButton->SetScheme( GetScheme() );
-
-	// Set tooltip
-	newButton.pButton->SetTooltip( description );
-
-	m_ToolButtons.AddToTail( newButton );
-
-	// Store in array for quick access
-	if ( toolID < 20 )
+	if ( m_ToolButtons.Count() > 0 )
 	{
-		m_pToolButtons[toolID] = newButton.pButton;
+		ToolButton_t &entry = m_ToolButtons[m_ToolButtons.Count() - 1];
+		entry.toolID = toolID;
+		Q_strncpy( entry.szDescription, description ? description : "", sizeof(entry.szDescription) );
+		if ( toolID >= 0 && toolID < ARRAYSIZE( m_pToolButtons ) )
+		{
+			m_pToolButtons[toolID] = entry.pButton;
+		}
 	}
 }
 
@@ -678,7 +894,7 @@ void CToolButtonsPanel::SetToolMode( int toolMode )
 		return;
 
 	// Deselect previous tool button
-	if ( m_nCurrentToolMode < 20 && m_pToolButtons[m_nCurrentToolMode] )
+	if ( m_nCurrentToolMode >= 0 && m_nCurrentToolMode < ARRAYSIZE( m_pToolButtons ) && m_pToolButtons[m_nCurrentToolMode] )
 	{
 		m_pToolButtons[m_nCurrentToolMode]->SetSelected( false );
 		m_bButtonStates[m_nCurrentToolMode] = false;
@@ -686,7 +902,7 @@ void CToolButtonsPanel::SetToolMode( int toolMode )
 
 	// Select new tool button
 	m_nCurrentToolMode = toolMode;
-	if ( toolMode < 20 && m_pToolButtons[toolMode] )
+	if ( toolMode >= 0 && toolMode < ARRAYSIZE( m_pToolButtons ) && m_pToolButtons[toolMode] )
 	{
 		m_pToolButtons[toolMode]->SetSelected( true );
 		m_bButtonStates[toolMode] = true;
@@ -796,10 +1012,261 @@ void CContextPanel::OnCommand( const char *command )
 		const char *contextType = command + 8;
 		ShowContext( contextType );
 	}
+	else if ( command && command[0] )
+	{
+		char fullCommand[512];
+		Q_snprintf( fullCommand, sizeof(fullCommand), "%s\n", command );
+		engine->ClientCmd( fullCommand );
+	}
 	else
 	{
 		BaseClass::OnCommand( command );
 	}
+}
+
+void CContextPanel::ClearContextContent()
+{
+	if ( m_pContextContent )
+	{
+		m_pContextContent->MarkForDeletion();
+		m_pContextContent = NULL;
+	}
+}
+
+static void BM_FlushContextRow( int &x, int &y, int &rowTall )
+{
+	if ( x != 0 )
+	{
+		y += rowTall + 4;
+		x = 0;
+		rowTall = 0;
+	}
+}
+
+void CContextPanel::AddContextLabel( const char *text, int &x, int &y, int &rowTall, int tall )
+{
+	if ( !m_pContextContent )
+		return;
+
+	BM_FlushContextRow( x, y, rowTall );
+
+	char panelName[64];
+	Q_snprintf( panelName, sizeof(panelName), "ContextLabel%d", y );
+
+	vgui::Label *pLabel = new vgui::Label( m_pContextContent, panelName, text ? text : "" );
+	pLabel->SetContentAlignment( vgui::Label::a_west );
+	pLabel->SetTextInset( 4, 0 );
+	pLabel->SetFgColor( Color( 235, 235, 205, 255 ) );
+	pLabel->SetBgColor( Color( 0, 0, 0, 0 ) );
+	pLabel->SetPaintBackgroundEnabled( false );
+	pLabel->SetBounds( 4, y, max( GetWide() - 28, 100 ), tall );
+	pLabel->SetMouseInputEnabled( false );
+	y += tall + 3;
+}
+
+void CContextPanel::AddContextButton( const char *text, const char *command, int &x, int &y, int &rowTall, int columns )
+{
+	if ( !m_pContextContent || !text || !text[0] )
+		return;
+
+	if ( columns < 1 )
+		columns = 1;
+	if ( x >= columns )
+		BM_FlushContextRow( x, y, rowTall );
+
+	const int spacing = 4;
+	const int contentWide = max( GetWide() - 28, 160 );
+	const int buttonWide = max( ( contentWide - spacing * ( columns - 1 ) ) / columns, 48 );
+	const int buttonTall = 20;
+	const int buttonX = 4 + x * ( buttonWide + spacing );
+
+	char panelName[64];
+	Q_snprintf( panelName, sizeof(panelName), "ContextButton%d_%d", y, x );
+
+	vgui::Button *pButton = new vgui::Button( m_pContextContent, panelName, text );
+	pButton->SetCommand( command ? command : "" );
+	pButton->AddActionSignalTarget( this );
+	pButton->SetContentAlignment( vgui::Label::a_west );
+	pButton->SetTextInset( 4, 0 );
+	pButton->SetBounds( buttonX, y, buttonWide, buttonTall );
+	pButton->SetVisible( true );
+	pButton->SetMouseInputEnabled( true );
+	pButton->SetScheme( GetScheme() );
+
+	x++;
+	if ( buttonTall > rowTall )
+		rowTall = buttonTall;
+	if ( x >= columns )
+		BM_FlushContextRow( x, y, rowTall );
+}
+
+void CContextPanel::AddContextKeyValueButtons( KeyValues *pControl, int &x, int &y, int &rowTall, int columns )
+{
+	if ( !pControl )
+		return;
+
+	const char *label = pControl->GetString( "label", "" );
+	if ( label[0] )
+	{
+		AddContextLabel( label, x, y, rowTall, 16 );
+	}
+
+	const char *kvFile = pControl->GetString( "kvfile", "" );
+	if ( !kvFile[0] )
+		return;
+
+	const char *settingName = pControl->GetString( "name", "" );
+	KeyValues *pItems = new KeyValues( "ContextItems" );
+	if ( pItems->LoadFromFile( filesystem, kvFile, "MOD" ) )
+	{
+		for ( KeyValues *pItem = pItems->GetFirstSubKey(); pItem; pItem = pItem->GetNextKey() )
+		{
+			char command[512];
+			command[0] = '\0';
+
+			if ( pItem->GetFirstSubKey() )
+			{
+				for ( KeyValues *pSub = pItem->GetFirstSubKey(); pSub; pSub = pSub->GetNextKey() )
+				{
+					char oneCommand[256];
+					Q_snprintf( oneCommand, sizeof(oneCommand), "%s %s; ", pSub->GetName(), pSub->GetString() );
+					Q_strncat( command, oneCommand, sizeof(command) );
+				}
+			}
+			else if ( settingName[0] )
+			{
+				Q_snprintf( command, sizeof(command), "%s \"%s\"", settingName, pItem->GetString() );
+			}
+
+			AddContextButton( pItem->GetName(), command, x, y, rowTall, columns );
+		}
+	}
+	pItems->deleteThis();
+}
+
+bool CContextPanel::LoadContextPanelFile( const char *fileName, const char *contextType )
+{
+	KeyValues *pConfig = new KeyValues( "ContextPanel" );
+	if ( !pConfig->LoadFromFile( filesystem, fileName, "MOD" ) )
+	{
+		pConfig->deleteThis();
+		return false;
+	}
+
+	if ( Q_stricmp( pConfig->GetName(), contextType ) != 0 )
+	{
+		pConfig->deleteThis();
+		return false;
+	}
+
+	int x = 0;
+	int y = 4;
+	int rowTall = 0;
+
+	const char *title = pConfig->GetString( "title", "" );
+	if ( title[0] )
+	{
+		AddContextLabel( title, x, y, rowTall, 22 );
+	}
+
+	KeyValues *pControls = pConfig->FindKey( "controls" );
+	int columns = pControls ? pControls->GetInt( "columns", 1 ) : 1;
+	if ( columns < 1 )
+		columns = 1;
+	if ( columns > 4 )
+		columns = 4;
+
+	if ( pControls )
+	{
+		for ( KeyValues *pControl = pControls->GetFirstSubKey(); pControl; pControl = pControl->GetNextKey() )
+		{
+			const char *controlType = pControl->GetName();
+			if ( Q_stricmp( controlType, "columns" ) == 0 )
+				continue;
+
+			if ( Q_stricmp( controlType, "button" ) == 0 )
+			{
+				AddContextButton( pControl->GetString( "label", "" ), pControl->GetString( "command", "" ), x, y, rowTall, columns );
+			}
+			else if ( Q_stricmp( controlType, "keyvaluecombobox" ) == 0 )
+			{
+				AddContextKeyValueButtons( pControl, x, y, rowTall, columns );
+			}
+			else if ( Q_stricmp( controlType, "smalltext" ) == 0 || Q_stricmp( controlType, "text" ) == 0 )
+			{
+				AddContextLabel( pControl->GetString( "label", "" ), x, y, rowTall, pControl->GetInt( "tall", 20 ) );
+			}
+			else if ( Q_stricmp( controlType, "toggle" ) == 0 || Q_stricmp( controlType, "Toggle" ) == 0 )
+			{
+				const char *name = pControl->GetString( "name", "" );
+				char command[256];
+				Q_snprintf( command, sizeof(command), "toggle %s", name );
+				AddContextButton( pControl->GetString( "label", name ), command, x, y, rowTall, columns );
+			}
+			else if ( Q_stricmp( controlType, "slider" ) == 0 )
+			{
+				AddContextLabel( pControl->GetString( "label", pControl->GetString( "name", "Slider" ) ), x, y, rowTall, 16 );
+			}
+		}
+	}
+
+	BM_FlushContextRow( x, y, rowTall );
+	pConfig->deleteThis();
+	return true;
+}
+
+bool CContextPanel::LoadContextPanel( const char *contextType )
+{
+	if ( !contextType || !contextType[0] )
+		return false;
+
+	char preferredPath[256];
+	Q_snprintf( preferredPath, sizeof(preferredPath), "settings/context_panels/%s.txt", contextType );
+	if ( filesystem->FileExists( preferredPath, "MOD" ) && LoadContextPanelFile( preferredPath, contextType ) )
+		return true;
+
+	Q_snprintf( preferredPath, sizeof(preferredPath), "mods/-modcache/settings/context_panels/%s.txt", contextType );
+	if ( filesystem->FileExists( preferredPath, "MOD" ) && LoadContextPanelFile( preferredPath, contextType ) )
+		return true;
+
+	if ( LoadContextPanelFromDirectory( "settings/context_panels", contextType ) )
+		return true;
+
+	if ( LoadContextPanelFromDirectory( "mods/-modcache/settings/context_panels", contextType ) )
+		return true;
+
+	return false;
+}
+
+bool CContextPanel::LoadContextPanelFromDirectory( const char *directory, const char *contextType )
+{
+	char searchPath[256];
+	Q_snprintf( searchPath, sizeof( searchPath ), "%s/*.txt", directory );
+
+	FileFindHandle_t findHandle = FILESYSTEM_INVALID_FIND_HANDLE;
+	const char *pFilename = filesystem->FindFirst( searchPath, &findHandle );
+	while ( pFilename )
+	{
+		if ( !BM_IsSpecialFindName( pFilename ) )
+		{
+			char fullPath[256];
+			Q_snprintf( fullPath, sizeof( fullPath ), "%s/%s", directory, pFilename );
+			if ( LoadContextPanelFile( fullPath, contextType ) )
+			{
+				filesystem->FindClose( findHandle );
+				return true;
+			}
+		}
+
+		pFilename = filesystem->FindNext( findHandle );
+	}
+
+	if ( findHandle != FILESYSTEM_INVALID_FIND_HANDLE )
+	{
+		filesystem->FindClose( findHandle );
+	}
+
+	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -807,14 +1274,35 @@ void CContextPanel::OnCommand( const char *command )
 //-----------------------------------------------------------------------------
 void CContextPanel::ShowContext( const char *contextType )
 {
-	Q_strncpy( m_szCurrentContext, contextType, sizeof(m_szCurrentContext) );
+	Q_strncpy( m_szCurrentContext, contextType ? contextType : "", sizeof(m_szCurrentContext) );
 	m_bContextVisible = true;
 
-	// Create context content panel if needed
-	if ( !m_pContextContent )
+	if ( !contextType || !contextType[0] || Q_stricmp( contextType, "props" ) == 0 || Q_stricmp( contextType, "spawnmenu" ) == 0 )
 	{
-		m_pContextContent = new vgui::Panel( this, "ContextContent" );
-		m_pContextContent->SetVisible( true );
+		ClearContextContent();
+		if ( m_pPropPanel )
+			m_pPropPanel->SetVisible( true );
+		return;
+	}
+
+	if ( m_pPropPanel )
+		m_pPropPanel->SetVisible( false );
+
+	ClearContextContent();
+	m_pContextContent = new vgui::Panel( this, "ContextContent" );
+	m_pContextContent->SetVisible( true );
+	m_pContextContent->SetMouseInputEnabled( true );
+	m_pContextContent->SetBounds( 5, 5, GetWide() - 10, GetTall() - 10 );
+	m_pContextContent->SetScheme( GetScheme() );
+
+	if ( !LoadContextPanel( contextType ) )
+	{
+		int x = 0;
+		int y = 4;
+		int rowTall = 0;
+		char message[128];
+		Q_snprintf( message, sizeof(message), "No settings for %s", contextType );
+		AddContextLabel( message, x, y, rowTall, 20 );
 	}
 
 	Msg( "Showing context: %s\n", contextType );

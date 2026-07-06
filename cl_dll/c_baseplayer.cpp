@@ -942,7 +942,7 @@ void C_BasePlayer::GetChaseCamView(Vector& eyeOrigin, QAngle& eyeAngles)
 
 	Vector forward, viewpoint;
 
-	Vector origin = target->EyePosition(); // target is a player with eyes
+	Vector origin = target->IsPlayer() ? target->EyePosition() : target->WorldSpaceCenter();
 
 	engine->GetViewAngles( viewangles );
 

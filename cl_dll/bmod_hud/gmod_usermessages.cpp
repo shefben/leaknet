@@ -31,6 +31,21 @@
 //=============================================================================
 // GMod Rect with Material Support
 //=============================================================================
+
+static const char *ResolveGModHudFontName(const char *fontName)
+{
+	if (!fontName || !*fontName)
+		return "Default";
+
+	if (!Q_stricmp(fontName, "ImpactMassive") || !Q_stricmp(fontName, "TrebuchetMassive"))
+		return "DefaultShadow";
+
+	if (Q_strnicmp(fontName, "Impact", 6) == 0)
+		return "DefaultShadow";
+
+	return fontName;
+}
+
 class CGModMaterialRect : public vgui::Panel
 {
 	DECLARE_CLASS_SIMPLE(CGModMaterialRect, vgui::Panel);
@@ -419,6 +434,7 @@ private:
 	int m_iTextID;
 	char m_szFontName[64];
 	char m_szText[512];
+	wchar_t m_wszText[512];
 	vgui::HFont m_hFont;
 
 	// Position (screen-relative 0-1)
@@ -455,7 +471,6 @@ private:
 	float m_flFadeOutDuration;
 
 	// Helper
-	wchar_t *ConvertToUnicode(const char *text);
 };
 
 //-----------------------------------------------------------------------------
@@ -465,7 +480,8 @@ CGModTextDisplay::CGModTextDisplay(vgui::Panel *parent, const char *name, int te
 	m_iTextID = textID;
 	Q_strcpy(m_szFontName, "Default");
 	m_szText[0] = '\0';
-	m_hFont = 0;
+	m_wszText[0] = L'\0';
+	m_hFont = vgui::INVALID_FONT;
 	m_flX = m_flY = 0.5f;
 	m_Color = Color(255, 255, 255, 255);
 	m_flHoldTime = 5.0f;
@@ -502,8 +518,8 @@ void CGModTextDisplay::ApplySchemeSettings(vgui::IScheme *pScheme)
 {
 	BaseClass::ApplySchemeSettings(pScheme);
 
-	m_hFont = pScheme->GetFont(m_szFontName, true);
-	if (m_hFont == 0)
+	m_hFont = pScheme->GetFont(ResolveGModHudFontName(m_szFontName), true);
+	if (m_hFont == vgui::INVALID_FONT)
 		m_hFont = pScheme->GetFont("Default", true);
 
 	// Re-fill the screen in case the resolution changed.
@@ -515,7 +531,7 @@ void CGModTextDisplay::ApplySchemeSettings(vgui::IScheme *pScheme)
 //-----------------------------------------------------------------------------
 void CGModTextDisplay::SetFont(const char *fontName)
 {
-	Q_strncpy(m_szFontName, fontName ? fontName : "Default", sizeof(m_szFontName));
+	Q_strncpy(m_szFontName, ResolveGModHudFontName(fontName), sizeof(m_szFontName));
 	InvalidateLayout(false, true);
 }
 
@@ -523,6 +539,8 @@ void CGModTextDisplay::SetFont(const char *fontName)
 void CGModTextDisplay::SetText(const char *text)
 {
 	Q_strncpy(m_szText, text ? text : "", sizeof(m_szText));
+	vgui::localize()->ConvertANSIToUnicode(m_szText, m_wszText, sizeof(m_wszText));
+	m_wszText[(sizeof(m_wszText) / sizeof(m_wszText[0])) - 1] = L'\0';
 }
 
 //-----------------------------------------------------------------------------
@@ -659,7 +677,10 @@ void CGModTextDisplay::OnThink()
 //-----------------------------------------------------------------------------
 void CGModTextDisplay::Paint()
 {
-	if (!m_bVisible || !m_szText[0])
+	if (!m_bVisible || !m_wszText[0])
+		return;
+
+	if (m_hFont == vgui::INVALID_FONT)
 		return;
 
 	int screenWide, screenTall;
@@ -671,22 +692,22 @@ void CGModTextDisplay::Paint()
 	// Entity attachment
 	if (m_iEntityIndex > 0)
 	{
-		C_BaseEntity *pEntity = ClientEntityList().GetEnt(m_iEntityIndex);
-		if (pEntity)
-		{
-			Vector worldPos = pEntity->GetAbsOrigin() + m_vecEntityOffset;
-			int sx, sy;
-			if (GetVectorInScreenSpace(worldPos, sx, sy))
-			{
-				drawX = (float)sx / (float)screenWide;
-				drawY = (float)sy / (float)screenTall;
-			}
-		}
+		C_BaseEntity *pEntity = ClientEntityList().GetBaseEntity(m_iEntityIndex);
+		if (!pEntity || pEntity->IsDormant())
+			return;
+
+		Vector worldPos = pEntity->GetAbsOrigin() + m_vecEntityOffset;
+		int sx, sy;
+		if (!GetVectorInScreenSpace(worldPos, sx, sy))
+			return;
+
+		drawX = (float)sx / (float)screenWide;
+		drawY = (float)sy / (float)screenTall;
 	}
 
 	// Measure the text up front so we can honor GMod's centering sentinel and alignment.
 	int textWide, textTall;
-	vgui::surface()->GetTextSize(m_hFont, ConvertToUnicode(m_szText), textWide, textTall);
+	vgui::surface()->GetTextSize(m_hFont, m_wszText, textWide, textTall);
 
 	// Convert normalized position to screen coordinates.
 	// GMod convention: an axis value of -1 means "center the text on that axis".
@@ -751,16 +772,7 @@ void CGModTextDisplay::Paint()
 	vgui::surface()->DrawSetTextColor(cr, cg, cb, finalAlpha);
 	vgui::surface()->DrawSetTextPos(x, y);
 
-	wchar_t wtext[512];
-	vgui::localize()->ConvertANSIToUnicode(m_szText, wtext, sizeof(wtext));
-	vgui::surface()->DrawPrintText(wtext, wcslen(wtext));
-}
-
-wchar_t *CGModTextDisplay::ConvertToUnicode(const char *text)
-{
-	static wchar_t wtext[512];
-	vgui::localize()->ConvertANSIToUnicode(text, wtext, sizeof(wtext));
-	return wtext;
+	vgui::surface()->DrawPrintText(m_wszText, wcslen(m_wszText));
 }
 
 //=============================================================================

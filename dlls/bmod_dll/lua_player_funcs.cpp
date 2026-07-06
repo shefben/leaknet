@@ -1009,8 +1009,13 @@ int Lua_PlayerSpectatorStart(lua_State *L)
 		++s_nLoggedSpectatorStart;
 	}
 
-	// Put player into observer mode
-	pPlayer->StartObserverMode(pPlayer->GetAbsOrigin(), pPlayer->GetAbsAngles());
+	// Put player into observer mode. StartObserverMode resets non-player target
+	// allowance, so do not call it again during MelonRacer round respawns while
+	// the player is already chasing a prop.
+	if ( !pPlayer->IsObserver() )
+	{
+		pPlayer->StartObserverMode(pPlayer->GetAbsOrigin(), pPlayer->GetAbsAngles());
+	}
 
 	// Set the specific observer mode
 	pPlayer->SetObserverMode(obsMode);
@@ -1030,10 +1035,21 @@ int Lua_PlayerSpectatorTarget(lua_State *L)
 	if (!pPlayer)
 		return CLuaUtility::LuaError(L, "_PlayerSpectatorTarget: Invalid player ID");
 
+	if (targetID <= 0)
+	{
+		pPlayer->m_hObserverTarget.Set(NULL);
+		pPlayer->m_bAllowNonPlayerObserverTarget = false;
+		return 0;
+	}
+
 	// Get target as ANY entity (not just player) - required for MelonRacer watermelon spectating
 	CBaseEntity *pTarget = UTIL_EntityByIndex(targetID);
 	if (pTarget)
 	{
+		DevMsg("GMod DBG: Lua_PlayerSpectatorTarget EXT begin player %d target %d (%s) obs=%d allow_nonplayer=%d\n",
+			playerID, targetID, pTarget->GetClassname(), pPlayer->m_iObserverMode,
+			pPlayer->m_bAllowNonPlayerObserverTarget ? 1 : 0);
+
 		// ORDER MATTERS. The camera only chases the melon in OBS_MODE_CHASE; OBS_MODE_ROAMING/FIXED
 		// copy the player's OWN EyePosition (its buried, at-spawn origin) -- that is why the chase-cam
 		// sat in the ground and never followed the prop. SetObserverMode(CHASE) -> CheckObserverSettings
@@ -1044,25 +1060,35 @@ int Lua_PlayerSpectatorTarget(lua_State *L)
 		// target is valid so CHASE sticks instead of collapsing to ROAMING.
 		if ( !pPlayer->IsObserver() )
 		{
+			DevMsg("GMod DBG: Lua_PlayerSpectatorTarget EXT StartObserverMode player %d\n", playerID);
 			pPlayer->StartObserverMode(pPlayer->GetAbsOrigin(), pPlayer->GetAbsAngles());
+			DevMsg("GMod DBG: Lua_PlayerSpectatorTarget EXT StartObserverMode done player %d obs=%d\n",
+				playerID, pPlayer->m_iObserverMode);
 		}
 
 		pPlayer->m_bAllowNonPlayerObserverTarget = !pTarget->IsPlayer();
+		DevMsg("GMod DBG: Lua_PlayerSpectatorTarget EXT SetObserverTarget player %d target %d\n",
+			playerID, targetID);
 		if (!pPlayer->SetObserverTarget(pTarget))
 		{
 			pPlayer->m_bAllowNonPlayerObserverTarget = !pTarget->IsPlayer();
 			pPlayer->m_hObserverTarget.Set(pTarget);
 		}
+		DevMsg("GMod DBG: Lua_PlayerSpectatorTarget EXT SetObserverTarget done player %d target %d\n",
+			playerID, targetID);
 
 		if (pPlayer->m_iObserverMode != OBS_MODE_CHASE && pPlayer->m_iObserverMode != OBS_MODE_IN_EYE)
 		{
+			DevMsg("GMod DBG: Lua_PlayerSpectatorTarget EXT SetObserverMode CHASE player %d\n", playerID);
 			pPlayer->SetObserverMode(OBS_MODE_CHASE);
+			DevMsg("GMod DBG: Lua_PlayerSpectatorTarget EXT SetObserverMode done player %d obs=%d\n",
+				playerID, pPlayer->m_iObserverMode);
 		}
 
 		static int s_nLoggedSpectatorTarget = 0;
 		if (s_nLoggedSpectatorTarget < 8)
 		{
-			DevMsg("GMod Lua: _PlayerSpectatorTarget player %d target %d (%s)\n",
+			DevMsg("GMod Lua EXT: _PlayerSpectatorTarget player %d target %d (%s)\n",
 				playerID, targetID, pTarget->GetClassname());
 			++s_nLoggedSpectatorTarget;
 		}
