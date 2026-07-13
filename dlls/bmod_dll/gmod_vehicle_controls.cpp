@@ -406,7 +406,14 @@ void CGModVehicleControls::CMD_gm_makeentity(void)
     {
         pEntity->SetAbsOrigin(spawnPos);
         pEntity->SetOwnerEntity(pPlayer);
+
+        // Runtime spawn, long after the map's own precache phase - lift the
+        // "too late" precache assert gate around Spawn()/Precache(), same as
+        // CC_GModMakeRagdoll/CC_GModMakeProp in gmod_make_compat.cpp.
+        bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+        CBaseEntity::SetAllowPrecache( true );
         pEntity->Spawn();
+        CBaseEntity::SetAllowPrecache( bAllowPrecache );
 
         ClientPrint(pPlayer, HUD_PRINTTALK, "Created entity: %s", className);
     }

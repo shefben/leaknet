@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -513,6 +513,9 @@ public:
 	EHANDLE					m_hAutoAimTarget;	//If the crosshair is on a target, this is it
 
 	char					m_szAnimExtension[32];
+
+	// the time at which the player died (used in PlayerDeathThink())
+	float GetDeathTime() const { return m_fDeadTime; }
 
 private:
 

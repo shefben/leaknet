@@ -264,13 +264,16 @@ CON_COMMAND( bm_toolmode, "Sets the current tool mode" )
 	if ( engine->Cmd_Argc() < 2 )
 	{
 		Msg( "Usage: bm_toolmode <mode_number>\n" );
-		Msg( "Available modes:\n" );
-		Msg( "  1 - Gun\n" );
-		Msg( "  2 - Physgun\n" );
-		Msg( "  3 - Camera\n" );
-		Msg( "  4 - NPC\n" );
-		Msg( "  5 - NextBot\n" );
-		Msg( "  ... (see tool definitions)\n" );
+		Msg( "Available modes (authentic gm_toolmode IDs, see weapon_tool.h):\n" );
+		Msg( "  0 - Rope        1 - Elastic     2 - Weld       3 - Ballsocket\n" );
+		Msg( "  4 - Pulley      5 - EasyWeld    6 - EasyBall   7 - Axis\n" );
+		Msg( "  8 - Slider      9 - NailGun    10 - FacePoser 11 - EyesPoser\n" );
+		Msg( " 12 - Remover    13 - Ignite     14 - Paint     15 - Duplicate\n" );
+		Msg( " 16 - Colour     17 - Magnetise  18 - NoCollide 19 - Dynamite\n" );
+		Msg( " 20 - Material   21 - RTCamera   23 - Thruster  24 - PhysProps\n" );
+		Msg( " 25 - Statue     26 - Balloon    27 - Emitter   28 - Sprite\n" );
+		Msg( " 29 - Wheel      30 - Gun        31 - Camera    32 - NPCSpawn\n" );
+		Msg( " 33 - Inflator\n" );
 		return;
 	}
 
@@ -311,16 +314,8 @@ CON_COMMAND( bm_context, "Shows a context menu" )
 	CClientSpawnDialog *pSpawnMenu = g_SpawnMenuManager.GetSpawnMenu();
 	if ( pSpawnMenu )
 	{
-		CContextPanel *pContextPanel = pSpawnMenu->GetContextPanel();
-		if ( pContextPanel )
-		{
-			pContextPanel->ShowContext( contextType );
-			Msg( "Showing context: %s\n", contextType );
-		}
-		else
-		{
-			Warning( "Context panel not available\n" );
-		}
+		pSpawnMenu->ShowToolContext( contextType );
+		Msg( "Showing context: %s\n", contextType );
 	}
 	else
 	{

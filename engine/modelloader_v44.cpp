@@ -334,11 +334,13 @@ bool CModelLoader_v44::LoadVtxFile_v44(model_v44_t *pModel)
 	if (pExt)
 		*pExt = '\0';
 
-	// Try extensions in order: .dx90.vtx, .dx80.vtx, .sw.vtx
-	const char *vtxExtensions[] = { ".dx90.vtx", ".dx80.vtx", ".sw.vtx" };
+	// The static vertex format stores hardware palette indices in four bits.
+	// Prefer the v44+ DX80 data, which is stripified to 16 palette slots. DX90
+	// data may use up to 53 slots and cannot be represented by CMeshBuilder.
+	const char *vtxExtensions[] = { ".dx80.vtx", ".sw.vtx" };
 	FileHandle_t fileHandle = FILESYSTEM_INVALID_HANDLE;
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < ARRAYSIZE(vtxExtensions); i++)
 	{
 		char tryName[256];
 		Q_strncpy(tryName, vtxFileName, sizeof(tryName));

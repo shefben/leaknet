@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -283,16 +283,22 @@ bool RecvTable_RecvInfo( bf_read *pBuf, bool bNeedsDecoder )
 	// Create a decoder for it if necessary.
 	if ( bNeedsDecoder )
 	{
-		// Make a decoder for it.
-		CRecvDecoder *pDecoder = new CRecvDecoder;
-		g_RecvDecoders.AddToTail( pDecoder );
-		
 		RecvTable *pRecvTable = FindRecvTable( pTable->m_pNetTableName );
 		if ( !pRecvTable )
 		{
+			// No client-side RecvTable for this SendTable (e.g. a server-only class
+			// with no client counterpart). This is tolerated by design - see the
+			// matching comment in CL_ParseClassInfo_EndClasses ("it's ok if the client
+			// is missing a class..."). Skip creating a decoder entirely so it can't
+			// end up half-initialized in g_RecvDecoders and later crash/assert in
+			// RecvTable_CreateDecoders on a NULL m_pClientSendTable.
 			DataTable_Warning( "No matching RecvTable for SendTable '%s'.\n", pTable->m_pNetTableName );
-			return false;
+			return true;
 		}
+
+		// Make a decoder for it.
+		CRecvDecoder *pDecoder = new CRecvDecoder;
+		g_RecvDecoders.AddToTail( pDecoder );
 
 		pRecvTable->m_pDecoder = pDecoder;
 		pDecoder->m_pTable = pRecvTable;
@@ -379,6 +385,12 @@ bool RecvTable_CreateDecoders()
 
 		// It should already have been linked to its ClientSendTable.
 		Assert( pDecoder->m_pClientSendTable );
+		if ( !pDecoder->m_pClientSendTable )
+		{
+			Warning( "RecvTable_CreateDecoders: decoder for '%s' has no ClientSendTable - skipping.\n",
+				pDecoder->GetRecvTable() ? pDecoder->GetRecvTable()->GetName() : "?" );
+			continue;
+		}
 
 
 		// For each decoder, precalculate the SendTable's flat property list.

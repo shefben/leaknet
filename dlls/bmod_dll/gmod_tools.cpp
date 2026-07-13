@@ -157,34 +157,16 @@ void CGModToolsSystem::InitializeToolRegistry()
                 Q_strncpy(toolData.description, "Creates rope constraint", sizeof(toolData.description));
                 toolData.delay = 0.5f;
                 break;
-            case TOOL_SPRING:
-                Q_strncpy(toolData.toolName, "spring", sizeof(toolData.toolName));
-                Q_strncpy(toolData.displayName, "Spring Tool", sizeof(toolData.displayName));
+            case TOOL_ELASTIC:
+                Q_strncpy(toolData.toolName, "elastic", sizeof(toolData.toolName));
+                Q_strncpy(toolData.displayName, "Elastic Tool", sizeof(toolData.displayName));
                 Q_strncpy(toolData.description, "Creates spring constraint", sizeof(toolData.description));
-                toolData.delay = 0.5f;
-                break;
-            case TOOL_HYDRAULIC:
-                Q_strncpy(toolData.toolName, "hydraulic", sizeof(toolData.toolName));
-                Q_strncpy(toolData.displayName, "Hydraulic Tool", sizeof(toolData.displayName));
-                Q_strncpy(toolData.description, "Creates hydraulic constraint", sizeof(toolData.description));
-                toolData.delay = 0.5f;
-                break;
-            case TOOL_MOTOR:
-                Q_strncpy(toolData.toolName, "motor", sizeof(toolData.toolName));
-                Q_strncpy(toolData.displayName, "Motor Tool", sizeof(toolData.displayName));
-                Q_strncpy(toolData.description, "Creates motor constraint", sizeof(toolData.description));
                 toolData.delay = 0.5f;
                 break;
             case TOOL_PULLEY:
                 Q_strncpy(toolData.toolName, "pulley", sizeof(toolData.toolName));
                 Q_strncpy(toolData.displayName, "Pulley Tool", sizeof(toolData.displayName));
                 Q_strncpy(toolData.description, "Creates pulley constraint", sizeof(toolData.description));
-                toolData.delay = 0.5f;
-                break;
-            case TOOL_KEEPUPRIGHT:
-                Q_strncpy(toolData.toolName, "keepupright", sizeof(toolData.toolName));
-                Q_strncpy(toolData.displayName, "Keep Upright Tool", sizeof(toolData.displayName));
-                Q_strncpy(toolData.description, "Keeps object upright", sizeof(toolData.description));
                 toolData.delay = 0.5f;
                 break;
             case TOOL_NOCOLLIDE:
@@ -537,6 +519,32 @@ void CMD_gm_toolmode(void)
     }
 
     int mode = atoi(GetCommandArg(1));
+
+    // This is the entry point the spawn menu UI actually calls
+    // (CToolButtonsPanel sends "gm_toolmode <authentic id>"). It must drive
+    // the player's REAL equipped weapon_tool instance directly - CWeaponTool
+    // polls nothing, there is no shared/global tool-mode ConVar to bounce
+    // through (that was the bug: two disconnected tool systems, see
+    // [[tool-mode-id-fragmentation]]). Equip weapon_tool if they don't have
+    // it, matching real GMod's "picking a tool switches you to the tool gun".
+    CBaseCombatWeapon* pWeapon = pPlayer->Weapon_OwnsThisType("weapon_tool");
+    if (!pWeapon)
+    {
+        pWeapon = dynamic_cast<CBaseCombatWeapon*>(pPlayer->GiveNamedItem("weapon_tool"));
+    }
+
+    CWeaponTool* pTool = dynamic_cast<CWeaponTool*>(pWeapon);
+    if (pTool)
+    {
+        pTool->SetToolMode(mode);
+        if (pPlayer->GetActiveWeapon() != pTool)
+        {
+            pPlayer->Weapon_Switch(pTool);
+        }
+    }
+
+    // Keep this system's own bookkeeping (context menu state, gm_toolweapon
+    // display) in sync for anything else that still reads it.
     CGModToolsSystem::SetPlayerToolMode(pPlayer, mode);
 }
 
@@ -629,23 +637,6 @@ static ConCommand gm_button6_cmd("gm_button6", CMD_gm_button6, "Button 6");
 static ConCommand gm_button7_cmd("gm_button7", CMD_gm_button7, "Button 7");
 static ConCommand gm_button8_cmd("gm_button8", CMD_gm_button8, "Button 8");
 static ConCommand gm_button9_cmd("gm_button9", CMD_gm_button9, "Button 9");
-
-// Tool-specific command implementations discovered from IDA analysis
-void CMD_gm_tool_weld(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_WELD); }
-void CMD_gm_tool_axis(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_AXIS); }
-void CMD_gm_tool_ballsocket(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_BALLSOCKET); }
-void CMD_gm_tool_rope(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_ROPE); }
-void CMD_gm_tool_spring(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_SPRING); }
-void CMD_gm_tool_hydraulic(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_HYDRAULIC); }
-void CMD_gm_tool_motor(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_MOTOR); }
-void CMD_gm_tool_pulley(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_PULLEY); }
-void CMD_gm_tool_keepupright(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_KEEPUPRIGHT); }
-void CMD_gm_tool_nocollide(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_NOCOLLIDE); }
-void CMD_gm_tool_thruster(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_THRUSTER); }
-void CMD_gm_tool_wheel(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_WHEEL); }
-void CMD_gm_tool_remover(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_REMOVER); }
-void CMD_gm_tool_ignite(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_IGNITE); }
-void CMD_gm_tool_camera(void) { CGModToolsSystem::SetPlayerTool(GetCommandPlayer(), TOOL_CAMERA); }
 
 // Context menu command implementations discovered from IDA analysis
 void CMD_gm_context_npc(void) { CGModToolsSystem::SetPlayerContext(GetCommandPlayer(), CONTEXT_NPC); }
@@ -749,22 +740,6 @@ Vector CGModToolsSystem::GetPlayerTracePosition(CBasePlayer* pPlayer)
 //-----------------------------------------------------------------------------
 // Additional console command registrations for individual tools and context commands
 //-----------------------------------------------------------------------------
-static ConCommand gm_tool_weld_cmd("gm_tool_weld", CMD_gm_tool_weld, "Select weld tool");
-static ConCommand gm_tool_axis_cmd("gm_tool_axis", CMD_gm_tool_axis, "Select axis tool");
-static ConCommand gm_tool_ballsocket_cmd("gm_tool_ballsocket", CMD_gm_tool_ballsocket, "Select ballsocket tool");
-static ConCommand gm_tool_rope_cmd("gm_tool_rope", CMD_gm_tool_rope, "Select rope tool");
-static ConCommand gm_tool_spring_cmd("gm_tool_spring", CMD_gm_tool_spring, "Select spring tool");
-static ConCommand gm_tool_hydraulic_cmd("gm_tool_hydraulic", CMD_gm_tool_hydraulic, "Select hydraulic tool");
-static ConCommand gm_tool_motor_cmd("gm_tool_motor", CMD_gm_tool_motor, "Select motor tool");
-static ConCommand gm_tool_pulley_cmd("gm_tool_pulley", CMD_gm_tool_pulley, "Select pulley tool");
-static ConCommand gm_tool_keepupright_cmd("gm_tool_keepupright", CMD_gm_tool_keepupright, "Select keep upright tool");
-static ConCommand gm_tool_nocollide_cmd("gm_tool_nocollide", CMD_gm_tool_nocollide, "Select no collide tool");
-static ConCommand gm_tool_thruster_cmd("gm_tool_thruster", CMD_gm_tool_thruster, "Select thruster tool");
-static ConCommand gm_tool_wheel_cmd("gm_tool_wheel", CMD_gm_tool_wheel, "Select wheel tool");
-static ConCommand gm_tool_remover_cmd("gm_tool_remover", CMD_gm_tool_remover, "Select remover tool");
-static ConCommand gm_tool_ignite_cmd("gm_tool_ignite", CMD_gm_tool_ignite, "Select ignite tool");
-static ConCommand gm_tool_camera_cmd("gm_tool_camera", CMD_gm_tool_camera, "Select camera tool");
-
 // Context command registrations
 static ConCommand gm_context_npc_cmd("gm_context_npc", CMD_gm_context_npc, "Set NPC context");
 static ConCommand gm_context_camera_cmd("gm_context_camera", CMD_gm_context_camera, "Set camera context");

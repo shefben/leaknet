@@ -58,6 +58,7 @@ BEGIN_SRC( CLIENT_BMOD_SOURCE_FILES "Source Files" )
 			"bmod_hud/c_te_flare.cpp"
 			"bmod_hud/c_vehicle_crane.cpp"
 			"bmod_dll/c_vehicle_jeep.cpp"
+			"bmod_dll/fx_hl2_impacts.cpp"
 			"bmod_hud/C_WaterLODControl.cpp"
 			"bmod_hud/c_weapon_gravitygun.cpp"
 			"bmod_hud/c_weapon_sticklauncher.cpp"

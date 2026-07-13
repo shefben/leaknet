@@ -8,393 +8,151 @@
 #include "cbase.h"
 #include "gmod_gamemode.h"
 #include "weapon_tool.h"
+#include "tool_dispatch.h"
 #include "player.h"
 #include "gamerules.h"
 #include "util.h"
-#include "te_effect_dispatch.h"
 #include "props.h"
 #include "physics.h"
-#include "vphysics/constraints.h"
-#include "keyvalues.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
+// ClientPrintf() only substitutes literal param1-4 strings into msg_name - it
+// has no printf-style formatting of its own - so this wrapper formats first.
+//-----------------------------------------------------------------------------
+static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFormat, ... )
+{
+	char szBuf[256];
+	va_list args;
+	va_start( args, pszFormat );
+	Q_vsnprintf( szBuf, sizeof( szBuf ), pszFormat, args );
+	va_end( args );
+	ClientPrint( pPlayer, msg_dest, szBuf );
+}
+
+//-----------------------------------------------------------------------------
 // Console variables for duplicator tool
 //-----------------------------------------------------------------------------
 ConVar bm_duplicator_limit("bm_duplicator_limit", "50", FCVAR_ARCHIVE, "Maximum entities per duplication");
-ConVar bm_duplicator_delay("bm_duplicator_delay", "0.1", FCVAR_ARCHIVE, "Delay between entity spawns during duplication");
-ConVar bm_duplicator_constraints("bm_duplicator_constraints", "1", FCVAR_ARCHIVE, "Copy constraints with entities");
 
 //-----------------------------------------------------------------------------
-// Entity information storage for copying
+// Snapshot of a single entity's state for later re-creation
 //-----------------------------------------------------------------------------
 struct DupeEntityInfo_t
 {
-	char szClassName[64];
-	char szModel[256];
-	Vector vecPosition;
-	QAngle angAngles;
-	Vector vecVelocity;
-	QAngle angVelocity;
-	int nHealth;
-	int nMaxHealth;
-	float flMass;
-	int nMaterial;
-	int nSkin;
-	int nBodyGroup;
-	KeyValues *pKeyValues;
-
-	// Rendering info
-	int nRenderMode;
-	int nRenderFX;
-	int r, g, b, a;
-	char szMaterialOverride[256];
-
-	// Physics info
-	bool bMotionEnabled;
-	bool bCollisionEnabled;
-	float flLinearDamping;
-	float flAngularDamping;
+	char			szClassName[64];
+	char			szModel[256];
+	Vector			vecPosition;
+	QAngle			angAngles;
+	Vector			vecVelocity;
+	AngularImpulse	angVelocity;
+	int				nHealth;
+	int				nMaxHealth;
+	float			flMass;
+	int				r, g, b, a;
+	int				nRenderMode;
+	int				nRenderFX;
+	int				nSkin;
+	int				nBody;
+	bool			bMoveable;
 
 	DupeEntityInfo_t()
 	{
-		pKeyValues = NULL;
-		szMaterialOverride[0] = '\0';
-	}
-
-	~DupeEntityInfo_t()
-	{
-		if ( pKeyValues )
-		{
-			pKeyValues->deleteThis();
-		}
+		szClassName[0] = '\0';
+		szModel[0] = '\0';
+		vecPosition = vec3_origin;
+		angAngles.Init();
+		vecVelocity = vec3_origin;
+		angVelocity.Init();
+		nHealth = 0;
+		nMaxHealth = 0;
+		flMass = 0.0f;
+		r = g = b = a = 255;
+		nRenderMode = 0;
+		nRenderFX = 0;
+		nSkin = 0;
+		nBody = 0;
+		bMoveable = true;
 	}
 };
 
 //-----------------------------------------------------------------------------
-// Constraint information for duplication
+// Per-player duplication clipboard - duplication is conceptually per-player,
+// so each player gets their own copy buffer rather than one per weapon_tool
+// instance (matches GMod: your clipboard survives switching away and back).
 //-----------------------------------------------------------------------------
-struct DupeConstraintInfo_t
+struct DupeClipboard_t
 {
-	int nType;					// Constraint type
-	int nEntity1Index;			// Index of first entity in dupe list
-	int nEntity2Index;			// Index of second entity (-1 for world)
-	Vector vecPos1;				// Position on entity 1
-	Vector vecPos2;				// Position on entity 2
-	QAngle angConstraint;		// Constraint angles
-	float flLength;				// Length (for rope, etc.)
-	float flStrength;			// Constraint strength
-	bool bCollisionEnabled;		// Collision between constrained entities
-};
+	CHandle<CBasePlayer>			hOwner;
+	CUtlVector<DupeEntityInfo_t*>	entities;
+	Vector							vecCenterPoint;
+	bool							bValid;
+	float							flLastCopyTime;
+	float							flLastPasteTime;
 
-//-----------------------------------------------------------------------------
-// Duplication data storage
-//-----------------------------------------------------------------------------
-struct DuplicationData_t
-{
-	CUtlVector<DupeEntityInfo_t*> m_Entities;
-	CUtlVector<DupeConstraintInfo_t> m_Constraints;
-	Vector m_vecCenterPoint;		// Center point of original selection
-	int m_nTotalEntities;
-	bool m_bValid;
-
-	DuplicationData_t()
+	DupeClipboard_t()
 	{
-		m_vecCenterPoint = Vector(0, 0, 0);
-		m_nTotalEntities = 0;
-		m_bValid = false;
+		vecCenterPoint = vec3_origin;
+		bValid = false;
+		flLastCopyTime = 0.0f;
+		flLastPasteTime = 0.0f;
 	}
 
-	~DuplicationData_t()
+	~DupeClipboard_t()
 	{
 		Clear();
 	}
 
 	void Clear()
 	{
-		for ( int i = 0; i < m_Entities.Count(); i++ )
+		for ( int i = 0; i < entities.Count(); i++ )
 		{
-			delete m_Entities[i];
+			delete entities[i];
 		}
-		m_Entities.RemoveAll();
-		m_Constraints.RemoveAll();
-		m_bValid = false;
+		entities.RemoveAll();
+		bValid = false;
 	}
 };
 
 //-----------------------------------------------------------------------------
-// Duplicator tool class - implements TOOL_DUPLICATOR mode
+// Global per-player clipboard registry
 //-----------------------------------------------------------------------------
-class CToolDuplicator : public CWeaponTool
+static CUtlVector<DupeClipboard_t*> g_DupeClipboards;
+
+static DupeClipboard_t *FindDupeClipboard( CBasePlayer *pOwner )
 {
-	DECLARE_CLASS( CToolDuplicator, CWeaponTool );
-
-public:
-	CToolDuplicator() : m_flLastCopyTime(0.0f), m_flLastPasteTime(0.0f) {}
-	virtual ~CToolDuplicator() { m_DupeData.Clear(); }
-
-	virtual void OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary );
-	virtual void OnToolTrace( trace_t &tr, bool bPrimary );
-	virtual void OnToolThink();
-
-private:
-	bool CopyEntity( CBaseEntity *pEntity );
-	bool CopyArea( const Vector &vecCenter, float flRadius );
-	bool PasteEntities( const Vector &vecPastePos );
-	void CreateCopyEffect( const Vector &vecPos );
-	void CreatePasteEffect( const Vector &vecPos );
-	void SaveEntityInfo( CBaseEntity *pEntity, DupeEntityInfo_t *pInfo );
-	CBaseEntity *CreateEntityFromInfo( DupeEntityInfo_t *pInfo, const Vector &vecOffset );
-	void FindConstraints( CBaseEntity *pEntity, const Vector &vecCenter, float flRadius );
-	void RecreateConstraints( const CUtlVector<CBaseEntity*> &newEntities );
-	bool CanCopy();
-	bool CanPaste();
-
-	// Duplicator state
-	DuplicationData_t m_DupeData;		// Stored duplication data
-	float m_flLastCopyTime;				// Last copy operation time
-	float m_flLastPasteTime;			// Last paste operation time
-};
-
-//-----------------------------------------------------------------------------
-// Tool implementation for Duplicator mode
-//-----------------------------------------------------------------------------
-void CToolDuplicator::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
-{
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
-	if ( !pOwner )
-		return;
-
-	if ( bPrimary )
+	for ( int i = 0; i < g_DupeClipboards.Count(); i++ )
 	{
-		// Primary attack - copy entity or area
-		if ( pEntity && pEntity != pOwner )
-		{
-			if ( CanCopy() )
-			{
-				if ( pOwner->m_nButtons & IN_USE )
-				{
-					// Use + primary = copy area around entity
-					if ( CopyArea( pEntity->GetAbsOrigin(), 256.0f ) )
-					{
-						CreateCopyEffect( pEntity->GetAbsOrigin() );
-						PlayToolSound( "garrysmod/save_sound1.wav" );
-						ClientPrint( pOwner, HUD_PRINTTALK, "Copied area (%d entities)", m_DupeData.m_nTotalEntities );
-					}
-				}
-				else
-				{
-					// Just primary = copy single entity
-					if ( CopyEntity( pEntity ) )
-					{
-						CreateCopyEffect( pEntity->GetAbsOrigin() );
-						PlayToolSound( "garrysmod/save_sound1.wav" );
-						ClientPrint( pOwner, HUD_PRINTTALK, "Copied %s", pEntity->GetClassname() );
-					}
-				}
-				m_flLastCopyTime = gpGlobals->curtime;
-			}
-		}
-		else
-		{
-			ClientPrint( pOwner, HUD_PRINTTALK, "No valid entity to copy" );
-		}
+		if ( g_DupeClipboards[i]->hOwner.Get() == pOwner )
+			return g_DupeClipboards[i];
 	}
-	else
-	{
-		// Secondary attack - paste entities
-		if ( CanPaste() && m_DupeData.m_bValid )
-		{
-			if ( PasteEntities( tr.endpos ) )
-			{
-				CreatePasteEffect( tr.endpos );
-				PlayToolSound( "garrysmod/save_sound2.wav" );
-				ClientPrint( pOwner, HUD_PRINTTALK, "Pasted %d entities", m_DupeData.m_nTotalEntities );
-			}
-			else
-			{
-				ClientPrint( pOwner, HUD_PRINTTALK, "Failed to paste entities" );
-			}
-			m_flLastPasteTime = gpGlobals->curtime;
-		}
-		else if ( !m_DupeData.m_bValid )
-		{
-			ClientPrint( pOwner, HUD_PRINTTALK, "No entities copied yet" );
-		}
-	}
+	return NULL;
 }
 
-//-----------------------------------------------------------------------------
-// Tool trace implementation for Duplicator mode
-//-----------------------------------------------------------------------------
-void CToolDuplicator::OnToolTrace( trace_t &tr, bool bPrimary )
+static DupeClipboard_t *GetOrCreateDupeClipboard( CBasePlayer *pOwner )
 {
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
-	if ( !pOwner )
-		return;
+	DupeClipboard_t *pClip = FindDupeClipboard( pOwner );
+	if ( pClip )
+		return pClip;
 
-	if ( !bPrimary )
-	{
-		// Secondary attack - paste at traced position
-		if ( CanPaste() && m_DupeData.m_bValid )
-		{
-			if ( PasteEntities( tr.endpos ) )
-			{
-				CreatePasteEffect( tr.endpos );
-				PlayToolSound( "garrysmod/save_sound2.wav" );
-				ClientPrint( pOwner, HUD_PRINTTALK, "Pasted %d entities", m_DupeData.m_nTotalEntities );
-			}
-			m_flLastPasteTime = gpGlobals->curtime;
-		}
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Tool think for Duplicator mode
-//-----------------------------------------------------------------------------
-void CToolDuplicator::OnToolThink()
-{
-	// Duplicator tool doesn't need continuous thinking
-}
-
-//-----------------------------------------------------------------------------
-// Copy single entity
-//-----------------------------------------------------------------------------
-bool CToolDuplicator::CopyEntity( CBaseEntity *pEntity )
-{
-	if ( !pEntity )
-		return false;
-
-	// Clear previous data
-	m_DupeData.Clear();
-
-	// Create new entity info
-	DupeEntityInfo_t *pInfo = new DupeEntityInfo_t;
-	SaveEntityInfo( pEntity, pInfo );
-
-	m_DupeData.m_Entities.AddToTail( pInfo );
-	m_DupeData.m_vecCenterPoint = pEntity->GetAbsOrigin();
-	m_DupeData.m_nTotalEntities = 1;
-	m_DupeData.m_bValid = true;
-
-	return true;
-}
-
-//-----------------------------------------------------------------------------
-// Copy area of entities
-//-----------------------------------------------------------------------------
-bool CToolDuplicator::CopyArea( const Vector &vecCenter, float flRadius )
-{
-	// Clear previous data
-	m_DupeData.Clear();
-
-	// Find all entities in radius
-	CBaseEntity *pEntity = NULL;
-	int nEntityCount = 0;
-	Vector vecBounds = Vector( flRadius, flRadius, flRadius );
-
-	while ( (pEntity = gEntList.FindEntityInSphere( pEntity, vecCenter, flRadius )) != NULL )
-	{
-		// Skip invalid entities
-		if ( !pEntity || pEntity->IsPlayer() || pEntity->IsWorld() )
-			continue;
-
-		// Skip entities without physics
-		if ( !pEntity->VPhysicsGetObject() )
-			continue;
-
-		// Check entity limit
-		if ( nEntityCount >= bm_duplicator_limit.GetInt() )
-		{
-			DevMsg( "Duplicator: Hit entity limit (%d)\n", bm_duplicator_limit.GetInt() );
-			break;
-		}
-
-		// Save entity info
-		DupeEntityInfo_t *pInfo = new DupeEntityInfo_t;
-		SaveEntityInfo( pEntity, pInfo );
-		m_DupeData.m_Entities.AddToTail( pInfo );
-
-		nEntityCount++;
-	}
-
-	if ( nEntityCount > 0 )
-	{
-		m_DupeData.m_vecCenterPoint = vecCenter;
-		m_DupeData.m_nTotalEntities = nEntityCount;
-		m_DupeData.m_bValid = true;
-
-		// Find constraints if enabled
-		if ( bm_duplicator_constraints.GetBool() )
-		{
-			FindConstraints( NULL, vecCenter, flRadius );
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
-//-----------------------------------------------------------------------------
-// Paste entities at new location
-//-----------------------------------------------------------------------------
-bool CToolDuplicator::PasteEntities( const Vector &vecPastePos )
-{
-	if ( !m_DupeData.m_bValid || m_DupeData.m_Entities.Count() == 0 )
-		return false;
-
-	// Calculate offset from original center to paste position
-	Vector vecOffset = vecPastePos - m_DupeData.m_vecCenterPoint;
-
-	// Create all entities
-	CUtlVector<CBaseEntity*> newEntities;
-	for ( int i = 0; i < m_DupeData.m_Entities.Count(); i++ )
-	{
-		CBaseEntity *pNewEntity = CreateEntityFromInfo( m_DupeData.m_Entities[i], vecOffset );
-		if ( pNewEntity )
-		{
-			newEntities.AddToTail( pNewEntity );
-		}
-		else
-		{
-			newEntities.AddToTail( NULL );
-		}
-
-		// Add delay between spawns to prevent lag
-		if ( bm_duplicator_delay.GetFloat() > 0.0f && i < m_DupeData.m_Entities.Count() - 1 )
-		{
-			// In a full implementation, this would use a timer system
-			// For now, just continue spawning
-		}
-	}
-
-	// Recreate constraints
-	if ( bm_duplicator_constraints.GetBool() )
-	{
-		RecreateConstraints( newEntities );
-	}
-
-	return newEntities.Count() > 0;
+	pClip = new DupeClipboard_t;
+	pClip->hOwner = pOwner;
+	g_DupeClipboards.AddToTail( pClip );
+	return pClip;
 }
 
 //-----------------------------------------------------------------------------
 // Save entity information for duplication
 //-----------------------------------------------------------------------------
-void CToolDuplicator::SaveEntityInfo( CBaseEntity *pEntity, DupeEntityInfo_t *pInfo )
+static void SaveEntityInfo( CBaseEntity *pEntity, DupeEntityInfo_t *pInfo )
 {
-	if ( !pEntity || !pInfo )
-		return;
+	Q_strncpy( pInfo->szClassName, pEntity->GetClassname(), sizeof( pInfo->szClassName ) );
 
-	// Basic entity info
-	Q_strncpy( pInfo->szClassName, pEntity->GetClassname(), sizeof(pInfo->szClassName) );
-
-	const model_t *pModel = pEntity->GetModel();
-	if ( pModel )
+	if ( pEntity->GetModelName() != NULL_STRING )
 	{
-		Q_strncpy( pInfo->szModel, modelinfo->GetModelName( pModel ), sizeof(pInfo->szModel) );
+		Q_strncpy( pInfo->szModel, STRING( pEntity->GetModelName() ), sizeof( pInfo->szModel ) );
 	}
 
 	pInfo->vecPosition = pEntity->GetAbsOrigin();
@@ -402,51 +160,42 @@ void CToolDuplicator::SaveEntityInfo( CBaseEntity *pEntity, DupeEntityInfo_t *pI
 	pInfo->nHealth = pEntity->GetHealth();
 	pInfo->nMaxHealth = pEntity->GetMaxHealth();
 
-	// Rendering info
-	pEntity->GetRenderColor( pInfo->r, pInfo->g, pInfo->b, pInfo->a );
+	color32 renderColor = pEntity->GetRenderColor();
+	pInfo->r = renderColor.r;
+	pInfo->g = renderColor.g;
+	pInfo->b = renderColor.b;
+	pInfo->a = renderColor.a;
 	pInfo->nRenderMode = pEntity->GetRenderMode();
 	pInfo->nRenderFX = pEntity->GetRenderFX();
 
-	// Physics info
 	IPhysicsObject *pPhysics = pEntity->VPhysicsGetObject();
 	if ( pPhysics )
 	{
 		pPhysics->GetVelocity( &pInfo->vecVelocity, &pInfo->angVelocity );
 		pInfo->flMass = pPhysics->GetMass();
-		pInfo->bMotionEnabled = pPhysics->IsMotionEnabled();
-		pInfo->bCollisionEnabled = pPhysics->IsCollisionEnabled();
-		pInfo->flLinearDamping = pPhysics->GetDamping( NULL, &pInfo->flAngularDamping );
+		pInfo->bMoveable = pPhysics->IsMoveable();
 	}
 
-	// Additional properties for specific entity types
 	CBaseAnimating *pAnimating = dynamic_cast<CBaseAnimating*>( pEntity );
 	if ( pAnimating )
 	{
-		pInfo->nSkin = pAnimating->GetSkin();
-		pInfo->nBodyGroup = pAnimating->GetBody();
+		pInfo->nSkin = pAnimating->m_nSkin;
+		pInfo->nBody = pAnimating->m_nBody;
 	}
-
-	DevMsg( "Saved entity info: %s at (%f,%f,%f)\n",
-		pInfo->szClassName, pInfo->vecPosition.x, pInfo->vecPosition.y, pInfo->vecPosition.z );
 }
 
 //-----------------------------------------------------------------------------
 // Create entity from saved info
 //-----------------------------------------------------------------------------
-CBaseEntity *CToolDuplicator::CreateEntityFromInfo( DupeEntityInfo_t *pInfo, const Vector &vecOffset )
+static CBaseEntity *CreateEntityFromInfo( CBasePlayer *pOwner, DupeEntityInfo_t *pInfo, const Vector &vecOffset )
 {
-	if ( !pInfo )
-		return NULL;
-
-	// Create the entity
 	CBaseEntity *pEntity = CreateEntityByName( pInfo->szClassName );
 	if ( !pEntity )
 	{
-		DevMsg( "Failed to create entity: %s\n", pInfo->szClassName );
+		DevMsg( "Duplicator: failed to create entity '%s'\n", pInfo->szClassName );
 		return NULL;
 	}
 
-	// Set basic properties
 	pEntity->SetAbsOrigin( pInfo->vecPosition + vecOffset );
 	pEntity->SetAbsAngles( pInfo->angAngles );
 
@@ -455,144 +204,257 @@ CBaseEntity *CToolDuplicator::CreateEntityFromInfo( DupeEntityInfo_t *pInfo, con
 		pEntity->SetModel( pInfo->szModel );
 	}
 
-	// Set owner for cleanup
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
 	if ( pOwner )
 	{
 		pEntity->SetOwnerEntity( pOwner );
 	}
 
-	bool bIsRagdoll = pInfo->szClassName[0] && !Q_stricmp(pInfo->szClassName, "prop_ragdoll");
-	bool bIsProp = pInfo->szClassName[0] &&
-		(!Q_stricmp(pInfo->szClassName, "prop_physics") || !Q_stricmp(pInfo->szClassName, "physics_prop"));
-	if ( bIsRagdoll )
+	// GMod gamemode rules can veto duplicating certain ragdolls/props (e.g.
+	// NPC corpses that aren't meant to be spammed).
+	bool bIsRagdoll = !Q_stricmp( pInfo->szClassName, "prop_ragdoll" );
+	bool bIsProp = !Q_stricmp( pInfo->szClassName, "prop_physics" ) || !Q_stricmp( pInfo->szClassName, "physics_prop" );
+
+	if ( bIsRagdoll && !CGModGamemodeSystem::CanPlayerDuplicateRagdoll( pOwner, pEntity ) )
 	{
-		if ( !CGModGamemodeSystem::CanPlayerDuplicateRagdoll(pOwner, pEntity) )
-		{
-			UTIL_Remove(pEntity);
-			return NULL;
-		}
+		UTIL_Remove( pEntity );
+		return NULL;
 	}
-	else if ( bIsProp && !CGModGamemodeSystem::CanPlayerDuplicateProp(pOwner, pEntity) )
+	else if ( bIsProp && !CGModGamemodeSystem::CanPlayerDuplicateProp( pOwner, pEntity ) )
 	{
-		UTIL_Remove(pEntity);
+		UTIL_Remove( pEntity );
 		return NULL;
 	}
 
-	// Spawn the entity
 	pEntity->Spawn();
 	pEntity->Activate();
 
-	// Restore rendering properties
 	pEntity->SetRenderColor( pInfo->r, pInfo->g, pInfo->b, pInfo->a );
-	pEntity->SetRenderMode( (RenderMode_t)pInfo->nRenderMode );
-	pEntity->SetRenderFX( (RenderFx_t)pInfo->nRenderFX );
+	pEntity->SetRenderMode( pInfo->nRenderMode );
+	pEntity->SetRenderFX( pInfo->nRenderFX );
 
-	// Restore physics properties
 	IPhysicsObject *pPhysics = pEntity->VPhysicsGetObject();
-	if ( pPhysics && pInfo->flMass > 0 )
+	if ( pPhysics )
 	{
-		pPhysics->SetMass( pInfo->flMass );
-		pPhysics->SetVelocity( &pInfo->vecVelocity, &pInfo->angVelocity );
-		pPhysics->EnableMotion( pInfo->bMotionEnabled );
-		pPhysics->EnableCollisions( pInfo->bCollisionEnabled );
-		pPhysics->SetDamping( &pInfo->flLinearDamping, &pInfo->flAngularDamping );
+		if ( pInfo->flMass > 0.0f )
+		{
+			pPhysics->SetMass( pInfo->flMass );
+		}
+
+		AngularImpulse angVelocity = pInfo->angVelocity;
+		pPhysics->SetVelocity( &pInfo->vecVelocity, &angVelocity );
+		pPhysics->EnableMotion( pInfo->bMoveable );
 	}
 
-	// Restore additional properties
 	CBaseAnimating *pAnimating = dynamic_cast<CBaseAnimating*>( pEntity );
 	if ( pAnimating )
 	{
-		pAnimating->SetSkin( pInfo->nSkin );
-		pAnimating->SetBody( pInfo->nBodyGroup );
+		pAnimating->m_nSkin = pInfo->nSkin;
+		pAnimating->m_nBody = pInfo->nBody;
 	}
-
-	DevMsg( "Created entity: %s at (%f,%f,%f)\n",
-		pInfo->szClassName,
-		(pInfo->vecPosition + vecOffset).x,
-		(pInfo->vecPosition + vecOffset).y,
-		(pInfo->vecPosition + vecOffset).z );
 
 	return pEntity;
 }
 
 //-----------------------------------------------------------------------------
-// Find constraints in area (placeholder)
+// Copy single entity into the clipboard
 //-----------------------------------------------------------------------------
-void CToolDuplicator::FindConstraints( CBaseEntity *pEntity, const Vector &vecCenter, float flRadius )
+static bool CopyEntity( DupeClipboard_t *pClip, CBaseEntity *pEntity )
 {
-	// This would scan for constraints between entities in the copy area
-	// Implementation would require access to constraint system
-	DevMsg( "Finding constraints in area (not fully implemented)\n" );
+	if ( !pEntity )
+		return false;
+
+	pClip->Clear();
+
+	DupeEntityInfo_t *pInfo = new DupeEntityInfo_t;
+	SaveEntityInfo( pEntity, pInfo );
+
+	pClip->entities.AddToTail( pInfo );
+	pClip->vecCenterPoint = pEntity->GetAbsOrigin();
+	pClip->bValid = true;
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------
-// Recreate constraints (placeholder)
+// Copy every physics prop within a radius into the clipboard
 //-----------------------------------------------------------------------------
-void CToolDuplicator::RecreateConstraints( const CUtlVector<CBaseEntity*> &newEntities )
+static bool CopyArea( DupeClipboard_t *pClip, const Vector &vecCenter, float flRadius )
 {
-	// This would recreate constraints between the newly created entities
-	// Implementation would require constraint creation system
-	DevMsg( "Recreating constraints (not fully implemented)\n" );
-}
+	pClip->Clear();
 
-//-----------------------------------------------------------------------------
-// Create copy effect
-//-----------------------------------------------------------------------------
-void CToolDuplicator::CreateCopyEffect( const Vector &vecPos )
-{
-	// Create scanning effect
-	CEffectData data;
-	data.m_vOrigin = vecPos;
-	data.m_flMagnitude = 100.0f;
-	data.m_flScale = 3.0f;
-	data.m_nColor = 100; // Blue
+	CBaseEntity *pEntity = NULL;
+	int nCount = 0;
 
-	DispatchEffect( "GlowSprite", data );
-
-	// Create scan lines
-	for ( int i = 0; i < 4; i++ )
+	while ( ( pEntity = gEntList.FindEntityInSphere( pEntity, vecCenter, flRadius ) ) != NULL )
 	{
-		data.m_vOrigin = vecPos + Vector( 0, 0, i * 20 );
-		data.m_flScale = 1.0f;
-		DispatchEffect( "Sparks", data );
+		if ( pEntity->IsPlayer() || pEntity->entindex() == 0 )
+			continue;
+
+		if ( !pEntity->VPhysicsGetObject() )
+			continue;
+
+		if ( nCount >= bm_duplicator_limit.GetInt() )
+		{
+			DevMsg( "Duplicator: hit entity limit (%d)\n", bm_duplicator_limit.GetInt() );
+			break;
+		}
+
+		DupeEntityInfo_t *pInfo = new DupeEntityInfo_t;
+		SaveEntityInfo( pEntity, pInfo );
+		pClip->entities.AddToTail( pInfo );
+
+		nCount++;
+	}
+
+	if ( nCount == 0 )
+		return false;
+
+	pClip->vecCenterPoint = vecCenter;
+	pClip->bValid = true;
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Paste every stored entity, offset from the original copy location
+//-----------------------------------------------------------------------------
+static int PasteEntities( CBasePlayer *pOwner, DupeClipboard_t *pClip, const Vector &vecPastePos )
+{
+	if ( !pClip->bValid || pClip->entities.Count() == 0 )
+		return 0;
+
+	Vector vecOffset = vecPastePos - pClip->vecCenterPoint;
+	int nSpawned = 0;
+
+	for ( int i = 0; i < pClip->entities.Count(); i++ )
+	{
+		if ( CreateEntityFromInfo( pOwner, pClip->entities[i], vecOffset ) )
+		{
+			nSpawned++;
+		}
+	}
+
+	return nSpawned;
+}
+
+//-----------------------------------------------------------------------------
+// Tool dispatch - Duplicate(15)
+//-----------------------------------------------------------------------------
+void Tool_Duplicator_OnUse( CWeaponTool *pTool, CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
+{
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
+	if ( !pOwner )
+		return;
+
+	DupeClipboard_t *pClip = GetOrCreateDupeClipboard( pOwner );
+
+	if ( bPrimary )
+	{
+		if ( pEntity && pEntity != pOwner && pEntity->VPhysicsGetObject() )
+		{
+			if ( ( gpGlobals->curtime - pClip->flLastCopyTime ) < 1.0f )
+				return;
+
+			bool bCopied;
+			if ( pOwner->m_nButtons & IN_USE )
+			{
+				// Use + primary = copy every prop in a radius around the target
+				bCopied = CopyArea( pClip, pEntity->GetAbsOrigin(), 256.0f );
+				if ( bCopied )
+				{
+					pTool->PlayToolSound( "garrysmod/save_sound1.wav" );
+					ClientPrintf( pOwner, HUD_PRINTTALK, "Copied area (%d entities)", pClip->entities.Count() );
+				}
+			}
+			else
+			{
+				bCopied = CopyEntity( pClip, pEntity );
+				if ( bCopied )
+				{
+					pTool->PlayToolSound( "garrysmod/save_sound1.wav" );
+					ClientPrintf( pOwner, HUD_PRINTTALK, "Copied %s", pEntity->GetClassname() );
+				}
+			}
+
+			pClip->flLastCopyTime = gpGlobals->curtime;
+		}
+		else
+		{
+			ClientPrintf( pOwner, HUD_PRINTTALK, "No valid entity to copy" );
+		}
+	}
+	else
+	{
+		if ( !pClip->bValid )
+		{
+			ClientPrintf( pOwner, HUD_PRINTTALK, "No entities copied yet" );
+			return;
+		}
+
+		if ( ( gpGlobals->curtime - pClip->flLastPasteTime ) < 2.0f )
+			return;
+
+		int nSpawned = PasteEntities( pOwner, pClip, tr.endpos );
+		if ( nSpawned > 0 )
+		{
+			pTool->PlayToolSound( "garrysmod/save_sound2.wav" );
+			ClientPrintf( pOwner, HUD_PRINTTALK, "Pasted %d entities", nSpawned );
+		}
+		else
+		{
+			ClientPrintf( pOwner, HUD_PRINTTALK, "Failed to paste entities" );
+		}
+
+		pClip->flLastPasteTime = gpGlobals->curtime;
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Create paste effect
-//-----------------------------------------------------------------------------
-void CToolDuplicator::CreatePasteEffect( const Vector &vecPos )
+void Tool_Duplicator_OnTrace( CWeaponTool *pTool, trace_t &tr, bool bPrimary )
 {
-	// Create materialization effect
-	CEffectData data;
-	data.m_vOrigin = vecPos;
-	data.m_flMagnitude = 150.0f;
-	data.m_flScale = 4.0f;
-	data.m_nColor = 50; // Green
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
+	if ( !pOwner )
+		return;
 
-	DispatchEffect( "TeleportSplash", data );
+	if ( bPrimary )
+	{
+		ClientPrintf( pOwner, HUD_PRINTTALK, "No valid entity to copy" );
+		return;
+	}
 
-	// Create sparkles
-	data.m_vOrigin = vecPos + Vector( 0, 0, 30 );
-	data.m_flScale = 2.0f;
-	DispatchEffect( "GlowSprite", data );
+	DupeClipboard_t *pClip = GetOrCreateDupeClipboard( pOwner );
+	if ( !pClip->bValid )
+	{
+		ClientPrintf( pOwner, HUD_PRINTTALK, "No entities copied yet" );
+		return;
+	}
+
+	if ( ( gpGlobals->curtime - pClip->flLastPasteTime ) < 2.0f )
+		return;
+
+	int nSpawned = PasteEntities( pOwner, pClip, tr.endpos );
+	if ( nSpawned > 0 )
+	{
+		pTool->PlayToolSound( "garrysmod/save_sound2.wav" );
+		ClientPrintf( pOwner, HUD_PRINTTALK, "Pasted %d entities", nSpawned );
+	}
+	else
+	{
+		ClientPrintf( pOwner, HUD_PRINTTALK, "Failed to paste entities" );
+	}
+
+	pClip->flLastPasteTime = gpGlobals->curtime;
 }
 
-//-----------------------------------------------------------------------------
-// Check if we can copy (rate limiting)
-//-----------------------------------------------------------------------------
-bool CToolDuplicator::CanCopy()
+void Tool_Duplicator_OnThink( CWeaponTool *pTool )
 {
-	return (gpGlobals->curtime - m_flLastCopyTime) >= 1.0f;
-}
-
-//-----------------------------------------------------------------------------
-// Check if we can paste (rate limiting)
-//-----------------------------------------------------------------------------
-bool CToolDuplicator::CanPaste()
-{
-	return (gpGlobals->curtime - m_flLastPasteTime) >= 2.0f;
+	// Prune clipboards belonging to players who have since disconnected.
+	for ( int i = g_DupeClipboards.Count() - 1; i >= 0; i-- )
+	{
+		if ( !g_DupeClipboards[i]->hOwner.Get() )
+		{
+			delete g_DupeClipboards[i];
+			g_DupeClipboards.Remove( i );
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -604,18 +466,21 @@ CON_COMMAND( bm_context_duplicator, "Opens duplicator tool context menu" )
 	if ( !pPlayer )
 		return;
 
-	// Check if player has duplicator tool equipped
 	CWeaponTool *pTool = dynamic_cast<CWeaponTool*>( pPlayer->GetActiveWeapon() );
-	if ( !pTool || pTool->GetToolMode() != TOOL_DUPLICATOR )
+	if ( !pTool || pTool->GetToolMode() != TOOL_DUPLICATE )
 	{
-		ClientPrint( pPlayer, HUD_PRINTTALK, "Duplicator tool must be equipped and selected" );
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "Duplicator tool must be equipped and selected" );
 		return;
 	}
 
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Duplicator Tool:" );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Left click: Copy single entity" );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Use + Left click: Copy area" );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Right click: Paste entities" );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Entity limit: %d", bm_duplicator_limit.GetInt() );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Copy constraints: %s", bm_duplicator_constraints.GetBool() ? "Yes" : "No" );
+	DupeClipboard_t *pClip = FindDupeClipboard( pPlayer );
+
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Duplicator Tool:" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Left click: Copy single entity" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Use + Left click: Copy area" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Right click: Paste entities" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Entity limit: %d", bm_duplicator_limit.GetInt() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Clipboard: %s (%d entities)",
+		( pClip && pClip->bValid ) ? "Ready" : "Empty",
+		pClip ? pClip->entities.Count() : 0 );
 }

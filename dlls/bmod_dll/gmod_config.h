@@ -170,6 +170,9 @@ public:
     static void CMD_gm_config_reset(void);
     static void CMD_gm_config_list(void);
 
+    // Called periodically by the game-system hook to trigger auto-save
+    static void CheckAutoSave();
+
 private:
     static bool m_bInitialized;
     static CUtlVector<CGModConfigFile*> m_ConfigFiles;
@@ -182,7 +185,6 @@ private:
     static void RegisterConfigFile(ConfigFileType_t type, const char* filename);
     static const char* GetConfigPath(const char* filename);
     static CBasePlayer* GetCommandPlayer();
-    static void CheckAutoSave();
 };
 
 // Console variables for config system

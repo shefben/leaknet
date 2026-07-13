@@ -21,6 +21,7 @@
 #include "server.h"
 #include "edict.h"
 #include "gl_model_private.h"
+#include "studio_helpers.h"
 #include "world.h"
 #include "vphysics_interface.h"
 #include "client_class.h"
@@ -413,25 +414,13 @@ bool CEngineTrace::ClipRayToHitboxes( const Ray_t& ray, unsigned int fMask, ICol
 		// Fill out the surfaceprop details from the hitbox. Use the physics bone instead of the hitbox bone
 		const model_t *pModel = pCollideable->GetCollisionModel();
 
-		// Check if this is a v44+ model using independent system
-		if ( pModel && pModel->studio.hardwareData.m_pV44Model != NULL )
+		studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)pModel );
+		if (pStudioHdr)
 		{
-			// v44+ models use independent collision system
+			// Use version-aware accessor for v37 bone structure compatibility
 			pTrace->surface.name = "**studio**";
 			pTrace->surface.flags = SURF_HITBOX;
-			pTrace->surface.surfaceProps = physprop->GetSurfaceIndex( "default" ); // Safe fallback
-			Con_DPrintf("EngineTrace: Using fallback surface properties for v44+ model %s\n", pModel->name);
-		}
-		else
-		{
-			studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)pModel );
-			if (pStudioHdr)
-			{
-				// Use version-aware accessor for v37 bone structure compatibility
-				pTrace->surface.name = "**studio**";
-				pTrace->surface.flags = SURF_HITBOX;
-				pTrace->surface.surfaceProps = physprop->GetSurfaceIndex( pStudioHdr->GetBoneSurfaceProp( pTrace->physicsbone ) );
-			}
+			pTrace->surface.surfaceProps = physprop->GetSurfaceIndex( pStudioHdr->GetBoneSurfaceProp( pTrace->physicsbone ) );
 		}
 	}
 
@@ -594,22 +583,11 @@ void CEngineTrace::ClipRayToCollideable( const Ray_t &ray, unsigned int fMask, I
 	// Cull if the collision mask isn't set + we're not testing hitboxes.
 	if ( bIsStudioModel && (( fMask & CONTENTS_HITBOX ) == 0) )
 	{
-		// Check if this is a v44+ model using independent system
-		if ( pModel->studio.hardwareData.m_pV44Model != NULL )
-		{
-			// v44+ models use independent collision system - assume standard solid contents for now
-			Con_DPrintf("ClipRayToCollideable: Using default collision for v44+ model %s\n", pModel->name);
-			if ( ( fMask & CONTENTS_SOLID ) == 0)
-				return;
-		}
-		else
-		{
-			studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)pModel );
-			if (!pStudioHdr)
-				return;
-			if ( ( fMask & pStudioHdr->contents ) == 0)
-				return;
-		}
+		studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)pModel );
+		if (!pStudioHdr)
+			return;
+		if ( ( fMask & StudioHdr_GetContents( pStudioHdr ) ) == 0)
+			return;
 	}
 
 	bool bTraced = false;
@@ -654,27 +632,14 @@ void CEngineTrace::ClipRayToCollideable( const Ray_t &ray, unsigned int fMask, I
 
 	if ( bIsStudioModel && !bTracedHitboxes && pTrace->DidHit() )
 	{
-		// Check if this is a v44+ model using independent system
-		if ( pModel->studio.hardwareData.m_pV44Model != NULL )
+		studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)pModel );
+		if (pStudioHdr)
 		{
-			// v44+ models use independent collision system - use safe defaults
-			pTrace->contents = CONTENTS_SOLID; // Safe default for v44+ models
+			pTrace->contents = StudioHdr_GetContents( pStudioHdr );
+			// use the default surface properties
 			pTrace->surface.name = "**studio**";
 			pTrace->surface.flags = 0;
-			pTrace->surface.surfaceProps = physprop->GetSurfaceIndex( "default" );
-			Con_DPrintf("ClipRayToCollideable: Using default trace properties for v44+ model %s\n", pModel->name);
-		}
-		else
-		{
-			studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)pModel );
-			if (pStudioHdr)
-			{
-				pTrace->contents = pStudioHdr->contents;
-				// use the default surface properties
-				pTrace->surface.name = "**studio**";
-				pTrace->surface.flags = 0;
-				pTrace->surface.surfaceProps = physprop->GetSurfaceIndex( pStudioHdr->pszSurfaceProp() );
-			}
+			pTrace->surface.surfaceProps = physprop->GetSurfaceIndex( StudioHdr_GetSurfaceProp( pStudioHdr ) );
 		}
 	}
 

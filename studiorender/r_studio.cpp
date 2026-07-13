@@ -252,6 +252,11 @@ void CStudioRender::LoadMaterials( studiohdr_t *phdr, OptimizedModel::FileHeader
 // - boneWeightIndex[4], boneID[4] as shorts, origMeshVertID as short
 // v37 MDL files use mstudiovertex_v37_t (64 bytes) with embedded vertex data
 //-----------------------------------------------------------------------------
+static inline bool R_StudioIsValidHardwareBoneIndex( int boneIndex )
+{
+	return boneIndex >= 0 && boneIndex < 16;
+}
+
 bool CStudioRender::R_AddVertexToMesh_V37( CMeshBuilder& meshBuilder,
 	OptimizedModel::Vertex_v37_t* pVertex, mstudiomesh_t* pMesh, bool hwSkin,
 	studiohdr_t* pStudioHdr )
@@ -301,20 +306,31 @@ bool CStudioRender::R_AddVertexToMesh_V37( CMeshBuilder& meshBuilder,
 		int numDesiredBones = pBoneWeight37->numbones;
 		float totalWeight = 0;
 		float boneWeights[4] = {0, 0, 0, 0};
+		int numVertexBones = pVertex->numBones;
+		if (numVertexBones > 4)
+		{
+			numVertexBones = 4;
+			ok = false;
+		}
 
-		for (i = 0; i < pVertex->numBones; ++i)
+		for (i = 0; i < numVertexBones; ++i)
 		{
 			int weightIdx = pVertex->boneWeightIndex[i];
-			if (weightIdx >= 0 && weightIdx < 4)
+			int boneIndex = pVertex->boneID[i];
+			if (weightIdx >= 0 && weightIdx < 4 && R_StudioIsValidHardwareBoneIndex( boneIndex ))
 			{
 				totalWeight += pBoneWeight37->weight[weightIdx];
 				boneWeights[i] = pBoneWeight37->weight[weightIdx];
+			}
+			else
+			{
+				ok = false;
 			}
 		}
 
 		// The only way we should not add up to 1 is if there's more than 4 *desired* bones
 		// and more than 1 *actual* bone
-		if ( (pVertex->numBones > 0) && (numDesiredBones <= 4) && fabs(totalWeight - 1.0f) > 0.01f )
+		if ( (numVertexBones > 0) && (numVertexBones >= numDesiredBones) && (numDesiredBones <= 4) && fabs(totalWeight - 1.0f) > 0.01f )
 		{
 			ok = false;
 			totalWeight = 1.0f;
@@ -328,10 +344,11 @@ bool CStudioRender::R_AddVertexToMesh_V37( CMeshBuilder& meshBuilder,
 
 		float invTotalWeight = 1.0f / totalWeight;
 
-		int maxBones = (pVertex->numBones < MAX_NUM_BONE_INDICES) ? pVertex->numBones : MAX_NUM_BONE_INDICES;
+		int maxBones = (numVertexBones < MAX_NUM_BONE_INDICES) ? numVertexBones : MAX_NUM_BONE_INDICES;
 		for (i = 0; i < maxBones; ++i)
 		{
-			if (pVertex->boneID[i] == -1)
+			int boneIndex = pVertex->boneID[i];
+			if (!R_StudioIsValidHardwareBoneIndex( boneIndex ))
 			{
 				meshBuilder.BoneWeight( i, 0.0f );
 				meshBuilder.BoneMatrix( i, BONE_MATRIX_INDEX_INVALID );
@@ -339,7 +356,7 @@ bool CStudioRender::R_AddVertexToMesh_V37( CMeshBuilder& meshBuilder,
 			else
 			{
 				meshBuilder.BoneWeight( i, boneWeights[i] * invTotalWeight );
-				meshBuilder.BoneMatrix( i, pVertex->boneID[i] );
+				meshBuilder.BoneMatrix( i, boneIndex );
 			}
 		}
 		for( ; i < MAX_NUM_BONE_INDICES; i++ )
@@ -374,9 +391,6 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 	bool ok = true;
 	int idx = pVertex->origMeshVertID;
 
-	// Get model for vertex offset calculation
-	mstudiomodel_t* pModel = pMesh->pModel();
-
 	// Use version-aware vertex access for v44+ models with external VVD data
 	mstudiovertex_t* pVert = Studio_GetVertex_VersionAware( pStudioHdr, pMesh, idx );
 	if ( !pVert )
@@ -389,8 +403,27 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 			Con_DPrintf("R_AddVertexToMesh: v44+ vertex access failed for model %s (pVertexBase=%p)\n",
 				pStudioHdr->name, pStudioHdr->pVertexBase);
 		}
-		// Fallback to standard accessor (may not work for v44+)
-		pVert = pMesh->Vertex(idx);
+
+		Vector fallbackPosition, fallbackNormal;
+		Vector2D fallbackTexCoord;
+		Vector4D fallbackTangent;
+		fallbackPosition.Init();
+		fallbackNormal.Init(0, 0, 1);
+		fallbackTexCoord.Init();
+		fallbackTangent.Init(1, 0, 0, 1);
+
+		meshBuilder.Position3fv( fallbackPosition.Base() );
+		meshBuilder.Normal3fv( fallbackNormal.Base() );
+		meshBuilder.TexCoord2fv( 0, fallbackTexCoord.Base() );
+		meshBuilder.UserData( fallbackTangent.Base() );
+		meshBuilder.Color4ub( 255, 255, 255, 255 );
+		for (int i = 0; i < MAX_NUM_BONE_INDICES; ++i)
+		{
+			meshBuilder.BoneWeight( i, (i == 0) ? 1.0f : 0.0f );
+			meshBuilder.BoneMatrix( i, BONE_MATRIX_INDEX_INVALID );
+		}
+		meshBuilder.AdvanceVertex();
+		return false;
 	}
 
 	meshBuilder.Position3fv( pVert->m_vecPosition.Base() );
@@ -443,14 +476,25 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 		int numDesiredBones = pBoneWeight->numbones;
 		float totalWeight = 0;
 		float boneWeights[4] = {0, 0, 0, 0};
+		int numVertexBones = pVertex->numBones;
+		if (numVertexBones > MAX_NUM_BONES_PER_VERT)
+		{
+			numVertexBones = MAX_NUM_BONES_PER_VERT;
+			ok = false;
+		}
 
-		for (i = 0; i < pVertex->numBones; ++i)
+		for (i = 0; i < numVertexBones; ++i)
 		{
 			int weightIdx = pVertex->boneWeightIndex[i];
-			if (weightIdx >= 0 && weightIdx < MAX_NUM_BONES_PER_VERT)
+			int boneIndex = pVertex->boneID[i];
+			if (weightIdx >= 0 && weightIdx < MAX_NUM_BONES_PER_VERT && R_StudioIsValidHardwareBoneIndex( boneIndex ))
 			{
 				totalWeight += pBoneWeight->weight[weightIdx];
 				boneWeights[i] = pBoneWeight->weight[weightIdx];
+			}
+			else
+			{
+				ok = false;
 			}
 		}
 
@@ -460,22 +504,38 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 
 		// The only way we should not add up to 1 is if there's more than 3 *desired* bones
 		// and more than 1 *actual* bone (we can have 0 vertex bones in the case of static props)
-		if ( (pVertex->numBones > 0) && (numDesiredBones <= 3) && fabs(totalWeight - 1.0f) > 0.01f )
+		if ( (numVertexBones > 0) && (numVertexBones >= numDesiredBones) && (numDesiredBones <= 3) && fabs(totalWeight - 1.0f) > 0.01f )
 		{
 			// Debug output for bad bone weights - limit to first 5 occurrences
 			static int s_nDebugCount = 0;
 			if (s_nDebugCount < 5)
 			{
 				s_nDebugCount++;
-				mstudiomodel_t* pModel = pMesh->pModel();
-				mstudiomodel_v44_t* pModel44 = (mstudiomodel_v44_t*)pModel;
-				const void* pVertData = (pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44) ? pModel44->vertexdata.pVertexData : NULL;
+				const void* pVertData = NULL;
+				int vertexOffset = pMesh ? pMesh->vertexoffset : 0;
+				if (pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44)
+				{
+					const mstudiomesh_v44_t* pMesh44;
+					const mstudiomodel_v44_t* pModel44;
+					const void* pVertexBase;
+					if (Studio_GetV44MeshAndModel(pStudioHdr, pMesh, pMesh44, pModel44, pVertexBase))
+					{
+						pVertData = pVertexBase;
+						vertexOffset = pMesh44->vertexoffset;
+					}
+				}
+				else if (pMesh)
+				{
+					mstudiomodel_t* pModel = pMesh->pModel();
+					pVertData = pModel ? ((byte*)pModel + pModel->vertexindex) : NULL;
+				}
 				DevMsg("Bad bone weight debug (%d/5):\n", s_nDebugCount);
-				DevMsg("  MDL version: %d, idx: %d, vertexoffset: %d\n", pStudioHdr ? pStudioHdr->version : -1, idx, pMesh->vertexoffset);
-				DevMsg("  pModel: %p, pVertexData: %p\n", pModel, pVertData);
+				DevMsg("  MDL version: %d, idx: %d, vertexoffset: %d\n", pStudioHdr ? pStudioHdr->version : -1, idx, vertexOffset);
+				DevMsg("  pVertexData: %p\n", pVertData);
 				DevMsg("  totalWeight: %.4f, numDesiredBones: %d, pVertex->numBones: %d\n", totalWeight, numDesiredBones, pVertex->numBones);
 				DevMsg("  weights[]: %.4f, %.4f, %.4f\n", pBoneWeight->weight[0], pBoneWeight->weight[1], pBoneWeight->weight[2]);
 				DevMsg("  boneWeightIndex[]: %d, %d, %d\n", pVertex->boneWeightIndex[0], pVertex->boneWeightIndex[1], pVertex->boneWeightIndex[2]);
+				DevMsg("  boneID[]: %d, %d, %d\n", pVertex->boneID[0], pVertex->boneID[1], pVertex->boneID[2]);
 			}
 			ok = false;
 			totalWeight = 1.0f;
@@ -489,10 +549,11 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 
 		float invTotalWeight = 1.0f / totalWeight;
 
-		int maxBones = (pVertex->numBones < MAX_NUM_BONE_INDICES) ? pVertex->numBones : MAX_NUM_BONE_INDICES;
+		int maxBones = (numVertexBones < MAX_NUM_BONE_INDICES) ? numVertexBones : MAX_NUM_BONE_INDICES;
 		for (i = 0; i < maxBones; ++i)
 		{
-			if (pVertex->boneID[i] == -1)
+			int boneIndex = pVertex->boneID[i];
+			if (!R_StudioIsValidHardwareBoneIndex( boneIndex ))
 			{
 				meshBuilder.BoneWeight( i, 0.0f );
 				meshBuilder.BoneMatrix( i, BONE_MATRIX_INDEX_INVALID );
@@ -500,7 +561,7 @@ bool CStudioRender::R_AddVertexToMesh( CMeshBuilder& meshBuilder,
 			else
 			{
 				meshBuilder.BoneWeight( i, boneWeights[i] * invTotalWeight );
-				meshBuilder.BoneMatrix( i, pVertex->boneID[i] );
+				meshBuilder.BoneMatrix( i, boneIndex );
 			}
 		}
 		for( ; i < MAX_NUM_BONE_INDICES; i++ )
@@ -613,8 +674,22 @@ void CStudioRender::R_StudioBuildMeshGroup( studiomeshgroup_t* pMeshGroup,
 
 	if (!ok)
 	{
-		mstudiomodel_t* pModel = pMesh->pModel();
-		Con_Printf("Bad data found in model \"%s\" (bad bone weights)\n", pModel->name);
+		const char *pBadModelName = pStudioHdr ? pStudioHdr->name : "<unknown>";
+		if (pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44)
+		{
+			const mstudiomesh_v44_t* pMesh44;
+			const mstudiomodel_v44_t* pModel44;
+			const void* pVertexBase;
+			if (Studio_GetV44MeshAndModel(pStudioHdr, pMesh, pMesh44, pModel44, pVertexBase) && pModel44)
+				pBadModelName = pModel44->name;
+		}
+		else if (pMesh)
+		{
+			mstudiomodel_t* pModel = pMesh->pModel();
+			if (pModel)
+				pBadModelName = pModel->name;
+		}
+		Con_Printf("Bad data found in model \"%s\" (bad bone weights)\n", pBadModelName);
 	}
 }
 
@@ -691,8 +766,14 @@ void CStudioRender::R_StudioCreateSingleMesh(mstudiomesh_t* pMesh,
 		pMeshGroup->m_Flags = 0;
 		if (pStripGroup->flags & OptimizedModel::STRIPGROUP_IS_FLEXED)
 			pMeshGroup->m_Flags |= MESHGROUP_IS_FLEXED;
-		if (pStripGroup->flags & OptimizedModel::STRIPGROUP_IS_HWSKINNED)
+		if ((pStripGroup->flags & OptimizedModel::STRIPGROUP_IS_HWSKINNED) &&
+			(!pStudioHdr || pStudioHdr->version < STUDIO_VERSION_44))
 			pMeshGroup->m_Flags |= MESHGROUP_IS_HWSKINNED;
+
+		// v44+ models use external VVD data and newer VTX palette variants.
+		// Route them through the version-aware software skinning path until the
+		// legacy static vertex format can represent their full palette safely.
+		// V37 models retain the original hardware-skinned static meshes.
 
 		// Build the vertex + index buffers
 		R_StudioBuildMeshGroup( pMeshGroup, pStripGroup, pMesh, pStudioHdr, bVtxIsV6 );
@@ -723,7 +804,8 @@ void CStudioRender::R_StudioCreateSingleMesh(mstudiomesh_t* pMesh,
 		pMeshGroup->m_pGroupIndexToMeshIndex[pStripGroup->numVerts] =
 			pMeshGroup->m_pGroupIndexToMeshIndex[pStripGroup->numVerts+1] =
 			pMeshGroup->m_pGroupIndexToMeshIndex[pStripGroup->numVerts+2] =
-			pMeshGroup->m_pGroupIndexToMeshIndex[pStripGroup->numVerts+3] = pMeshGroup->m_pGroupIndexToMeshIndex[pStripGroup->numVerts - 1];
+			pMeshGroup->m_pGroupIndexToMeshIndex[pStripGroup->numVerts+3] =
+				(pStripGroup->numVerts > 0) ? pMeshGroup->m_pGroupIndexToMeshIndex[pStripGroup->numVerts - 1] : 0;
 	}
 }
 

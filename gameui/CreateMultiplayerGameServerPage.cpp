@@ -1,4 +1,4 @@
-//========= Copyright � 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -7,6 +7,8 @@
 
 #include "CreateMultiplayerGameServerPage.h"
 #include "CreateMultiplayerGameDialog.h"
+
+#include <stdio.h>
 
 using namespace vgui;
 
@@ -27,6 +29,19 @@ using namespace vgui;
 
 #define RANDOM_MAP "< Random Map >"
 
+static void TraceCreateServerControl( FILE *trace, vgui::Panel *control, const char *name )
+{
+	if ( !control )
+	{
+		fprintf( trace, "%s missing\n", name );
+		return;
+	}
+
+	int x, y, wide, tall;
+	control->GetBounds( x, y, wide, tall );
+	fprintf( trace, "%s visible=%d bounds=%d,%d,%d,%d\n", name, control->IsVisible() ? 1 : 0, x, y, wide, tall );
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
@@ -40,6 +55,23 @@ CCreateMultiplayerGameServerPage::CCreateMultiplayerGameServerPage(vgui::Panel *
 	m_pMapList = new ListPanel(this, "MapList");
 
 	LoadControlSettings("Resource/CreateMultiplayerGameServerPage.res");
+
+	const char *gameDirectory = engine ? engine->GetGameDirectory() : NULL;
+	if ( gameDirectory && gameDirectory[ 0 ] )
+	{
+		char tracePath[ 1024 ];
+		_snprintf( tracePath, sizeof( tracePath ) - 1, "%s/gameui_resource_trace.txt", gameDirectory );
+		tracePath[ sizeof( tracePath ) - 1 ] = 0;
+		FILE *trace = fopen( tracePath, "at" );
+		if ( trace )
+		{
+			TraceCreateServerControl( trace, m_pMapList, "MapList" );
+			TraceCreateServerControl( trace, FindChildByName( "ServerNameEdit" ), "ServerNameEdit" );
+			TraceCreateServerControl( trace, FindChildByName( "MaxPlayersEdit" ), "MaxPlayersEdit" );
+			TraceCreateServerControl( trace, FindChildByName( "PasswordEdit" ), "PasswordEdit" );
+			fclose( trace );
+		}
+	}
 
 	m_pMapList->AddColumnHeader(0, "mapname", "#GameUI_Map", m_pMapList->GetWide(), true, RESIZABLE, RESIZABLE);
 	LoadMapList();

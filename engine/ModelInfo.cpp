@@ -72,16 +72,7 @@ static int ModelFrameCount( model_t *model )
 	}
 	else if ( model->type == mod_studio )
 	{
-		// Check if this is a v44+ model using independent system
-		if ( model->studio.hardwareData.m_pV44Model != NULL )
-		{
-			Con_DPrintf("ModelFrameCount: Skipping v44+ model %s (handled by independent system)\n", model->name);
-			count = 1; // Default fallback for v44+ models
-		}
-		else
-		{
-			count = R_StudioBodyVariations( ( studiohdr_t * )modelloader->GetExtraData( model ) );
-		}
+		count = R_StudioBodyVariations( ( studiohdr_t * )modelloader->GetExtraData( model ) );
 	}
 
 	if ( count < 1 )
@@ -146,32 +137,28 @@ void CModelInfo::GetModelRenderBounds( const model_t *model, int sequence, Vecto
 	{
 	case mod_studio:
 		{
-			// Check if this is a v44+ model - use independent system
-			if ( model->studio.hardwareData.m_pV44Model != NULL )
-			{
-				Con_DPrintf("GetModelRenderBounds: Skipping v44+ model %s (handled by independent system)\n", model->name);
-				// Use model's static bounding box for v44+ models
-				VectorCopy( model->mins, mins );
-				VectorCopy( model->maxs, maxs );
-				return;
-			}
-
 			studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( (model_t*)model );
 			Assert( pStudioHdr );
 
+			// Version-aware: v44+ headers store hull_min/hull_max/view_bbmin/view_bbmax at
+			// different byte offsets than v37 (studiohdr_v44_t has extra fields ahead of them).
+			// GetViewBBMin()/GetHullMin()/etc pick the correct offsets at runtime.
+			const Vector &viewBBMin = pStudioHdr->GetViewBBMin();
+			const Vector &viewBBMax = pStudioHdr->GetViewBBMax();
+
 			// NOTE: We're not looking at the sequence box here, although we could
-			if (!VectorCompare( vec3_origin, pStudioHdr->view_bbmin ) ||
-				!VectorCompare( vec3_origin, pStudioHdr->view_bbmax ) )
+			if (!VectorCompare( vec3_origin, viewBBMin ) ||
+				!VectorCompare( vec3_origin, viewBBMax ) )
 			{
 				// clipping bounding box
-				VectorCopy ( pStudioHdr->view_bbmin, mins);
-				VectorCopy ( pStudioHdr->view_bbmax, maxs);
+				VectorCopy ( viewBBMin, mins);
+				VectorCopy ( viewBBMax, maxs);
 			}
 			else
 			{
 				// movement bounding box
-				VectorCopy ( pStudioHdr->hull_min, mins);
-				VectorCopy ( pStudioHdr->hull_max, maxs);
+				VectorCopy ( pStudioHdr->GetHullMin(), mins);
+				VectorCopy ( pStudioHdr->GetHullMax(), maxs);
 			}
 
 			// construct the base bounding box for this frame
@@ -259,16 +246,6 @@ void CModelInfo::GetIlluminationPoint( const model_t *model, const Vector& origi
 {
 	Assert( model->type == mod_studio );
 
-	// Check if this is a v44+ model using independent system
-	if ( model && model->studio.hardwareData.m_pV44Model != NULL )
-	{
-		// v44+ models use independent lighting system
-		// For now, use origin as fallback (v44+ system should handle this independently)
-		Con_DPrintf("GetIlluminationPoint: Using origin fallback for v44+ model %s\n", model->name);
-		*pLightingOrigin = origin;
-		return;
-	}
-
 	studiohdr_t* pStudioHdr = (studiohdr_t*)GetModelExtraData(model);
 	if (pStudioHdr)
 		R_StudioGetLightingCenter( pStudioHdr, origin, angles, pLightingOrigin );
@@ -348,35 +325,25 @@ const char *CModelInfo::GetModelKeyValueText( const model_t *model )
 	if (!model || model->type != mod_studio)
 		return NULL;
 
-	// Check if this is a v44+ model using independent system
-	if ( model->studio.hardwareData.m_pV44Model != NULL )
-	{
-		Con_DPrintf("GetModelKeyValueText: Skipping v44+ model %s (handled by independent system)\n", model->name);
-		return NULL;
-	}
-
 	studiohdr_t* pStudioHdr = (studiohdr_t*)GetModelExtraData( model );
 	if (!pStudioHdr)
 		return NULL;
 
-	if ( StudioHdr_IsV44Plus( pStudioHdr ) )
-	{
-		Con_DPrintf("GetModelKeyValueText: Skipping v44+ model %s (handled by independent system)\n", model->name);
-		return NULL;
-	}
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44( pStudioHdr );
+	const int length = pHdr44 ? pHdr44->length : pStudioHdr->length;
+	const int keyValueIndex = pHdr44 ? pHdr44->keyvalueindex : pStudioHdr->keyvalueindex;
+	const int keyValueSize = pHdr44 ? pHdr44->keyvaluesize : pStudioHdr->keyvaluesize;
 
-	if ( pStudioHdr->length <= 0 )
+	if ( length <= 0 )
 		return NULL;
 
-	const int keyValueIndex = pStudioHdr->keyvalueindex;
-	const int keyValueSize = pStudioHdr->keyvaluesize;
 	if ( keyValueSize <= 0 )
 		return NULL;
 
-	if ( keyValueIndex <= 0 || keyValueIndex > pStudioHdr->length || keyValueSize > pStudioHdr->length - keyValueIndex )
+	if ( keyValueIndex <= 0 || keyValueIndex > length || keyValueSize > length - keyValueIndex )
 	{
 		Con_DPrintf("GetModelKeyValueText: Ignoring invalid keyvalue range for %s (index %d, size %d, length %d)\n",
-			model->name, keyValueIndex, keyValueSize, pStudioHdr->length );
+			model->name, keyValueIndex, keyValueSize, length );
 		return NULL;
 	}
 

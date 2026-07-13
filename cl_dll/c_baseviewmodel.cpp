@@ -13,6 +13,7 @@
 #include "view_shared.h"
 #include "iviewrender.h"
 #include "view.h"
+#include "iinput.h"
 
 
 void FormatViewModelAttachment( Vector &vOrigin, bool bInverse )
@@ -72,7 +73,17 @@ bool C_BaseViewModel::IsViewModel() const
 
 bool C_BaseViewModel::ShouldDraw( void )
 {
-	return BaseClass::ShouldDraw();
+	if ( !BaseClass::ShouldDraw() )
+		return false;
+
+	// Viewmodels are rendered separately by CViewRender in first person. They
+	// must never be submitted as normal world entities, otherwise third-person
+	// rendering shows the v_ weapon model at the viewmodel's eye-space origin.
+	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
+	if ( !pLocalPlayer || pLocalPlayer->GetViewModel( ViewModelIndex() ) != this )
+		return false;
+
+	return !input->CAM_IsThirdPerson();
 }
 
 void C_BaseViewModel::UncorrectViewModelAttachment( Vector &vOrigin )
@@ -200,7 +211,8 @@ int C_BaseViewModel::DrawModel( int flags )
 		// CRITICAL DEBUG: Check for v44+ viewmodel vertex data issues
 		if (pHdr && pHdr->version >= 44)
 		{
-			DevMsg("  v44+ viewmodel: pVertexBase = %p\n", pHdr->pVertexBase);
+			studiohdr_v44_t *pHdr44 = StudioHdr_AsV44(pHdr);
+			DevMsg("  v44+ viewmodel: pVertexBase = %p\n", pHdr44 ? pHdr44->pVertexBase : NULL);
 
 			// Check first model's vertex data
 			if (StudioHdr_GetNumBodyparts(pHdr) > 0)

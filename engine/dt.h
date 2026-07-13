@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -370,7 +370,14 @@ void SetupArrayProps_R( TableType *pTable )
 		else if ( pProp->GetType() == DPT_DataTable )
 		{
 			// Recurse into children datatables.
-			SetupArrayProps_R<TableType,PropType>( pProp->GetDataTable() );
+			TableType *pChildTable = pProp->GetDataTable();
+			if ( !pChildTable )
+			{
+				Warning( "SetupArrayProps_R: NULL datatable for prop '%s' in table '%s' - skipping.\n",
+					pProp->GetName(), pTable->GetName() );
+				continue;
+			}
+			SetupArrayProps_R<TableType,PropType>( pChildTable );
 		}
 	}
 }

@@ -8,32 +8,19 @@
 #include "convar.h"
 #include "utlvector.h"
 #include "igamesystem.h"
+#include "weapon_tool.h"
 
 // Forward declarations
 class CBaseEntity;
 class CBasePlayer;
 
-// Tool types discovered in IDA analysis
-enum GMToolType_t
-{
-    TOOL_NONE = 0,
-    TOOL_WELD = 1,
-    TOOL_AXIS = 2,
-    TOOL_BALLSOCKET = 3,
-    TOOL_ROPE = 4,
-    TOOL_SPRING = 5,
-    TOOL_HYDRAULIC = 6,
-    TOOL_MOTOR = 7,
-    TOOL_PULLEY = 8,
-    TOOL_KEEPUPRIGHT = 9,
-    TOOL_NOCOLLIDE = 10,
-    TOOL_THRUSTER = 11,
-    TOOL_WHEEL = 12,
-    TOOL_REMOVER = 13,
-    TOOL_IGNITE = 14,
-    TOOL_CAMERA = 15,
-    TOOL_MAX
-};
+// Tool type identifiers for this bookkeeping system are the same authentic
+// ToolMode_t values weapon_tool.h defines (there used to be a second,
+// differently-numbered GMToolType_t enum here that disagreed with both the
+// real game's numbering AND weapon_tool.h's own - see [[tool-mode-id-fragmentation]]
+// in project memory. Consolidated onto one enum so there's exactly one
+// numbering scheme in the codebase.
+typedef ToolMode_t GMToolType_t;
 
 // Context types discovered in IDA analysis
 enum GMContextType_t
@@ -174,23 +161,6 @@ void CMD_gm_toolweapon(void);
 void CMD_gm_toolmode(void);
 void CMD_gm_context(void);
 void CMD_gm_wepselmode(void);
-
-// Tool-specific commands
-void CMD_gm_tool_weld(void);
-void CMD_gm_tool_axis(void);
-void CMD_gm_tool_ballsocket(void);
-void CMD_gm_tool_rope(void);
-void CMD_gm_tool_spring(void);
-void CMD_gm_tool_hydraulic(void);
-void CMD_gm_tool_motor(void);
-void CMD_gm_tool_pulley(void);
-void CMD_gm_tool_keepupright(void);
-void CMD_gm_tool_nocollide(void);
-void CMD_gm_tool_thruster(void);
-void CMD_gm_tool_wheel(void);
-void CMD_gm_tool_remover(void);
-void CMD_gm_tool_ignite(void);
-void CMD_gm_tool_camera(void);
 
 // Context menu commands
 void CMD_gm_context_npc(void);

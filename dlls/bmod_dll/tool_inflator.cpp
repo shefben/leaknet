@@ -1,23 +1,45 @@
 //========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: BarrysMod Inflator Tool - Implementation of entity resizing tool
-//          Based on Garry's Mod tool system analysis
+//          (TOOL_INFLATOR, mode 33 - no authentic gm_toolmode slot, reachable
+//          only via "bm_toolmode 33").
+//
+//          Dispatched here as free functions (declared in tool_dispatch.h)
+//          rather than as a CWeaponTool subclass, since "weapon_tool" is the
+//          only entity class for every tool mode (see tool_dispatch.h). The
+//          old CToolInflator's single per-instance member (m_flLastInflateTime)
+//          now lives in a static file-local registry keyed by the weapon's
+//          EHANDLE, matching the g_RemoverStates pattern in tool_remover.cpp.
 //
 //=============================================================================
 
 #include "cbase.h"
 #include "weapon_tool.h"
+#include "tool_dispatch.h"
 #include "player.h"
 #include "gamerules.h"
 #include "util.h"
 #include "te_effect_dispatch.h"
 #include "props.h"
 #include "physics.h"
-#include "bone_setup.h"
-#include "studio.h"
+#include "in_buttons.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+//-----------------------------------------------------------------------------
+// ClientPrintf() only substitutes literal param1-4 strings into msg_name - it
+// has no printf-style formatting of its own - so this wrapper formats first.
+//-----------------------------------------------------------------------------
+static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFormat, ... )
+{
+	char szBuf[256];
+	va_list args;
+	va_start( args, pszFormat );
+	Q_vsnprintf( szBuf, sizeof( szBuf ), pszFormat, args );
+	va_end( args );
+	ClientPrint( pPlayer, msg_dest, szBuf );
+}
 
 //-----------------------------------------------------------------------------
 // Console variables for inflator tool
@@ -50,58 +72,98 @@ struct ScaleInfo_t
 };
 
 //-----------------------------------------------------------------------------
-// Global scale tracking
+// Global scale tracking - keyed by target entity (not by weapon), since the
+// scale is a property of the prop being resized, not of any one tool instance.
 //-----------------------------------------------------------------------------
 static CUtlVector<ScaleInfo_t*> g_ScaledEntities;
 
 //-----------------------------------------------------------------------------
-// Inflator tool class - implements TOOL_INFLATOR mode
+// Per-weapon inflator state - CWeaponTool is not subclassed, so the state that
+// used to live in CToolInflator's m_flLastInflateTime member now lives here,
+// keyed by the weapon's EHANDLE (mirrors g_RemoverStates in tool_remover.cpp).
 //-----------------------------------------------------------------------------
-class CToolInflator : public CWeaponTool
+struct InflatorState_t
 {
-	DECLARE_CLASS( CToolInflator, CWeaponTool );
+	EHANDLE	hTool;
+	float	flLastInflateTime;
 
-public:
-	CToolInflator() : m_flLastInflateTime(0.0f) {}
-
-	virtual void OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary );
-	virtual void OnToolTrace( trace_t &tr, bool bPrimary );
-	virtual void OnToolThink();
-
-private:
-	bool InflateEntity( CBaseEntity *pEntity, float flScaleFactor );
-	bool DeflateEntity( CBaseEntity *pEntity, float flScaleFactor );
-	bool ResetEntityScale( CBaseEntity *pEntity );
-	bool CanInflateEntity( CBaseEntity *pEntity );
-	void CreateInflateEffect( const Vector &vecPos, bool bInflate );
-	ScaleInfo_t *FindScaleInfo( CBaseEntity *pEntity );
-	ScaleInfo_t *GetOrCreateScaleInfo( CBaseEntity *pEntity );
-	void CleanupScaleInfo();
-	float GetEntityScale( CBaseEntity *pEntity );
-	void SetEntityScale( CBaseEntity *pEntity, float flScale );
-
-	// Inflator tool state
-	float m_flLastInflateTime;		// Last inflate operation time
+	InflatorState_t()
+	{
+		flLastInflateTime = 0.0f;
+	}
 };
+
+static CUtlVector<InflatorState_t*> g_InflatorStates;
+
+static InflatorState_t *FindInflatorState( CWeaponTool *pTool )
+{
+	for ( int i = 0; i < g_InflatorStates.Count(); i++ )
+	{
+		if ( g_InflatorStates[i]->hTool == pTool )
+			return g_InflatorStates[i];
+	}
+	return NULL;
+}
+
+static InflatorState_t *GetInflatorState( CWeaponTool *pTool )
+{
+	InflatorState_t *pState = FindInflatorState( pTool );
+	if ( !pState )
+	{
+		pState = new InflatorState_t;
+		pState->hTool = pTool;
+		g_InflatorStates.AddToTail( pState );
+	}
+	return pState;
+}
+
+// Removes state records for weapons that no longer exist.
+static void CleanupInflatorStates()
+{
+	for ( int i = g_InflatorStates.Count() - 1; i >= 0; i-- )
+	{
+		if ( !g_InflatorStates[i]->hTool.Get() )
+		{
+			delete g_InflatorStates[i];
+			g_InflatorStates.Remove( i );
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Forward declarations of tool helpers
+//-----------------------------------------------------------------------------
+static bool InflateEntity( CBaseEntity *pEntity, float flScaleFactor );
+static bool DeflateEntity( CBaseEntity *pEntity, float flScaleFactor );
+static bool ResetEntityScale( CBaseEntity *pEntity );
+static bool CanInflateEntity( CBaseEntity *pEntity );
+static void CreateInflateEffect( const Vector &vecPos, bool bInflate );
+static ScaleInfo_t *FindScaleInfo( CBaseEntity *pEntity );
+static ScaleInfo_t *GetOrCreateScaleInfo( CBaseEntity *pEntity );
+static void CleanupScaleInfo();
+static float GetEntityScale( CBaseEntity *pEntity );
+static void SetEntityScale( CBaseEntity *pEntity, float flScale );
 
 //-----------------------------------------------------------------------------
 // Tool implementation for Inflator mode
 //-----------------------------------------------------------------------------
-void CToolInflator::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
+void Tool_Inflator_OnUse( CWeaponTool *pTool, CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 {
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( !pOwner )
 		return;
 
+	InflatorState_t *pState = GetInflatorState( pTool );
+
 	if ( !pEntity || pEntity == pOwner )
 	{
-		ClientPrint( pOwner, HUD_PRINTTALK, "No valid entity targeted" );
+		ClientPrintf( pOwner, HUD_PRINTTALK, "No valid entity targeted" );
 		return;
 	}
 
 	if ( !CanInflateEntity( pEntity ) )
 	{
-		ClientPrint( pOwner, HUD_PRINTTALK, "Cannot resize %s", pEntity->GetClassname() );
+		ClientPrintf( pOwner, HUD_PRINTTALK, "Cannot resize %s", pEntity->GetClassname() );
 		return;
 	}
 
@@ -116,8 +178,8 @@ void CToolInflator::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary 
 			if ( ResetEntityScale( pEntity ) )
 			{
 				CreateInflateEffect( tr.endpos, false );
-				PlayToolSound( "garrysmod/balloon_pop_cute.wav" );
-				ClientPrint( pOwner, HUD_PRINTTALK, "Reset %s to original size", pEntity->GetClassname() );
+				pTool->PlayToolSound( "garrysmod/balloon_pop_cute.wav" );
+				ClientPrintf( pOwner, HUD_PRINTTALK, "Reset %s to original size", pEntity->GetClassname() );
 			}
 		}
 		else
@@ -126,10 +188,10 @@ void CToolInflator::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary 
 			if ( InflateEntity( pEntity, flScaleFactor ) )
 			{
 				CreateInflateEffect( tr.endpos, true );
-				PlayToolSound( "weapons/physcannon/energy_sing_loop4.wav" );
+				pTool->PlayToolSound( "weapons/physcannon/energy_sing_loop4.wav" );
 
 				float flCurrentScale = GetEntityScale( pEntity );
-				ClientPrint( pOwner, HUD_PRINTTALK, "Inflated %s (Scale: %.2fx)",
+				ClientPrintf( pOwner, HUD_PRINTTALK, "Inflated %s (Scale: %.2fx)",
 					pEntity->GetClassname(), flCurrentScale );
 			}
 		}
@@ -142,45 +204,43 @@ void CToolInflator::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary 
 		if ( DeflateEntity( pEntity, flScaleFactor ) )
 		{
 			CreateInflateEffect( tr.endpos, false );
-			PlayToolSound( "weapons/physcannon/energy_bounce1.wav" );
+			pTool->PlayToolSound( "weapons/physcannon/energy_bounce1.wav" );
 
 			float flCurrentScale = GetEntityScale( pEntity );
-			ClientPrint( pOwner, HUD_PRINTTALK, "Deflated %s (Scale: %.2fx)",
+			ClientPrintf( pOwner, HUD_PRINTTALK, "Deflated %s (Scale: %.2fx)",
 				pEntity->GetClassname(), flCurrentScale );
 		}
 	}
 
-	m_flLastInflateTime = gpGlobals->curtime;
+	pState->flLastInflateTime = gpGlobals->curtime;
 }
 
 //-----------------------------------------------------------------------------
 // Tool trace implementation for Inflator mode
 //-----------------------------------------------------------------------------
-void CToolInflator::OnToolTrace( trace_t &tr, bool bPrimary )
+void Tool_Inflator_OnTrace( CWeaponTool *pTool, trace_t &tr, bool bPrimary )
 {
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( !pOwner )
 		return;
 
-	if ( bPrimary || !bPrimary )
-	{
-		ClientPrint( pOwner, HUD_PRINTTALK, "Inflator tool can only be applied to entities" );
-	}
+	ClientPrintf( pOwner, HUD_PRINTTALK, "Inflator tool can only be applied to entities" );
 }
 
 //-----------------------------------------------------------------------------
 // Tool think for Inflator mode
 //-----------------------------------------------------------------------------
-void CToolInflator::OnToolThink()
+void Tool_Inflator_OnThink( CWeaponTool *pTool )
 {
-	// Clean up invalid scale info
+	// Clean up invalid scale info and stale per-weapon state
 	CleanupScaleInfo();
+	CleanupInflatorStates();
 }
 
 //-----------------------------------------------------------------------------
 // Inflate entity (make bigger)
 //-----------------------------------------------------------------------------
-bool CToolInflator::InflateEntity( CBaseEntity *pEntity, float flScaleFactor )
+static bool InflateEntity( CBaseEntity *pEntity, float flScaleFactor )
 {
 	if ( !pEntity || flScaleFactor <= 0.0f )
 		return false;
@@ -221,7 +281,7 @@ bool CToolInflator::InflateEntity( CBaseEntity *pEntity, float flScaleFactor )
 //-----------------------------------------------------------------------------
 // Deflate entity (make smaller)
 //-----------------------------------------------------------------------------
-bool CToolInflator::DeflateEntity( CBaseEntity *pEntity, float flScaleFactor )
+static bool DeflateEntity( CBaseEntity *pEntity, float flScaleFactor )
 {
 	if ( !pEntity || flScaleFactor <= 0.0f )
 		return false;
@@ -262,7 +322,7 @@ bool CToolInflator::DeflateEntity( CBaseEntity *pEntity, float flScaleFactor )
 //-----------------------------------------------------------------------------
 // Reset entity to original scale
 //-----------------------------------------------------------------------------
-bool CToolInflator::ResetEntityScale( CBaseEntity *pEntity )
+static bool ResetEntityScale( CBaseEntity *pEntity )
 {
 	if ( !pEntity )
 		return false;
@@ -291,7 +351,7 @@ bool CToolInflator::ResetEntityScale( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // Check if entity can be inflated
 //-----------------------------------------------------------------------------
-bool CToolInflator::CanInflateEntity( CBaseEntity *pEntity )
+static bool CanInflateEntity( CBaseEntity *pEntity )
 {
 	if ( !pEntity )
 		return false;
@@ -301,7 +361,7 @@ bool CToolInflator::CanInflateEntity( CBaseEntity *pEntity )
 		return false;
 
 	// Can't inflate world
-	if ( pEntity->IsWorld() )
+	if ( pEntity->entindex() == 0 )
 		return false;
 
 	// Entity must be a prop or have a model
@@ -314,7 +374,7 @@ bool CToolInflator::CanInflateEntity( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // Create inflate effect
 //-----------------------------------------------------------------------------
-void CToolInflator::CreateInflateEffect( const Vector &vecPos, bool bInflate )
+static void CreateInflateEffect( const Vector &vecPos, bool bInflate )
 {
 	// Create inflation/deflation effect
 	CEffectData data;
@@ -342,7 +402,7 @@ void CToolInflator::CreateInflateEffect( const Vector &vecPos, bool bInflate )
 //-----------------------------------------------------------------------------
 // Find scale info for entity
 //-----------------------------------------------------------------------------
-ScaleInfo_t *CToolInflator::FindScaleInfo( CBaseEntity *pEntity )
+static ScaleInfo_t *FindScaleInfo( CBaseEntity *pEntity )
 {
 	for ( int i = 0; i < g_ScaledEntities.Count(); i++ )
 	{
@@ -357,7 +417,7 @@ ScaleInfo_t *CToolInflator::FindScaleInfo( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // Get or create scale info for entity
 //-----------------------------------------------------------------------------
-ScaleInfo_t *CToolInflator::GetOrCreateScaleInfo( CBaseEntity *pEntity )
+static ScaleInfo_t *GetOrCreateScaleInfo( CBaseEntity *pEntity )
 {
 	ScaleInfo_t *pInfo = FindScaleInfo( pEntity );
 	if ( pInfo )
@@ -383,7 +443,7 @@ ScaleInfo_t *CToolInflator::GetOrCreateScaleInfo( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // Clean up invalid scale info
 //-----------------------------------------------------------------------------
-void CToolInflator::CleanupScaleInfo()
+static void CleanupScaleInfo()
 {
 	for ( int i = g_ScaledEntities.Count() - 1; i >= 0; i-- )
 	{
@@ -400,7 +460,7 @@ void CToolInflator::CleanupScaleInfo()
 //-----------------------------------------------------------------------------
 // Get entity's current scale
 //-----------------------------------------------------------------------------
-float CToolInflator::GetEntityScale( CBaseEntity *pEntity )
+static float GetEntityScale( CBaseEntity *pEntity )
 {
 	if ( !pEntity )
 		return 1.0f;
@@ -420,7 +480,7 @@ float CToolInflator::GetEntityScale( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // Set entity's scale
 //-----------------------------------------------------------------------------
-void CToolInflator::SetEntityScale( CBaseEntity *pEntity, float flScale )
+static void SetEntityScale( CBaseEntity *pEntity, float flScale )
 {
 	if ( !pEntity )
 		return;
@@ -432,7 +492,7 @@ void CToolInflator::SetEntityScale( CBaseEntity *pEntity, float flScale )
 	// Store scale in keyvalue for potential custom rendering system
 	char szScale[32];
 	Q_snprintf( szScale, sizeof(szScale), "%.3f", flScale );
-	pEntity->SetKeyValue( "model_scale", szScale );
+	pEntity->KeyValue( "model_scale", szScale );
 
 	// Note: Visual scaling would require custom implementation in older SDK
 	// This could be done through:
@@ -468,18 +528,18 @@ CON_COMMAND( bm_context_inflator, "Opens inflator tool context menu" )
 	CWeaponTool *pTool = dynamic_cast<CWeaponTool*>( pPlayer->GetActiveWeapon() );
 	if ( !pTool || pTool->GetToolMode() != TOOL_INFLATOR )
 	{
-		ClientPrint( pPlayer, HUD_PRINTTALK, "Inflator tool must be equipped and selected" );
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "Inflator tool must be equipped and selected" );
 		return;
 	}
 
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Inflator Tool:" );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Left click: Inflate (make bigger)" );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Right click: Deflate (make smaller)" );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Use + Left click: Reset to original size" );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Scale factor: %.2fx", bm_inflator_scale.GetFloat() );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Scale range: %.1f - %.1f", bm_inflator_min.GetFloat(), bm_inflator_max.GetFloat() );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Scale physics: %s", bm_inflator_physics.GetBool() ? "Yes" : "No" );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Scale mass: %s", bm_inflator_mass.GetBool() ? "Yes" : "No" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Inflator Tool:" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Left click: Inflate (make bigger)" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Right click: Deflate (make smaller)" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Use + Left click: Reset to original size" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Scale factor: %.2fx", bm_inflator_scale.GetFloat() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Scale range: %.1f - %.1f", bm_inflator_min.GetFloat(), bm_inflator_max.GetFloat() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Scale physics: %s", bm_inflator_physics.GetBool() ? "Yes" : "No" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Scale mass: %s", bm_inflator_mass.GetBool() ? "Yes" : "No" );
 }
 
 //-----------------------------------------------------------------------------
@@ -498,7 +558,7 @@ CON_COMMAND( bm_inflator_resetall, "Reset all entity scales to original" )
 			// Reset to original scale (older SDK compatible)
 			char szScale[32];
 			Q_snprintf( szScale, sizeof(szScale), "%.3f", pInfo->flOriginalScale );
-			pInfo->pEntity->SetKeyValue( "model_scale", szScale );
+			pInfo->pEntity->KeyValue( "model_scale", szScale );
 
 			// Reset physics
 			IPhysicsObject *pPhysics = pInfo->pEntity->VPhysicsGetObject();
@@ -521,6 +581,6 @@ CON_COMMAND( bm_inflator_resetall, "Reset all entity scales to original" )
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( pPlayer )
 	{
-		ClientPrint( pPlayer, HUD_PRINTTALK, "Reset %d entities to original scale", nReset );
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "Reset %d entities to original scale", nReset );
 	}
 }

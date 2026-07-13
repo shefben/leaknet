@@ -7,6 +7,7 @@
 
 #include "cbase.h"
 #include "weapon_tool.h"
+#include "tool_dispatch.h"
 #include "player.h"
 #include "gamerules.h"
 #include "util.h"
@@ -16,6 +17,20 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+//-----------------------------------------------------------------------------
+// ClientPrintf() only substitutes literal param1-4 strings into msg_name - it
+// has no printf-style formatting of its own - so this wrapper formats first.
+//-----------------------------------------------------------------------------
+static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFormat, ... )
+{
+	char szBuf[256];
+	va_list args;
+	va_start( args, pszFormat );
+	Q_vsnprintf( szBuf, sizeof( szBuf ), pszFormat, args );
+	va_end( args );
+	ClientPrint( pPlayer, msg_dest, szBuf );
+}
 
 //-----------------------------------------------------------------------------
 // Console variables for remover tool
@@ -45,44 +60,85 @@ static const char *g_RemovalModeNames[] =
 };
 
 //-----------------------------------------------------------------------------
-// Remover tool class - implements TOOL_REMOVER mode
+// Per-weapon remover state - CWeaponTool is not subclassed, so the state that
+// used to live in CToolRemover's member variables now lives here, keyed by
+// the weapon's EHANDLE (mirrors the g_WeldConstraints/g_RopeConstraints
+// per-constraint registries used by the sibling tool_*.cpp files).
 //-----------------------------------------------------------------------------
-class CToolRemover : public CWeaponTool
+struct RemoverState_t
 {
-	DECLARE_CLASS( CToolRemover, CWeaponTool );
+	EHANDLE	hTool;
+	float	flLastRemoveTime;	// Last removal operation time
+	bool	bConfirmPending;	// Waiting for confirmation
+	Vector	vecPendingPos;		// Position for pending area removal
 
-public:
-	CToolRemover() : m_flLastRemoveTime(0.0f), m_bConfirmPending(false), m_vecPendingPos(Vector(0,0,0)) {}
-
-	virtual void OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary );
-	virtual void OnToolTrace( trace_t &tr, bool bPrimary );
-	virtual void OnToolThink();
-
-private:
-	bool RemoveSingleEntity( CBaseEntity *pEntity );
-	int RemoveEntitiesInArea( const Vector &vecCenter, float flRadius );
-	int RemoveEntitiesOfType( const char *pszClassName );
-	bool CanRemoveEntity( CBaseEntity *pEntity );
-	void CreateRemovalEffect( const Vector &vecPos );
-	void CreateAreaEffect( const Vector &vecCenter, float flRadius );
-	void CycleRemovalMode();
-	RemovalMode_t GetRemovalMode();
-	void ProcessConfirmation( bool bConfirm );
-
-	// Remover tool state
-	float m_flLastRemoveTime;		// Last removal operation time
-	bool m_bConfirmPending;			// Waiting for confirmation
-	Vector m_vecPendingPos;			// Position for pending area removal
+	RemoverState_t()
+	{
+		flLastRemoveTime = 0.0f;
+		bConfirmPending = false;
+		vecPendingPos = Vector( 0, 0, 0 );
+	}
 };
+
+static CUtlVector<RemoverState_t*> g_RemoverStates;
+
+static RemoverState_t *FindRemoverState( CWeaponTool *pTool )
+{
+	for ( int i = 0; i < g_RemoverStates.Count(); i++ )
+	{
+		if ( g_RemoverStates[i]->hTool == pTool )
+			return g_RemoverStates[i];
+	}
+	return NULL;
+}
+
+static RemoverState_t *GetRemoverState( CWeaponTool *pTool )
+{
+	RemoverState_t *pState = FindRemoverState( pTool );
+	if ( !pState )
+	{
+		pState = new RemoverState_t;
+		pState->hTool = pTool;
+		g_RemoverStates.AddToTail( pState );
+	}
+	return pState;
+}
+
+// Removes state records for weapons that no longer exist.
+static void CleanupRemoverStates()
+{
+	for ( int i = g_RemoverStates.Count() - 1; i >= 0; i-- )
+	{
+		if ( !g_RemoverStates[i]->hTool.Get() )
+		{
+			delete g_RemoverStates[i];
+			g_RemoverStates.Remove( i );
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Forward declarations of tool helpers
+//-----------------------------------------------------------------------------
+static bool RemoveSingleEntity( CBaseEntity *pEntity, CWeaponTool *pTool );
+static int RemoveEntitiesInArea( const Vector &vecCenter, float flRadius, CWeaponTool *pTool );
+static int RemoveEntitiesOfType( const char *pszClassName, CWeaponTool *pTool );
+static bool CanRemoveEntity( CBaseEntity *pEntity, CWeaponTool *pTool );
+static void CreateRemovalEffect( const Vector &vecPos );
+static void CreateAreaEffect( const Vector &vecCenter, float flRadius );
+static void CycleRemovalMode( CWeaponTool *pTool );
+static RemovalMode_t GetRemovalMode();
 
 //-----------------------------------------------------------------------------
 // Tool implementation for Remover mode
 //-----------------------------------------------------------------------------
-void CToolRemover::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
+void Tool_Remover_OnUse( CWeaponTool *pTool, CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 {
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( !pOwner )
 		return;
+
+	RemoverState_t *pState = GetRemoverState( pTool );
 
 	if ( bPrimary )
 	{
@@ -93,18 +149,18 @@ void CToolRemover::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 		{
 			case REMOVE_SINGLE:
 			{
-				if ( pEntity && CanRemoveEntity( pEntity ) )
+				if ( pEntity && CanRemoveEntity( pEntity, pTool ) )
 				{
-					if ( RemoveSingleEntity( pEntity ) )
+					if ( RemoveSingleEntity( pEntity, pTool ) )
 					{
 						CreateRemovalEffect( tr.endpos );
-						PlayToolSound( "weapons/physcannon/energy_disintegrate4.wav" );
-						ClientPrint( pOwner, HUD_PRINTTALK, "Removed %s", pEntity->GetClassname() );
+						pTool->PlayToolSound( "weapons/physcannon/energy_disintegrate4.wav" );
+						ClientPrintf( pOwner, HUD_PRINTTALK, "Removed %s", pEntity->GetClassname() );
 					}
 				}
 				else
 				{
-					ClientPrint( pOwner, HUD_PRINTTALK, "Cannot remove this entity" );
+					ClientPrintf( pOwner, HUD_PRINTTALK, "Cannot remove this entity" );
 				}
 				break;
 			}
@@ -113,31 +169,31 @@ void CToolRemover::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 			{
 				float flRadius = bm_remover_radius.GetFloat();
 
-				if ( bm_remover_confirm.GetBool() && !m_bConfirmPending )
+				if ( bm_remover_confirm.GetBool() && !pState->bConfirmPending )
 				{
 					// Show confirmation for area removal
-					m_bConfirmPending = true;
-					m_vecPendingPos = tr.endpos;
+					pState->bConfirmPending = true;
+					pState->vecPendingPos = tr.endpos;
 
 					CreateAreaEffect( tr.endpos, flRadius );
-					ClientPrint( pOwner, HUD_PRINTTALK, "Area removal (radius: %.0f)", flRadius );
-					ClientPrint( pOwner, HUD_PRINTTALK, "Click again to confirm, right-click to cancel" );
+					ClientPrintf( pOwner, HUD_PRINTTALK, "Area removal (radius: %.0f)", flRadius );
+					ClientPrintf( pOwner, HUD_PRINTTALK, "Click again to confirm, right-click to cancel" );
 				}
 				else
 				{
 					// Perform area removal
-					int nRemoved = RemoveEntitiesInArea( tr.endpos, flRadius );
+					int nRemoved = RemoveEntitiesInArea( tr.endpos, flRadius, pTool );
 					if ( nRemoved > 0 )
 					{
 						CreateAreaEffect( tr.endpos, flRadius );
-						PlayToolSound( "weapons/physcannon/energy_disintegrate5.wav" );
-						ClientPrint( pOwner, HUD_PRINTTALK, "Removed %d entities in area", nRemoved );
+						pTool->PlayToolSound( "weapons/physcannon/energy_disintegrate5.wav" );
+						ClientPrintf( pOwner, HUD_PRINTTALK, "Removed %d entities in area", nRemoved );
 					}
 					else
 					{
-						ClientPrint( pOwner, HUD_PRINTTALK, "No removable entities in area" );
+						ClientPrintf( pOwner, HUD_PRINTTALK, "No removable entities in area" );
 					}
-					m_bConfirmPending = false;
+					pState->bConfirmPending = false;
 				}
 				break;
 			}
@@ -148,30 +204,30 @@ void CToolRemover::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 				{
 					const char *pszClassName = pEntity->GetClassname();
 
-					if ( bm_remover_confirm.GetBool() && !m_bConfirmPending )
+					if ( bm_remover_confirm.GetBool() && !pState->bConfirmPending )
 					{
 						// Show confirmation for type removal
-						m_bConfirmPending = true;
+						pState->bConfirmPending = true;
 						bm_remover_filter.SetValue( pszClassName );
 
-						ClientPrint( pOwner, HUD_PRINTTALK, "Type removal: %s", pszClassName );
-						ClientPrint( pOwner, HUD_PRINTTALK, "Click again to confirm, right-click to cancel" );
+						ClientPrintf( pOwner, HUD_PRINTTALK, "Type removal: %s", pszClassName );
+						ClientPrintf( pOwner, HUD_PRINTTALK, "Click again to confirm, right-click to cancel" );
 					}
 					else
 					{
 						// Perform type removal
-						int nRemoved = RemoveEntitiesOfType( pszClassName );
+						int nRemoved = RemoveEntitiesOfType( pszClassName, pTool );
 						if ( nRemoved > 0 )
 						{
 							CreateRemovalEffect( tr.endpos );
-							PlayToolSound( "weapons/physcannon/energy_disintegrate5.wav" );
-							ClientPrint( pOwner, HUD_PRINTTALK, "Removed %d entities of type %s", nRemoved, pszClassName );
+							pTool->PlayToolSound( "weapons/physcannon/energy_disintegrate5.wav" );
+							ClientPrintf( pOwner, HUD_PRINTTALK, "Removed %d entities of type %s", nRemoved, pszClassName );
 						}
 						else
 						{
-							ClientPrint( pOwner, HUD_PRINTTALK, "No removable entities of type %s", pszClassName );
+							ClientPrintf( pOwner, HUD_PRINTTALK, "No removable entities of type %s", pszClassName );
 						}
-						m_bConfirmPending = false;
+						pState->bConfirmPending = false;
 					}
 				}
 				break;
@@ -181,30 +237,32 @@ void CToolRemover::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 	else
 	{
 		// Secondary attack - cycle mode or cancel confirmation
-		if ( m_bConfirmPending )
+		if ( pState->bConfirmPending )
 		{
 			// Cancel pending operation
-			m_bConfirmPending = false;
-			ClientPrint( pOwner, HUD_PRINTTALK, "Removal cancelled" );
+			pState->bConfirmPending = false;
+			ClientPrintf( pOwner, HUD_PRINTTALK, "Removal cancelled" );
 		}
 		else
 		{
 			// Cycle removal mode
-			CycleRemovalMode();
+			CycleRemovalMode( pTool );
 		}
 	}
 
-	m_flLastRemoveTime = gpGlobals->curtime;
+	pState->flLastRemoveTime = gpGlobals->curtime;
 }
 
 //-----------------------------------------------------------------------------
 // Tool trace implementation for Remover mode
 //-----------------------------------------------------------------------------
-void CToolRemover::OnToolTrace( trace_t &tr, bool bPrimary )
+void Tool_Remover_OnTrace( CWeaponTool *pTool, trace_t &tr, bool bPrimary )
 {
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( !pOwner )
 		return;
+
+	RemoverState_t *pState = GetRemoverState( pTool );
 
 	if ( bPrimary )
 	{
@@ -215,43 +273,43 @@ void CToolRemover::OnToolTrace( trace_t &tr, bool bPrimary )
 			// Area removal can work on empty space
 			float flRadius = bm_remover_radius.GetFloat();
 
-			if ( bm_remover_confirm.GetBool() && !m_bConfirmPending )
+			if ( bm_remover_confirm.GetBool() && !pState->bConfirmPending )
 			{
-				m_bConfirmPending = true;
-				m_vecPendingPos = tr.endpos;
+				pState->bConfirmPending = true;
+				pState->vecPendingPos = tr.endpos;
 
 				CreateAreaEffect( tr.endpos, flRadius );
-				ClientPrint( pOwner, HUD_PRINTTALK, "Area removal (radius: %.0f)", flRadius );
-				ClientPrint( pOwner, HUD_PRINTTALK, "Click again to confirm, right-click to cancel" );
+				ClientPrintf( pOwner, HUD_PRINTTALK, "Area removal (radius: %.0f)", flRadius );
+				ClientPrintf( pOwner, HUD_PRINTTALK, "Click again to confirm, right-click to cancel" );
 			}
 			else
 			{
-				int nRemoved = RemoveEntitiesInArea( tr.endpos, flRadius );
+				int nRemoved = RemoveEntitiesInArea( tr.endpos, flRadius, pTool );
 				if ( nRemoved > 0 )
 				{
 					CreateAreaEffect( tr.endpos, flRadius );
-					PlayToolSound( "weapons/physcannon/energy_disintegrate5.wav" );
-					ClientPrint( pOwner, HUD_PRINTTALK, "Removed %d entities in area", nRemoved );
+					pTool->PlayToolSound( "weapons/physcannon/energy_disintegrate5.wav" );
+					ClientPrintf( pOwner, HUD_PRINTTALK, "Removed %d entities in area", nRemoved );
 				}
-				m_bConfirmPending = false;
+				pState->bConfirmPending = false;
 			}
 		}
 		else
 		{
-			ClientPrint( pOwner, HUD_PRINTTALK, "No entity targeted" );
+			ClientPrintf( pOwner, HUD_PRINTTALK, "No entity targeted" );
 		}
 	}
 	else
 	{
 		// Cancel or cycle mode
-		if ( m_bConfirmPending )
+		if ( pState->bConfirmPending )
 		{
-			m_bConfirmPending = false;
-			ClientPrint( pOwner, HUD_PRINTTALK, "Removal cancelled" );
+			pState->bConfirmPending = false;
+			ClientPrintf( pOwner, HUD_PRINTTALK, "Removal cancelled" );
 		}
 		else
 		{
-			CycleRemovalMode();
+			CycleRemovalMode( pTool );
 		}
 	}
 }
@@ -259,27 +317,31 @@ void CToolRemover::OnToolTrace( trace_t &tr, bool bPrimary )
 //-----------------------------------------------------------------------------
 // Tool think for Remover mode
 //-----------------------------------------------------------------------------
-void CToolRemover::OnToolThink()
+void Tool_Remover_OnThink( CWeaponTool *pTool )
 {
-	// Cancel confirmation after timeout
-	if ( m_bConfirmPending && (gpGlobals->curtime - m_flLastRemoveTime) > 5.0f )
-	{
-		m_bConfirmPending = false;
+	RemoverState_t *pState = GetRemoverState( pTool );
 
-		CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	// Cancel confirmation after timeout
+	if ( pState->bConfirmPending && (gpGlobals->curtime - pState->flLastRemoveTime) > 5.0f )
+	{
+		pState->bConfirmPending = false;
+
+		CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 		if ( pOwner )
 		{
-			ClientPrint( pOwner, HUD_PRINTTALK, "Removal confirmation timed out" );
+			ClientPrintf( pOwner, HUD_PRINTTALK, "Removal confirmation timed out" );
 		}
 	}
+
+	CleanupRemoverStates();
 }
 
 //-----------------------------------------------------------------------------
 // Remove single entity
 //-----------------------------------------------------------------------------
-bool CToolRemover::RemoveSingleEntity( CBaseEntity *pEntity )
+static bool RemoveSingleEntity( CBaseEntity *pEntity, CWeaponTool *pTool )
 {
-	if ( !pEntity || !CanRemoveEntity( pEntity ) )
+	if ( !pEntity || !CanRemoveEntity( pEntity, pTool ) )
 		return false;
 
 	// Create removal effect before removing
@@ -298,7 +360,7 @@ bool CToolRemover::RemoveSingleEntity( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // Remove entities in area
 //-----------------------------------------------------------------------------
-int CToolRemover::RemoveEntitiesInArea( const Vector &vecCenter, float flRadius )
+static int RemoveEntitiesInArea( const Vector &vecCenter, float flRadius, CWeaponTool *pTool )
 {
 	int nRemoved = 0;
 	CUtlVector<CBaseEntity*> entitiesToRemove;
@@ -307,7 +369,7 @@ int CToolRemover::RemoveEntitiesInArea( const Vector &vecCenter, float flRadius 
 	CBaseEntity *pEntity = NULL;
 	while ( (pEntity = gEntList.FindEntityInSphere( pEntity, vecCenter, flRadius )) != NULL )
 	{
-		if ( CanRemoveEntity( pEntity ) )
+		if ( CanRemoveEntity( pEntity, pTool ) )
 		{
 			entitiesToRemove.AddToTail( pEntity );
 		}
@@ -334,7 +396,7 @@ int CToolRemover::RemoveEntitiesInArea( const Vector &vecCenter, float flRadius 
 //-----------------------------------------------------------------------------
 // Remove entities of specific type
 //-----------------------------------------------------------------------------
-int CToolRemover::RemoveEntitiesOfType( const char *pszClassName )
+static int RemoveEntitiesOfType( const char *pszClassName, CWeaponTool *pTool )
 {
 	if ( !pszClassName || !pszClassName[0] )
 		return 0;
@@ -346,7 +408,7 @@ int CToolRemover::RemoveEntitiesOfType( const char *pszClassName )
 	CBaseEntity *pEntity = NULL;
 	while ( (pEntity = gEntList.NextEnt( pEntity )) != NULL )
 	{
-		if ( FClassnameIs( pEntity, pszClassName ) && CanRemoveEntity( pEntity ) )
+		if ( FClassnameIs( pEntity, pszClassName ) && CanRemoveEntity( pEntity, pTool ) )
 		{
 			entitiesToRemove.AddToTail( pEntity );
 		}
@@ -373,7 +435,7 @@ int CToolRemover::RemoveEntitiesOfType( const char *pszClassName )
 //-----------------------------------------------------------------------------
 // Check if entity can be removed
 //-----------------------------------------------------------------------------
-bool CToolRemover::CanRemoveEntity( CBaseEntity *pEntity )
+static bool CanRemoveEntity( CBaseEntity *pEntity, CWeaponTool *pTool )
 {
 	if ( !pEntity )
 		return false;
@@ -383,7 +445,7 @@ bool CToolRemover::CanRemoveEntity( CBaseEntity *pEntity )
 		return false;
 
 	// Can't remove world
-	if ( pEntity->IsWorld() )
+	if ( pEntity->entindex() == 0 )
 		return false;
 
 	// Can't remove essential game entities (spawn points, etc.)
@@ -398,7 +460,7 @@ bool CToolRemover::CanRemoveEntity( CBaseEntity *pEntity )
 	}
 
 	// Check if entity is owned by someone else
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	CBaseEntity *pEntityOwner = pEntity->GetOwnerEntity();
 	if ( pEntityOwner && pEntityOwner != pOwner && pEntityOwner->IsPlayer() )
 	{
@@ -412,7 +474,7 @@ bool CToolRemover::CanRemoveEntity( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 // Create removal effect
 //-----------------------------------------------------------------------------
-void CToolRemover::CreateRemovalEffect( const Vector &vecPos )
+static void CreateRemovalEffect( const Vector &vecPos )
 {
 	if ( !bm_remover_effects.GetBool() )
 		return;
@@ -448,7 +510,7 @@ void CToolRemover::CreateRemovalEffect( const Vector &vecPos )
 //-----------------------------------------------------------------------------
 // Create area effect preview
 //-----------------------------------------------------------------------------
-void CToolRemover::CreateAreaEffect( const Vector &vecCenter, float flRadius )
+static void CreateAreaEffect( const Vector &vecCenter, float flRadius )
 {
 	// Create area preview effect
 	CEffectData data;
@@ -477,16 +539,16 @@ void CToolRemover::CreateAreaEffect( const Vector &vecCenter, float flRadius )
 //-----------------------------------------------------------------------------
 // Cycle removal mode
 //-----------------------------------------------------------------------------
-void CToolRemover::CycleRemovalMode()
+static void CycleRemovalMode( CWeaponTool *pTool )
 {
 	int nCurrentMode = bm_remover_mode.GetInt();
 	nCurrentMode = (nCurrentMode + 1) % REMOVE_MAX;
 	bm_remover_mode.SetValue( nCurrentMode );
 
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( pOwner )
 	{
-		ClientPrint( pOwner, HUD_PRINTTALK, "Removal mode: %s",
+		ClientPrintf( pOwner, HUD_PRINTTALK, "Removal mode: %s",
 			g_RemovalModeNames[nCurrentMode] );
 	}
 }
@@ -494,7 +556,7 @@ void CToolRemover::CycleRemovalMode()
 //-----------------------------------------------------------------------------
 // Get current removal mode
 //-----------------------------------------------------------------------------
-RemovalMode_t CToolRemover::GetRemovalMode()
+static RemovalMode_t GetRemovalMode()
 {
 	int nMode = bm_remover_mode.GetInt();
 	return (RemovalMode_t)clamp( nMode, 0, REMOVE_MAX - 1 );
@@ -513,37 +575,37 @@ CON_COMMAND( bm_context_remover, "Opens remover tool context menu" )
 	CWeaponTool *pTool = dynamic_cast<CWeaponTool*>( pPlayer->GetActiveWeapon() );
 	if ( !pTool || pTool->GetToolMode() != TOOL_REMOVER )
 	{
-		ClientPrint( pPlayer, HUD_PRINTTALK, "Remover tool must be equipped and selected" );
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "Remover tool must be equipped and selected" );
 		return;
 	}
 
 	int nMode = bm_remover_mode.GetInt();
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Remover Tool:" );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Current mode: %s", g_RemovalModeNames[nMode] );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Left click: Remove" );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Right click: Change mode" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Remover Tool:" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Current mode: %s", g_RemovalModeNames[nMode] );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Left click: Remove" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Right click: Change mode" );
 
 	switch ( nMode )
 	{
 		case REMOVE_SINGLE:
-			ClientPrint( pPlayer, HUD_PRINTTALK, "Mode: Remove single entities" );
+			ClientPrintf( pPlayer, HUD_PRINTTALK, "Mode: Remove single entities" );
 			break;
 
 		case REMOVE_AREA:
-			ClientPrint( pPlayer, HUD_PRINTTALK, "Mode: Remove entities in radius %.0f", bm_remover_radius.GetFloat() );
+			ClientPrintf( pPlayer, HUD_PRINTTALK, "Mode: Remove entities in radius %.0f", bm_remover_radius.GetFloat() );
 			break;
 
 		case REMOVE_TYPE:
-			ClientPrint( pPlayer, HUD_PRINTTALK, "Mode: Remove all entities of clicked type" );
+			ClientPrintf( pPlayer, HUD_PRINTTALK, "Mode: Remove all entities of clicked type" );
 			if ( bm_remover_filter.GetString()[0] )
 			{
-				ClientPrint( pPlayer, HUD_PRINTTALK, "Filter: %s", bm_remover_filter.GetString() );
+				ClientPrintf( pPlayer, HUD_PRINTTALK, "Filter: %s", bm_remover_filter.GetString() );
 			}
 			break;
 	}
 
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Confirmation: %s", bm_remover_confirm.GetBool() ? "On" : "Off" );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Effects: %s", bm_remover_effects.GetBool() ? "On" : "Off" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Confirmation: %s", bm_remover_confirm.GetBool() ? "On" : "Off" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Effects: %s", bm_remover_effects.GetBool() ? "On" : "Off" );
 }
 
 //-----------------------------------------------------------------------------
@@ -558,7 +620,7 @@ CON_COMMAND( bm_remover_cleanup, "Remove all props and physics objects" )
 	CBaseEntity *pEntity = NULL;
 	while ( (pEntity = gEntList.NextEnt( pEntity )) != NULL )
 	{
-		if ( !pEntity->IsPlayer() && !pEntity->IsWorld() && pEntity->VPhysicsGetObject() )
+		if ( !pEntity->IsPlayer() && pEntity->entindex() != 0 && pEntity->VPhysicsGetObject() )
 		{
 			const char *pszClassName = pEntity->GetClassname();
 			if ( Q_stristr( pszClassName, "prop_" ) || Q_stristr( pszClassName, "physics_" ) )
@@ -578,6 +640,6 @@ CON_COMMAND( bm_remover_cleanup, "Remove all props and physics objects" )
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( pPlayer )
 	{
-		ClientPrint( pPlayer, HUD_PRINTTALK, "Emergency cleanup: Removed %d physics objects", nRemoved );
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "Emergency cleanup: Removed %d physics objects", nRemoved );
 	}
 }

@@ -23,7 +23,7 @@
 #include "physobj.h"
 #include "physics_saverestore.h"
 #include "mathlib/mathlib.h"
-#include "tier1/strtools.h"
+#include "vstdlib/strtools.h"
 
 ConVar	g_debug_physcannon( "g_debug_physcannon", "0" );
 

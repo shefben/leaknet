@@ -152,14 +152,6 @@ void SurfaceToVerts( model_t *model, int surfID, Vector verts[], int *vertCount 
 {
 	int i;
 
-	// Check if this is a v44+ model using independent system
-	if ( model && model->studio.hardwareData.m_pV44Model != NULL )
-	{
-		Con_DPrintf("SurfaceToVerts: Skipping v44+ model %s (handled by independent system)\n", model->name);
-		*vertCount = 0;
-		return;
-	}
-
 	if ( *vertCount > MSurf_VertCount( surfID, model ) )
 		*vertCount = MSurf_VertCount( surfID, model );
 
@@ -181,13 +173,6 @@ float SurfaceArea( model_t *model, int surfID )
 	int		vertCount = 32;
 	float	area;
 	int		i;
-
-	// Check if this is a v44+ model using independent system
-	if ( model && model->studio.hardwareData.m_pV44Model != NULL )
-	{
-		Con_DPrintf("SurfaceArea: Skipping v44+ model %s (handled by independent system)\n", model->name);
-		return 0.0f;
-	}
 
 	// Compute a "center" point and fan
 	SurfaceToVerts( model, surfID, verts, &vertCount );
@@ -215,14 +200,6 @@ void SurfaceCenter( model_t *model, int surfID, Vector& center )
 {
 	Vector	verts[32];		// We limit faces to 32 verts elsewhere in the engine
 	int		vertCount = 32;
-
-	// Check if this is a v44+ model using independent system
-	if ( model && model->studio.hardwareData.m_pV44Model != NULL )
-	{
-		Con_DPrintf("SurfaceCenter: Skipping v44+ model %s (handled by independent system)\n", model->name);
-		VectorClear( center );
-		return;
-	}
 
 	SurfaceToVerts( model, surfID, verts, &vertCount );
 	CenterVerts( verts, vertCount, center );

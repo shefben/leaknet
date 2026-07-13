@@ -90,8 +90,8 @@ ConVar gm_sv_pvpdamage("gm_sv_pvpdamage", "0", FCVAR_GAMEDLL | FCVAR_REPLICATED,
 ConVar gm_sv_teamdamage("gm_sv_teamdamage", "0", FCVAR_GAMEDLL | FCVAR_REPLICATED, "Team damage enabled");
 ConVar gm_sv_allownpc("gm_sv_allownpc", "1", FCVAR_GAMEDLL | FCVAR_REPLICATED, "Allow NPC spawning");
 ConVar gm_sv_allowspawning("gm_sv_allowspawning", "1", FCVAR_GAMEDLL | FCVAR_REPLICATED, "Allow prop spawning");
-ConVar gm_sv_allowmultigun("gm_sv_allowmultigun", "1", FCVAR_GAMEDLL | FCVAR_REPLICATED, "Allow multiple physics guns");
-ConVar gm_sv_allowphysgun("gm_sv_allowphysgun", "1", FCVAR_GAMEDLL | FCVAR_REPLICATED, "Allow physics gun");
+// gm_sv_allowmultigun / gm_sv_allowphysgun are declared in gmod_serverrules.cpp -
+// declaring them twice was a duplicate ConVar-name registration (see [[gamemode-map-prefix-gate]]).
 
 // Per-client spawn limits (gm_sv_clientlimit_*)
 ConVar gm_sv_clientlimit_ragdolls("gm_sv_clientlimit_ragdolls", "10", FCVAR_GAMEDLL | FCVAR_REPLICATED, "Max ragdolls per client");

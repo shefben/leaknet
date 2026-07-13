@@ -117,6 +117,57 @@ foreach( target ${ALL_TARGETS} )
 	message( "---- ${target} (${target_type})" )
 endforeach()
 
-# Copy game resource files to output directory
+# Populate the BMod game directory with the original GMod 9.0.4b data that
+# the client DLL consumes at run time.  Previously only gameevents.res was
+# deployed, leaving the spawn-menu scheme/font files, spawn icons, and GMod
+# materials outside the game search path (which produces invisible text and
+# the engine's green missing-texture fallback).
+set( BMOD_ASSET_SOURCE "${SRCDIR}/gmod_9_0_4b" )
+set( BMOD_ASSET_DESTINATION "${GAMEDIR}/bmod" )
+foreach( BMOD_ASSET_DIR cfg fonts lua materials models mods resource scripts settings sound )
+	if( EXISTS "${BMOD_ASSET_SOURCE}/${BMOD_ASSET_DIR}" )
+		file( COPY "${BMOD_ASSET_SOURCE}/${BMOD_ASSET_DIR}" DESTINATION "${BMOD_ASSET_DESTINATION}" )
+	endif()
+endforeach()
+
+# The engine executes cfg/config.cfg at startup; config_default.cfg is only a
+# template and is never loaded by itself.  Seed the real config once so the
+# shipped GMod controls (including Q -> +menu) are active, while preserving a
+# player's customized bindings on subsequent CMake runs.
+if( EXISTS "${BMOD_ASSET_SOURCE}/cfg/config_default.cfg" AND
+	NOT EXISTS "${BMOD_ASSET_DESTINATION}/cfg/config.cfg" )
+	configure_file(
+		"${BMOD_ASSET_SOURCE}/cfg/config_default.cfg"
+		"${BMOD_ASSET_DESTINATION}/cfg/config.cfg"
+		COPYONLY
+	)
+endif()
+
+# Engine-era player remapping can request this material even though it was not
+# shipped with the extracted GMod 9 content.  Ship a neutral fallback instead
+# of allowing the material system's bright-green error texture.
+file( COPY "${SRCDIR}/bmod_assets/materials" DESTINATION "${BMOD_ASSET_DESTINATION}" )
+
+# Keep the project-local resource override available for both the engine and
+# BMod, while preserving its gameevents addition.
 file( MAKE_DIRECTORY "${GAMEDIR}/resource" )
 file( COPY "${SRCDIR}/resource/gameevents.res" DESTINATION "${GAMEDIR}/resource" )
+file( COPY "${SRCDIR}/resource/SpawnMenuScheme.res" DESTINATION "${BMOD_ASSET_DESTINATION}/resource" )
+
+# GameUI only resolves its Create Server pages and localization from the active
+# mod's resource path.  Keep these base UI assets with BMod instead of relying
+# on the mounted HL2 search path, which can be absent after a beta reinstall.
+foreach( BMOD_GAMEUI_RESOURCE
+	CreateMultiplayerGameServerPage.res
+	CreateMultiplayerGameGameplayPage.res
+	gameui_english.txt
+	TrackerScheme.res
+)
+	file( COPY "${SRCDIR}/resource/${BMOD_GAMEUI_RESOURCE}"
+		DESTINATION "${BMOD_ASSET_DESTINATION}/resource" )
+	# Legacy GameUI resolves these files from the engine-root Resource path,
+	# while BMod HUD code resolves them through the active mod path.  Deploy to
+	# both locations so a beta reinstall cannot leave either UI path blank.
+	file( COPY "${SRCDIR}/resource/${BMOD_GAMEUI_RESOURCE}"
+		DESTINATION "${GAMEDIR}/resource" )
+endforeach()

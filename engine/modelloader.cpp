@@ -3453,7 +3453,11 @@ bool Mod_LoadStudioModelVtxFileIntoTempBuffer( model_t *mod, CUtlMemory<unsigned
 
 	if (pStudioHdr && pStudioHdr->version >= STUDIO_VERSION_44)
 	{
-		vtxExtensions[vtxExtensionCount++] = ".dx90.vtx";
+		// The static model vertex format in this renderer stores hardware bone
+		// indices in four bits.  v44+ .dx90 VTX files can use a 53-bone palette,
+		// whereas .dx80 files are already split into 16-slot strip palettes.
+		// Loading .dx90 here makes valid v44 data look like invalid bone weights
+		// and can pass an out-of-range matrix index to the shader API.
 		vtxExtensions[vtxExtensionCount++] = ".dx80.vtx";
 		vtxExtensions[vtxExtensionCount++] = ".sw.vtx";
 	}
@@ -3850,11 +3854,12 @@ static void Studio_SetupVvdVertexPointers( studiohdr_t *pStudioHdr, vertexFileHe
 		return;
 	}
 
-	// CRITICAL FIX: Set the global vertex base pointer in studiohdr
-	// This is the base pointer that ALL models will use for vertex access
-	// Each model offsets into this buffer using their vertexindex field
-	pStudioHdr->pVertexBase = (void *)pVertexData;
-	pStudioHdr->pIndexBase = NULL; // Index data is in VTX, not VVD
+	// The v44 header has its own serialized layout. Its runtime vertex-base
+	// fields must be written through that layout; writing via studiohdr_t lands
+	// at the wrong offset and makes the renderer consume arbitrary memory.
+	studiohdr_v44_t *pStudioHdr44 = (studiohdr_v44_t *)pStudioHdr;
+	pStudioHdr44->pVertexBase = (void *)pVertexData;
+	pStudioHdr44->pIndexBase = NULL; // Index data is in VTX, not VVD
 
 	// CRITICAL FIX: Do NOT set individual model vertex pointers!
 	// In the 2007 Source Engine, all models share the same vertex base pointer
@@ -3870,8 +3875,6 @@ static void Studio_SetupVvdVertexPointers( studiohdr_t *pStudioHdr, vertexFileHe
 	// CRITICAL FIX: Must cast to studiohdr_v44_t to use correct field offsets!
 	// The v37 studiohdr_t has different field layout than v44, so using
 	// pStudioHdr->pBodypart() would read bodypartindex from wrong offset.
-	studiohdr_v44_t *pStudioHdr44 = (studiohdr_v44_t *)pStudioHdr;
-
 	int numBodyParts = pStudioHdr44->numbodyparts;
 	for (int bodyPartID = 0; bodyPartID < numBodyParts; bodyPartID++)
 	{
@@ -3899,23 +3902,21 @@ static void Studio_SetupVvdVertexPointers( studiohdr_t *pStudioHdr, vertexFileHe
 
 			// CRITICAL FIX: Populate the model's vertexdata structure
 			// This is essential for the GetVertexData() and accessor methods to work
-			mstudio_modelvertexdata_t *pModelVertexData = (mstudio_modelvertexdata_t *)&pModel44->vertexdata;
+			mstudio_modelvertexdata_v44_t *pModelVertexData = &pModel44->vertexdata;
 			pModelVertexData->pVertexData = pVertexData;
 			pModelVertexData->pTangentData = pTangentData;
 
 			DevMsg("  Model %s: %d verts, starts at global vertex %d (byte offset %d)\n",
 				pModel44->name, pModel44->numvertices, vertexIndexAsCount, pModel44->vertexindex);
 
-			// CRITICAL FIX: Set up mesh vertexdata structures to link to model vertexdata
+			// Do not write runtime pointers into pMesh->vertexdata. That field is
+			// serialized MDL data (an eight-element LOD vertex-count array), not
+			// runtime storage. The v44 accessors resolve the owning model directly.
 			for (int meshID = 0; meshID < pModel44->nummeshes; meshID++)
 			{
 				mstudiomesh_v44_t *pMesh = pModel44->pMesh(meshID);
 				if (!pMesh)
 					continue;
-
-				// Populate the mesh's vertexdata structure to point to the model's vertexdata
-				mstudio_meshvertexdata_t *pMeshVertexData = (mstudio_meshvertexdata_t *)&pMesh->vertexdata;
-				pMeshVertexData->modelvertexdata = pModelVertexData;
 
 				DevMsg("    Mesh %d: %d verts, offset %d from model start\n",
 					meshID, pMesh->numvertices, pMesh->vertexoffset);

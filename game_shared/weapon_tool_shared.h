@@ -12,32 +12,54 @@
 #endif
 
 //-----------------------------------------------------------------------------
-// Tool mode definitions - matching Garry's Mod values discovered in IDA
+// Tool mode definitions - MUST match dlls/bmod_dll/weapon_tool.h's ToolMode_t
+// exactly. These are the authentic GMod 9.0.4b gm_toolmode IDs (verified via
+// IDA against the real server.dll/client.dll and the shipped menu_main/*.txt
+// content files) - the server is authoritative and networks m_nToolMode as a
+// plain int, so this copy exists only for client-side code that can't include
+// the server-only dlls/bmod_dll/weapon_tool.h (which pulls in CBaseCombatWeapon,
+// player.h, etc). Do not renumber independently of that file.
 //-----------------------------------------------------------------------------
 enum ToolMode_t
 {
-	TOOL_NONE = 0,
-	TOOL_GUN = 1,			// Gun tool
-	TOOL_PHYSGUN = 2,		// Physics gun (should use weapon_physcannon instead)
-	TOOL_CAMERA = 3,		// Camera tool
-	TOOL_NPC = 4,			// NPC spawning tool
-	TOOL_NEXTBOT = 5,		// NextBot tool
-	TOOL_MATERIAL = 6,		// Material tool
-	TOOL_ROPE = 7,			// Rope tool
-	TOOL_PULLEY = 8,		// Pulley tool
-	TOOL_WHEEL = 9,			// Wheel tool
-	TOOL_THRUSTER = 10,		// Thruster tool
-	TOOL_EMITTER = 11,		// Emitter tool
-	TOOL_WELDER = 12,		// Welder tool
-	TOOL_HYDRAULIC = 13,	// Hydraulic tool
-	TOOL_BALLSOCKET = 14,	// Ball socket tool
-	TOOL_SLIDER = 15,		// Slider tool
-	TOOL_DUPLICATOR = 16,	// Duplicator tool
-	TOOL_REMOVER = 17,		// Remover tool
-	TOOL_NOCOLLIDE = 18,	// No collide tool
-	TOOL_PAINT = 19,		// Paint tool
+	TOOL_NONE		= -1,	// sentinel only - falls back to TOOL_WELD
 
-	TOOL_MAX = 20			// Maximum tool count
+	TOOL_ROPE		= 0,
+	TOOL_ELASTIC	= 1,
+	TOOL_WELD		= 2,
+	TOOL_BALLSOCKET	= 3,
+	TOOL_PULLEY		= 4,
+	TOOL_EASYWELD	= 5,
+	TOOL_EASYBALL	= 6,
+	TOOL_AXIS		= 7,
+	TOOL_SLIDER		= 8,
+	TOOL_NAILGUN	= 9,
+	TOOL_FACEPOSER	= 10,
+	TOOL_EYESPOSER	= 11,
+	TOOL_REMOVER	= 12,
+	TOOL_IGNITE		= 13,
+	TOOL_PAINT		= 14,
+	TOOL_DUPLICATE	= 15,
+	TOOL_COLOUR		= 16,
+	TOOL_MAGNETISE	= 17,
+	TOOL_NOCOLLIDE	= 18,
+	TOOL_DYNAMITE	= 19,
+	TOOL_MATERIAL	= 20,
+	TOOL_RTCAMERA	= 21,
+	TOOL_THRUSTER	= 23,
+	TOOL_PHYSPROPS	= 24,
+	TOOL_STATUE		= 25,
+	TOOL_BALLOON	= 26,
+	TOOL_EMITTER	= 27,
+	TOOL_SPRITE		= 28,
+	TOOL_WHEEL		= 29,
+
+	TOOL_GUN		= 30,
+	TOOL_CAMERA		= 31,
+	TOOL_NPCSPAWN	= 32,
+	TOOL_INFLATOR	= 33,
+
+	TOOL_MAX		= 40
 };
 
 //-----------------------------------------------------------------------------

@@ -8,9 +8,10 @@
 #include "cbase.h"
 #include "gmod_emitter.h"
 #include "player.h"
-#include "tier1/strtools.h"
+#include "vstdlib/strtools.h"
 #include "te_effect_dispatch.h"
 #include "util.h"
+#include "igamesystem.h"
 
 // Initialize static members
 bool CGModEmitterSystem::m_bInitialized = false;
@@ -33,22 +34,22 @@ ConVar gm_emitter_enabled("gm_emitter_enabled", "1", FCVAR_GAMEDLL, "Enable emit
 LINK_ENTITY_TO_CLASS(prop_emitter, CPropEmitter);
 
 BEGIN_DATADESC(CPropEmitter)
-    DEFINE_FIELD(m_EmitterType, FIELD_INTEGER),
-    DEFINE_FIELD(m_bEmitting, FIELD_BOOLEAN),
-    DEFINE_FIELD(m_flEmitRate, FIELD_FLOAT),
-    DEFINE_FIELD(m_flParticleSize, FIELD_FLOAT),
-    DEFINE_FIELD(m_flParticleLifetime, FIELD_FLOAT),
-    DEFINE_FIELD(m_flEmitSpeed, FIELD_FLOAT),
-    DEFINE_FIELD(m_vecEmitDirection, FIELD_VECTOR),
-    DEFINE_FIELD(m_flNextEmitTime, FIELD_TIME),
+    DEFINE_FIELD(CPropEmitter, m_EmitterType, FIELD_INTEGER),
+    DEFINE_FIELD(CPropEmitter, m_bEmitting, FIELD_BOOLEAN),
+    DEFINE_FIELD(CPropEmitter, m_flEmitRate, FIELD_FLOAT),
+    DEFINE_FIELD(CPropEmitter, m_flParticleSize, FIELD_FLOAT),
+    DEFINE_FIELD(CPropEmitter, m_flParticleLifetime, FIELD_FLOAT),
+    DEFINE_FIELD(CPropEmitter, m_flEmitSpeed, FIELD_FLOAT),
+    DEFINE_FIELD(CPropEmitter, m_vecEmitDirection, FIELD_VECTOR),
+    DEFINE_FIELD(CPropEmitter, m_flNextEmitTime, FIELD_TIME),
 
-    DEFINE_THINKFUNC(Think),
+    DEFINE_THINKFUNC(CPropEmitter, Think),
 
-    DEFINE_INPUTFUNC(FIELD_VOID, "Start", InputStart),
-    DEFINE_INPUTFUNC(FIELD_VOID, "Stop", InputStop),
-    DEFINE_INPUTFUNC(FIELD_VOID, "Toggle", InputToggle),
-    DEFINE_INPUTFUNC(FIELD_INTEGER, "SetType", InputSetType),
-    DEFINE_INPUTFUNC(FIELD_FLOAT, "SetRate", InputSetRate),
+    DEFINE_INPUTFUNC(CPropEmitter, FIELD_VOID, "Start", InputStart),
+    DEFINE_INPUTFUNC(CPropEmitter, FIELD_VOID, "Stop", InputStop),
+    DEFINE_INPUTFUNC(CPropEmitter, FIELD_VOID, "Toggle", InputToggle),
+    DEFINE_INPUTFUNC(CPropEmitter, FIELD_INTEGER, "SetType", InputSetType),
+    DEFINE_INPUTFUNC(CPropEmitter, FIELD_FLOAT, "SetRate", InputSetRate),
 END_DATADESC()
 
 //-----------------------------------------------------------------------------
@@ -80,11 +81,9 @@ void CPropEmitter::Precache()
 {
     PrecacheModel("models/props_lab/clipboard.mdl");
 
-    // Precache particle effects
-    PrecacheParticleSystem("env_fire_small");
-    PrecacheParticleSystem("env_steam");
-    PrecacheParticleSystem("env_dust_1");
-    PrecacheParticleSystem("blood_impact_red_01");
+    // NOTE: this 2003-era engine predates the particle system precache API
+    // (env_fire_small etc. are dispatched client-side via te_effect_dispatch,
+    // no server-side precache exists for them here).
 }
 
 //-----------------------------------------------------------------------------
@@ -251,8 +250,8 @@ void CPropEmitter::CreateParticleEffect()
             break;
 
         case EMITTER_SPARKS:
-            data.m_nMagnitude = 5;
-            data.m_nRadius = 3;
+            data.m_flMagnitude = 5;
+            data.m_flRadius = 3;
             DispatchEffect("MetalSpark", data);
             break;
 
@@ -266,7 +265,7 @@ void CPropEmitter::CreateParticleEffect()
             break;
 
         case EMITTER_WATER:
-            data.m_nMagnitude = 3;
+            data.m_flMagnitude = 3;
             DispatchEffect("WaterSplashQuiet", data);
             break;
 
@@ -404,7 +403,7 @@ CPropEmitter* CGModEmitterSystem::CreatePlayerEmitter(CBasePlayer* pPlayer, cons
     if (pEmitter)
     {
         UpdatePlayerDelay(pPlayer);
-        ClientPrint(pPlayer, HUD_PRINTTALK, "Emitter spawned: %s", GetEmitterTypeName(type));
+        ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Emitter spawned: %s", GetEmitterTypeName(type)));
     }
 
     return pEmitter;
@@ -516,7 +515,7 @@ bool CGModEmitterSystem::CheckPlayerDelay(CBasePlayer* pPlayer)
     if (timeSinceLastSpawn < delay)
     {
         float timeLeft = delay - timeSinceLastSpawn;
-        ClientPrint(pPlayer, HUD_PRINTTALK, "Emitter delay: %.1f seconds remaining", timeLeft);
+        ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Emitter delay: %.1f seconds remaining", timeLeft));
         return false;
     }
 
@@ -602,7 +601,7 @@ void CGModEmitterSystem::CMD_gm_emitter_remove(void)
         }
     }
 
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Removed %d emitter(s)", count);
+    ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Removed %d emitter(s)", count));
 }
 
 //-----------------------------------------------------------------------------
@@ -615,7 +614,7 @@ void CGModEmitterSystem::CMD_gm_emitter_clear(void)
 
     CBasePlayer* pPlayer = GetCommandPlayer();
     if (pPlayer)
-        ClientPrint(pPlayer, HUD_PRINTTALK, "Cleared %d emitter(s)", count);
+        ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Cleared %d emitter(s)", count));
 }
 
 //-----------------------------------------------------------------------------
@@ -637,7 +636,7 @@ void CGModEmitterSystem::CMD_gm_emitter_start_all(void)
 
     CBasePlayer* pPlayer = GetCommandPlayer();
     if (pPlayer)
-        ClientPrint(pPlayer, HUD_PRINTTALK, "Started %d emitter(s)", count);
+        ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Started %d emitter(s)", count));
 }
 
 //-----------------------------------------------------------------------------
@@ -659,7 +658,7 @@ void CGModEmitterSystem::CMD_gm_emitter_stop_all(void)
 
     CBasePlayer* pPlayer = GetCommandPlayer();
     if (pPlayer)
-        ClientPrint(pPlayer, HUD_PRINTTALK, "Stopped %d emitter(s)", count);
+        ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Stopped %d emitter(s)", count));
 }
 
 // Register console commands

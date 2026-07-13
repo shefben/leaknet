@@ -8,7 +8,8 @@
 #include "cbase.h"
 #include "gmod_serverlimits.h"
 #include "player.h"
-#include "tier1/strtools.h"
+#include "vstdlib/strtools.h"
+#include "igamesystem.h"
 
 // Initialize static members
 int CGModServerLimits::m_iPlayerEntityCounts[MAX_PLAYERS][LIMIT_TYPE_COUNT];
@@ -31,17 +32,20 @@ ConVar gm_sv_serverlimit_vehicles("gm_sv_serverlimit_vehicles", "20", FCVAR_NONE
 ConVar gm_sv_serverlimit_thrusters("gm_sv_serverlimit_thrusters", "200", FCVAR_NONE, "Maximum thrusters on server");
 
 // Console variables - Client Limits
-ConVar gm_sv_clientlimit_props("gm_sv_clientlimit_props", "100", FCVAR_NONE, "Maximum props per client");
-ConVar gm_sv_clientlimit_ragdolls("gm_sv_clientlimit_ragdolls", "20", FCVAR_NONE, "Maximum ragdolls per client");
-ConVar gm_sv_clientlimit_balloons("gm_sv_clientlimit_balloons", "20", FCVAR_NONE, "Maximum balloons per client");
-ConVar gm_sv_clientlimit_effects("gm_sv_clientlimit_effects", "50", FCVAR_NONE, "Maximum effects per client");
-ConVar gm_sv_clientlimit_sprites("gm_sv_clientlimit_sprites", "30", FCVAR_NONE, "Maximum sprites per client");
-ConVar gm_sv_clientlimit_emitters("gm_sv_clientlimit_emitters", "10", FCVAR_NONE, "Maximum emitters per client");
-ConVar gm_sv_clientlimit_wheels("gm_sv_clientlimit_wheels", "15", FCVAR_NONE, "Maximum wheels per client");
-ConVar gm_sv_clientlimit_npcs("gm_sv_clientlimit_npcs", "5", FCVAR_NONE, "Maximum NPCs per client");
+// NOTE: props/ragdolls/balloons/effects/sprites/emitters/wheels/npcs/vehicles/thrusters
+// are already declared in gmod_cvars_commands.cpp (compiled first) - reuse those
+// instead of redefining them (would be a duplicate-global link error).
+extern ConVar gm_sv_clientlimit_props;
+extern ConVar gm_sv_clientlimit_ragdolls;
+extern ConVar gm_sv_clientlimit_balloons;
+extern ConVar gm_sv_clientlimit_effects;
+extern ConVar gm_sv_clientlimit_sprites;
+extern ConVar gm_sv_clientlimit_emitters;
+extern ConVar gm_sv_clientlimit_wheels;
+extern ConVar gm_sv_clientlimit_npcs;
+extern ConVar gm_sv_clientlimit_vehicles;
+extern ConVar gm_sv_clientlimit_thrusters;
 ConVar gm_sv_clientlimit_dynamite("gm_sv_clientlimit_dynamite", "10", FCVAR_NONE, "Maximum dynamite per client");
-ConVar gm_sv_clientlimit_vehicles("gm_sv_clientlimit_vehicles", "2", FCVAR_NONE, "Maximum vehicles per client");
-ConVar gm_sv_clientlimit_thrusters("gm_sv_clientlimit_thrusters", "20", FCVAR_NONE, "Maximum thrusters per client");
 
 //-----------------------------------------------------------------------------
 // Purpose: Initialize the server limits system
@@ -141,8 +145,8 @@ bool CGModServerLimits::CanCreateEntity(CBasePlayer* pPlayer, EntityLimitType_t 
     int serverLimit = GetServerLimit(type);
     if (serverLimit > 0 && m_iTotalEntityCounts[type] >= serverLimit)
     {
-        ClientPrint(pPlayer, HUD_PRINTTALK, "Server limit reached for %s (%d/%d)",
-                   GetLimitTypeName(type), m_iTotalEntityCounts[type], serverLimit);
+        ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Server limit reached for %s (%d/%d)",
+                   GetLimitTypeName(type), m_iTotalEntityCounts[type], serverLimit));
         return false;
     }
 
@@ -150,8 +154,8 @@ bool CGModServerLimits::CanCreateEntity(CBasePlayer* pPlayer, EntityLimitType_t 
     int clientLimit = GetClientLimit(type);
     if (clientLimit > 0 && m_iPlayerEntityCounts[playerIndex][type] >= clientLimit)
     {
-        ClientPrint(pPlayer, HUD_PRINTTALK, "Personal limit reached for %s (%d/%d)",
-                   GetLimitTypeName(type), m_iPlayerEntityCounts[playerIndex][type], clientLimit);
+        ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Personal limit reached for %s (%d/%d)",
+                   GetLimitTypeName(type), m_iPlayerEntityCounts[playerIndex][type], clientLimit));
         return false;
     }
 

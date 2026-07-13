@@ -20,7 +20,6 @@
 class CGModBalloon : public CPhysicsProp
 {
     DECLARE_CLASS(CGModBalloon, CPhysicsProp);
-    DECLARE_SERVERCLASS();
     DECLARE_DATADESC();
 
 public:

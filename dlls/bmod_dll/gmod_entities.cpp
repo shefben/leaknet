@@ -3,9 +3,9 @@
 #include "player.h"
 #include "filesystem.h"
 #include "KeyValues.h"
-#include "entityfactory.h"
 #include "physics.h"
 #include "util.h"
+#include "baseanimating.h"
 
 // ConCommand registration
 static ConCommand gmod_entity_list("gmod_entity_list", CMD_gmod_entity_list, "List all configured entities");
@@ -86,6 +86,17 @@ bool CGModEntitySystem::LoadEntityConfigs()
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Purge and reload all entity configs
+//-----------------------------------------------------------------------------
+bool CGModEntitySystem::ReloadEntityConfigs()
+{
+    s_EntityConfigs.Purge();
+    s_bConfigsLoaded = false;
+
+    return LoadEntityConfigs();
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Scan entity directory for configuration files
 //-----------------------------------------------------------------------------
 bool CGModEntitySystem::ScanEntityDirectory()
@@ -93,7 +104,7 @@ bool CGModEntitySystem::ScanEntityDirectory()
     const char* pszSearchPath = "settings/entities/*.txt";
     FileFindHandle_t findHandle;
 
-    const char* pszFileName = filesystem->FindFirstEx(pszSearchPath, "GAME", &findHandle);
+    const char* pszFileName = filesystem->FindFirst(pszSearchPath, &findHandle);
     int configCount = 0;
 
     while (pszFileName)
@@ -247,9 +258,9 @@ bool CGModEntitySystem::WriteEntityConfigFile(const char* pszConfigPath, const E
     pPhysics->SetName("physics");
     pPhysics->SetFloat("mass", config.flMass);
     pPhysics->SetFloat("health", config.flHealth);
-    pPhysics->SetBool("breakable", config.bBreakable);
-    pPhysics->SetBool("solid", config.bSolid);
-    pPhysics->SetBool("static", config.bStatic);
+    pPhysics->SetInt("breakable", config.bBreakable ? 1 : 0);
+    pPhysics->SetInt("solid", config.bSolid ? 1 : 0);
+    pPhysics->SetInt("static", config.bStatic ? 1 : 0);
 
     // Write appearance properties
     KeyValues* pAppearance = pKV->CreateNewKey();
@@ -263,10 +274,10 @@ bool CGModEntitySystem::WriteEntityConfigFile(const char* pszConfigPath, const E
     // Write behavior properties
     KeyValues* pBehavior = pKV->CreateNewKey();
     pBehavior->SetName("behavior");
-    pBehavior->SetBool("canpick", config.bCanPick);
-    pBehavior->SetBool("canfreeze", config.bCanFreeze);
-    pBehavior->SetBool("canweld", config.bCanWeld);
-    pBehavior->SetBool("enabled", config.bIsEnabled);
+    pBehavior->SetInt("canpick", config.bCanPick ? 1 : 0);
+    pBehavior->SetInt("canfreeze", config.bCanFreeze ? 1 : 0);
+    pBehavior->SetInt("canweld", config.bCanWeld ? 1 : 0);
+    pBehavior->SetInt("enabled", config.bIsEnabled ? 1 : 0);
 
     bool success = pKV->SaveToFile(filesystem, pszConfigPath, "GAME");
     pKV->deleteThis();
@@ -361,19 +372,23 @@ bool CGModEntitySystem::ApplyEntityConfig(CBaseEntity* pEntity, const EntityConf
         pEntity->SetMaxHealth(config.flHealth);
     }
 
-    // Set appearance properties
-    if (config.flScale != 1.0f)
+    // Set appearance properties (scale/skin live on CBaseAnimating, not CBaseEntity)
+    CBaseAnimating* pAnimating = dynamic_cast<CBaseAnimating*>(pEntity);
+    if (pAnimating)
     {
-        pEntity->SetModelScale(config.flScale);
-    }
+        if (config.flScale != 1.0f)
+        {
+            pAnimating->m_flModelScale = config.flScale;
+        }
 
-    if (config.iSkin != 0)
-    {
-        pEntity->m_nSkin = config.iSkin;
+        if (config.iSkin != 0)
+        {
+            pAnimating->m_nSkin = config.iSkin;
+        }
     }
 
     // Set physics properties if it's a physics object
-    IPhysicsObject* pPhysics = pEntity->GetPhysicsObject();
+    IPhysicsObject* pPhysics = pEntity->VPhysicsGetObject();
     if (pPhysics && config.flMass > 0)
     {
         pPhysics->SetMass(config.flMass);
@@ -562,10 +577,7 @@ void CMD_gmod_entity_config(void)
 //-----------------------------------------------------------------------------
 void CMD_gmod_entity_reload(void)
 {
-    CGModEntitySystem::s_EntityConfigs.Purge();
-    CGModEntitySystem::s_bConfigsLoaded = false;
-
-    if (CGModEntitySystem::LoadEntityConfigs())
+    if (CGModEntitySystem::ReloadEntityConfigs())
     {
         Msg("Entity configurations reloaded successfully\n");
     }

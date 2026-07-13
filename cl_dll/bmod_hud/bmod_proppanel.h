@@ -15,6 +15,7 @@
 #include <vgui_controls/Button.h>
 #include <vgui_controls/ImagePanel.h>
 #include <vgui_controls/ScrollBar.h>
+#include <vgui_controls/ComboBox.h>
 #include <vgui_controls/PanelListPanel.h>
 #include "utlvector.h"
 
@@ -208,30 +209,14 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-// CPropCategoryButton - Button for selecting a prop category
-//-----------------------------------------------------------------------------
-class CPropCategoryButton : public vgui::Button
-{
-	DECLARE_CLASS_SIMPLE( CPropCategoryButton, vgui::Button );
-
-public:
-	CPropCategoryButton( vgui::Panel *parent, const char *panelName, const char *categoryName, int categoryIndex );
-	virtual ~CPropCategoryButton();
-
-	virtual void ApplySchemeSettings( vgui::IScheme *pScheme );
-
-	int GetCategoryIndex() const { return m_nCategoryIndex; }
-
-private:
-	int		m_nCategoryIndex;
-};
-
-//-----------------------------------------------------------------------------
-// CPropCategoryList - List of category buttons on the left side
+// CPropCategoryList - Category picker. Real GMod9 uses a single dropdown at
+// the top of the spawn panel (not a vertical button list) to choose which
+// settings/menu_props/*.txt file is showing below it.
 //-----------------------------------------------------------------------------
 class CPropCategoryList : public vgui::Panel
 {
 	DECLARE_CLASS_SIMPLE( CPropCategoryList, vgui::Panel );
+	DECLARE_PANELMAP();
 
 public:
 	CPropCategoryList( vgui::Panel *parent, const char *panelName );
@@ -239,7 +224,7 @@ public:
 
 	virtual void ApplySchemeSettings( vgui::IScheme *pScheme );
 	virtual void PerformLayout();
-	virtual void OnCommand( const char *command );
+	virtual void OnTextChanged( const char *text );
 
 	void LoadCategories();
 	void SelectCategory( int index );
@@ -250,9 +235,9 @@ public:
 private:
 	void ParseCategoryFile( PropCategory_t &category );
 
-	CUtlVector<PropCategory_t>			m_Categories;
-	CUtlVector<CPropCategoryButton*>	m_CategoryButtons;
-	int									m_nSelectedCategory;
+	CUtlVector<PropCategory_t>	m_Categories;
+	vgui::ComboBox				*m_pCombo;
+	int							m_nSelectedCategory;
 };
 
 //-----------------------------------------------------------------------------
@@ -266,10 +251,13 @@ public:
 	CPropPanel( vgui::Panel *parent, const char *panelName );
 	virtual ~CPropPanel();
 
+	DECLARE_PANELMAP();
+
 	virtual void ApplySchemeSettings( vgui::IScheme *pScheme );
 	virtual void PerformLayout();
 	virtual void OnCommand( const char *command );
 	virtual void OnMouseWheeled( int delta );
+	virtual void OnScrollBarSliderMoved( int position );
 
 	void ReloadProps();
 

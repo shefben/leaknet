@@ -416,47 +416,47 @@ void CGModDeathSystem::LoadWeaponDeathIcons()
 
     // Common weapon death icons - store weapon name in [x][0] and icon in [x][1]
     Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][0], "crowbar", 256);
-    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_crowbar", 256);
+    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_skull", 256);
     m_WeaponDeathIconCount++;
 
     Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][0], "pistol", 256);
-    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_pistol", 256);
+    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_skull", 256);
     m_WeaponDeathIconCount++;
 
     Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][0], "357", 256);
-    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_357", 256);
+    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_skull", 256);
     m_WeaponDeathIconCount++;
 
     Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][0], "smg1", 256);
-    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_smg1", 256);
+    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_skull", 256);
     m_WeaponDeathIconCount++;
 
     Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][0], "ar2", 256);
-    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_ar2", 256);
+    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_skull", 256);
     m_WeaponDeathIconCount++;
 
     Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][0], "shotgun", 256);
-    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_shotgun", 256);
+    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_skull", 256);
     m_WeaponDeathIconCount++;
 
     Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][0], "crossbow", 256);
-    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_crossbow", 256);
+    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_skull", 256);
     m_WeaponDeathIconCount++;
 
     Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][0], "grenade", 256);
-    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_grenade", 256);
+    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_skull", 256);
     m_WeaponDeathIconCount++;
 
     Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][0], "rpg", 256);
-    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_rpg", 256);
+    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_skull", 256);
     m_WeaponDeathIconCount++;
 
     Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][0], "physics", 256);
-    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_physics", 256);
+    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_skull", 256);
     m_WeaponDeathIconCount++;
 
     Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][0], "combine_ball", 256);
-    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_ball", 256);
+    Q_strncpy(m_WeaponDeathIcons[m_WeaponDeathIconCount][1], "deathnotify/d_skull", 256);
     m_WeaponDeathIconCount++;
 
     // Default/unknown weapon (empty string)

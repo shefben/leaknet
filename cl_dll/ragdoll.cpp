@@ -344,7 +344,7 @@ public:
 				bonematrix[1][3] = pos[i][1];
 				bonematrix[2][3] = pos[i][2];
 
-				int parentBone = hdr->GetBoneParent( i );
+				int parentBone = StudioBone_GetParent( hdr, i );
 				if (parentBone == -1) 
 				{
 					ConcatTransforms( cameraTransform, bonematrix, m_CachedBones[i] );

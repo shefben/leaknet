@@ -108,19 +108,29 @@ FragLimit = 0;
 	
 		_PlayerGiveItem( playerid, "weapon_crowbar" )
 		_PlayerGiveItem( playerid, "weapon_pistol" )
-		_PlayerGiveItem( playerid, "weapon_physcannon" )
 		_PlayerGiveAmmo( playerid, 100, "SMG1", false )
-		_PlayerGiveAmmo( playerid, 25, "Buckshot", false )	
+		_PlayerGiveAmmo( playerid, 25, "Buckshot", false )
 
+		-- Real GMod doesn't give the vanilla HL2 gravity gun (weapon_physcannon) -
+		-- only its own physics gun (weapon_physgun, dlls/physgun.cpp).
 		if ( _GetRule( "AllowPhysgun" ) ) then
-			
+
 			_PlayerGiveItem( playerid, "weapon_physgun" )
-			
+
 		end
 
 		if ( _GetRule( "AllowMultigun" ) ) then
 
 			_PlayerGiveItem( playerid, "weapon_tool" )
+
+		end
+
+		-- Real GMod always has the physgun out as soon as you spawn - force
+		-- it active rather than leaving whichever weapon was given/deployed
+		-- last (weapon_tool) as the active one.
+		if ( _GetRule( "AllowPhysgun" ) ) then
+
+			_PlayerSelectWeapon( playerid, "weapon_physgun" )
 
 		end
 

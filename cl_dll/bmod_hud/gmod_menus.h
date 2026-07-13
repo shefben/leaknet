@@ -48,11 +48,14 @@ public:
 
 protected:
 	virtual void OnCommand( const char *command );
+	virtual void OnClose();
 	void AdjustLayout();
 
 	void PopulateMapList();
 	const char *GetSelectedMap() const;
 	void ApplyCommonCvars() const;
+	void LoadPersistentSettings();
+	void SavePersistentSettings() const;
 
 	vgui::ListPanel *m_pMapList;
 	vgui::TextEntry *m_pHostname;

@@ -8,8 +8,9 @@
 #include "cbase.h"
 #include "gmod_config.h"
 #include "player.h"
-#include "tier1/strtools.h"
+#include "vstdlib/strtools.h"
 #include "filesystem.h"
+#include "igamesystem.h"
 
 // Initialize static members
 bool CGModConfigManager::m_bInitialized = false;
@@ -555,13 +556,13 @@ void CGModConfigManager::ApplyServerSettings()
         return;
 
     // Apply server settings to ConVars
-    ConVar* hostname = cvar->FindVar("hostname");
+    const ConVar* hostname = cvar->FindVar("hostname");
     if (hostname)
-        hostname->SetValue(pConfig->GetString("Server", "hostname", "Garry's Mod Server"));
+        const_cast<ConVar*>(hostname)->SetValue(pConfig->GetString("Server", "hostname", "Garry's Mod Server"));
 
-    ConVar* maxplayers = cvar->FindVar("maxplayers");
+    const ConVar* maxplayers = cvar->FindVar("maxplayers");
     if (maxplayers)
-        maxplayers->SetValue(pConfig->GetInt("Server", "maxplayers", 16));
+        const_cast<ConVar*>(maxplayers)->SetValue(pConfig->GetInt("Server", "maxplayers", 16));
 }
 
 //-----------------------------------------------------------------------------

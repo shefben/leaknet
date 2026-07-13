@@ -129,7 +129,7 @@ bool CGModSpritesSystem::ParseSpritesFile(const char* pszFilePath)
     int spriteCount = 0;
 
     // Parse sprites section
-    FOR_EACH_SUBKEY(pKV, pSprite)
+    for (KeyValues *pSprite = pKV->GetFirstSubKey(); pSprite; pSprite = pSprite->GetNextKey())
     {
         SpriteData_t sprite;
         sprite.spriteName = pSprite->GetName();
@@ -430,22 +430,27 @@ bool CGModSpritesSystem::ApplySpriteConfig(CSprite* pSprite, const SpriteData_t&
     pSprite->SetBrightness(config.flBrightness * 255.0f);
 
     // Set color
-    pSprite->SetColor(config.spriteColor.r(), config.spriteColor.g(), config.spriteColor.b());
-    pSprite->SetTransparency(kRenderTransAlpha, config.spriteColor.r(), config.spriteColor.g(), config.spriteColor.b(), config.spriteColor.a(), kRenderFxNone);
+    int colorR, colorG, colorB, colorA;
+    config.spriteColor.GetColor(colorR, colorG, colorB, colorA);
+
+    pSprite->SetColor(colorR, colorG, colorB);
+    pSprite->SetTransparency(kRenderTransAlpha, colorR, colorG, colorB, colorA, kRenderFxNone);
 
     // Set render mode
     switch (config.renderMode)
     {
         case SPRITE_RENDER_ADDITIVE:
-            pSprite->SetTransparency(kRenderTransAdd, config.spriteColor.r(), config.spriteColor.g(), config.spriteColor.b(), config.spriteColor.a(), kRenderFxNone);
+            pSprite->SetTransparency(kRenderTransAdd, colorR, colorG, colorB, colorA, kRenderFxNone);
             break;
 
         case SPRITE_RENDER_ALPHA_TEST:
-            pSprite->SetTransparency(kRenderTransAlphaTest, config.spriteColor.r(), config.spriteColor.g(), config.spriteColor.b(), config.spriteColor.a(), kRenderFxNone);
+            // NOTE: this engine's RenderMode_t predates a dedicated alpha-test
+            // mode - kRenderTransAlpha is the closest available blend mode.
+            pSprite->SetTransparency(kRenderTransAlpha, colorR, colorG, colorB, colorA, kRenderFxNone);
             break;
 
         case SPRITE_RENDER_GLOW:
-            pSprite->SetTransparency(kRenderGlow, config.spriteColor.r(), config.spriteColor.g(), config.spriteColor.b(), config.spriteColor.a(), kRenderFxNoDissipation);
+            pSprite->SetTransparency(kRenderGlow, colorR, colorG, colorB, colorA, kRenderFxNoDissipation);
             break;
 
         default:
@@ -651,7 +656,9 @@ bool CGModSpritesSystem::SetSpriteColor(CSprite* pSprite, const Color& color)
     if (!pSprite)
         return false;
 
-    pSprite->SetColor(color.r(), color.g(), color.b());
+    int colorR, colorG, colorB, colorA;
+    color.GetColor(colorR, colorG, colorB, colorA);
+    pSprite->SetColor(colorR, colorG, colorB);
     return true;
 }
 
@@ -675,7 +682,7 @@ bool CGModSpritesSystem::SetSpriteFrame(CSprite* pSprite, int iFrame)
     if (!pSprite)
         return false;
 
-    pSprite->SetFrame(iFrame);
+    pSprite->m_flFrame = (float)iFrame;
     return true;
 }
 

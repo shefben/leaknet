@@ -561,6 +561,9 @@ inline const char* StudioBone_GetName(const studiohdr_t* pStudioHdr, int boneInd
 {
 	if (!pStudioHdr)
 		return "";
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
+	if (pHdr44)
+		return pHdr44->pBone(boneIndex)->pszName();
 	return pStudioHdr->GetBoneName(boneIndex);
 }
 
@@ -568,6 +571,9 @@ inline int StudioBone_GetParent(const studiohdr_t* pStudioHdr, int boneIndex)
 {
 	if (!pStudioHdr)
 		return -1;
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
+	if (pHdr44)
+		return pHdr44->pBone(boneIndex)->parent;
 	return pStudioHdr->GetBoneParent(boneIndex);
 }
 
@@ -575,6 +581,9 @@ inline int StudioBone_GetFlags(const studiohdr_t* pStudioHdr, int boneIndex)
 {
 	if (!pStudioHdr)
 		return 0;
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
+	if (pHdr44)
+		return pHdr44->pBone(boneIndex)->flags;
 	return pStudioHdr->GetBoneFlags(boneIndex);
 }
 
@@ -582,6 +591,9 @@ inline int StudioBone_GetContents(const studiohdr_t* pStudioHdr, int boneIndex)
 {
 	if (!pStudioHdr)
 		return 0;
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
+	if (pHdr44)
+		return pHdr44->pBone(boneIndex)->contents;
 	return pStudioHdr->GetBoneContents(boneIndex);
 }
 
@@ -589,6 +601,9 @@ inline int StudioBone_GetPhysicsBone(const studiohdr_t* pStudioHdr, int boneInde
 {
 	if (!pStudioHdr)
 		return -1;
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
+	if (pHdr44)
+		return pHdr44->pBone(boneIndex)->physicsbone;
 	return pStudioHdr->GetBonePhysicsbone(boneIndex);
 }
 
@@ -596,6 +611,9 @@ inline int StudioBone_GetProcType(const studiohdr_t* pStudioHdr, int boneIndex)
 {
 	if (!pStudioHdr)
 		return 0;
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
+	if (pHdr44)
+		return pHdr44->pBone(boneIndex)->proctype;
 	return pStudioHdr->GetBoneProctype(boneIndex);
 }
 
@@ -603,7 +621,20 @@ inline void* StudioBone_GetProcedure(const studiohdr_t* pStudioHdr, int boneInde
 {
 	if (!pStudioHdr)
 		return NULL;
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
+	if (pHdr44)
+		return pHdr44->pBone(boneIndex)->pProcedure();
 	return pStudioHdr->GetBoneProcedure(boneIndex);
+}
+
+inline const char* StudioBone_GetSurfaceProp(const studiohdr_t* pStudioHdr, int boneIndex)
+{
+	if (!pStudioHdr)
+		return "";
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
+	if (pHdr44)
+		return pHdr44->pBone(boneIndex)->pszSurfaceProp();
+	return pStudioHdr->GetBoneSurfaceProp(boneIndex);
 }
 
 inline const matrix3x4_t& StudioBone_GetPoseToBone(const studiohdr_t* pStudioHdr, int boneIndex)
@@ -612,6 +643,9 @@ inline const matrix3x4_t& StudioBone_GetPoseToBone(const studiohdr_t* pStudioHdr
 	SetIdentityMatrix(identity);
 	if (!pStudioHdr)
 		return identity;
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
+	if (pHdr44)
+		return pHdr44->pBone(boneIndex)->poseToBone;
 	return pStudioHdr->GetBonePoseToBone(boneIndex);
 }
 
@@ -619,6 +653,9 @@ inline const matrix3x4_t* StudioBone_GetPoseToBonePtr(const studiohdr_t* pStudio
 {
 	if (!pStudioHdr)
 		return NULL;
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
+	if (pHdr44)
+		return &pHdr44->pBone(boneIndex)->poseToBone;
 	return &pStudioHdr->GetBonePoseToBone(boneIndex);
 }
 
@@ -1161,6 +1198,30 @@ inline const studiohdr2_t* StudioHdr_GetStudioHdr2(const studiohdr_t* pStudioHdr
 		return NULL;
 	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
 	return pHdr44 ? (const studiohdr2_t*)pHdr44->pStudioHdr2() : NULL;
+}
+
+inline Vector StudioHdr_GetIllumPosition(const studiohdr_t* pStudioHdr)
+{
+	if (!pStudioHdr)
+		return vec3_origin;
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
+	return pHdr44 ? pHdr44->illumposition : pStudioHdr->illumposition;
+}
+
+inline const char* StudioHdr_GetSurfaceProp(const studiohdr_t* pStudioHdr)
+{
+	if (!pStudioHdr)
+		return NULL;
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
+	return pHdr44 ? pHdr44->pszSurfaceProp() : pStudioHdr->pszSurfaceProp();
+}
+
+inline const char* StudioHdr_GetKeyValueText(const studiohdr_t* pStudioHdr)
+{
+	if (!pStudioHdr)
+		return NULL;
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
+	return pHdr44 ? pHdr44->KeyValueText() : pStudioHdr->KeyValueText();
 }
 
 #endif // STUDIO_HELPERS_H

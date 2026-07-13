@@ -5,6 +5,7 @@
 #include "KeyValues.h"
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imaterial.h"
+#include "materialsystem/imaterialvar.h"
 #include "materialsystem/itexture.h"
 #include "util.h"
 
@@ -119,7 +120,7 @@ bool CGModMaterialsSystem::ParseMaterialsFile(const char* pszFilePath)
     KeyValues* pMaterials = pKV->FindKey("materials");
     if (pMaterials)
     {
-        FOR_EACH_SUBKEY(pMaterials, pMaterial)
+        for (KeyValues *pMaterial = pMaterials->GetFirstSubKey(); pMaterial; pMaterial = pMaterial->GetNextKey())
         {
             MaterialData_t material;
             material.materialName = pMaterial->GetName();
@@ -140,7 +141,7 @@ bool CGModMaterialsSystem::ParseMaterialsFile(const char* pszFilePath)
     KeyValues* pGroups = pKV->FindKey("groups");
     if (pGroups)
     {
-        FOR_EACH_SUBKEY(pGroups, pGroup)
+        for (KeyValues *pGroup = pGroups->GetFirstSubKey(); pGroup; pGroup = pGroup->GetNextKey())
         {
             MaterialGroup_t group;
             group.groupName = pGroup->GetName();
@@ -229,7 +230,7 @@ bool CGModMaterialsSystem::ParseGroupSection(KeyValues* pKV, MaterialGroup_t* pG
     KeyValues* pMaterials = pKV->FindKey("materials");
     if (pMaterials)
     {
-        FOR_EACH_VALUE(pMaterials, pValue)
+        for (KeyValues *pValue = pMaterials->GetFirstValue(); pValue; pValue = pValue->GetNextValue())
         {
             const char* pszMaterialPath = pValue->GetString();
             if (pszMaterialPath && *pszMaterialPath)
@@ -371,7 +372,9 @@ bool CGModMaterialsSystem::ApplyMaterialOverrideToEntity(CBaseEntity* pEntity, c
     // Apply the material override
     if (pMaterial->overridePath.Length() > 0)
     {
-        pEntity->SetMaterial(pMaterial->overridePath.Get());
+        // NOTE: this 2003-era engine has no generic per-entity material
+        // override mechanism (see Lua_EntSetMaterial in lua_entity_funcs.cpp,
+        // which is the same stub); tracked here only so lookups/queries work.
         return true;
     }
 
@@ -421,43 +424,52 @@ IMaterial* CGModMaterialsSystem::CreateCustomMaterial(const char* pszMaterialNam
 //-----------------------------------------------------------------------------
 IMaterial* CGModMaterialsSystem::LoadMaterialFromData(const MaterialData_t& data)
 {
-    // Create KeyValues for material definition
-    KeyValues* pVMT = new KeyValues(data.shaderName.Get());
+    // NOTE: this engine's IMaterialSystem::CreateMaterial() takes no name/VMT
+    // (unlike later Source SDKs) - it returns a blank material that must be
+    // configured directly, the same way vguimatsurface/FontTextureCache.cpp does.
+    IMaterial* pMaterial = materials->CreateMaterial();
+    if (!pMaterial)
+        return NULL;
+
+    pMaterial->SetShader(data.shaderName.Length() > 0 ? data.shaderName.Get() : "UnlitGeneric");
+
+    bool bFound;
 
     // Set base texture
     if (data.baseTexture.Length() > 0)
     {
-        pVMT->SetString("$basetexture", data.baseTexture.Get());
+        IMaterialVar* pVar = pMaterial->FindVar("$basetexture", &bFound, false);
+        if (bFound && pVar)
+            pVar->SetStringValue(data.baseTexture.Get());
     }
 
     // Set normal map
     if (data.normalMap.Length() > 0)
     {
-        pVMT->SetString("$normalmap", data.normalMap.Get());
+        IMaterialVar* pVar = pMaterial->FindVar("$normalmap", &bFound, false);
+        if (bFound && pVar)
+            pVar->SetStringValue(data.normalMap.Get());
     }
 
     // Set alpha
     if (data.flAlpha < 1.0f || data.bTranslucent)
     {
-        pVMT->SetInt("$translucent", 1);
-        pVMT->SetFloat("$alpha", data.flAlpha);
+        pMaterial->SetMaterialVarFlag(MATERIAL_VAR_TRANSLUCENT, true);
+        IMaterialVar* pVar = pMaterial->FindVar("$alpha", &bFound, false);
+        if (bFound && pVar)
+            pVar->SetFloatValue(data.flAlpha);
     }
-
-    // Set material properties
-    pVMT->SetFloat("$reflectivity", data.flReflectivity);
 
     // Set flags
     if (data.bNoCull)
-        pVMT->SetInt("$nocull", 1);
+        pMaterial->SetMaterialVarFlag(MATERIAL_VAR_NOCULL, true);
 
     if (data.bNoFog)
-        pVMT->SetInt("$nofog", 1);
+        pMaterial->SetMaterialVarFlag(MATERIAL_VAR_NOFOG, true);
 
     if (data.bSelfIllum)
-        pVMT->SetInt("$selfillum", 1);
+        pMaterial->SetMaterialVarFlag(MATERIAL_VAR_SELFILLUM, true);
 
-    // Create material
-    IMaterial* pMaterial = materials->CreateMaterial(data.materialName.Get(), pVMT);
     return pMaterial;
 }
 
@@ -466,8 +478,9 @@ IMaterial* CGModMaterialsSystem::LoadMaterialFromData(const MaterialData_t& data
 //-----------------------------------------------------------------------------
 bool CGModMaterialsSystem::ModifyMaterialProperties(const char* pszMaterialName, const MaterialData_t& data)
 {
-    IMaterial* pMaterial = materials->FindMaterial(pszMaterialName, TEXTURE_GROUP_MODEL);
-    if (!pMaterial || pMaterial->IsErrorMaterial())
+    bool bFound = false;
+    IMaterial* pMaterial = materials->FindMaterial(pszMaterialName, &bFound, false);
+    if (!pMaterial || !bFound)
         return false;
 
     // Material modification would require more complex material system integration
@@ -586,7 +599,8 @@ bool CGModMaterialsSystem::RestoreEntityMaterial(CBaseEntity* pEntity)
     if (!pEntity)
         return false;
 
-    pEntity->SetMaterial("");
+    // NOTE: no generic per-entity material override mechanism exists in this
+    // engine (see ApplyMaterialOverrideToEntity above); nothing to restore.
     return true;
 }
 

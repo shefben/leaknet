@@ -9,6 +9,8 @@
 #include "utlvector.h"
 #include "utlstring.h"
 #include "utldict.h"
+#include "Color.h"
+#include "igamesystem.h"
 
 // Forward declarations
 class CBaseEntity;
@@ -89,6 +91,33 @@ struct MaterialGroup_t
     MaterialGroup_t()
     {
         bGroupEnabled = true;
+    }
+
+    // CUtlVector's copy constructor is protected (intentionally non-copyable),
+    // so this struct needs its own copy ctor/assignment to be storable in a
+    // CUtlDict, which copy-constructs elements internally.
+    MaterialGroup_t( const MaterialGroup_t &src )
+    {
+        CopyFrom( src );
+    }
+
+    MaterialGroup_t &operator=( const MaterialGroup_t &src )
+    {
+        if ( this != &src )
+            CopyFrom( src );
+        return *this;
+    }
+
+private:
+    void CopyFrom( const MaterialGroup_t &src )
+    {
+        groupName = src.groupName;
+        groupProperties = src.groupProperties;
+        bGroupEnabled = src.bGroupEnabled;
+
+        materialPaths.RemoveAll();
+        for ( int i = 0; i < src.materialPaths.Count(); i++ )
+            materialPaths.AddToTail( src.materialPaths[i] );
     }
 };
 

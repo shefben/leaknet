@@ -7,10 +7,10 @@
 
 #include "cbase.h"
 #include "weapon_tool.h"
+#include "tool_dispatch.h"
 #include "player.h"
 #include "gamerules.h"
 #include "ammodef.h"
-#include "mathlib/mathlib.h"
 #include "in_buttons.h"
 #include "util.h"
 #include "te_effect_dispatch.h"
@@ -19,75 +19,59 @@
 #include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
-// Gun tool class - implements TOOL_GUN mode
+// Forward declarations of tool helpers - Gun mode has no persistent per-weapon
+// state (the old CToolGun had no member variables that survived between
+// calls), so unlike the constraint-family tools there's no static registry
+// here, just free functions.
 //-----------------------------------------------------------------------------
-class CToolGun : public CWeaponTool
-{
-	DECLARE_CLASS( CToolGun, CWeaponTool );
-
-public:
-	CToolGun() {}
-
-	virtual void OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary );
-	virtual void OnToolTrace( trace_t &tr, bool bPrimary );
-	virtual void OnToolThink();
-
-private:
-	void FireBullet( trace_t &tr );
-	void CreateMuzzleFlash();
-	void DamageEntity( CBaseEntity *pEntity, const CTakeDamageInfo &info );
-};
+static void FireBullet( CWeaponTool *pTool, trace_t &tr );
+static void CreateMuzzleFlash( CWeaponTool *pTool );
+static void DamageEntity( CBaseEntity *pEntity, const CTakeDamageInfo &info );
 
 //-----------------------------------------------------------------------------
 // Tool implementation for Gun mode
 //-----------------------------------------------------------------------------
-void CToolGun::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
+void Tool_Gun_OnUse( CWeaponTool *pTool, CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 {
 	if ( !bPrimary )
 		return;
 
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( !pOwner )
 		return;
 
-	// Fire bullet
-	FireBullet( tr );
+	FireBullet( pTool, tr );
+	CreateMuzzleFlash( pTool );
 
-	// Create muzzle flash
-	CreateMuzzleFlash();
-
-	// Apply damage to entity
 	if ( pEntity && pEntity != pOwner )
 	{
-		CTakeDamageInfo info( this, pOwner, 25.0f, DMG_BULLET );
+		CTakeDamageInfo info( pTool, pOwner, 25.0f, DMG_BULLET );
 		info.SetDamagePosition( tr.endpos );
 		info.SetDamageForce( tr.m_pEnt->GetAbsOrigin() - tr.endpos );
 
 		DamageEntity( pEntity, info );
 	}
 
-	// Play sound
-	PlayToolSound( "Weapon_Pistol.Single" );
+	pTool->PlayToolSound( "Weapon_Pistol.Single" );
 }
 
 //-----------------------------------------------------------------------------
-// Tool trace implementation for Gun mode
+// Tool trace implementation for Gun mode - fire into empty space
 //-----------------------------------------------------------------------------
-void CToolGun::OnToolTrace( trace_t &tr, bool bPrimary )
+void Tool_Gun_OnTrace( CWeaponTool *pTool, trace_t &tr, bool bPrimary )
 {
 	if ( !bPrimary )
 		return;
 
-	// Fire into empty space
-	FireBullet( tr );
-	CreateMuzzleFlash();
-	PlayToolSound( "Weapon_Pistol.Single" );
+	FireBullet( pTool, tr );
+	CreateMuzzleFlash( pTool );
+	pTool->PlayToolSound( "Weapon_Pistol.Single" );
 }
 
 //-----------------------------------------------------------------------------
 // Tool think for Gun mode
 //-----------------------------------------------------------------------------
-void CToolGun::OnToolThink()
+void Tool_Gun_OnThink( CWeaponTool *pTool )
 {
 	// Gun tool doesn't need continuous thinking
 }
@@ -95,9 +79,9 @@ void CToolGun::OnToolThink()
 //-----------------------------------------------------------------------------
 // Fire bullet
 //-----------------------------------------------------------------------------
-void CToolGun::FireBullet( trace_t &tr )
+static void FireBullet( CWeaponTool *pTool, trace_t &tr )
 {
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( !pOwner )
 		return;
 
@@ -123,16 +107,15 @@ void CToolGun::FireBullet( trace_t &tr )
 //-----------------------------------------------------------------------------
 // Create muzzle flash
 //-----------------------------------------------------------------------------
-void CToolGun::CreateMuzzleFlash()
+static void CreateMuzzleFlash( CWeaponTool *pTool )
 {
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( !pOwner )
 		return;
 
 	// Create muzzle flash effect
 	CEffectData data;
-	data.m_nEntIndex = entindex();
-	data.m_nAttachmentIndex = LookupAttachment( "muzzle" );
+	data.m_nEntIndex = pTool->entindex();
 	data.m_flScale = 1.0f;
 
 	DispatchEffect( "MuzzleFlash", data );
@@ -141,7 +124,7 @@ void CToolGun::CreateMuzzleFlash()
 //-----------------------------------------------------------------------------
 // Damage entity
 //-----------------------------------------------------------------------------
-void CToolGun::DamageEntity( CBaseEntity *pEntity, const CTakeDamageInfo &info )
+static void DamageEntity( CBaseEntity *pEntity, const CTakeDamageInfo &info )
 {
 	if ( !pEntity )
 		return;

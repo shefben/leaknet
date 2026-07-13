@@ -864,21 +864,19 @@ struct mstudiovertex_v44_t
 };
 
 //-----------------------------------------------------------------------------
-// mstudio_meshvertexdata_v44_t - Mesh vertex data accessor for v44+ models
+// mstudio_meshvertexdata_v44_t - Mesh vertex data stored in v44+ MDL files
 //-----------------------------------------------------------------------------
 struct mstudio_meshvertexdata_v44_t
 {
-	// base of external vertex data
-	const void			*pModelVertexData;
-	const void			*pTangentData;		// tangent data pointer
-
-	// indirection to model's vertex data arrays
+	// This is serialized in the MDL. Keep it at 32 bytes: treating it as
+	// runtime pointers changes mstudiomesh_v44_t's stride and corrupts every
+	// mesh after the first one.
 	int					numLODVertexes[MAX_NUM_LODS_V44];
 
-	// Accessor methods
-	mstudiovertex_v44_t	*Vertex( int i ) const { return (mstudiovertex_v44_t *)pModelVertexData + i; }
-	Vector4D			*TangentS( int i ) const { return pTangentData ? ((Vector4D *)pTangentData + i) : NULL; }
-	bool				HasTangentData() const { return pTangentData != NULL; }
+	int					GetModelVertexIndex( int i ) const;
+	mstudiovertex_v44_t	*Vertex( int i ) const;
+	Vector4D			*TangentS( int i ) const;
+	bool				HasTangentData() const;
 };
 
 //-----------------------------------------------------------------------------
@@ -910,7 +908,9 @@ struct mstudiomesh_v44_t
 	// Embedded vertex data for v44+ models
 	mstudio_meshvertexdata_v44_t vertexdata;
 
-	int					unused[8]; // remove as appropriate
+	// Retail v44 MDLs use a 116-byte mesh record. The ninth reserved value is
+	// part of the serialized layout and must remain present for pMesh(i).
+	int					unused[9]; // remove as appropriate
 
 	// Vertex data access - defined out of line
 	inline const mstudio_meshvertexdata_v44_t *GetVertexData( void *pModelHeader = NULL ) const
@@ -948,17 +948,91 @@ struct mstudiomodel_v44_t
 	inline mstudioeyeball_v44_t *pEyeball( int i ) const { return (mstudioeyeball_v44_t *)(((byte *)this) + eyeballindex) + i; };
 
 	// Embedded vertex data pointers (set at load time)
-	struct
-	{
-		const void		*pVertexData;
-		const void		*pTangentData;
-	} vertexdata;
+	mstudio_modelvertexdata_v44_t vertexdata;
 
 	int					unused[8];		// remove as appropriate
 
 	// Vertex data caching - returns true if data is valid
 	inline bool CacheVertexData( void *pModelHeader ) const { return vertexdata.pVertexData != NULL; }
 };
+
+inline int mstudio_modelvertexdata_v44_t::GetGlobalVertexIndex( int i ) const
+{
+	const mstudiomodel_v44_t *pModel = (const mstudiomodel_v44_t *)((const byte *)this - offsetof(mstudiomodel_v44_t, vertexdata));
+	return i + (pModel->vertexindex / sizeof(mstudiovertex_v44_t));
+}
+
+inline int mstudio_modelvertexdata_v44_t::GetGlobalTangentIndex( int i ) const
+{
+	const mstudiomodel_v44_t *pModel = (const mstudiomodel_v44_t *)((const byte *)this - offsetof(mstudiomodel_v44_t, vertexdata));
+	return i + (pModel->tangentsindex / sizeof(Vector4D));
+}
+
+inline mstudiovertex_v44_t *mstudio_modelvertexdata_v44_t::Vertex( int i ) const
+{
+	return pVertexData ? ((mstudiovertex_v44_t *)pVertexData) + GetGlobalVertexIndex( i ) : NULL;
+}
+
+inline Vector *mstudio_modelvertexdata_v44_t::Position( int i ) const
+{
+	mstudiovertex_v44_t *pVertex = Vertex( i );
+	return pVertex ? &pVertex->m_vecPosition : NULL;
+}
+
+inline Vector *mstudio_modelvertexdata_v44_t::Normal( int i ) const
+{
+	mstudiovertex_v44_t *pVertex = Vertex( i );
+	return pVertex ? &pVertex->m_vecNormal : NULL;
+}
+
+inline Vector4D *mstudio_modelvertexdata_v44_t::TangentS( int i ) const
+{
+	return pTangentData ? ((Vector4D *)pTangentData) + GetGlobalTangentIndex( i ) : NULL;
+}
+
+inline Vector2D *mstudio_modelvertexdata_v44_t::Texcoord( int i ) const
+{
+	mstudiovertex_v44_t *pVertex = Vertex( i );
+	return pVertex ? &pVertex->m_vecTexCoord : NULL;
+}
+
+inline mstudioboneweight_v44_t *mstudio_modelvertexdata_v44_t::BoneWeights( int i ) const
+{
+	mstudiovertex_v44_t *pVertex = Vertex( i );
+	return pVertex ? &pVertex->m_BoneWeights : NULL;
+}
+
+inline bool mstudio_modelvertexdata_v44_t::HasTangentData( void ) const
+{
+	return pTangentData != NULL;
+}
+
+inline int mstudio_meshvertexdata_v44_t::GetModelVertexIndex( int i ) const
+{
+	const mstudiomesh_v44_t *pMesh = (const mstudiomesh_v44_t *)((const byte *)this - offsetof(mstudiomesh_v44_t, vertexdata));
+	return pMesh->vertexoffset + i;
+}
+
+inline mstudiovertex_v44_t *mstudio_meshvertexdata_v44_t::Vertex( int i ) const
+{
+	const mstudiomesh_v44_t *pMesh = (const mstudiomesh_v44_t *)((const byte *)this - offsetof(mstudiomesh_v44_t, vertexdata));
+	const mstudiomodel_v44_t *pModel = pMesh->pModel();
+	return pModel ? pModel->vertexdata.Vertex( GetModelVertexIndex( i ) ) : NULL;
+}
+
+inline Vector4D *mstudio_meshvertexdata_v44_t::TangentS( int i ) const
+{
+	const mstudiomesh_v44_t *pMesh = (const mstudiomesh_v44_t *)((const byte *)this - offsetof(mstudiomesh_v44_t, vertexdata));
+	const mstudiomodel_v44_t *pModel = pMesh->pModel();
+	return pModel ? pModel->vertexdata.TangentS( GetModelVertexIndex( i ) ) : NULL;
+}
+
+inline bool mstudio_meshvertexdata_v44_t::HasTangentData() const
+{
+	const mstudiomesh_v44_t *pMesh = (const mstudiomesh_v44_t *)((const byte *)this - offsetof(mstudiomesh_v44_t, vertexdata));
+	const mstudiomodel_v44_t *pModel = pMesh->pModel();
+	return pModel && pModel->vertexdata.HasTangentData();
+}
 
 //-----------------------------------------------------------------------------
 // mstudiobodyparts_v44_t - Bodypart structure

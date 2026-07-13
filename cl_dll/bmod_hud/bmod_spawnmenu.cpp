@@ -47,17 +47,6 @@ ConVar bm_snapangles("bm_snapangles", "45", FCVAR_ARCHIVE, "Snap angles for rota
 //-----------------------------------------------------------------------------
 CClientSpawnDialog *g_pSpawnMenu = NULL;
 
-//-----------------------------------------------------------------------------
-// Console commands
-//-----------------------------------------------------------------------------
-CON_COMMAND( spawnmenu, "Opens the spawn menu" )
-{
-	if ( g_pSpawnMenu )
-	{
-		g_pSpawnMenu->ShowPanel( true );
-	}
-}
-
 CON_COMMAND( gm_reloadspawnmenu, "Reloads the spawn menu configuration" )
 {
 	if ( g_pSpawnMenu )
@@ -89,10 +78,10 @@ CON_COMMAND( gm_context, "Show a GMod build-menu context panel" )
 		return;
 	}
 
-	if ( g_pSpawnMenu && g_pSpawnMenu->GetContextPanel() )
+	if ( g_pSpawnMenu )
 	{
 		g_pSpawnMenu->ShowPanel( true );
-		g_pSpawnMenu->GetContextPanel()->ShowContext( engine->Cmd_Argv( 1 ) );
+		g_pSpawnMenu->ShowToolContext( engine->Cmd_Argv( 1 ) );
 	}
 }
 
@@ -139,15 +128,18 @@ CClientSpawnDialog::CClientSpawnDialog( vgui::Panel *parent ) : BaseClass( paren
 	int screenWide, screenTall;
 	vgui::surface()->GetScreenSize( screenWide, screenTall );
 
-	// Set initial size - 790 pixels wide, calculated height
+	// Set initial size - real GMod9's build menu splits roughly evenly
+	// between the spawn (left) and tools (right) halves; the old 790px width
+	// with a 238px tool column was much narrower than the reference layout.
 	m_nConsoleHeight = screenTall - 100;
 	if ( m_nConsoleHeight > 3000 )
 		m_nConsoleHeight = 3000;
 	if ( m_nConsoleHeight < 550 )
 		m_nConsoleHeight = 550;
 
-	SetSize( 790, m_nConsoleHeight );
-	SetPos( (screenWide - 790) / 2, (screenTall - m_nConsoleHeight) / 2 );
+	const int nWide = 960;
+	SetSize( nWide, m_nConsoleHeight );
+	SetPos( (screenWide - nWide) / 2, (screenTall - m_nConsoleHeight) / 2 );
 
 	Initialize();
 }
@@ -171,6 +163,9 @@ void CClientSpawnDialog::Initialize()
 	// Create main panel
 	CreateMainPanel();
 
+	// Create the always-visible spawnable-props panel
+	CreatePropPanel();
+
 	// Create tool buttons panel
 	CreateToolButtonsPanel();
 
@@ -192,10 +187,23 @@ void CClientSpawnDialog::Initialize()
 void CClientSpawnDialog::CreateMainPanel()
 {
 	m_pMainPanel = new vgui::Panel( this, "MainPanel" );
-	m_pMainPanel->SetSize( 790, m_nConsoleHeight );
+	m_pMainPanel->SetSize( GetWide(), m_nConsoleHeight );
 	m_pMainPanel->SetVisible( false );
 	m_pMainPanel->SetMouseInputEnabled( true );
 	m_pMainPanel->SetPos( 0, 0 );
+}
+
+//-----------------------------------------------------------------------------
+// Create the spawnable-props panel (left side, always visible - real GMod9
+// never hides this behind a tool's settings, see PerformLayout)
+//-----------------------------------------------------------------------------
+void CClientSpawnDialog::CreatePropPanel()
+{
+	m_pPropPanel = new CPropPanel( m_pMainPanel, "PropPanel" );
+	m_pPropPanel->SetParent( m_pMainPanel );
+	m_pPropPanel->SetVisible( true );
+	m_pPropPanel->SetMouseInputEnabled( true );
+	m_pPropPanel->SetScheme( GetScheme() );
 }
 
 //-----------------------------------------------------------------------------
@@ -205,8 +213,6 @@ void CClientSpawnDialog::CreateToolButtonsPanel()
 {
 	m_pToolButtonsPanel = new CToolButtonsPanel( m_pMainPanel, "ToolButtonsPanel" );
 	m_pToolButtonsPanel->SetParent( m_pMainPanel );
-	m_pToolButtonsPanel->SetSize( 238, m_nConsoleHeight - 20 );
-	m_pToolButtonsPanel->SetPos( 10, 10 );
 	m_pToolButtonsPanel->SetVisible( true );
 	m_pToolButtonsPanel->SetMouseInputEnabled( true );
 
@@ -215,15 +221,15 @@ void CClientSpawnDialog::CreateToolButtonsPanel()
 }
 
 //-----------------------------------------------------------------------------
-// Create context panel
+// Create context panel - a small floating "tool settings" box (like the
+// reference screenshot's "Bloom Settings" box) anchored over the bottom-right
+// corner of the tool buttons panel. Hidden until a tool's gm_context is shown.
 //-----------------------------------------------------------------------------
 void CClientSpawnDialog::CreateContextPanel()
 {
 	m_pContextPanel = new CContextPanel( m_pMainPanel, "ContextPanel" );
 	m_pContextPanel->SetParent( m_pMainPanel );
-	m_pContextPanel->SetSize( 510, m_nConsoleHeight - 20 );
-	m_pContextPanel->SetPos( 270, 10 );
-	m_pContextPanel->SetVisible( true );
+	m_pContextPanel->SetVisible( false );
 	m_pContextPanel->SetMouseInputEnabled( true );
 
 	// Propagate scheme to child panel
@@ -231,24 +237,13 @@ void CClientSpawnDialog::CreateContextPanel()
 }
 
 //-----------------------------------------------------------------------------
-// Create minimize button
+// Create minimize button - sits at the top-right corner of the floating
+// context box and hides just that box (not the whole spawn menu).
 //-----------------------------------------------------------------------------
 void CClientSpawnDialog::CreateMinimizeButton()
 {
 	m_pMinimizeButton = new vgui::Button( m_pMainPanel, "ContextMinimize", "Seclude" );
 	m_pMinimizeButton->SetVisible( false );
-
-	// Position at top right of context panel
-	int contextX, contextY, contextW, contextH;
-	m_pContextPanel->GetBounds( contextX, contextY, contextW, contextH );
-
-	int buttonW, buttonH;
-	m_pMinimizeButton->GetSize( buttonW, buttonH );
-
-	m_pMinimizeButton->SetPos(
-		contextX + contextW - buttonW,
-		contextY + contextH - buttonH - 18
-	);
 }
 
 //-----------------------------------------------------------------------------
@@ -417,7 +412,10 @@ void CClientSpawnDialog::ReloadSpawnMenu()
 	if ( m_pContextPanel )
 	{
 		m_pContextPanel->LoadContextConfiguration();
-		m_pContextPanel->ReloadProps();
+	}
+	if ( m_pPropPanel )
+	{
+		m_pPropPanel->ReloadProps();
 	}
 }
 
@@ -483,6 +481,59 @@ void CClientSpawnDialog::PerformLayout()
 	{
 		m_pMainPanel->SetSize( GetWide(), GetTall() );
 	}
+
+	const int margin = 10;
+	const int gap = 10;
+	const int toolWide = 380;	// tools column - closer to the reference screenshot's near-even split
+	const int contentTall = max( GetTall() - margin * 2, 1 );
+	const int propWide = max( GetWide() - margin * 2 - gap - toolWide, 1 );
+	const int toolX = margin + propWide + gap;
+
+	if ( m_pPropPanel )
+	{
+		m_pPropPanel->SetBounds( margin, margin, propWide, contentTall );
+	}
+	if ( m_pToolButtonsPanel )
+	{
+		m_pToolButtonsPanel->SetBounds( toolX, margin, toolWide, contentTall );
+	}
+
+	// The context box floats over the bottom-right corner of the tools
+	// panel (matching the reference screenshot's "Bloom Settings" box) - it
+	// does not take up its own layout column.
+	if ( m_pContextPanel )
+	{
+		const int boxWide = min( toolWide - 20, 260 );
+		const int boxTall = min( contentTall - 40, 260 );
+		const int boxX = toolX + toolWide - boxWide - 4;
+		const int boxY = margin + contentTall - boxTall - 4;
+		m_pContextPanel->SetBounds( boxX, boxY, boxWide, boxTall );
+
+		if ( m_pMinimizeButton )
+		{
+			int buttonW, buttonH;
+			m_pMinimizeButton->GetSize( buttonW, buttonH );
+			m_pMinimizeButton->SetPos( boxX + boxWide - buttonW - 2, boxY + 2 );
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Show a tool's settings box (gm_context <name>) and its Seclude button.
+// "props"/"spawnmenu"/empty mean "hide the box" (see CContextPanel::ShowContext).
+//-----------------------------------------------------------------------------
+void CClientSpawnDialog::ShowToolContext( const char *contextType )
+{
+	if ( !m_pContextPanel )
+		return;
+
+	m_pContextPanel->ShowContext( contextType );
+
+	bool bVisible = m_pContextPanel->IsContextVisible();
+	if ( m_pMinimizeButton )
+	{
+		m_pMinimizeButton->SetVisible( bVisible );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -509,7 +560,17 @@ void CClientSpawnDialog::OnCommand( const char *command )
 {
 	if ( Q_stricmp( command, "ContextMinimize" ) == 0 )
 	{
-		ShowPanel( false );
+		// "Seclude" hides just the floating tool-settings box, not the whole
+		// build menu (a previous version of this called ShowPanel(false),
+		// which closed the entire spawn menu instead).
+		if ( m_pContextPanel )
+		{
+			m_pContextPanel->HideContext();
+		}
+		if ( m_pMinimizeButton )
+		{
+			m_pMinimizeButton->SetVisible( false );
+		}
 	}
 	else
 	{
@@ -556,6 +617,24 @@ void CToolButtonsPanel::ApplySchemeSettings( vgui::IScheme *pScheme )
 
 	// Set background color for tool buttons panel
 	SetBgColor( pScheme->GetColor( "ToolButtonsBackground", Color( 50, 50, 50, 200 ) ) );
+
+	vgui::HFont font = pScheme->GetFont( "SpawnMenuButton", IsProportional() );
+	if ( font == vgui::INVALID_FONT )
+	{
+		font = pScheme->GetFont( "Default", IsProportional() );
+	}
+
+	if ( font != vgui::INVALID_FONT )
+	{
+		for ( int i = 0; i < m_ToolButtons.Count(); ++i )
+		{
+			vgui::Label *label = dynamic_cast<vgui::Label *>( m_ToolButtons[i].pPanel );
+			if ( label )
+			{
+				label->SetFont( font );
+			}
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -732,6 +811,7 @@ void CToolButtonsPanel::CreateMenuButton( const char *buttonText, const char *co
 	newEntry.pButton = new vgui::Button( this, buttonName, newEntry.szName );
 	newEntry.pPanel = newEntry.pButton;
 	newEntry.pButton->SetCommand( menuCommand );
+	newEntry.pButton->AddActionSignalTarget( this );
 	newEntry.pButton->SetTooltip( newEntry.szCommand );
 	newEntry.pButton->SetContentAlignment( vgui::Label::a_west );
 	newEntry.pButton->SetTextInset( 4, 0 );
@@ -924,13 +1004,6 @@ CContextPanel::CContextPanel( vgui::Panel *parent, const char *panelName )
 	m_szCurrentContext[0] = '\0';
 	m_bContextVisible = false;
 	m_pContextContent = NULL;
-	m_pPropPanel = NULL;
-
-	// Create the prop panel as the main content
-	// Note: CPropPanel loads its own scheme in its constructor
-	m_pPropPanel = new CPropPanel( this, "PropPanel" );
-	m_pPropPanel->SetVisible( true );
-	m_pPropPanel->SetMouseInputEnabled( true );
 
 	LoadContextConfiguration();
 }
@@ -943,10 +1016,6 @@ CContextPanel::~CContextPanel()
 	if ( m_pContextContent )
 	{
 		m_pContextContent->MarkForDeletion();
-	}
-	if ( m_pPropPanel )
-	{
-		m_pPropPanel->MarkForDeletion();
 	}
 }
 
@@ -971,34 +1040,6 @@ void CContextPanel::PerformLayout()
 	if ( m_pContextContent )
 	{
 		m_pContextContent->SetBounds( 5, 5, GetWide() - 10, GetTall() - 10 );
-	}
-
-	// Size the prop panel to fill the context area
-	if ( m_pPropPanel )
-	{
-		m_pPropPanel->SetBounds( 5, 5, GetWide() - 10, GetTall() - 10 );
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Mouse wheel scrolling - forward to prop panel
-//-----------------------------------------------------------------------------
-void CContextPanel::OnMouseWheeled( int delta )
-{
-	if ( m_pPropPanel )
-	{
-		m_pPropPanel->OnMouseWheeled( delta );
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Reload props
-//-----------------------------------------------------------------------------
-void CContextPanel::ReloadProps()
-{
-	if ( m_pPropPanel )
-	{
-		m_pPropPanel->ReloadProps();
 	}
 }
 
@@ -1274,19 +1315,19 @@ bool CContextPanel::LoadContextPanelFromDirectory( const char *directory, const 
 //-----------------------------------------------------------------------------
 void CContextPanel::ShowContext( const char *contextType )
 {
-	Q_strncpy( m_szCurrentContext, contextType ? contextType : "", sizeof(m_szCurrentContext) );
-	m_bContextVisible = true;
-
+	// "props"/"spawnmenu"/empty used to mean "show the prop panel instead of
+	// a tool's settings" back when this box also hosted the prop panel; the
+	// prop panel is now a permanent sibling on the dialog (CClientSpawnDialog::
+	// m_pPropPanel), so those aliases just mean "nothing to show".
 	if ( !contextType || !contextType[0] || Q_stricmp( contextType, "props" ) == 0 || Q_stricmp( contextType, "spawnmenu" ) == 0 )
 	{
-		ClearContextContent();
-		if ( m_pPropPanel )
-			m_pPropPanel->SetVisible( true );
+		HideContext();
 		return;
 	}
 
-	if ( m_pPropPanel )
-		m_pPropPanel->SetVisible( false );
+	Q_strncpy( m_szCurrentContext, contextType, sizeof(m_szCurrentContext) );
+	m_bContextVisible = true;
+	SetVisible( true );
 
 	ClearContextContent();
 	m_pContextContent = new vgui::Panel( this, "ContextContent" );
@@ -1315,11 +1356,9 @@ void CContextPanel::HideContext()
 {
 	m_bContextVisible = false;
 	m_szCurrentContext[0] = '\0';
+	SetVisible( false );
 
-	if ( m_pContextContent )
-	{
-		m_pContextContent->SetVisible( false );
-	}
+	ClearContextContent();
 }
 
 //-----------------------------------------------------------------------------

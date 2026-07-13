@@ -67,9 +67,14 @@ public:
 	void LoadMenuConfiguration();
 	void ReloadSpawnMenu();
 
+	// Shows a tool's settings in the floating context box and reveals the
+	// "Seclude" minimize button that goes with it (used by gm_context).
+	void ShowToolContext( const char *contextType );
+
 	// Panel access
 	CToolButtonsPanel *GetToolButtonsPanel() { return m_pToolButtonsPanel; }
 	CContextPanel *GetContextPanel() { return m_pContextPanel; }
+	CPropPanel *GetPropPanel() { return m_pPropPanel; }
 
 	// External access methods
 	void ScanPropsRecursive( const char *path );
@@ -77,6 +82,7 @@ public:
 protected:
 	// UI Panel management
 	void CreateMainPanel();
+	void CreatePropPanel();
 	void CreateToolButtonsPanel();
 	void CreateContextPanel();
 	void CreateMinimizeButton();
@@ -91,9 +97,10 @@ private:
 	// Main UI panels - matches Garry's Mod structure
 	vgui::Panel		*m_pMainPanel;			// Main container panel
 	vgui::Panel		*m_pPanel43;			// Additional panel slot
-	CContextPanel	*m_pContextPanel;		// Context panel for menus
+	CPropPanel		*m_pPropPanel;			// Spawnable props, always visible on the left
+	CContextPanel	*m_pContextPanel;		// Floating per-tool settings box (bottom-right of tools)
 	CToolButtonsPanel *m_pToolButtonsPanel;	// Tool buttons panel
-	vgui::Button	*m_pMinimizeButton;		// Minimize/close button
+	vgui::Button	*m_pMinimizeButton;		// Minimize/close button for the context box
 	vgui::Panel		*m_pPanel52;			// Additional panel slot
 
 	// Additional panels
@@ -187,16 +194,12 @@ public:
 	virtual void ApplySchemeSettings( vgui::IScheme *pScheme );
 	virtual void PerformLayout();
 	virtual void OnCommand( const char *command );
-	virtual void OnMouseWheeled( int delta );
 
 	// Context menu management
 	void ShowContext( const char *contextType );
 	void HideContext();
 	void LoadContextConfiguration();
-
-	// Prop panel access
-	CPropPanel *GetPropPanel() { return m_pPropPanel; }
-	void ReloadProps();
+	bool IsContextVisible() const { return m_bContextVisible; }
 
 private:
 	bool LoadContextPanel( const char *contextType );
@@ -210,7 +213,6 @@ private:
 	char			m_szCurrentContext[64];
 	bool			m_bContextVisible;
 	vgui::Panel		*m_pContextContent;
-	CPropPanel		*m_pPropPanel;			// Main prop spawn panel
 };
 
 //-----------------------------------------------------------------------------
@@ -228,27 +230,51 @@ private:
 #define DEFAULT_CONFIG_FILE		"settings/menu_main/default.txt"
 #define COMPLETE_DUMP_FILE		"settings/menu_props/complete_dump.txt"
 
-// Tool modes
+// Tool modes - MUST match dlls/bmod_dll/weapon_tool.h's ToolMode_t exactly
+// (the authentic GMod 9.0.4b gm_toolmode IDs). Menu buttons don't actually use
+// these symbols - CToolButtonsPanel parses the numeric ID straight out of each
+// button's "gm_toolmode <N>" command string - but TOOL_NONE is used directly
+// as the panel's initial state, so it must agree with the server's sentinel.
 enum ToolMode_t
 {
-	TOOL_NONE = 0,
-	TOOL_GUN = 1,
-	TOOL_PHYSGUN = 2,
-	TOOL_CAMERA = 3,
-	TOOL_NPC = 4,
-	TOOL_NEXTBOT = 5,
-	TOOL_MATERIAL = 6,
-	TOOL_COLOR = 7,
-	TOOL_PAINT = 8,
-	TOOL_INFLATOR = 9,
-	TOOL_DUPLICATOR = 10,
-	TOOL_CONSTRAINER = 11,
-	TOOL_AXIS = 12,
-	TOOL_BALLSOCKET = 13,
-	TOOL_ROPE = 14,
-	TOOL_PULLEY = 15,
-	// Additional tools can be added here
-	TOOL_MAX = 20
+	TOOL_NONE		= -1,
+
+	TOOL_ROPE		= 0,
+	TOOL_ELASTIC	= 1,
+	TOOL_WELD		= 2,
+	TOOL_BALLSOCKET	= 3,
+	TOOL_PULLEY		= 4,
+	TOOL_EASYWELD	= 5,
+	TOOL_EASYBALL	= 6,
+	TOOL_AXIS		= 7,
+	TOOL_SLIDER		= 8,
+	TOOL_NAILGUN	= 9,
+	TOOL_FACEPOSER	= 10,
+	TOOL_EYESPOSER	= 11,
+	TOOL_REMOVER	= 12,
+	TOOL_IGNITE		= 13,
+	TOOL_PAINT		= 14,
+	TOOL_DUPLICATE	= 15,
+	TOOL_COLOUR		= 16,
+	TOOL_MAGNETISE	= 17,
+	TOOL_NOCOLLIDE	= 18,
+	TOOL_DYNAMITE	= 19,
+	TOOL_MATERIAL	= 20,
+	TOOL_RTCAMERA	= 21,
+	TOOL_THRUSTER	= 23,
+	TOOL_PHYSPROPS	= 24,
+	TOOL_STATUE		= 25,
+	TOOL_BALLOON	= 26,
+	TOOL_EMITTER	= 27,
+	TOOL_SPRITE		= 28,
+	TOOL_WHEEL		= 29,
+
+	TOOL_GUN		= 30,
+	TOOL_CAMERA		= 31,
+	TOOL_NPCSPAWN	= 32,
+	TOOL_INFLATOR	= 33,
+
+	TOOL_MAX		= 40
 };
 
 //-----------------------------------------------------------------------------

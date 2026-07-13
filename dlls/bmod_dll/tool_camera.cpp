@@ -7,6 +7,7 @@
 
 #include "cbase.h"
 #include "weapon_tool.h"
+#include "tool_dispatch.h"
 #include "player.h"
 #include "gamerules.h"
 #include "util.h"
@@ -17,108 +18,165 @@
 #include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
+// ClientPrintf() only substitutes literal param1-4 strings into msg_name - it
+// has no printf-style formatting of its own - so this wrapper formats first.
+//-----------------------------------------------------------------------------
+static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFormat, ... )
+{
+	char szBuf[256];
+	va_list args;
+	va_start( args, pszFormat );
+	Q_vsnprintf( szBuf, sizeof( szBuf ), pszFormat, args );
+	va_end( args );
+	ClientPrint( pPlayer, msg_dest, szBuf );
+}
+
+//-----------------------------------------------------------------------------
 // Console variables for camera tool
 //-----------------------------------------------------------------------------
 ConVar bm_camera_fov("bm_camera_fov", "90", FCVAR_ARCHIVE, "Camera tool field of view");
 ConVar bm_camera_quality("bm_camera_quality", "high", FCVAR_ARCHIVE, "Camera tool screenshot quality");
 
 //-----------------------------------------------------------------------------
-// Camera tool class - implements TOOL_CAMERA mode
+// Per-weapon camera state - CWeaponTool is not subclassed, so the state that
+// used to live in CToolCamera's member variables now lives here, keyed by
+// the weapon's EHANDLE (mirrors the g_RemoverStates pattern in tool_remover.cpp).
 //-----------------------------------------------------------------------------
-class CToolCamera : public CWeaponTool
+struct CameraState_t
 {
-	DECLARE_CLASS( CToolCamera, CWeaponTool );
+	EHANDLE	hTool;
+	float	flLastPhotoTime;
+	int		nPhotoCount;
 
-public:
-	CToolCamera() : m_flLastPhotoTime(0.0f), m_nPhotoCount(0) {}
-
-	virtual void OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary );
-	virtual void OnToolTrace( trace_t &tr, bool bPrimary );
-	virtual void OnToolThink();
-
-private:
-	void TakePhoto( const Vector &vecTarget );
-	void CreatePhotoEffect( const Vector &vecPos );
-	void PlayShutterSound();
-	void AdjustCameraSettings();
-
-	// Camera state
-	float	m_flLastPhotoTime;
-	int		m_nPhotoCount;
+	CameraState_t()
+	{
+		flLastPhotoTime = 0.0f;
+		nPhotoCount = 0;
+	}
 };
+
+static CUtlVector<CameraState_t*> g_CameraStates;
+
+static CameraState_t *FindCameraState( CWeaponTool *pTool )
+{
+	for ( int i = 0; i < g_CameraStates.Count(); i++ )
+	{
+		if ( g_CameraStates[i]->hTool == pTool )
+			return g_CameraStates[i];
+	}
+	return NULL;
+}
+
+static CameraState_t *GetCameraState( CWeaponTool *pTool )
+{
+	CameraState_t *pState = FindCameraState( pTool );
+	if ( !pState )
+	{
+		pState = new CameraState_t;
+		pState->hTool = pTool;
+		g_CameraStates.AddToTail( pState );
+	}
+	return pState;
+}
+
+// Removes state records for weapons that no longer exist.
+static void CleanupCameraStates()
+{
+	for ( int i = g_CameraStates.Count() - 1; i >= 0; i-- )
+	{
+		if ( !g_CameraStates[i]->hTool.Get() )
+		{
+			delete g_CameraStates[i];
+			g_CameraStates.Remove( i );
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Forward declarations of tool helpers
+//-----------------------------------------------------------------------------
+static void TakePhoto( CWeaponTool *pTool, const Vector &vecTarget );
+static void CreatePhotoEffect( CWeaponTool *pTool, const Vector &vecPos );
+static void PlayShutterSound( CWeaponTool *pTool );
+static void AdjustCameraSettings( CWeaponTool *pTool );
 
 //-----------------------------------------------------------------------------
 // Tool implementation for Camera mode
 //-----------------------------------------------------------------------------
-void CToolCamera::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
+void Tool_Camera_OnUse( CWeaponTool *pTool, CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 {
 	if ( !bPrimary )
 	{
 		// Secondary attack - adjust camera settings
-		AdjustCameraSettings();
+		AdjustCameraSettings( pTool );
 		return;
 	}
 
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( !pOwner )
 		return;
 
+	CameraState_t *pState = GetCameraState( pTool );
+
 	// Check photo delay (prevent spam)
-	if ( gpGlobals->curtime - m_flLastPhotoTime < 1.0f )
+	if ( gpGlobals->curtime - pState->flLastPhotoTime < 1.0f )
 		return;
 
 	// Take photo targeting the entity
-	TakePhoto( tr.endpos );
+	TakePhoto( pTool, tr.endpos );
 
 	// Create photo effect
-	CreatePhotoEffect( tr.endpos );
+	CreatePhotoEffect( pTool, tr.endpos );
 
 	// Play camera shutter sound - matching IDA finding "NPC_CScanner.TakePhoto"
-	PlayShutterSound();
+	PlayShutterSound( pTool );
 
 	// Update photo state
-	m_flLastPhotoTime = gpGlobals->curtime;
-	m_nPhotoCount++;
+	pState->flLastPhotoTime = gpGlobals->curtime;
+	pState->nPhotoCount++;
 
 	DevMsg( "Camera tool: Photo #%d taken targeting %s\n",
-		m_nPhotoCount,
+		pState->nPhotoCount,
 		pEntity ? pEntity->GetClassname() : "world" );
 }
 
 //-----------------------------------------------------------------------------
 // Tool trace implementation for Camera mode
 //-----------------------------------------------------------------------------
-void CToolCamera::OnToolTrace( trace_t &tr, bool bPrimary )
+void Tool_Camera_OnTrace( CWeaponTool *pTool, trace_t &tr, bool bPrimary )
 {
 	if ( !bPrimary )
 		return;
 
+	CameraState_t *pState = GetCameraState( pTool );
+
 	// Take photo of empty space
-	TakePhoto( tr.endpos );
-	CreatePhotoEffect( tr.endpos );
-	PlayShutterSound();
+	TakePhoto( pTool, tr.endpos );
+	CreatePhotoEffect( pTool, tr.endpos );
+	PlayShutterSound( pTool );
 
-	m_flLastPhotoTime = gpGlobals->curtime;
-	m_nPhotoCount++;
+	pState->flLastPhotoTime = gpGlobals->curtime;
+	pState->nPhotoCount++;
 
-	DevMsg( "Camera tool: Photo #%d taken of empty space\n", m_nPhotoCount );
+	DevMsg( "Camera tool: Photo #%d taken of empty space\n", pState->nPhotoCount );
 }
 
 //-----------------------------------------------------------------------------
 // Tool think for Camera mode
 //-----------------------------------------------------------------------------
-void CToolCamera::OnToolThink()
+void Tool_Camera_OnThink( CWeaponTool *pTool )
 {
-	// Camera tool doesn't need continuous thinking
-	// Could add viewfinder effects here
+	// Camera tool doesn't need continuous thinking - could add viewfinder
+	// effects here. Just keep the per-weapon state registry tidy.
+	CleanupCameraStates();
 }
 
 //-----------------------------------------------------------------------------
 // Take photo
 //-----------------------------------------------------------------------------
-void CToolCamera::TakePhoto( const Vector &vecTarget )
+static void TakePhoto( CWeaponTool *pTool, const Vector &vecTarget )
 {
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( !pOwner )
 		return;
 
@@ -141,7 +199,7 @@ void CToolCamera::TakePhoto( const Vector &vecTarget )
 //-----------------------------------------------------------------------------
 // Create photo effect
 //-----------------------------------------------------------------------------
-void CToolCamera::CreatePhotoEffect( const Vector &vecPos )
+static void CreatePhotoEffect( CWeaponTool *pTool, const Vector &vecPos )
 {
 	// Create camera flash effect
 	CEffectData data;
@@ -153,7 +211,7 @@ void CToolCamera::CreatePhotoEffect( const Vector &vecPos )
 	DispatchEffect( "GlowSprite", data );
 
 	// Create some particles to simulate photo capture
-	data.m_vOrigin = GetAbsOrigin();
+	data.m_vOrigin = pTool->GetAbsOrigin();
 	data.m_vNormal = Vector(0, 0, 1);
 	data.m_flScale = 1.0f;
 
@@ -163,21 +221,21 @@ void CToolCamera::CreatePhotoEffect( const Vector &vecPos )
 //-----------------------------------------------------------------------------
 // Play shutter sound - matching Garry's Mod IDA finding
 //-----------------------------------------------------------------------------
-void CToolCamera::PlayShutterSound()
+static void PlayShutterSound( CWeaponTool *pTool )
 {
 	// Use the same sound as found in Garry's Mod IDA analysis
-	PlayToolSound( "NPC_CScanner.TakePhoto" );
+	pTool->PlayToolSound( "NPC_CScanner.TakePhoto" );
 
 	// Also play a mechanical shutter sound
-	EmitSound( "Camera.Snapshot" );
+	pTool->EmitSound( "Camera.Snapshot" );
 }
 
 //-----------------------------------------------------------------------------
 // Adjust camera settings
 //-----------------------------------------------------------------------------
-void CToolCamera::AdjustCameraSettings()
+static void AdjustCameraSettings( CWeaponTool *pTool )
 {
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( !pOwner )
 		return;
 
@@ -201,7 +259,7 @@ void CToolCamera::AdjustCameraSettings()
 		bm_camera_fov.SetValue( 60 );
 
 	// Inform player
-	ClientPrint( pOwner, HUD_PRINTTALK, "Camera FOV set to %.0f", bm_camera_fov.GetFloat() );
+	ClientPrintf( pOwner, HUD_PRINTTALK, "Camera FOV set to %.0f", bm_camera_fov.GetFloat() );
 }
 
 //-----------------------------------------------------------------------------
@@ -217,14 +275,14 @@ CON_COMMAND( bm_context_camera, "Opens camera tool context menu" )
 	CWeaponTool *pTool = dynamic_cast<CWeaponTool*>( pPlayer->GetActiveWeapon() );
 	if ( !pTool || pTool->GetToolMode() != TOOL_CAMERA )
 	{
-		ClientPrint( pPlayer, HUD_PRINTTALK, "Camera tool must be equipped and selected" );
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "Camera tool must be equipped and selected" );
 		return;
 	}
 
 	// In a full implementation, this would open the camera context menu
 	// For now, just show camera info
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Camera Tool Settings:" );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "FOV: %.0f", bm_camera_fov.GetFloat() );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Quality: %s", bm_camera_quality.GetString() );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Use secondary fire to adjust settings" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Camera Tool Settings:" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "FOV: %.0f", bm_camera_fov.GetFloat() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Quality: %s", bm_camera_quality.GetString() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Use secondary fire to adjust settings" );
 }

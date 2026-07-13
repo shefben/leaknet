@@ -56,17 +56,6 @@ int SV_HullForEntity( edict_t *ent )
 	int modelindex = serverEntity->GetModelIndex();
 	model = sv.GetModel( modelindex );
 
-	// Check if this is a v44+ model using independent system
-	if ( model && model->studio.hardwareData.m_pV44Model != NULL )
-	{
-		Con_DPrintf("SV_HullForEntity: Skipping v44+ model %s (handled by independent system)\n", model->name);
-		// Return default hull for v44+ models
-		ICollideable *pCollideable = serverEntity->GetCollideable();
-		Vector vecMins = pCollideable->WorldAlignMins();
-		Vector vecMaxs = pCollideable->WorldAlignMaxs();
-		return CM_HeadnodeForBoxHull( vecMins, vecMaxs );
-	}
-
 	if (model->type == mod_brush)
 	{
 		cmodel_t *pCModel = CM_InlineModelNumber( modelindex - 1 );
@@ -290,13 +279,6 @@ public:
 
 		model_t* pModel = sv.GetModel( pCollideable->GetCollisionModelIndex() );
 
-		// Check if this is a v44+ model using independent system
-		if ( pModel && pModel->studio.hardwareData.m_pV44Model != NULL )
-		{
-			Con_DPrintf("TriggerMoved::EnumElement: Skipping v44+ model %s (handled by independent system)\n", pModel->name);
-			return ITERATION_CONTINUE;
-		}
-
 		if ( pModel && pModel->type == mod_brush )
 		{
 			int headnode = SV_HullForEntity( pTouch );
@@ -361,14 +343,7 @@ public:
 		{
 			model_t *pModel = sv.GetModel( pServerTrigger->GetModelIndex() );
 
-			// Check if this is a v44+ model using independent system
-			if ( pModel && pModel->studio.hardwareData.m_pV44Model != NULL )
-			{
-				Con_DPrintf("CTriggerMoved::CTriggerMoved: Skipping v44+ model %s (handled by independent system)\n", pModel->name);
-				// Use default headnode for v44+ models
-				m_headnode = 0;
-			}
-			else if ( pModel && pModel->type == mod_brush )
+			if ( pModel && pModel->type == mod_brush )
 			{
 				m_headnode = SV_HullForEntity( pTriggerEntity );
 			}

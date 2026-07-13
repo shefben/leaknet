@@ -731,21 +731,23 @@ void CStudioRender::SetAlphaModulation( float alpha )
 void CStudioRender::ComputePoseToWorld( studiohdr_t *pStudioHdr )
 { 
 
-	// convert bone to world transformations into pose to world transformations
-	// CRITICAL: v37 bones are 192 bytes, v48 bones are 216 bytes - must use correct accessor!
-	bool bIsV48 = (pStudioHdr->version >= STUDIO_VERSION_44);
+	// Convert bone-to-world transformations into pose-to-world transformations.
+	// The v44 header moves the bone count and bone array offsets, so neither may
+	// be read through studiohdr_t when processing a v44+ model.
+	const bool bIsV44Plus = (pStudioHdr->version >= STUDIO_VERSION_44);
+	const int numBones = StudioHdr_GetNumBones(pStudioHdr);
+	studiohdr_v44_t *pStudioHdr44 = bIsV44Plus ? (studiohdr_v44_t *)pStudioHdr : NULL;
 
-	for (int i = 0; i < pStudioHdr->numbones; i++)
+	for (int i = 0; i < numBones; i++)
 	{
-		// Use version-aware bone accessor to get correct stride
 		int boneFlags;
 		const matrix3x4_t *pPoseToBone;
 
-		if (bIsV48)
+		if (bIsV44Plus)
 		{
-			mstudiobone_v48_t *pCurBone48 = pStudioHdr->pBone_v48(i);
-			boneFlags = pCurBone48->flags;
-			pPoseToBone = &pCurBone48->poseToBone;
+			mstudiobone_v44_t *pCurBone44 = pStudioHdr44->pBone(i);
+			boneFlags = pCurBone44->flags;
+			pPoseToBone = &pCurBone44->poseToBone;
 		}
 		else
 		{
@@ -779,15 +781,16 @@ void CStudioRender::ComputePoseToWorld( studiohdr_t *pStudioHdr )
 
 void CStudioRender::ScreenAlignBone( studiohdr_t *pStudioHdr, int i )
 {
-	// CRITICAL: v37 bones are 192 bytes, v48 bones are 216 bytes - must use correct accessor!
+	// V44+ uses a different studio header layout for its bone array.
 	int boneFlags;
 	const matrix3x4_t *pPoseToBone;
 
 	if (pStudioHdr->version >= STUDIO_VERSION_44)
 	{
-		mstudiobone_v48_t *pCurBone48 = pStudioHdr->pBone_v48(i);
-		boneFlags = pCurBone48->flags;
-		pPoseToBone = &pCurBone48->poseToBone;
+		studiohdr_v44_t *pStudioHdr44 = (studiohdr_v44_t *)pStudioHdr;
+		mstudiobone_v44_t *pCurBone44 = pStudioHdr44->pBone(i);
+		boneFlags = pCurBone44->flags;
+		pPoseToBone = &pCurBone44->poseToBone;
 	}
 	else
 	{

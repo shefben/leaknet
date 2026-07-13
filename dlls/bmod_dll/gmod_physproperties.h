@@ -8,6 +8,9 @@
 #include "convar.h"
 #include "utlvector.h"
 #include "utldict.h"
+#include "utlstring.h"
+#include "Color.h"
+#include "igamesystem.h"
 
 // Forward declarations
 class CBaseEntity;

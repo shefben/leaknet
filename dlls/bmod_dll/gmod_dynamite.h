@@ -40,6 +40,7 @@ public:
 private:
     float m_flExplodeTime;
     float m_flExplosionPower;
+    float m_flSpawnTime;
     bool m_bArmed;
 
     void InitDynamite();

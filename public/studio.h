@@ -2346,6 +2346,14 @@ struct studiohdr_t
 	inline int numlocalseq() const;     // Defined after studiohdr_v44.h include
 	inline mstudioseqdesc_t *pLocalSeqdesc( int i ) const { return pSeqdesc(i); }
 
+	// Version-aware bounding box accessors - v44+ hull_min/hull_max/view_bbmin/view_bbmax
+	// live at different byte offsets than v37 (studiohdr_v44_t has extra fields before them).
+	// Defined after studiohdr_v44.h include.
+	inline const Vector &GetHullMin() const;
+	inline const Vector &GetHullMax() const;
+	inline const Vector &GetViewBBMin() const;
+	inline const Vector &GetViewBBMax() const;
+
 	int					sequencesindexed;	// v37: initialization flag, v48: unused
 
 	// v37: sequence groups for demand loading, v48: unused (replaced by include models)
@@ -3071,6 +3079,35 @@ inline int studiohdr_t::GetNumLocalSeq() const
 inline int studiohdr_t::numlocalseq() const
 {
 	return GetNumLocalSeq();
+}
+
+// Version-aware bounding box accessors
+inline const Vector &studiohdr_t::GetHullMin() const
+{
+	if (version >= STUDIO_VERSION_44)
+		return ((const studiohdr_v44_t*)this)->hull_min;
+	return hull_min;
+}
+
+inline const Vector &studiohdr_t::GetHullMax() const
+{
+	if (version >= STUDIO_VERSION_44)
+		return ((const studiohdr_v44_t*)this)->hull_max;
+	return hull_max;
+}
+
+inline const Vector &studiohdr_t::GetViewBBMin() const
+{
+	if (version >= STUDIO_VERSION_44)
+		return ((const studiohdr_v44_t*)this)->view_bbmin;
+	return view_bbmin;
+}
+
+inline const Vector &studiohdr_t::GetViewBBMax() const
+{
+	if (version >= STUDIO_VERSION_44)
+		return ((const studiohdr_v44_t*)this)->view_bbmax;
+	return view_bbmax;
 }
 
 // Version-aware sequence descriptor accessor

@@ -56,10 +56,9 @@ private:
 //-----------------------------------------------------------------------------
 // Network table
 //-----------------------------------------------------------------------------
+// Mirrors weapon_tool.cpp's temporarily-emptied DT_WeaponTool SendTable (see
+// the comment there) - must stay symmetric with the server's table.
 IMPLEMENT_CLIENTCLASS_DT( C_WeaponTool, DT_WeaponTool, CWeaponTool )
-	RecvPropInt( RECVINFO(m_nToolMode) ),
-	RecvPropBool( RECVINFO(m_bToolActive) ),
-	RecvPropFloat( RECVINFO(m_flNextToolTime) ),
 END_RECV_TABLE()
 
 //-----------------------------------------------------------------------------

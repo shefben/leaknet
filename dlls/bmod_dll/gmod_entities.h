@@ -9,6 +9,7 @@
 #include "utlvector.h"
 #include "utlstring.h"
 #include "utldict.h"
+#include "igamesystem.h"
 
 // Forward declarations
 class CBaseEntity;
@@ -90,6 +91,7 @@ public:
 
     // Entity configuration functions discovered from IDA
     static bool LoadEntityConfigs(); // Loads all entity configs from settings/entities/
+    static bool ReloadEntityConfigs(); // Purges and reloads all entity configs
     static bool LoadEntityConfig(const char* pszEntityName); // Load specific entity config
     static bool SaveEntityConfig(const char* pszEntityName, const EntityConfig_t& config);
     static EntityConfig_t* FindEntityConfig(const char* pszEntityName);

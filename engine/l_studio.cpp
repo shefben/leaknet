@@ -641,7 +641,7 @@ static void R_SetNonAmbientLightingState( float overbrightFactor, int numLights,
 //-----------------------------------------------------------------------------
 void R_StudioCenter( studiohdr_t* pStudioHdr, const matrix3x4_t &matrix, Vector& center )
 {
-	VectorTransform( pStudioHdr->illumposition, matrix, center );
+	VectorTransform( StudioHdr_GetIllumPosition( pStudioHdr ), matrix, center );
 }
 
 

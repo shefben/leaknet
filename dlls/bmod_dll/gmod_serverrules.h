@@ -90,6 +90,9 @@ public:
     static void ResetPlayerStates();
     static void BroadcastMessage(const char* message);
 
+    // Called periodically by the game-system hook
+    static void ValidatePlayerStates();
+
 private:
     static bool m_bInitialized;
     static GMod_GameMode_t m_CurrentGameMode;
@@ -97,7 +100,6 @@ private:
 
     static CBasePlayer* GetCommandPlayer();
     static void UpdateGameModeSettings();
-    static void ValidatePlayerStates();
 };
 
 // Console variables for server rules

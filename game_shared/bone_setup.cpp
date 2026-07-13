@@ -15,6 +15,20 @@
 #include "studiohdr_v44.h"
 #include "studio_helpers.h"  // Helper functions for studiohdr_t access
 
+// studiohdr_t::pBone_v48 still uses studiohdr_t::boneindex. That offset is
+// only valid for the legacy header, so v44+ models must reach the bone array
+// through studiohdr_v44_t before using the otherwise compatible v48 fields.
+static inline mstudiobone_v48_t *StudioBone_GetV48( const studiohdr_t *pStudioHdr, int iBone )
+{
+	if ( StudioHdr_IsV44Plus( pStudioHdr ) )
+	{
+		return reinterpret_cast<mstudiobone_v48_t *>(
+			StudioHdr_AsV44( pStudioHdr )->pBone( iBone ) );
+	}
+
+	return pStudioHdr->pBone_v48( iBone );
+}
+
 void BuildBoneChain(
 	const studiohdr_t *pStudioHdr,
 	matrix3x4_t &rootxform,
@@ -677,7 +691,7 @@ static void CalcLocalHierarchyAnimation(
 	Vector p1;
 	Quaternion q1;
 	// Use v48 bone accessor for correct struct size in array indexing
-	int n = pStudioHdr->pBone_v48(iBone)->parent;
+	int n = StudioBone_GetV48( pStudioHdr, iBone )->parent;
 	if (n == -1)
 	{
 		if (weight == 1.0f)
@@ -766,18 +780,6 @@ static void CalcRotations_v48_internal( const studiohdr_t *pStudioHdr, Vector *p
 	iFrame = (int)fFrame;
 	s = (fFrame - iFrame);
 
-	// DEBUG: Track v48 animation processing
-	static int s_nDebugCounter = 0;
-	static const char* s_pLastModel = NULL;
-	if (s_pLastModel != pStudioHdr->name || (s_nDebugCounter % 500) == 0)
-	{
-		s_pLastModel = pStudioHdr->name;
-		DevMsg("CalcRotations_v48: model=%s ver=%d numframes=%d animblock=%d animindex=%d cycle=%.2f\n",
-			pStudioHdr->name, pStudioHdr->version, panimdesc->numframes,
-			panimdesc->animblock, panimdesc->animindex, cycle);
-	}
-	s_nDebugCounter++;
-
 	// CRITICAL: Initialize ALL bones to their default pose first!
 	// The pos/q arrays may come from uninitialized stack memory (e.g., AccumulatePose's local pos2/q2).
 	// If we only initialize bones with weight > 0, the others remain as garbage/NaN, which causes
@@ -785,7 +787,7 @@ static void CalcRotations_v48_internal( const studiohdr_t *pStudioHdr, Vector *p
 	int numBones = StudioHdr_GetNumBones(pStudioHdr);
 	for (int i = 0; i < numBones; i++)
 	{
-		mstudiobone_v48_t *pbone = pStudioHdr->pBone_v48( i );
+		mstudiobone_v48_t *pbone = StudioBone_GetV48( pStudioHdr, i );
 		// Initialize all bones to safe default values
 		pos[i] = pbone->pos;
 		q[i] = pbone->quat;
@@ -795,20 +797,6 @@ static void CalcRotations_v48_internal( const studiohdr_t *pStudioHdr, Vector *p
 	// Use version-aware accessor that handles external animation blocks for v44+
 	mstudioanim_v48_t *panim = StudioAnimDesc_GetAnim_v44_Frame(pStudioHdr, panimdesc, &iFrame);
 
-	// DEBUG: Check animation data
-	if (s_pLastModel == pStudioHdr->name && panim == NULL && (s_nDebugCounter % 500) == 1)
-	{
-		DevMsg("  WARNING: StudioAnimDesc_GetAnim_v44 returned NULL! animindex=%d\n", panimdesc->animindex);
-	}
-	else if (s_pLastModel == pStudioHdr->name && panim && (s_nDebugCounter % 500) == 1)
-	{
-		int nAnimBones = 0;
-		mstudioanim_v48_t *pCount = panim;
-		while (pCount) { nAnimBones++; pCount = pCount->pNext(); }
-		DevMsg("  Animation has %d bones in linked list, first bone=%d flags=0x%02X\n",
-			nAnimBones, panim->bone, panim->flags);
-	}
-
 	while (panim)
 	{
 		int iBone = panim->bone;
@@ -816,7 +804,7 @@ static void CalcRotations_v48_internal( const studiohdr_t *pStudioHdr, Vector *p
 		// Make sure bone index is valid
 		if (iBone >= 0 && iBone < numBones)
 		{
-			mstudiobone_v48_t *pbone = pStudioHdr->pBone_v48( iBone );
+			mstudiobone_v48_t *pbone = StudioBone_GetV48( pStudioHdr, iBone );
 
 			// Use version-safe weight accessor for v44+ seqdesc baseptr compatibility
 			if (StudioSeqdesc_GetWeightFromPtr(pStudioHdr, pseqdesc, iBone) > 0 && (pbone->flags & boneMask))
@@ -858,11 +846,11 @@ static void CalcRotations_v48_internal( const studiohdr_t *pStudioHdr, Vector *p
 
 			int iBone = pHierarchy->iBone;
 			if (iBone >= 0 && iBone < numBones &&
-				(pStudioHdr->pBone_v48(iBone)->flags & boneMask))
+				(StudioBone_GetV48(pStudioHdr, iBone)->flags & boneMask))
 			{
 				int iNewParent = pHierarchy->iNewParent;
 				if (iNewParent >= 0 && iNewParent < numBones &&
-					(pStudioHdr->pBone_v48(iNewParent)->flags & boneMask))
+					(StudioBone_GetV48(pStudioHdr, iNewParent)->flags & boneMask))
 				{
 					CalcLocalHierarchyAnimation( pStudioHdr, boneToWorld, pos, q, pbone,
 						pHierarchy, iBone, iNewParent, cycle, iFrame, s, boneMask );
@@ -1277,7 +1265,7 @@ void InitPose(
 		// v44+ models use pos/quat directly in bone structure
 		for (int i = 0; i < numBones; i++)
 		{
-			mstudiobone_v48_t *pbone = pStudioHdr->pBone_v48( i );
+			mstudiobone_v48_t *pbone = StudioBone_GetV48( pStudioHdr, i );
 			pos[i] = pbone->pos;
 			q[i] = pbone->quat;
 

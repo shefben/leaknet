@@ -7,6 +7,7 @@
 
 #include "cbase.h"
 #include "weapon_tool.h"
+#include "tool_dispatch.h"
 #include "player.h"
 #include "gamerules.h"
 #include "util.h"
@@ -16,6 +17,20 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+//-----------------------------------------------------------------------------
+// ClientPrintf() only substitutes literal param1-4 strings into msg_name - it
+// has no printf-style formatting of its own - so this wrapper formats first.
+//-----------------------------------------------------------------------------
+static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFormat, ... )
+{
+	char szBuf[256];
+	va_list args;
+	va_start( args, pszFormat );
+	Q_vsnprintf( szBuf, sizeof( szBuf ), pszFormat, args );
+	va_end( args );
+	ClientPrint( pPlayer, msg_dest, szBuf );
+}
 
 //-----------------------------------------------------------------------------
 // Console variables for NPC tool
@@ -60,41 +75,81 @@ static NPCInfo_t g_NPCInfo[] =
 };
 
 //-----------------------------------------------------------------------------
-// NPC tool class - implements TOOL_NPC mode
+// Per-weapon NPC tool state - CWeaponTool is not subclassed, so the state
+// that used to live in CToolNPC's member variables now lives here, keyed by
+// the weapon's EHANDLE (mirrors the g_RemoverStates pattern in tool_remover.cpp).
 //-----------------------------------------------------------------------------
-class CToolNPC : public CWeaponTool
+struct NPCToolState_t
 {
-	DECLARE_CLASS( CToolNPC, CWeaponTool );
+	EHANDLE	hTool;
+	int		nSelectedNPC;	// Currently selected NPC type index
+	int		nNPCCount;		// NPCs spawned this session
 
-public:
-	CToolNPC() : m_nSelectedNPC(0), m_nNPCCount(0) {}
-
-	virtual void OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary );
-	virtual void OnToolTrace( trace_t &tr, bool bPrimary );
-	virtual void OnToolThink();
-
-private:
-	CBaseEntity *SpawnNPC( const char *pszNPCClass, const Vector &vecPos, const QAngle &angFacing );
-	void DeleteNPC( CBaseEntity *pNPC );
-	void CycleNPCType();
-	int GetPlayerNPCCount( CBasePlayer *pPlayer );
-	bool CanSpawnNPC( CBasePlayer *pPlayer );
-	void CreateSpawnEffect( const Vector &vecPos );
-	const NPCInfo_t *GetCurrentNPCInfo();
-
-	// NPC tool state
-	int		m_nSelectedNPC;		// Currently selected NPC type index
-	int		m_nNPCCount;		// NPCs spawned this session
+	NPCToolState_t()
+	{
+		nSelectedNPC = 0;
+		nNPCCount = 0;
+	}
 };
+
+static CUtlVector<NPCToolState_t*> g_NPCToolStates;
+
+static NPCToolState_t *FindNPCToolState( CWeaponTool *pTool )
+{
+	for ( int i = 0; i < g_NPCToolStates.Count(); i++ )
+	{
+		if ( g_NPCToolStates[i]->hTool == pTool )
+			return g_NPCToolStates[i];
+	}
+	return NULL;
+}
+
+static NPCToolState_t *GetNPCToolState( CWeaponTool *pTool )
+{
+	NPCToolState_t *pState = FindNPCToolState( pTool );
+	if ( !pState )
+	{
+		pState = new NPCToolState_t;
+		pState->hTool = pTool;
+		g_NPCToolStates.AddToTail( pState );
+	}
+	return pState;
+}
+
+// Removes state records for weapons that no longer exist.
+static void CleanupNPCToolStates()
+{
+	for ( int i = g_NPCToolStates.Count() - 1; i >= 0; i-- )
+	{
+		if ( !g_NPCToolStates[i]->hTool.Get() )
+		{
+			delete g_NPCToolStates[i];
+			g_NPCToolStates.Remove( i );
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Forward declarations of tool helpers
+//-----------------------------------------------------------------------------
+static CBaseEntity *SpawnNPC( CWeaponTool *pTool, const char *pszNPCClass, const Vector &vecPos, const QAngle &angFacing );
+static void DeleteNPC( CWeaponTool *pTool, CBaseEntity *pNPC );
+static void CycleNPCType( CWeaponTool *pTool, NPCToolState_t *pState );
+static int GetPlayerNPCCount( CBasePlayer *pPlayer );
+static bool CanSpawnNPC( CBasePlayer *pPlayer );
+static void CreateSpawnEffect( const Vector &vecPos );
+static const NPCInfo_t *GetCurrentNPCInfo( NPCToolState_t *pState );
 
 //-----------------------------------------------------------------------------
 // Tool implementation for NPC mode
 //-----------------------------------------------------------------------------
-void CToolNPC::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
+void Tool_NPC_OnUse( CWeaponTool *pTool, CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 {
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( !pOwner )
 		return;
+
+	NPCToolState_t *pState = GetNPCToolState( pTool );
 
 	if ( bPrimary )
 	{
@@ -102,19 +157,19 @@ void CToolNPC::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 		if ( pEntity && pEntity->MyNPCPointer() )
 		{
 			// Clicking on an NPC - delete it
-			DeleteNPC( pEntity );
+			DeleteNPC( pTool, pEntity );
 		}
 		else
 		{
 			// Clicking on empty space or non-NPC - spawn NPC
 			if ( !CanSpawnNPC( pOwner ) )
 			{
-				ClientPrint( pOwner, HUD_PRINTTALK, "NPC limit reached (%d/%d)",
+				ClientPrintf( pOwner, HUD_PRINTTALK, "NPC limit reached (%d/%d)",
 					GetPlayerNPCCount( pOwner ), bm_npc_limit.GetInt() );
 				return;
 			}
 
-			const NPCInfo_t *pNPCInfo = GetCurrentNPCInfo();
+			const NPCInfo_t *pNPCInfo = GetCurrentNPCInfo( pState );
 			if ( pNPCInfo )
 			{
 				// Calculate spawn position and angle
@@ -123,22 +178,22 @@ void CToolNPC::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 				angSpawn.x = 0; // Only use yaw for NPC facing
 
 				// Spawn the NPC
-				CBaseEntity *pNPC = SpawnNPC( pNPCInfo->pszClassName, vecSpawnPos, angSpawn );
+				CBaseEntity *pNPC = SpawnNPC( pTool, pNPCInfo->pszClassName, vecSpawnPos, angSpawn );
 				if ( pNPC )
 				{
 					CreateSpawnEffect( vecSpawnPos );
-					PlayToolSound( "physics/wood/wood_crate_break5.wav" );
+					pTool->PlayToolSound( "physics/wood/wood_crate_break5.wav" );
 
-					m_nNPCCount++;
+					pState->nNPCCount++;
 
-					ClientPrint( pOwner, HUD_PRINTTALK, "Spawned %s (%d/%d)",
+					ClientPrintf( pOwner, HUD_PRINTTALK, "Spawned %s (%d/%d)",
 						pNPCInfo->pszDisplayName,
 						GetPlayerNPCCount( pOwner ),
 						bm_npc_limit.GetInt() );
 				}
 				else
 				{
-					ClientPrint( pOwner, HUD_PRINTTALK, "Failed to spawn %s", pNPCInfo->pszDisplayName );
+					ClientPrintf( pOwner, HUD_PRINTTALK, "Failed to spawn %s", pNPCInfo->pszDisplayName );
 				}
 			}
 		}
@@ -146,31 +201,31 @@ void CToolNPC::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 	else
 	{
 		// Secondary attack - cycle NPC type
-		CycleNPCType();
+		CycleNPCType( pTool, pState );
 	}
 }
 
 //-----------------------------------------------------------------------------
 // Tool trace implementation for NPC mode
 //-----------------------------------------------------------------------------
-void CToolNPC::OnToolTrace( trace_t &tr, bool bPrimary )
+void Tool_NPC_OnTrace( CWeaponTool *pTool, trace_t &tr, bool bPrimary )
 {
-	// Same as OnToolUse but with no entity
-	OnToolUse( NULL, tr, bPrimary );
+	// Same as OnUse but with no entity
+	Tool_NPC_OnUse( pTool, NULL, tr, bPrimary );
 }
 
 //-----------------------------------------------------------------------------
 // Tool think for NPC mode
 //-----------------------------------------------------------------------------
-void CToolNPC::OnToolThink()
+void Tool_NPC_OnThink( CWeaponTool *pTool )
 {
-	// NPC tool doesn't need continuous thinking
+	CleanupNPCToolStates();
 }
 
 //-----------------------------------------------------------------------------
 // Spawn NPC
 //-----------------------------------------------------------------------------
-CBaseEntity *CToolNPC::SpawnNPC( const char *pszNPCClass, const Vector &vecPos, const QAngle &angFacing )
+static CBaseEntity *SpawnNPC( CWeaponTool *pTool, const char *pszNPCClass, const Vector &vecPos, const QAngle &angFacing )
 {
 	if ( !pszNPCClass )
 		return NULL;
@@ -188,14 +243,14 @@ CBaseEntity *CToolNPC::SpawnNPC( const char *pszNPCClass, const Vector &vecPos, 
 	pNPC->SetAbsAngles( angFacing );
 
 	// Set owner for cleanup tracking
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( pOwner )
 	{
 		pNPC->SetOwnerEntity( pOwner );
 	}
 
 	// Set health if specified
-	const NPCInfo_t *pNPCInfo = GetCurrentNPCInfo();
+	const NPCInfo_t *pNPCInfo = GetCurrentNPCInfo( GetNPCToolState( pTool ) );
 	if ( pNPCInfo && pNPCInfo->nHealth > 0 )
 	{
 		pNPC->SetHealth( pNPCInfo->nHealth );
@@ -215,19 +270,19 @@ CBaseEntity *CToolNPC::SpawnNPC( const char *pszNPCClass, const Vector &vecPos, 
 //-----------------------------------------------------------------------------
 // Delete NPC
 //-----------------------------------------------------------------------------
-void CToolNPC::DeleteNPC( CBaseEntity *pNPC )
+static void DeleteNPC( CWeaponTool *pTool, CBaseEntity *pNPC )
 {
 	if ( !pNPC )
 		return;
 
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( !pOwner )
 		return;
 
 	// Check if player owns this NPC
 	if ( pNPC->GetOwnerEntity() != pOwner )
 	{
-		ClientPrint( pOwner, HUD_PRINTTALK, "You can only delete NPCs you spawned" );
+		ClientPrintf( pOwner, HUD_PRINTTALK, "You can only delete NPCs you spawned" );
 		return;
 	}
 
@@ -239,34 +294,34 @@ void CToolNPC::DeleteNPC( CBaseEntity *pNPC )
 	const char *pszClassName = pNPC->GetClassname();
 	UTIL_Remove( pNPC );
 
-	PlayToolSound( "physics/wood/wood_crate_break5.wav" );
-	ClientPrint( pOwner, HUD_PRINTTALK, "Deleted %s", pszClassName );
+	pTool->PlayToolSound( "physics/wood/wood_crate_break5.wav" );
+	ClientPrintf( pOwner, HUD_PRINTTALK, "Deleted %s", pszClassName );
 }
 
 //-----------------------------------------------------------------------------
 // Cycle NPC type
 //-----------------------------------------------------------------------------
-void CToolNPC::CycleNPCType()
+static void CycleNPCType( CWeaponTool *pTool, NPCToolState_t *pState )
 {
 	// Find next valid NPC type
 	do
 	{
-		m_nSelectedNPC++;
-		if ( g_NPCInfo[m_nSelectedNPC].pszClassName == NULL )
+		pState->nSelectedNPC++;
+		if ( g_NPCInfo[pState->nSelectedNPC].pszClassName == NULL )
 		{
-			m_nSelectedNPC = 0; // Wrap around
+			pState->nSelectedNPC = 0; // Wrap around
 		}
-	} while ( g_NPCInfo[m_nSelectedNPC].pszClassName == NULL );
+	} while ( g_NPCInfo[pState->nSelectedNPC].pszClassName == NULL );
 
 	// Update ConVar
-	bm_npc_type.SetValue( g_NPCInfo[m_nSelectedNPC].pszClassName );
+	bm_npc_type.SetValue( g_NPCInfo[pState->nSelectedNPC].pszClassName );
 
 	// Inform player
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( pOwner )
 	{
-		const NPCInfo_t *pInfo = GetCurrentNPCInfo();
-		ClientPrint( pOwner, HUD_PRINTTALK, "Selected: %s - %s",
+		const NPCInfo_t *pInfo = GetCurrentNPCInfo( pState );
+		ClientPrintf( pOwner, HUD_PRINTTALK, "Selected: %s - %s",
 			pInfo->pszDisplayName, pInfo->pszDescription );
 	}
 }
@@ -274,7 +329,7 @@ void CToolNPC::CycleNPCType()
 //-----------------------------------------------------------------------------
 // Get player NPC count
 //-----------------------------------------------------------------------------
-int CToolNPC::GetPlayerNPCCount( CBasePlayer *pPlayer )
+static int GetPlayerNPCCount( CBasePlayer *pPlayer )
 {
 	if ( !pPlayer )
 		return 0;
@@ -297,7 +352,7 @@ int CToolNPC::GetPlayerNPCCount( CBasePlayer *pPlayer )
 //-----------------------------------------------------------------------------
 // Check if player can spawn NPC
 //-----------------------------------------------------------------------------
-bool CToolNPC::CanSpawnNPC( CBasePlayer *pPlayer )
+static bool CanSpawnNPC( CBasePlayer *pPlayer )
 {
 	if ( !pPlayer )
 		return false;
@@ -312,7 +367,7 @@ bool CToolNPC::CanSpawnNPC( CBasePlayer *pPlayer )
 //-----------------------------------------------------------------------------
 // Create spawn effect
 //-----------------------------------------------------------------------------
-void CToolNPC::CreateSpawnEffect( const Vector &vecPos )
+static void CreateSpawnEffect( const Vector &vecPos )
 {
 	// Create teleport-in effect
 	CEffectData data;
@@ -334,7 +389,7 @@ void CToolNPC::CreateSpawnEffect( const Vector &vecPos )
 //-----------------------------------------------------------------------------
 // Get current NPC info
 //-----------------------------------------------------------------------------
-const NPCInfo_t *CToolNPC::GetCurrentNPCInfo()
+static const NPCInfo_t *GetCurrentNPCInfo( NPCToolState_t *pState )
 {
 	// Find NPC info matching the current ConVar
 	const char *pszCurrentType = bm_npc_type.GetString();
@@ -343,13 +398,13 @@ const NPCInfo_t *CToolNPC::GetCurrentNPCInfo()
 	{
 		if ( !Q_stricmp( g_NPCInfo[i].pszClassName, pszCurrentType ) )
 		{
-			m_nSelectedNPC = i;
+			pState->nSelectedNPC = i;
 			return &g_NPCInfo[i];
 		}
 	}
 
 	// Default to first NPC if not found
-	m_nSelectedNPC = 0;
+	pState->nSelectedNPC = 0;
 	return &g_NPCInfo[0];
 }
 
@@ -364,24 +419,24 @@ CON_COMMAND( bm_context_npc, "Opens NPC tool context menu" )
 
 	// Check if player has NPC tool equipped
 	CWeaponTool *pTool = dynamic_cast<CWeaponTool*>( pPlayer->GetActiveWeapon() );
-	if ( !pTool || pTool->GetToolMode() != TOOL_NPC )
+	if ( !pTool || pTool->GetToolMode() != TOOL_NPCSPAWN )
 	{
-		ClientPrint( pPlayer, HUD_PRINTTALK, "NPC tool must be equipped and selected" );
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "NPC tool must be equipped and selected" );
 		return;
 	}
 
 	// In a full implementation, this would open the NPC context menu
 	// For now, show available NPCs
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Available NPCs:" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Available NPCs:" );
 
 	for ( int i = 0; g_NPCInfo[i].pszClassName; i++ )
 	{
-		ClientPrint( pPlayer, HUD_PRINTTALK, "  %s - %s",
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "  %s - %s",
 			g_NPCInfo[i].pszDisplayName, g_NPCInfo[i].pszDescription );
 	}
 
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Current: %s", bm_npc_type.GetString() );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Use secondary fire to cycle NPC types" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Current: %s", bm_npc_type.GetString() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Use secondary fire to cycle NPC types" );
 }
 
 //-----------------------------------------------------------------------------
@@ -406,5 +461,5 @@ CON_COMMAND( bm_npc_cleanup, "Removes all NPCs spawned by the player" )
 		}
 	}
 
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Removed %d NPCs", nCount );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Removed %d NPCs", nCount );
 }

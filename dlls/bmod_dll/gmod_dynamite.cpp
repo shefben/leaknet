@@ -8,11 +8,12 @@
 #include "cbase.h"
 #include "gmod_dynamite.h"
 #include "player.h"
-#include "tier1/strtools.h"
+#include "vstdlib/strtools.h"
 #include "explode.h"
 #include "soundent.h"
 #include "te_effect_dispatch.h"
 #include "util.h"
+#include "igamesystem.h"
 
 // Initialize static members
 bool CGModDynamiteSystem::m_bInitialized = false;
@@ -33,12 +34,12 @@ ConVar gm_dynamite_sound("gm_dynamite_sound", "1", FCVAR_GAMEDLL, "Enable dynami
 LINK_ENTITY_TO_CLASS(gmod_dynamite, CGModDynamite);
 
 BEGIN_DATADESC(CGModDynamite)
-    DEFINE_FIELD(m_flExplodeTime, FIELD_TIME),
-    DEFINE_FIELD(m_flExplosionPower, FIELD_FLOAT),
-    DEFINE_FIELD(m_bArmed, FIELD_BOOLEAN),
+    DEFINE_FIELD(CGModDynamite, m_flExplodeTime, FIELD_TIME),
+    DEFINE_FIELD(CGModDynamite, m_flExplosionPower, FIELD_FLOAT),
+    DEFINE_FIELD(CGModDynamite, m_bArmed, FIELD_BOOLEAN),
 
-    DEFINE_THINKFUNC(Think),
-    DEFINE_ENTITYFUNC(Touch),
+    DEFINE_THINKFUNC(CGModDynamite, Think),
+    DEFINE_ENTITYFUNC(CGModDynamite, Touch),
 END_DATADESC()
 
 //-----------------------------------------------------------------------------
@@ -56,6 +57,8 @@ void CGModDynamite::Spawn()
 
     // Create physics object
     VPhysicsInitNormal(SOLID_BBOX, 0, false);
+
+    m_flSpawnTime = gpGlobals->curtime;
 
     InitDynamite();
 
@@ -134,7 +137,7 @@ void CGModDynamite::Think()
 void CGModDynamite::Touch(CBaseEntity *pOther)
 {
     // Don't detonate on owner for first second
-    if (pOther == GetOwnerEntity() && gpGlobals->curtime < GetSpawnTime() + 1.0f)
+    if (pOther == GetOwnerEntity() && gpGlobals->curtime < m_flSpawnTime + 1.0f)
         return;
 
     BaseClass::Touch(pOther);
@@ -159,7 +162,7 @@ void CGModDynamite::Explode()
 
     // Apply damage in radius
     RadiusDamage(CTakeDamageInfo(this, GetOwnerEntity(), m_flExplosionPower, DMG_BLAST),
-                 vecOrigin, m_flExplosionPower * 3.0f, CLASS_NONE, NULL);
+                 vecOrigin, m_flExplosionPower * 3.0f, CLASS_NONE);
 
     // Create light effect
     CBroadcastRecipientFilter filter;
@@ -267,7 +270,7 @@ bool CGModDynamiteSystem::CanCreateDynamite(CBasePlayer* pPlayer)
     if (timeSinceLastSpawn < playerDelay)
     {
         float timeLeft = playerDelay - timeSinceLastSpawn;
-        ClientPrint(pPlayer, HUD_PRINTTALK, "Dynamite delay: %.1f seconds remaining", timeLeft);
+        ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Dynamite delay: %.1f seconds remaining", timeLeft));
         return false;
     }
 
@@ -286,7 +289,7 @@ CGModDynamite* CGModDynamiteSystem::CreatePlayerDynamite(CBasePlayer* pPlayer, c
     if (pDynamite)
     {
         UpdatePlayerDelay(pPlayer);
-        ClientPrint(pPlayer, HUD_PRINTTALK, "Dynamite spawned - Timer: %.1f seconds", gm_dynamite_timer.GetFloat());
+        ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Dynamite spawned - Timer: %.1f seconds", gm_dynamite_timer.GetFloat()));
     }
 
     return pDynamite;
@@ -419,7 +422,7 @@ void CGModDynamiteSystem::CMD_gm_dynamite_explode_all(void)
         }
     }
 
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Detonating %d dynamite(s)", count);
+    ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Detonating %d dynamite(s)", count));
 }
 
 //-----------------------------------------------------------------------------
@@ -439,7 +442,7 @@ void CGModDynamiteSystem::CMD_gm_dynamite_clear(void)
         count++;
     }
 
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Removed %d dynamite(s)", count);
+    ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Removed %d dynamite(s)", count));
 }
 
 // Register console commands

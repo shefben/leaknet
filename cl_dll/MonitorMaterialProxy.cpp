@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -8,6 +8,7 @@
 #include "materialsystem/imaterialproxy.h"
 #include "materialsystem/imaterial.h"
 #include "materialsystem/imaterialvar.h"
+#include "KeyValues.h"
 
 // $monitorTextureVar
 class CMonitorMaterialProxy : public IMaterialProxy
@@ -35,7 +36,7 @@ CMonitorMaterialProxy::~CMonitorMaterialProxy()
 
 bool CMonitorMaterialProxy::Init( IMaterial *pMaterial, KeyValues *pKeyValues )
 {
-	char const* pMonitorTextureVarName = pKeyValues->getString( "$monitorTextureVar" );
+	char const* pMonitorTextureVarName = pKeyValues->GetString( "$monitorTextureVar" );
 	if( !pMonitorTextureVarName )
 		return false;
 

@@ -684,49 +684,52 @@ void CPropGridPanel::LayoutItems()
 }
 
 //=============================================================================
-// CPropCategoryButton Implementation
+// CPropCategoryList Implementation
+//
+// Real GMod9's spawn menu picks the category (Characters/Custom/Effects/...)
+// via a single dropdown at the top of the panel, not a vertical button list -
+// see the reference screenshot. One ComboBox replaces what used to be a
+// column of CPropCategoryButton widgets.
 //=============================================================================
+
+MessageMapItem_t CPropCategoryList::m_MessageMap[] =
+{
+	MAP_MESSAGE_CONSTCHARPTR( CPropCategoryList, "TextChanged", OnTextChanged, "text" ),
+};
+IMPLEMENT_PANELMAP( CPropCategoryList, Panel );
 
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
-CPropCategoryButton::CPropCategoryButton( Panel *parent, const char *panelName, const char *categoryName, int categoryIndex )
-	: BaseClass( parent, panelName, categoryName )
+CPropCategoryList::CPropCategoryList( Panel *parent, const char *panelName )
+	: BaseClass( parent, panelName )
 {
-	m_nCategoryIndex = categoryIndex;
+	m_nSelectedCategory = -1;
+	SetMouseInputEnabled( true );
 
-	char cmd[64];
-	Q_snprintf( cmd, sizeof(cmd), "SelectCategory %d", categoryIndex );
-	SetCommand( cmd );
-
-	SetSize( PROP_CATEGORY_WIDTH, PROP_CATEGORY_HEIGHT );
-	SetVisible( true );
+	m_pCombo = new ComboBox( this, "CategoryCombo", 12, false );
+	m_pCombo->AddActionSignalTarget( this );
+	m_pCombo->SetVisible( true );
 }
 
 //-----------------------------------------------------------------------------
 // Destructor
 //-----------------------------------------------------------------------------
-CPropCategoryButton::~CPropCategoryButton()
+CPropCategoryList::~CPropCategoryList()
 {
+	m_Categories.Purge();
 }
 
 //-----------------------------------------------------------------------------
 // Apply scheme settings
 //-----------------------------------------------------------------------------
-void CPropCategoryButton::ApplySchemeSettings( IScheme *pScheme )
+void CPropCategoryList::ApplySchemeSettings( IScheme *pScheme )
 {
 	BaseClass::ApplySchemeSettings( pScheme );
+	SetBgColor( pScheme->GetColor( "CategoryList.BgColor", Color( 40, 40, 40, 200 ) ) );
 
-	// Use visible button colors
-	SetBgColor( pScheme->GetColor( "Button.BgColor", Color( 70, 70, 70, 255 ) ) );
-	SetFgColor( pScheme->GetColor( "Button.TextColor", Color( 255, 255, 255, 255 ) ) );
+	m_pCombo->SetScheme( GetScheme() );
 
-	// 2003 VGUI: SetArmedColor takes both fg and bg
-	Color armedFg = pScheme->GetColor( "Button.ArmedTextColor", Color( 255, 255, 255, 255 ) );
-	Color armedBg = pScheme->GetColor( "Button.ArmedBgColor", Color( 100, 100, 100, 255 ) );
-	SetArmedColor( armedFg, armedBg );
-
-	// Use SpawnPanelButton font (matches original GMod) with fallback
 	HFont font = pScheme->GetFont( "SpawnPanelButton", IsProportional() );
 	if ( !font )
 	{
@@ -738,85 +741,35 @@ void CPropCategoryButton::ApplySchemeSettings( IScheme *pScheme )
 	}
 	if ( font )
 	{
-		SetFont( font );
+		m_pCombo->SetFont( font );
 	}
 }
 
-//=============================================================================
-// CPropCategoryList Implementation
-//=============================================================================
-
 //-----------------------------------------------------------------------------
-// Constructor
-//-----------------------------------------------------------------------------
-CPropCategoryList::CPropCategoryList( Panel *parent, const char *panelName )
-	: BaseClass( parent, panelName )
-{
-	m_nSelectedCategory = -1;
-	SetMouseInputEnabled( true );
-}
-
-//-----------------------------------------------------------------------------
-// Destructor
-//-----------------------------------------------------------------------------
-CPropCategoryList::~CPropCategoryList()
-{
-	for ( int i = 0; i < m_CategoryButtons.Count(); i++ )
-	{
-		if ( m_CategoryButtons[i] )
-		{
-			m_CategoryButtons[i]->MarkForDeletion();
-		}
-	}
-	m_CategoryButtons.RemoveAll();
-	m_Categories.Purge();
-}
-
-//-----------------------------------------------------------------------------
-// Apply scheme settings
-//-----------------------------------------------------------------------------
-void CPropCategoryList::ApplySchemeSettings( IScheme *pScheme )
-{
-	BaseClass::ApplySchemeSettings( pScheme );
-	SetBgColor( pScheme->GetColor( "CategoryList.BgColor", Color( 40, 40, 40, 200 ) ) );
-}
-
-//-----------------------------------------------------------------------------
-// Perform layout
+// Perform layout - the combo box fills this whole (thin, top-of-panel) strip
 //-----------------------------------------------------------------------------
 void CPropCategoryList::PerformLayout()
 {
 	BaseClass::PerformLayout();
 
-	int buttonY = 5;
-	for ( int i = 0; i < m_CategoryButtons.Count(); i++ )
-	{
-		if ( m_CategoryButtons[i] )
-		{
-			m_CategoryButtons[i]->SetPos( 5, buttonY );
-			m_CategoryButtons[i]->SetWide( GetWide() - 10 );
-			buttonY += PROP_CATEGORY_HEIGHT + 2;
-		}
-	}
+	m_pCombo->SetBounds( 0, 0, GetWide(), GetTall() );
 }
 
 //-----------------------------------------------------------------------------
-// Handle commands
+// Combo box selection changed
 //-----------------------------------------------------------------------------
-void CPropCategoryList::OnCommand( const char *command )
+void CPropCategoryList::OnTextChanged( const char *text )
 {
-	if ( Q_strnicmp( command, "SelectCategory ", 15 ) == 0 )
-	{
-		int index = atoi( command + 15 );
-		SelectCategory( index );
+	int index = m_pCombo->GetActiveItem();
+	if ( index < 0 || index >= m_Categories.Count() )
+		return;
 
-		// Forward to parent
-		PostActionSignal( new KeyValues( "Command", "command", command ) );
-	}
-	else
-	{
-		BaseClass::OnCommand( command );
-	}
+	SelectCategory( index );
+
+	// Forward to CPropPanel::OnCommand, which tells the grid to switch category.
+	char command[64];
+	Q_snprintf( command, sizeof(command), "SelectCategory %d", index );
+	PostActionSignal( new KeyValues( "Command", "command", command ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -825,16 +778,9 @@ void CPropCategoryList::OnCommand( const char *command )
 //-----------------------------------------------------------------------------
 void CPropCategoryList::LoadCategories()
 {
-	// Clear existing
-	for ( int i = 0; i < m_CategoryButtons.Count(); i++ )
-	{
-		if ( m_CategoryButtons[i] )
-		{
-			m_CategoryButtons[i]->MarkForDeletion();
-		}
-	}
-	m_CategoryButtons.RemoveAll();
+	m_pCombo->DeleteAllItems();
 	m_Categories.Purge();
+	m_nSelectedCategory = -1;
 
 	// Ensure spawnicons search path is added for icon materials
 	// This adds mods/spawnicons to the search path which contains materials/gmod/models/*.vmt
@@ -867,24 +813,15 @@ void CPropCategoryList::LoadCategories()
 
 	Msg( "Loaded %d prop categories\n", m_Categories.Count() );
 
-	// Get our scheme to propagate to child buttons
-	vgui::HScheme myScheme = GetScheme();
-
-	// Create category buttons
 	for ( int i = 0; i < m_Categories.Count(); i++ )
 	{
-		char buttonName[64];
-		Q_snprintf( buttonName, sizeof(buttonName), "CatButton%d", i );
-
-		CPropCategoryButton *pButton = new CPropCategoryButton( this, buttonName, m_Categories[i].szName, i );
-		pButton->SetScheme( myScheme );
-		pButton->SetMouseInputEnabled( true );
-		m_CategoryButtons.AddToTail( pButton );
+		m_pCombo->AddItem( m_Categories[i].szName, NULL );
 	}
 
 	// Select first category by default
 	if ( m_Categories.Count() > 0 )
 	{
+		m_pCombo->ActivateItem( 0 );
 		SelectCategory( 0 );
 	}
 
@@ -907,13 +844,9 @@ void CPropCategoryList::SelectCategory( int index )
 		ParseCategoryFile( m_Categories[index] );
 	}
 
-	// Update button appearance
-	for ( int i = 0; i < m_CategoryButtons.Count(); i++ )
+	if ( m_pCombo->GetActiveItem() != index )
 	{
-		if ( m_CategoryButtons[i] )
-		{
-			m_CategoryButtons[i]->SetSelected( i == index );
-		}
+		m_pCombo->ActivateItem( index );
 	}
 }
 
@@ -1044,14 +977,16 @@ void CPropPanel::PerformLayout()
 	int wide, tall;
 	GetSize( wide, tall );
 
-	// Category list on left (130px wide)
-	m_pCategoryList->SetBounds( 0, 0, 130, tall );
+	// Category dropdown across the top (real GMod9 layout - a combo box, not
+	// a side column of buttons)
+	const int comboTall = 22;
+	m_pCategoryList->SetBounds( 0, 0, wide, comboTall );
 
-	// Scrollbar on right (16px wide)
-	m_pScrollBar->SetBounds( wide - 16, 0, 16, tall );
+	// Scrollbar on right (16px wide), below the dropdown
+	m_pScrollBar->SetBounds( wide - 16, comboTall + 4, 16, tall - comboTall - 4 );
 
-	// Prop grid in center
-	m_pPropGrid->SetBounds( 130, 0, wide - 130 - 16, tall );
+	// Prop grid fills the rest, below the dropdown
+	m_pPropGrid->SetBounds( 0, comboTall + 4, wide - 16, tall - comboTall - 4 );
 
 	// Update scrollbar range
 	int maxScroll = m_pPropGrid->GetMaxScrollOffset();
@@ -1090,6 +1025,21 @@ void CPropPanel::OnMouseWheeled( int delta )
 	m_pPropGrid->OnMouseWheeled( delta );
 	m_pScrollBar->SetValue( m_pPropGrid->GetScrollOffset() );
 }
+
+//-----------------------------------------------------------------------------
+// Scrollbar thumb dragged - the ScrollBar posts this via PostActionSignal;
+// without a message map entry for it here it was silently dropped.
+//-----------------------------------------------------------------------------
+void CPropPanel::OnScrollBarSliderMoved( int position )
+{
+	m_pPropGrid->SetScrollOffset( position );
+}
+
+MessageMapItem_t CPropPanel::m_MessageMap[] =
+{
+	MAP_MESSAGE_INT( CPropPanel, "ScrollBarSliderMoved", OnScrollBarSliderMoved, "position" ),
+};
+IMPLEMENT_PANELMAP( CPropPanel, Panel );
 
 //-----------------------------------------------------------------------------
 // Reload props

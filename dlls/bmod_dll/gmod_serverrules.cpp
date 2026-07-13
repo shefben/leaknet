@@ -9,9 +9,10 @@
 #include "gmod_serverrules.h"
 #include "player.h"
 #include "ai_basenpc.h"
-#include "tier1/strtools.h"
+#include "vstdlib/strtools.h"
 #include "game.h"
 #include "physics.h"
+#include "igamesystem.h"
 
 // Initialize static members
 bool CGModServerRules::m_bInitialized = false;
@@ -19,8 +20,11 @@ GMod_GameMode_t CGModServerRules::m_CurrentGameMode = GAMEMODE_SANDBOX;
 float CGModServerRules::m_flLastCleanupTime = 0.0f;
 
 // Console variables for server rules
+// NOTE: gm_sv_allownpc, gm_sv_noclip, gm_sv_allweapons, gm_sv_allowignite,
+// gm_sv_playerdamage, gm_sv_pvpdamage, gm_sv_teamdamage and gm_sv_allowspawning
+// are already declared in gmod_cvars_commands.cpp - do NOT redeclare them here,
+// that would be a duplicate global symbol.
 ConVar gm_sv_gamemode("gm_sv_gamemode", "0", FCVAR_GAMEDLL | FCVAR_NOTIFY, "Game mode (0=Sandbox, 1=Build, 2=RP, 3=DM, 4=Team, 5=Custom)");
-ConVar gm_sv_allownpc("gm_sv_allownpc", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY, "Allow NPC spawning");
 ConVar gm_sv_npchealthmultiplier("gm_sv_npchealthmultiplier", "1.0", FCVAR_GAMEDLL, "NPC health multiplier");
 ConVar gm_sv_allowweapons("gm_sv_allowweapons", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY, "Allow weapon spawning");
 ConVar gm_sv_allowphysgun("gm_sv_allowphysgun", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY, "Allow physics gun usage");
@@ -29,7 +33,6 @@ ConVar gm_sv_maxprops("gm_sv_maxprops", "1000", FCVAR_GAMEDLL, "Maximum props on
 ConVar gm_sv_maxragdolls("gm_sv_maxragdolls", "200", FCVAR_GAMEDLL, "Maximum ragdolls on server");
 ConVar gm_sv_maxnpcs("gm_sv_maxnpcs", "50", FCVAR_GAMEDLL, "Maximum NPCs on server");
 ConVar gm_sv_respawntime("gm_sv_respawntime", "5.0", FCVAR_GAMEDLL, "Player respawn time in seconds");
-ConVar gm_sv_noclip("gm_sv_noclip", "0", FCVAR_GAMEDLL | FCVAR_NOTIFY, "Allow noclip for all players");
 ConVar gm_sv_god("gm_sv_god", "0", FCVAR_GAMEDLL | FCVAR_NOTIFY, "God mode for all players");
 ConVar gm_sv_gravity("gm_sv_gravity", "600", FCVAR_GAMEDLL | FCVAR_NOTIFY, "Server gravity setting");
 ConVar gm_sv_airaccelerate("gm_sv_airaccelerate", "10", FCVAR_GAMEDLL, "Air acceleration multiplier");
@@ -39,14 +42,6 @@ ConVar gm_sv_allowchat("gm_sv_allowchat", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY, "Al
 ConVar gm_sv_allowvoice("gm_sv_allowvoice", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY, "Allow voice chat");
 ConVar gm_sv_teamplay("gm_sv_teamplay", "0", FCVAR_GAMEDLL | FCVAR_NOTIFY, "Enable team play mode");
 ConVar gm_sv_friendly_fire("gm_sv_friendly_fire", "0", FCVAR_GAMEDLL | FCVAR_NOTIFY, "Enable friendly fire in team mode");
-
-// Additional cvars required by client gmod_menus.cpp
-ConVar gm_sv_allweapons("gm_sv_allweapons", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, "Give all weapons to players");
-ConVar gm_sv_allowignite("gm_sv_allowignite", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, "Allow igniting objects");
-ConVar gm_sv_playerdamage("gm_sv_playerdamage", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, "Enable player damage");
-ConVar gm_sv_pvpdamage("gm_sv_pvpdamage", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, "Enable PvP damage");
-ConVar gm_sv_teamdamage("gm_sv_teamdamage", "0", FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, "Enable team damage");
-ConVar gm_sv_allowspawning("gm_sv_allowspawning", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, "Allow spawning entities");
 ConVar gm_sv_allowmultigun("gm_sv_allowmultigun", "1", FCVAR_GAMEDLL | FCVAR_NOTIFY | FCVAR_REPLICATED, "Allow multiple physics gun targets");
 
 //-----------------------------------------------------------------------------
@@ -161,7 +156,7 @@ void CGModServerRules::HandlePlayerConnect(CBasePlayer* pPlayer)
         return;
 
     // Send game mode info to player
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Server Mode: %s", GetGameModeName(m_CurrentGameMode));
+    ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Server Mode: %s", GetGameModeName(m_CurrentGameMode)));
 
     // Apply player-specific rules based on game mode
     ApplyGameModeRules();
@@ -203,7 +198,7 @@ bool CGModServerRules::CanSpawnNPC(CBasePlayer* pPlayer, const char* npcClass)
 
     if (npcCount >= gm_sv_maxnpcs.GetInt())
     {
-        ClientPrint(pPlayer, HUD_PRINTTALK, "Maximum NPCs reached (%d/%d)", npcCount, gm_sv_maxnpcs.GetInt());
+        ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Maximum NPCs reached (%d/%d)", npcCount, gm_sv_maxnpcs.GetInt()));
         return false;
     }
 
@@ -373,26 +368,26 @@ void CGModServerRules::ApplyGameModeRules()
         return;
 
     // Apply physics settings
-    ConVar* sv_gravity = cvar->FindVar("sv_gravity");
+    const ConVar* sv_gravity = cvar->FindVar("sv_gravity");
     if (sv_gravity)
-        sv_gravity->SetValue(gm_sv_gravity.GetInt());
+        const_cast<ConVar*>(sv_gravity)->SetValue(gm_sv_gravity.GetInt());
 
-    ConVar* sv_airaccelerate = cvar->FindVar("sv_airaccelerate");
+    const ConVar* sv_airaccelerate = cvar->FindVar("sv_airaccelerate");
     if (sv_airaccelerate)
-        sv_airaccelerate->SetValue(gm_sv_airaccelerate.GetInt());
+        const_cast<ConVar*>(sv_airaccelerate)->SetValue(gm_sv_airaccelerate.GetInt());
 
-    ConVar* sv_friction = cvar->FindVar("sv_friction");
+    const ConVar* sv_friction = cvar->FindVar("sv_friction");
     if (sv_friction)
-        sv_friction->SetValue(gm_sv_friction.GetInt());
+        const_cast<ConVar*>(sv_friction)->SetValue(gm_sv_friction.GetInt());
 
     // Apply team play settings
-    ConVar* mp_teamplay = cvar->FindVar("mp_teamplay");
+    const ConVar* mp_teamplay = cvar->FindVar("mp_teamplay");
     if (mp_teamplay)
-        mp_teamplay->SetValue(gm_sv_teamplay.GetBool() ? 1 : 0);
+        const_cast<ConVar*>(mp_teamplay)->SetValue(gm_sv_teamplay.GetBool() ? 1 : 0);
 
-    ConVar* mp_friendlyfire = cvar->FindVar("mp_friendlyfire");
+    const ConVar* mp_friendlyfire = cvar->FindVar("mp_friendlyfire");
     if (mp_friendlyfire)
-        mp_friendlyfire->SetValue(gm_sv_friendly_fire.GetBool() ? 1 : 0);
+        const_cast<ConVar*>(mp_friendlyfire)->SetValue(gm_sv_friendly_fire.GetBool() ? 1 : 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -417,9 +412,9 @@ void CGModServerRules::ResetPlayerStates()
         {
             // Reset player states based on current game mode
             if (gm_sv_god.GetBool())
-                pPlayer->SetFlags(pPlayer->GetFlags() | FL_GODMODE);
+                pPlayer->AddFlag(FL_GODMODE);
             else
-                pPlayer->SetFlags(pPlayer->GetFlags() & ~FL_GODMODE);
+                pPlayer->RemoveFlag(FL_GODMODE);
 
             if (gm_sv_noclip.GetBool())
                 pPlayer->SetMoveType(MOVETYPE_NOCLIP);
@@ -474,16 +469,15 @@ void CGModServerRules::CMD_gm_gamemode(void)
     if (!pPlayer)
         return;
 
-    CCommand args;
-    if (args.ArgC() < 2)
+    if (engine->Cmd_Argc() < 2)
     {
-        ClientPrint(pPlayer, HUD_PRINTTALK, "Current game mode: %s (%d)",
-                   GetGameModeName(m_CurrentGameMode), (int)m_CurrentGameMode);
+        ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Current game mode: %s (%d)",
+                   GetGameModeName(m_CurrentGameMode), (int)m_CurrentGameMode));
         ClientPrint(pPlayer, HUD_PRINTTALK, "Usage: gm_gamemode <0-5> (0=Sandbox, 1=Build, 2=RP, 3=DM, 4=Team, 5=Custom)");
         return;
     }
 
-    int mode = atoi(args.Arg(1));
+    int mode = atoi(engine->Cmd_Argv(1));
     SetGameMode((GMod_GameMode_t)mode);
 }
 
@@ -526,7 +520,7 @@ void CGModServerRules::CMD_gm_cleanup(void)
         count++;
     }
 
-    ClientPrint(pPlayer, HUD_PRINTTALK, "Cleaned up %d entities", count);
+    ClientPrint(pPlayer, HUD_PRINTTALK, UTIL_VarArgs("Cleaned up %d entities", count));
 }
 
 //-----------------------------------------------------------------------------
@@ -559,7 +553,7 @@ void CGModServerRules::CMD_gm_freeze_all(void)
         CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
         if (pPlayer && pPlayer->IsConnected())
         {
-            pPlayer->SetFlags(pPlayer->GetFlags() | FL_FROZEN);
+            pPlayer->AddFlag(FL_FROZEN);
         }
     }
     BroadcastMessage("All players frozen");
@@ -575,7 +569,7 @@ void CGModServerRules::CMD_gm_unfreeze_all(void)
         CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
         if (pPlayer && pPlayer->IsConnected())
         {
-            pPlayer->SetFlags(pPlayer->GetFlags() & ~FL_FROZEN);
+            pPlayer->RemoveFlag(FL_FROZEN);
         }
     }
     BroadcastMessage("All players unfrozen");

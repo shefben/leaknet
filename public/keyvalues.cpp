@@ -1574,14 +1574,14 @@ bool KeyValues::LoadFromBuffer( char const *resourceName, const char *pBuffer, I
 		if ( !pfile || !s || *s == 0 )
 			break;
 
-		if ( !Q_stricmp( s, "#include" ) )	// special include macro (not a key name)
+		if ( !Q_stricmp( s, "#include" ) || !Q_stricmp( s, "#base" ) )	// special include/base macros (not a key name)
 		{
 			s = ReadToken( &pfile, wasQuoted );
 			// Name of subfile to load is now in s
 
 			if ( !s || *s == 0 )
 			{
-				DevMsg( "KeyValues::LoadFromBuffer: #include is NULL in file %s\n", resourceName);
+				DevMsg( "KeyValues::LoadFromBuffer: #include/#base is NULL in file %s\n", resourceName);
 			}
 			else
 			{
@@ -1631,7 +1631,38 @@ bool KeyValues::LoadFromBuffer( char const *resourceName, const char *pBuffer, I
 
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: Evaluates a Valve KeyValues platform conditional tag like "[$WIN32]",
+// "[$WINDOWS]", "[!$X360]". This engine only ever runs on WIN32, so any tag
+// naming a non-Windows platform (or negating a Windows one) is false.
+//-----------------------------------------------------------------------------
+static bool KeyValues_EvaluateConditionalTag( const char *token )
+{
+	// token looks like "[...]" - strip the brackets.
+	int len = Q_strlen( token );
+	if ( len < 2 )
+		return true;
+
+	char inner[128];
+	Q_strncpy( inner, token + 1, sizeof( inner ) );
+	int innerLen = Q_strlen( inner );
+	if ( innerLen > 0 && inner[innerLen - 1] == ']' )
+		inner[innerLen - 1] = 0;
+
+	bool bNegate = false;
+	char *pTag = inner;
+	if ( *pTag == '!' )
+	{
+		bNegate = true;
+		pTag++;
+	}
+
+	bool bIsWindows = ( Q_stricmp( pTag, "$WIN32" ) == 0 || Q_stricmp( pTag, "$WINDOWS" ) == 0 );
+
+	return bNegate ? !bIsWindows : bIsWindows;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
 //-----------------------------------------------------------------------------
 void KeyValues::RecursiveLoadFromBuffer( char const *resourceName, char **pfile )
 {
@@ -1662,6 +1693,41 @@ void KeyValues::RecursiveLoadFromBuffer( char const *resourceName, char **pfile 
 
 		// get the value
 		const char * value = ReadToken( pfile, wasQuoted );
+
+		// Skip over platform conditional tags like [$WIN32] that some newer
+		// Source content places between a key and its real value/block (see
+		// KeyValues_EvaluateConditionalTag above). Without this, the tag gets
+		// stored as if it were the value, desyncing every token read after it
+		// for the rest of the file.
+		bool bSkipKey = false;
+		while ( value && !wasQuoted && value[0] == '[' )
+		{
+			bool bConditionMet = KeyValues_EvaluateConditionalTag( value );
+			if ( !bConditionMet )
+			{
+				// This key doesn't apply on this platform - drop it (and its
+				// associated value, which may be a nested { } block) entirely.
+				RemoveSubKey( dat );
+				dat->deleteThis();
+
+				const char *skipValue = ReadToken( pfile, wasQuoted );
+				if ( skipValue && !wasQuoted && *skipValue == '{' )
+				{
+					KeyValues *pDiscard = new KeyValues( "" );
+					pDiscard->RecursiveLoadFromBuffer( resourceName, pfile );
+					pDiscard->deleteThis();
+				}
+
+				bSkipKey = true;
+				break;
+			}
+
+			// Condition met - the real value is the next token.
+			value = ReadToken( pfile, wasQuoted );
+		}
+
+		if ( bSkipKey )
+			continue;
 
 		if ( !value )
 		{

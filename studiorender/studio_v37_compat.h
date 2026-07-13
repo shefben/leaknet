@@ -31,6 +31,48 @@
 // They accept v44+ types directly and output via reference parameters
 //=============================================================================
 
+inline void StudioMesh_SetDefaultVertexData(
+	Vector& outPosition,
+	Vector& outNormal,
+	Vector2D& outTexCoord,
+	mstudioboneweight_t& outBoneWeight)
+{
+	outPosition.Init();
+	outNormal.Init(0, 0, 1);
+	outTexCoord.Init();
+	outBoneWeight.numbones = 0;
+	for (int i = 0; i < MAX_NUM_BONES_PER_VERT; ++i)
+	{
+		outBoneWeight.weight[i] = 0.0f;
+		outBoneWeight.bone[i] = 0;
+	}
+}
+
+inline bool StudioMesh_V44_GetVertexIndex(
+	const mstudiomesh_v44_t* pMesh44,
+	const mstudiomodel_v44_t* pModel44,
+	int idx,
+	int& outVertexIndex)
+{
+	outVertexIndex = 0;
+
+	if (!pMesh44 || !pModel44)
+		return false;
+
+	if (idx < 0 || idx >= pMesh44->numvertices)
+		return false;
+
+	if (pMesh44->vertexoffset < 0 || pModel44->numvertices < 0)
+		return false;
+
+	__int64 vertexIndex = (__int64)pMesh44->vertexoffset + idx;
+	if (vertexIndex < 0 || vertexIndex >= pModel44->numvertices)
+		return false;
+
+	outVertexIndex = (int)vertexIndex;
+	return true;
+}
+
 // Get full vertex data for a v44+ mesh vertex
 inline void StudioMesh_V44_GetVertexData(
 	const mstudiomesh_v44_t* pMesh44,
@@ -44,15 +86,18 @@ inline void StudioMesh_V44_GetVertexData(
 {
 	if (!pMesh44 || !pModel44 || !pVertexBase)
 	{
-		outPosition.Init();
-		outNormal.Init(0, 0, 1);
-		outTexCoord.Init();
-		outBoneWeight.numbones = 0;
+		StudioMesh_SetDefaultVertexData(outPosition, outNormal, outTexCoord, outBoneWeight);
 		return;
 	}
 
 	// Calculate vertex offset in external VVD data
-	int vertexIndex = pMesh44->vertexoffset + idx;
+	int vertexIndex;
+	if (!StudioMesh_V44_GetVertexIndex(pMesh44, pModel44, idx, vertexIndex))
+	{
+		StudioMesh_SetDefaultVertexData(outPosition, outNormal, outTexCoord, outBoneWeight);
+		return;
+	}
+
 	const mstudiovertex_v44_t* pVert =
 		(const mstudiovertex_v44_t*)((const byte*)pVertexBase +
 			pModel44->vertexindex + vertexIndex * sizeof(mstudiovertex_v44_t));
@@ -85,7 +130,18 @@ inline bool StudioMesh_V44_GetBoneWeights(
 	}
 
 	// Calculate vertex offset in external VVD data
-	int vertexIndex = pMesh44->vertexoffset + idx;
+	int vertexIndex;
+	if (!StudioMesh_V44_GetVertexIndex(pMesh44, pModel44, idx, vertexIndex))
+	{
+		outBoneWeight.numbones = 0;
+		for (int i = 0; i < MAX_NUM_BONES_PER_VERT; i++)
+		{
+			outBoneWeight.weight[i] = 0.0f;
+			outBoneWeight.bone[i] = 0;
+		}
+		return false;
+	}
+
 	const mstudiovertex_v44_t* pVert =
 		(const mstudiovertex_v44_t*)((const byte*)pVertexBase +
 			pModel44->vertexindex + vertexIndex * sizeof(mstudiovertex_v44_t));
@@ -115,7 +171,13 @@ inline void StudioMesh_V44_GetPosition(
 	}
 
 	// Calculate vertex offset in external VVD data
-	int vertexIndex = pMesh44->vertexoffset + idx;
+	int vertexIndex;
+	if (!StudioMesh_V44_GetVertexIndex(pMesh44, pModel44, idx, vertexIndex))
+	{
+		outPosition.Init();
+		return;
+	}
+
 	const mstudiovertex_v44_t* pVert =
 		(const mstudiovertex_v44_t*)((const byte*)pVertexBase +
 			pModel44->vertexindex + vertexIndex * sizeof(mstudiovertex_v44_t));
@@ -138,7 +200,13 @@ inline void StudioMesh_V44_GetNormal(
 	}
 
 	// Calculate vertex offset in external VVD data
-	int vertexIndex = pMesh44->vertexoffset + idx;
+	int vertexIndex;
+	if (!StudioMesh_V44_GetVertexIndex(pMesh44, pModel44, idx, vertexIndex))
+	{
+		outNormal.Init(0, 0, 1);
+		return;
+	}
+
 	const mstudiovertex_v44_t* pVert =
 		(const mstudiovertex_v44_t*)((const byte*)pVertexBase +
 			pModel44->vertexindex + vertexIndex * sizeof(mstudiovertex_v44_t));
@@ -157,7 +225,10 @@ inline const mstudiovertex_v44_t* StudioMesh_V44_GetVertex(
 		return NULL;
 
 	// Calculate vertex offset in external VVD data
-	int vertexIndex = pMesh44->vertexoffset + idx;
+	int vertexIndex;
+	if (!StudioMesh_V44_GetVertexIndex(pMesh44, pModel44, idx, vertexIndex))
+		return NULL;
+
 	return (const mstudiovertex_v44_t*)((const byte*)pVertexBase +
 		pModel44->vertexindex + vertexIndex * sizeof(mstudiovertex_v44_t));
 }
@@ -170,7 +241,10 @@ inline Vector4D* StudioMesh_V44_GetTangentS(
 	if (!pMesh44 || !pModel44 || !pModel44->vertexdata.pTangentData)
 		return NULL;
 
-	int tangentIndex = pMesh44->vertexoffset + idx;
+	int tangentIndex;
+	if (!StudioMesh_V44_GetVertexIndex(pMesh44, pModel44, idx, tangentIndex))
+		return NULL;
+
 	return (Vector4D*)((byte*)pModel44->vertexdata.pTangentData +
 		pModel44->tangentsindex + tangentIndex * sizeof(Vector4D));
 }
@@ -200,7 +274,12 @@ inline bool Studio_GetV44MeshAndModel(
 	// We use reinterpret_cast here because we've verified the version
 	outMesh44 = reinterpret_cast<const mstudiomesh_v44_t*>(pMesh);
 	outModel44 = outMesh44->pModel();
-	outVertexBase = pStudioHdr->pVertexBase;
+	if (!outModel44)
+		return false;
+	// pVertexBase is a runtime field in the version-specific header. Reading it
+	// through studiohdr_t uses a legacy offset and returns unrelated MDL data.
+	const studiohdr_v44_t* pHdr44 = StudioHdr_AsV44(pStudioHdr);
+	outVertexBase = pHdr44 && pHdr44->pVertexBase ? pHdr44->pVertexBase : outModel44->vertexdata.pVertexData;
 
 	return (outMesh44 != NULL && outModel44 != NULL && outVertexBase != NULL);
 }

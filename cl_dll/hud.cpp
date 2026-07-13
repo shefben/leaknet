@@ -201,6 +201,15 @@ void CHud::Init( void )
 	DevMsg("CHud::Init - Created %d HUD elements\n", m_HudList.Size());
 	for ( int i = 0; i < m_HudList.Size(); i++ )
 	{
+		// A number of the legacy BMod HUD panels are constructed without a
+		// parent.  An orphaned VGUI panel never paints, so attach every such
+		// HUD panel to the active client-mode viewport before initializing it.
+		vgui::Panel *pPanel = dynamic_cast<vgui::Panel *>( m_HudList[i] );
+		if ( pPanel && !pPanel->GetParent() && g_pClientMode )
+		{
+			pPanel->SetParent( g_pClientMode->GetViewport() );
+		}
+
 		m_HudList[i]->Init();
 	}
 
@@ -364,6 +373,9 @@ void CHudTexture::DrawSelfCropped( int x, int y, int cropx, int cropy, int cropw
 
 	float fw = (float)Width();
 	float fh = (float)Height();
+
+	if ( fw <= 0.0f || fh <= 0.0f )
+		return;
 
 	float twidth	= texCoords[ 2 ] - texCoords[ 0 ];
 	float theight	= texCoords[ 3 ] - texCoords[ 1 ];
@@ -662,4 +674,3 @@ void TestHudAnim_f( void )
 }
 
 static ConCommand testhudanim( "testhudanim", TestHudAnim_f, "Test a hud element animation.\n\tArguments: <anim name>\n", FCVAR_CHEAT );
-

@@ -30,6 +30,11 @@ BEGIN_SRC( SERVER_BMOD_SOURCE_FILES "Source Files" )
 			"hl2_dll/weapon_physcannon.cpp"
 			"hl2_dll/weapon_physcannon.h"
 
+			# Real GMod-style physics gun (distinct weapon/entity from the HL2
+			# physcannon above - client c_weapon_gravitygun.cpp already expects
+			# this exact ServerClass/DT pairing, see physgun.cpp).
+			"physgun.cpp"
+
 			# Basic HL2 weapons for compatibility
 			"hl2_dll/weapon_crowbar.cpp"
 			"hl2_dll/weapon_pistol.cpp"
@@ -42,6 +47,7 @@ BEGIN_SRC( SERVER_BMOD_SOURCE_FILES "Source Files" )
 			"bmod_dll/weapon_frag.cpp"
 			"bmod_dll/weapon_gauss.cpp"
 			"bmod_dll/weapon_rpg.cpp"
+			"bmod_dll/weapon_slam.cpp"
 
 			# Grenades needed by weapons
 			"bmod_dll/grenade_ar2.cpp"
@@ -74,10 +80,13 @@ BEGIN_SRC( SERVER_BMOD_SOURCE_FILES "Source Files" )
 			"bmod_dll/gmod_lua.h"
 			"bmod_dll/gmod_tools.cpp"
 			"bmod_dll/gmod_tools.h"
+			"bmod_dll/gmod_balloon.cpp"
+			"bmod_dll/gmod_balloon.h"
 			"bmod_dll/gmod_swep.cpp"
 			"bmod_dll/gmod_swep.h"
 			"bmod_dll/gmod_gamemode.cpp"
 			"bmod_dll/gmod_gamemode.h"
+			"bmod_dll/gmod_make_compat.cpp"
 			"bmod_dll/gmod_mod.cpp"
 			"bmod_dll/gmod_mod.h"
 			"bmod_dll/gmod_overlay.cpp"
@@ -90,6 +99,24 @@ BEGIN_SRC( SERVER_BMOD_SOURCE_FILES "Source Files" )
 			"bmod_dll/gmod_scheme.h"
 			"bmod_dll/gmod_compatibility_test.cpp"
 			"bmod_dll/gmod_cvars_commands.cpp"
+			"bmod_dll/gmod_serverrules.cpp"
+			"bmod_dll/gmod_serverrules.h"
+			"bmod_dll/gmod_config.cpp"
+			"bmod_dll/gmod_config.h"
+			"bmod_dll/gmod_entities.cpp"
+			"bmod_dll/gmod_entities.h"
+			"bmod_dll/gmod_materials.cpp"
+			"bmod_dll/gmod_materials.h"
+			"bmod_dll/gmod_physproperties.cpp"
+			"bmod_dll/gmod_physproperties.h"
+			"bmod_dll/gmod_dynamite.cpp"
+			"bmod_dll/gmod_dynamite.h"
+			"bmod_dll/gmod_emitter.cpp"
+			"bmod_dll/gmod_emitter.h"
+			"bmod_dll/gmod_sprites.cpp"
+			"bmod_dll/gmod_sprites.h"
+			"bmod_dll/gmod_serverlimits.cpp"
+			"bmod_dll/gmod_serverlimits.h"
 			"bmod_dll/lua_integration.cpp"
 			"bmod_dll/lua_integration.h"
 		"bmod_dll/gmod_paint.cpp"
@@ -103,6 +130,28 @@ BEGIN_SRC( SERVER_BMOD_SOURCE_FILES "Source Files" )
 		# "bmod_dll/te_gauss.cpp" - TE_GaussExplosion is defined in weapon_gauss.cpp
 		"bmod_dll/skill_cvars.cpp"
 	#}
+	)
+	SRC_GRP(
+		SUBGROUP "GMod Tool Gun"
+		SOURCES
+		#{
+			"bmod_dll/weapon_tool.cpp"
+			"bmod_dll/weapon_tool.h"
+			"bmod_dll/tool_dispatch.h"
+			"bmod_dll/tool_constraints.cpp"
+			"bmod_dll/tool_poser.cpp"
+			"bmod_dll/tool_remover.cpp"
+			"bmod_dll/tool_simple.cpp"
+			"bmod_dll/tool_paint.cpp"
+			"bmod_dll/tool_duplicator.cpp"
+			"bmod_dll/tool_color.cpp"
+			"bmod_dll/tool_material.cpp"
+			"bmod_dll/tool_attach.cpp"
+			"bmod_dll/tool_gun.cpp"
+			"bmod_dll/tool_camera.cpp"
+			"bmod_dll/tool_npc.cpp"
+			"bmod_dll/tool_inflator.cpp"
+		#}
 	)
 	SRC_GRP(
 	SUBGROUP "Lua 5.0.3 Integration"

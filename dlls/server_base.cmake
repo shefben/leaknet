@@ -84,6 +84,7 @@ BEGIN_SRC( SERVER_BASE_SOURCE_FILES "Source Files" )
 			#"${SRCDIR}/public/tier0/memoverride.cpp" # Noprecomp?
 			"${SRCDIR}/public/UserCmd.cpp"
 			"${SRCDIR}/public/utlbuffer.cpp" # Noprecomp?
+			"${SRCDIR}/public/utlstring.cpp" # Noprecomp?
 			"${SRCDIR}/public/utlsymbol.cpp" # Noprecomp?
 			"${SRCDIR}/public/vmatrix.cpp" # Noprecomp?
 
@@ -257,6 +258,7 @@ BEGIN_SRC( SERVER_BASE_SOURCE_FILES "Source Files" )
 			"point_playermoveconstraint.cpp"
 			"point_template.cpp"
 			"props.cpp"
+			"physics_prop_ragdoll.cpp"
 			"recipientfilter.cpp"
 			"rope.cpp"
 			"saverestore_gamedll.cpp"
@@ -565,6 +567,7 @@ BEGIN_SRC( SERVER_BASE_HEADER_FILES "Header Files" )
 			"${SRCDIR}/public/utlmemory.h"
 			"${SRCDIR}/public/utlpriorityqueue.h"
 			"${SRCDIR}/public/utlrbtree.h"
+			"${SRCDIR}/public/utlstring.h"
 			"${SRCDIR}/public/utlsymbol.h"
 			"${SRCDIR}/public/utlvector.h"
 			"${SRCDIR}/public/vallocator.h"
@@ -730,6 +733,7 @@ BEGIN_SRC( SERVER_BASE_HEADER_FILES "Header Files" )
 			"player_resource.h"
 			"point_template.h"
 			"props.h"
+			"physics_prop_ragdoll.h"
 			"recipientfilter.h"
 			"rope.h"
 			"sceneentity.h"

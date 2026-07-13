@@ -330,13 +330,6 @@ class CEngineClient : public IVEngineClient
 		if ( !model )
 			return 0;
 
-		// Check if this is a v44+ model using independent system
-		if ( model->studio.hardwareData.m_pV44Model != NULL )
-		{
-			Con_DPrintf("GetIntersectingSurfaces: Skipping v44+ model %s (handled by independent system)\n", model->name);
-			return 0;
-		}
-
 		GetIntersectingSurfaces_Struct theStruct;
 		theStruct.m_pModel = ( model_t * )model;
 		theStruct.m_pCenter = &vCenter;

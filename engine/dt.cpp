@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -323,7 +323,14 @@ static void SetDataTableProxyIndices_R( SendTable *pMainTable, SendTable *pCurTa
 			pMainTable->SetNumDataTableProxies( pMainTable->GetNumDataTableProxies() + 1 );
 		}
 
-		SetDataTableProxyIndices_R( pMainTable, pProp->GetDataTable() );
+		SendTable *pChildTable = pProp->GetDataTable();
+		if ( !pChildTable )
+		{
+			Warning( "SetDataTableProxyIndices_R: NULL datatable for prop '%s' in table '%s' - skipping.\n",
+				pProp->GetName(), pCurTable->GetName() );
+			continue;
+		}
+		SetDataTableProxyIndices_R( pMainTable, pChildTable );
 	}
 }
 
@@ -359,15 +366,23 @@ void SendTable_BuildHierarchy(
 
 		if ( pProp->GetType() == DPT_DataTable )
 		{
+			SendTable *pChildDataTable = pProp->GetDataTable();
+			if ( !pChildDataTable )
+			{
+				Warning( "SendTable_BuildHierarchy: NULL datatable for prop '%s' in table '%s' - skipping.\n",
+					pProp->GetName(), pTable->GetName() );
+				continue;
+			}
+
 			// Setup a child datatable reference.
 			CSendNode *pChild = new CSendNode;
 
 			// Setup a datatable prop for this node to reference (so the recursion
 			// routines can get at the proxy).
-			ErrorIfNot( bhs->m_nDatatableProps < ARRAYSIZE( bhs->m_pDatatableProps ), 
-				("Overflowed datatable prop list in SendTable '%s'.", pTable->GetName()) 
+			ErrorIfNot( bhs->m_nDatatableProps < ARRAYSIZE( bhs->m_pDatatableProps ),
+				("Overflowed datatable prop list in SendTable '%s'.", pTable->GetName())
 			);
-			
+
 			bhs->m_pDatatableProps[bhs->m_nDatatableProps] = pProp;
 			pChild->m_iDatatableProp = bhs->m_nDatatableProps;
 			++bhs->m_nDatatableProps;
@@ -375,7 +390,7 @@ void SendTable_BuildHierarchy(
 			pNode->m_Children.AddToTail( pChild );
 
 			// Recurse into the new child datatable.
-			SendTable_BuildHierarchy( pChild, pProp->GetDataTable(), bhs );
+			SendTable_BuildHierarchy( pChild, pChildDataTable, bhs );
 		}
 		else
 		{

@@ -1515,6 +1515,15 @@ int CStudioRender::R_StudioDrawGroupHWSkin( studiomeshgroup_t* pGroup, IMesh* pM
 			if (pStateChange->newBoneID < 0)
 				break;
 
+			// Static model vertices carry four-bit hardware palette indices.  Do
+			// not let a v44+ DX90 palette (which may have up to 53 entries), or
+			// corrupt strip data, address an invalid material matrix or pose bone.
+			if (pStateChange->hardwareID < 0 || pStateChange->hardwareID >= 16 ||
+				pStateChange->newBoneID >= StudioHdr_GetNumBones(m_pStudioHdr))
+			{
+				continue;
+			}
+
 			MaterialMatrixMode_t bone = MATERIAL_MODEL_MATRIX(pStateChange->hardwareID);
 
 			StudioStats().IncrementCountedStat( STUDIO_STATS_MODEL_NUM_BONE_CHANGES, 1 );
@@ -2213,14 +2222,23 @@ int CStudioRender::R_StudioDrawPoints( int skin, void /*IClientEntity*/ *pClient
 
 	// draw each mesh
 	int numStudioMeshes = StudioModel_GetNumMeshes(m_pStudioHdr, m_pSubModel);
+	bool bV44DebugLog = StudioHdr_IsV44Plus(m_pStudioHdr);
+	if ( bV44DebugLog )
+		Con_DPrintf( "[v44dbg] R_StudioDrawPoints model=%s numStudioMeshes=%d translucentPass=%d\n",
+			m_pStudioHdr ? m_pStudioHdr->name : "?", numStudioMeshes, m_bDrawTranslucentSubModels );
 	for ( i = 0; i < numStudioMeshes; ++i)
 	{
 		mstudiomesh_t	*pmesh		= StudioModel_GetMesh(m_pStudioHdr, m_pSubModel, i);
-		studiomeshdata_t *pMeshData = &m_pStudioMeshes[StudioMesh_GetMeshId(m_pStudioHdr, pmesh)];
+		int meshid = StudioMesh_GetMeshId(m_pStudioHdr, pmesh);
+		studiomeshdata_t *pMeshData = &m_pStudioMeshes[meshid];
 		Assert(pMeshData);
 
 		int material = StudioMesh_GetMaterial(m_pStudioHdr, pmesh);
 		IMaterial* pMaterial = R_StudioSetupSkin( pskinref[ material ], ppMaterials, pClientEntity );
+		if ( bV44DebugLog )
+			Con_DPrintf( "[v44dbg]   mesh %d meshid=%d numGroup=%d material=%d pskinref[material]=%d pMaterial=%p (%s)\n",
+				i, meshid, pMeshData->m_NumGroup, material, pskinref[material], pMaterial,
+				pMaterial ? pMaterial->GetName() : "NULL" );
 		if( !pMaterial )
 			continue;
 

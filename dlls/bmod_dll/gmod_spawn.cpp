@@ -28,6 +28,14 @@ static void SpawnPropModel( CBasePlayer *pPlayer, const char *model )
 	if ( !pPlayer || !model || !model[0] )
 		return;
 
+	// Runtime spawning happens well after the map's own precache phase, so
+	// CBaseEntity::PrecacheModel() (called from prop_physics/prop_ragdoll's
+	// Precache()) would otherwise trip the "too late" assert and, in a debug
+	// build, pop a message box and crash. Temporarily lift the gate exactly
+	// like npc_create does (dlls/ai_concommands.cpp CC_NPC_Create).
+	bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+	CBaseEntity::SetAllowPrecache( true );
+
 	if ( engine )
 	{
 		int modelIndex = engine->PrecacheModel( model );
@@ -35,6 +43,7 @@ static void SpawnPropModel( CBasePlayer *pPlayer, const char *model )
 		{
 			// Model precache failed (likely table overflow) - fail gracefully
 			Warning( "gm_spawn: Failed to precache model '%s' - too many models precached\n", model );
+			CBaseEntity::SetAllowPrecache( bAllowPrecache );
 			return;
 		}
 	}
@@ -52,12 +61,17 @@ static void SpawnPropModel( CBasePlayer *pPlayer, const char *model )
 
 	CBaseEntity *pEnt = CreateEntityByName( classname );
 	if ( !pEnt )
+	{
+		CBaseEntity::SetAllowPrecache( bAllowPrecache );
 		return;
+	}
 
 	pEnt->KeyValue( "model", model );
 	DispatchSpawn( pEnt );
 	pEnt->Teleport( &spawnPos, &pPlayer->EyeAngles(), NULL );
 	pEnt->Activate();
+
+	CBaseEntity::SetAllowPrecache( bAllowPrecache );
 }
 
 static void SpawnByClassname( CBasePlayer *pPlayer, const char *classname )
@@ -74,13 +88,23 @@ static void SpawnByClassname( CBasePlayer *pPlayer, const char *classname )
 	UTIL_TraceLine( start, end, MASK_SOLID, pPlayer, COLLISION_GROUP_NONE, &tr );
 	Vector spawnPos = tr.endpos + tr.plane.normal * 4.0f;
 
+	// See SpawnPropModel() - runtime spawns need the precache gate lifted or
+	// DispatchSpawn()'s Precache() call trips the "too late" assert/crash.
+	bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+	CBaseEntity::SetAllowPrecache( true );
+
 	CBaseEntity *pEnt = CreateEntityByName( classname );
 	if ( !pEnt )
+	{
+		CBaseEntity::SetAllowPrecache( bAllowPrecache );
 		return;
+	}
 
 	DispatchSpawn( pEnt );
 	pEnt->Teleport( &spawnPos, &pPlayer->EyeAngles(), NULL );
 	pEnt->Activate();
+
+	CBaseEntity::SetAllowPrecache( bAllowPrecache );
 }
 
 CON_COMMAND( gm_spawn, "Spawn an entity or model (server-side, gmod parity)" )

@@ -9,6 +9,7 @@
 #include "fmtstr.h"
 #include "vstdlib/strtools.h"
 #include <vgui/ISurface.h>
+#include <vgui/IScheme.h>
 
 #include <vgui/ISurface.h>
 #include <vgui_controls/ListPanel.h>
@@ -58,6 +59,30 @@ static void SetConVarInt( const char *name, int value )
 	if ( engine )
 	{
 		engine->ClientCmd( CFmtStr( "%s %d\n", name, value ) );
+	}
+}
+
+static const char *GModServerSettingsFile( bool multiplayer )
+{
+	return multiplayer ? "cfg/gmod9_multiplayer_settings.vdf" : "cfg/gmod9_singleplayer_settings.vdf";
+}
+
+static void SaveTextEntry( KeyValues *settings, const char *name, vgui::TextEntry *entry )
+{
+	char value[128];
+	value[0] = '\0';
+	if ( entry )
+	{
+		entry->GetText( value, sizeof( value ) );
+	}
+	settings->SetString( name, value );
+}
+
+static void LoadTextEntry( KeyValues *settings, const char *name, vgui::TextEntry *entry )
+{
+	if ( settings && entry )
+	{
+		entry->SetText( settings->GetString( name, "" ) );
 	}
 }
 
@@ -257,6 +282,7 @@ CGModBaseServerDialog::CGModBaseServerDialog( vgui::VPANEL parent, bool multipla
 	SetTitle( multiplayer ? "Create Multiplayer Server" : "Start Singleplayer Game", true );
 	SetSizeable( true );
 	SetMoveable( true );
+	SetScheme( vgui::scheme()->LoadSchemeFromFile( "resource/SpawnMenuScheme.res", "SpawnMenuScheme" ) );
 
 	const int leftMargin = 10;
 	const int topMargin = 35;
@@ -269,6 +295,7 @@ CGModBaseServerDialog::CGModBaseServerDialog( vgui::VPANEL parent, bool multipla
 	int lineY = topMargin;
 
 	m_pHostname = new vgui::TextEntry( this, "Hostname" );
+	m_pHostname->SetText( multiplayer ? "GMod 9.0.4" : "Singleplayer" );
 	m_pHostname->SetBounds( controlX + 120, lineY, 200, 20 );
 	vgui::Label *hostnameLabel = new vgui::Label( this, "HostnameLabel", "Server Name:" );
 	hostnameLabel->SetPos( controlX, lineY );
@@ -281,6 +308,7 @@ CGModBaseServerDialog::CGModBaseServerDialog( vgui::VPANEL parent, bool multipla
 	lineY += 28;
 
 	m_pMaxPlayers = new vgui::TextEntry( this, "MaxPlayers" );
+	m_pMaxPlayers->SetText( multiplayer ? "32" : "1" );
 	m_pMaxPlayers->SetBounds( controlX + 120, lineY, 60, 20 );
 	vgui::Label *maxPlayersLabel = new vgui::Label( this, "MaxPlayersLabel", "Max Players:" );
 	maxPlayersLabel->SetPos( controlX, lineY );
@@ -302,6 +330,16 @@ CGModBaseServerDialog::CGModBaseServerDialog( vgui::VPANEL parent, bool multipla
 	makeCheck( "AllowSpawning", "Allow Spawning", lineY, &m_pAllowSpawning ); lineY += 20;
 	makeCheck( "AllowMultiGun", "Allow Multigun", lineY, &m_pAllowMultiGun ); lineY += 20;
 	makeCheck( "AllowPhysgun", "Allow Physgun", lineY, &m_pAllowPhysgun ); lineY += 28;
+	m_pAllWeapons->SetSelected( true );
+	m_pAllowIgnite->SetSelected( false );
+	m_pNoClip->SetSelected( false );
+	m_pPlayerDamage->SetSelected( true );
+	m_pPvPDamage->SetSelected( true );
+	m_pTeamDamage->SetSelected( true );
+	m_pAllowNPCs->SetSelected( true );
+	m_pAllowSpawning->SetSelected( true );
+	m_pAllowMultiGun->SetSelected( true );
+	m_pAllowPhysgun->SetSelected( true );
 
 	auto makeLimit = [&]( const char *name, const char *label, int yOffset, vgui::TextEntry **out )
 	{
@@ -321,6 +359,16 @@ CGModBaseServerDialog::CGModBaseServerDialog( vgui::VPANEL parent, bool multipla
 	makeLimit( "LimitWheels", "Max Wheels:", lineY, &m_pLimitWheels ); lineY += 22;
 	makeLimit( "LimitNPCs", "Max NPCs:", lineY, &m_pLimitNPCs ); lineY += 22;
 	makeLimit( "LimitVehicles", "Max Vehicles:", lineY, &m_pLimitVehicles ); lineY += 30;
+	SetTextIfPresent( m_pLimitRagdolls, "3" );
+	SetTextIfPresent( m_pLimitThrusters, "10" );
+	SetTextIfPresent( m_pLimitProps, "30" );
+	SetTextIfPresent( m_pLimitBalloons, "10" );
+	SetTextIfPresent( m_pLimitEffects, "10" );
+	SetTextIfPresent( m_pLimitSprites, "1" );
+	SetTextIfPresent( m_pLimitEmitters, "1" );
+	SetTextIfPresent( m_pLimitWheels, "1" );
+	SetTextIfPresent( m_pLimitNPCs, "1" );
+	SetTextIfPresent( m_pLimitVehicles, "1" );
 
 	vgui::Button *start = new vgui::Button( this, "Start", multiplayer ? "Start Multiplayer" : "Start Singleplayer" );
 	start->SetBounds( controlX, lineY, 150, 24 );
@@ -337,6 +385,7 @@ void CGModBaseServerDialog::ActivateAndRefresh()
 {
 	AdjustLayout();
 	PopulateMapList();
+	LoadPersistentSettings();
 	MoveToFront();
 	SetVisible( true );
 	RequestFocus();
@@ -418,6 +467,91 @@ void CGModBaseServerDialog::ApplyCommonCvars() const
 	char passBuf[64];
 	m_pPassword->GetText( passBuf, sizeof( passBuf ) );
 	engine->ClientCmd( CFmtStr( "sv_password \"%s\"\n", passBuf ) );
+
+	SavePersistentSettings();
+}
+
+void CGModBaseServerDialog::LoadPersistentSettings()
+{
+	KeyValues *settings = new KeyValues( "GModServerMenu" );
+	if ( !settings->LoadFromFile( filesystem, GModServerSettingsFile( m_bMultiplayer ), "MOD" ) )
+	{
+		settings->deleteThis();
+		return;
+	}
+
+	LoadTextEntry( settings, "hostname", m_pHostname );
+	LoadTextEntry( settings, "password", m_pPassword );
+	LoadTextEntry( settings, "maxplayers", m_pMaxPlayers );
+	LoadTextEntry( settings, "limit_ragdolls", m_pLimitRagdolls );
+	LoadTextEntry( settings, "limit_thrusters", m_pLimitThrusters );
+	LoadTextEntry( settings, "limit_props", m_pLimitProps );
+	LoadTextEntry( settings, "limit_balloons", m_pLimitBalloons );
+	LoadTextEntry( settings, "limit_effects", m_pLimitEffects );
+	LoadTextEntry( settings, "limit_sprites", m_pLimitSprites );
+	LoadTextEntry( settings, "limit_emitters", m_pLimitEmitters );
+	LoadTextEntry( settings, "limit_wheels", m_pLimitWheels );
+	LoadTextEntry( settings, "limit_npcs", m_pLimitNPCs );
+	LoadTextEntry( settings, "limit_vehicles", m_pLimitVehicles );
+
+	m_pAllWeapons->SetSelected( settings->GetInt( "all_weapons", m_pAllWeapons->IsSelected() ? 1 : 0 ) != 0 );
+	m_pAllowIgnite->SetSelected( settings->GetInt( "allow_ignite", m_pAllowIgnite->IsSelected() ? 1 : 0 ) != 0 );
+	m_pNoClip->SetSelected( settings->GetInt( "noclip", m_pNoClip->IsSelected() ? 1 : 0 ) != 0 );
+	m_pPlayerDamage->SetSelected( settings->GetInt( "player_damage", m_pPlayerDamage->IsSelected() ? 1 : 0 ) != 0 );
+	m_pPvPDamage->SetSelected( settings->GetInt( "pvp_damage", m_pPvPDamage->IsSelected() ? 1 : 0 ) != 0 );
+	m_pTeamDamage->SetSelected( settings->GetInt( "team_damage", m_pTeamDamage->IsSelected() ? 1 : 0 ) != 0 );
+	m_pAllowNPCs->SetSelected( settings->GetInt( "allow_npcs", m_pAllowNPCs->IsSelected() ? 1 : 0 ) != 0 );
+	m_pAllowSpawning->SetSelected( settings->GetInt( "allow_spawning", m_pAllowSpawning->IsSelected() ? 1 : 0 ) != 0 );
+	m_pAllowMultiGun->SetSelected( settings->GetInt( "allow_multigun", m_pAllowMultiGun->IsSelected() ? 1 : 0 ) != 0 );
+	m_pAllowPhysgun->SetSelected( settings->GetInt( "allow_physgun", m_pAllowPhysgun->IsSelected() ? 1 : 0 ) != 0 );
+
+	const char *selectedMap = settings->GetString( "map", "" );
+	if ( selectedMap[0] )
+	{
+		for ( int row = 0; row < m_pMapList->GetItemCount(); ++row )
+		{
+			int itemID = m_pMapList->GetItemIDFromRow( row );
+			KeyValues *item = m_pMapList->GetItem( itemID );
+			if ( item && !Q_stricmp( item->GetString( "Map", "" ), selectedMap ) )
+			{
+				m_pMapList->SetSingleSelectedItem( itemID );
+				break;
+			}
+		}
+	}
+
+	settings->deleteThis();
+}
+
+void CGModBaseServerDialog::SavePersistentSettings() const
+{
+	KeyValues *settings = new KeyValues( "GModServerMenu" );
+	SaveTextEntry( settings, "hostname", m_pHostname );
+	SaveTextEntry( settings, "password", m_pPassword );
+	SaveTextEntry( settings, "maxplayers", m_pMaxPlayers );
+	SaveTextEntry( settings, "limit_ragdolls", m_pLimitRagdolls );
+	SaveTextEntry( settings, "limit_thrusters", m_pLimitThrusters );
+	SaveTextEntry( settings, "limit_props", m_pLimitProps );
+	SaveTextEntry( settings, "limit_balloons", m_pLimitBalloons );
+	SaveTextEntry( settings, "limit_effects", m_pLimitEffects );
+	SaveTextEntry( settings, "limit_sprites", m_pLimitSprites );
+	SaveTextEntry( settings, "limit_emitters", m_pLimitEmitters );
+	SaveTextEntry( settings, "limit_wheels", m_pLimitWheels );
+	SaveTextEntry( settings, "limit_npcs", m_pLimitNPCs );
+	SaveTextEntry( settings, "limit_vehicles", m_pLimitVehicles );
+	settings->SetInt( "all_weapons", m_pAllWeapons->IsSelected() ? 1 : 0 );
+	settings->SetInt( "allow_ignite", m_pAllowIgnite->IsSelected() ? 1 : 0 );
+	settings->SetInt( "noclip", m_pNoClip->IsSelected() ? 1 : 0 );
+	settings->SetInt( "player_damage", m_pPlayerDamage->IsSelected() ? 1 : 0 );
+	settings->SetInt( "pvp_damage", m_pPvPDamage->IsSelected() ? 1 : 0 );
+	settings->SetInt( "team_damage", m_pTeamDamage->IsSelected() ? 1 : 0 );
+	settings->SetInt( "allow_npcs", m_pAllowNPCs->IsSelected() ? 1 : 0 );
+	settings->SetInt( "allow_spawning", m_pAllowSpawning->IsSelected() ? 1 : 0 );
+	settings->SetInt( "allow_multigun", m_pAllowMultiGun->IsSelected() ? 1 : 0 );
+	settings->SetInt( "allow_physgun", m_pAllowPhysgun->IsSelected() ? 1 : 0 );
+	settings->SetString( "map", GetSelectedMap() ? GetSelectedMap() : "" );
+	settings->SaveToFile( filesystem, GModServerSettingsFile( m_bMultiplayer ), "MOD" );
+	settings->deleteThis();
 }
 
 void CGModBaseServerDialog::AdjustLayout()
@@ -534,12 +668,19 @@ void CGModBaseServerDialog::OnCommand( const char *command )
 {
 	if ( !Q_stricmp( command, "Close" ) )
 	{
+		SavePersistentSettings();
 		Close();
 	}
 	else
 	{
 		BaseClass::OnCommand( command );
 	}
+}
+
+void CGModBaseServerDialog::OnClose()
+{
+	SavePersistentSettings();
+	BaseClass::OnClose();
 }
 
 // --------------------------------------------------------------------------------------------------

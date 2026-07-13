@@ -30,6 +30,10 @@ extern ConVar in_joystick;
 #include "vgui_scorepanel.h"
 #include "vgui_vprofpanel.h"
 
+#ifdef BMOD_CLIENT_DLL
+#include "bmod_spawnmenu.h"
+#endif
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -542,8 +546,17 @@ void IN_BudgetUp(void)
 void IN_MenuDown(void)
 {
 	KeyDown(&in_menu);
-	// Execute the spawnmenu toggle command
+
+#ifdef BMOD_CLIENT_DLL
+	// Q is bound to +menu. Open the already-created client panel directly so
+	// the binding does not depend on a second console-command dispatch.
+	if ( g_pSpawnMenu )
+	{
+		g_pSpawnMenu->ShowPanel( true );
+	}
+#else
 	engine->ClientCmd_Unrestricted("spawnmenu\n");
+#endif
 }
 
 void IN_MenuUp(void)
@@ -1421,4 +1434,3 @@ void CInput::Shutdown_All(void)
 	delete[] m_pCommands;
 	m_pCommands = NULL;
 }
-

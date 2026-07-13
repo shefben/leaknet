@@ -1224,13 +1224,6 @@ void CStaticPropMgr::OutputLevelStats( void )
 		}
 		Assert( pModel->type == mod_studio );
 
-		// Check if this is a v44+ model using independent system
-		if ( pModel->studio.hardwareData.m_pV44Model != NULL )
-		{
-			Con_DPrintf("OutputLevelStats: Skipping v44+ model %s (handled by independent system)\n", pModel->name);
-			continue;
-		}
-
 		studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( pModel );
 		if (!pStudioHdr)
 			continue;

@@ -331,13 +331,29 @@ void CGModGamemodeSystem::LevelInitPostEntity()
         if (detectedGamemode)
         {
             DevMsg("GMod Gamemode System: Auto-detected gamemode '%s' from map '%s'\n", detectedGamemode, mapName);
-            gmod_gamemode_current.SetValue(detectedGamemode);
-            DevMsg("GMod Gamemode System: Deferring gamemode load until Lua reload completes\n");
-            return;
         }
     }
 
-    DevMsg("GMod Gamemode System: Level initialized, gamemode load deferred\n");
+    // Real GMod 9 always runs the server's currently selected gamemode
+    // (default "build"/sandbox) on EVERY map, regardless of map name - that's
+    // how a stock HL2 map gets the sandbox loadout when loaded in GMod. The
+    // gm_ prefix detection above only picks a map-specific override; when it
+    // finds nothing, fall back to whatever gamemode is already selected
+    // instead of leaving s_pActiveGamemode NULL forever (that left players
+    // with the vanilla HL2 weapon loadout - no physgun/toolgun - on any map
+    // that doesn't start with "gm_"). See [[gamemode-map-prefix-gate]].
+    const char* gamemodeToActivate = detectedGamemode ? detectedGamemode : gmod_gamemode_current.GetString();
+    if (gamemodeToActivate && gamemodeToActivate[0])
+    {
+        if (SetActiveGamemode(gamemodeToActivate))
+        {
+            DevMsg("GMod Gamemode System: Activated gamemode '%s'\n", gamemodeToActivate);
+        }
+        else
+        {
+            Warning("GMod Gamemode System: Failed to activate gamemode '%s'\n", gamemodeToActivate);
+        }
+    }
 }
 
 void CGModGamemodeSystem::LevelShutdownPostEntity()

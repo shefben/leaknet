@@ -1204,23 +1204,15 @@ void CL_ParseBSPDecal (void)
 
 	if (r_decals.GetInt())
 	{
-		// Check if this is a v44+ model using independent system
-		if ( model && model->studio.hardwareData.m_pV44Model != NULL )
-		{
-			Con_DPrintf("DecalShoot: Skipping v44+ model %s (handled by independent system)\n", model->name);
-		}
-		else
-		{
-			g_pEfx->DecalShoot(
-				decalTextureIndex,
-				entnumber,
-				model,
-				vec3_origin,
-				vec3_angle,
-				pos,
-				NULL,
-				flags );
-		}
+		g_pEfx->DecalShoot(
+			decalTextureIndex,
+			entnumber,
+			model,
+			vec3_origin,
+			vec3_angle,
+			pos,
+			NULL,
+			flags );
 	}
 }
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Â© 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: Implements all the functions exported by the GameUI dll
 //
@@ -178,28 +178,76 @@ void CGameUI::Initialize( CreateInterfaceFn *factories, int count )
 
 	vgui::VGui_InitInterfacesList("GameUI", m_FactoryList, count); // client factory may not be passed in
 */
-	CreateInterfaceFn factory = factories[ 0 ];
-	CreateInterfaceFn fileSystemFactory = factories[ 0 ];
-	CreateInterfaceFn vguiFactory = factories[ 0 ];
 	CreateInterfaceFn engineFactory = factories[ 0 ];
-	CreateInterfaceFn clientFactory = factories[ 0 ];
+	// CBaseUI supplies the VGUI module factory immediately after the engine
+	// factory.  Retain it so GameUI resolves Resource/*.res and localization
+	// through the active game's filesystem search paths.
+	CreateInterfaceFn vguiFactory = ( count > 1 ) ? factories[ 1 ] : NULL;
+	CreateInterfaceFn clientFactory = engineFactory;
 
 
-	enginesound = (IEngineSound *)factory(IENGINESOUND_CLIENT_INTERFACE_VERSION, NULL);
-	cvar		= (ICvar *)factory( VENGINE_CVAR_INTERFACE_VERSION, NULL );
-	engine		= (IVEngineClient *)factory( VENGINE_CLIENT_INTERFACE_VERSION, NULL );
+	enginesound = (IEngineSound *)engineFactory(IENGINESOUND_CLIENT_INTERFACE_VERSION, NULL);
+	cvar		= (ICvar *)engineFactory( VENGINE_CVAR_INTERFACE_VERSION, NULL );
+	engine		= (IVEngineClient *)engineFactory( VENGINE_CLIENT_INTERFACE_VERSION, NULL );
 
 	m_FactoryList[ 0 ] = Sys_GetFactoryThis();
-	m_FactoryList[ 1 ] = factory;
-	m_iNumFactories = count;
+	m_FactoryList[ 1 ] = engineFactory;
+	m_iNumFactories = 2;
+	if ( vguiFactory )
+	{
+		m_FactoryList[ m_iNumFactories++ ] = vguiFactory;
+	}
 
-	vgui::VGui_InitInterfacesList( "GameUI", m_FactoryList, 2 );
+	vgui::VGui_InitInterfacesList( "GameUI", m_FactoryList, m_iNumFactories );
+
+	// Older GameUI code loads control layouts without a path ID.  The rewritten
+	// engine's GameUI filesystem can otherwise fall back to the engine root and
+	// miss the active mod's resource directory.  Register the active game path
+	// explicitly before loading localization or creating dialogs.
+	const char *gameDirectory = engine ? engine->GetGameDirectory() : NULL;
+	if ( gameDirectory && gameDirectory[ 0 ] )
+	{
+		vgui::filesystem()->AddSearchPath( gameDirectory, "GAME" );
+	}
 
 		// load localization file
 	vgui::localize()->AddFile(vgui::filesystem(), "Resource/gameui_%language%.txt");
 
 	// load localization file for kb_act.lst
 	vgui::localize()->AddFile(vgui::filesystem(), "Resource/valve_%language%.txt");
+
+	// Runtime diagnostics for legacy GameUI resource resolution.  This file is
+	// intentionally emitted before any dialog is constructed so a blank dialog
+	// can be diagnosed from the exact filesystem state instead of inferred from
+	// its appearance.
+	if ( gameDirectory && gameDirectory[ 0 ] )
+	{
+		char tracePath[ 1024 ];
+		_snprintf( tracePath, sizeof( tracePath ) - 1, "%s/gameui_resource_trace.txt", gameDirectory );
+		tracePath[ sizeof( tracePath ) - 1 ] = 0;
+		FILE *trace = fopen( tracePath, "wt" );
+		if ( trace )
+		{
+			const char *resources[] =
+			{
+				"Resource/TrackerScheme.res",
+				"Resource/gameui_english.txt",
+				"Resource/CreateMultiplayerGameServerPage.res",
+				"Resource/CreateMultiplayerGameGameplayPage.res"
+			};
+
+			fprintf( trace, "game_directory=%s\n", gameDirectory );
+			for ( int i = 0; i < sizeof( resources ) / sizeof( resources[ 0 ] ); ++i )
+			{
+				fprintf( trace, "%s default=%d game=%d mod=%d\n", resources[ i ],
+					vgui::filesystem()->FileExists( resources[ i ] ),
+					vgui::filesystem()->FileExists( resources[ i ], "GAME" ),
+					vgui::filesystem()->FileExists( resources[ i ], "MOD" ) );
+			}
+			fprintf( trace, "localized_GameUI_Start=%d\n", vgui::localize()->Find( "#GameUI_Start" ) ? 1 : 0 );
+			fclose( trace );
+		}
+	}
 
 	// setup base panel
 	staticPanel = new CBasePanel();
@@ -1070,4 +1118,3 @@ bool CGameUI::IsInBackgroundLevel()
 	}
 	return false;
 }
-

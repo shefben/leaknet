@@ -391,7 +391,7 @@ void C_BaseAnimating::BuildTransformations( Vector *pos, Quaternion *q, const ma
 				// Use version-aware bone name accessor for v37/v44+ compatibility
 				for (j = 0; j < followNumBones; j++)
 				{
-					if ( _stricmp(hdr->GetBoneName(i), fhdr->GetBoneName(j) ) == 0 )
+					if ( _stricmp(StudioBone_GetName(hdr, i), StudioBone_GetName(fhdr, j) ) == 0 )
 					{
 						MatrixCopy( follow->m_CachedBones[ j ], m_CachedBones[ i ] );
 						break;
@@ -466,7 +466,7 @@ void C_BaseAnimating::SaveRagdollInfo( int numbones, const matrix3x4_t &cameraTr
 		matrix3x4_t inverted;
 		matrix3x4_t output;
 
-		int parentBone = hdr->GetBoneParent( i );
+		int parentBone = StudioBone_GetParent( hdr, i );
 		if ( parentBone == -1 )
 		{
 			// Decompose into parent space
@@ -2124,7 +2124,7 @@ bool C_BaseAnimating::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask
 		// Use version-aware accessor for v37/v44+ bone structure compatibility
 		tr.surface.name = "**studio**";
 		tr.surface.flags = SURF_HITBOX;
-		tr.surface.surfaceProps = hitBone >= 0 ? physprops->GetSurfaceIndex( pStudioHdr->GetBoneSurfaceProp(hitBone) ) : 0;
+		tr.surface.surfaceProps = hitBone >= 0 ? physprops->GetSurfaceIndex( StudioBone_GetSurfaceProp(pStudioHdr, hitBone) ) : 0;
 		m_lastPhysicsBone = tr.physicsbone;
 	}
 

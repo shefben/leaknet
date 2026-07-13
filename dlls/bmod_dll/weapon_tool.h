@@ -21,33 +21,66 @@
 #include "utlvector.h"
 
 //-----------------------------------------------------------------------------
-// Tool mode definitions - matching Garry's Mod values discovered in IDA
+// Tool mode definitions.
+//
+// These values are NOT arbitrary - they are the authentic GMod 9.0.4b
+// gm_toolmode IDs, byte-identical to what ships in settings/menu_main/*.txt
+// and gmod_9_0_4b/settings/menu_main/*.txt (real extracted game assets), and
+// to what every third-party GMod9 addon menu file out there also uses.
+// DO NOT renumber these - content files reference these numbers directly by
+// value, not by symbol, so the numbers themselves are the contract.
+//
+// TOOL_NONE is a sentinel for "nothing selected yet" and deliberately does
+// NOT use 0, since 0 is a real tool (Rope) in the authentic numbering.
 //-----------------------------------------------------------------------------
 enum ToolMode_t
 {
-	TOOL_NONE = 0,
-	TOOL_GUN = 1,			// Gun tool
-	TOOL_PHYSGUN = 2,		// Physics gun (should use weapon_physcannon instead)
-	TOOL_CAMERA = 3,		// Camera tool
-	TOOL_NPC = 4,			// NPC spawning tool
-	TOOL_NEXTBOT = 5,		// NextBot tool
-	TOOL_MATERIAL = 6,		// Material tool
-	TOOL_COLOR = 7,			// Color tool
-	TOOL_PAINT = 8,			// Paint tool
-	TOOL_INFLATOR = 9,		// Inflator/size tool
-	TOOL_DUPLICATOR = 10,	// Duplicator tool
-	TOOL_CONSTRAINER = 11,	// Constraint tool
-	TOOL_AXIS = 12,			// Axis constraint
-	TOOL_BALLSOCKET = 13,	// Ball socket constraint
-	TOOL_ROPE = 14,			// Rope constraint
-	TOOL_PULLEY = 15,		// Pulley constraint
-	TOOL_MOTOR = 16,		// Motor constraint
-	TOOL_HYDRAULIC = 17,	// Hydraulic constraint
-	TOOL_PNEUMATIC = 18,	// Pneumatic constraint
-	TOOL_SPRING = 19,		// Spring constraint
-	TOOL_KEEPUPRIGHT = 20,	// Keep upright constraint
+	TOOL_NONE		= -1,	// sentinel only - falls back to TOOL_WELD (the real game's default starting tool)
 
-	TOOL_MAX = 32			// Maximum tool modes supported
+	TOOL_ROPE		= 0,
+	TOOL_ELASTIC	= 1,	// spring constraint ("Elastic" in the menu)
+	TOOL_WELD		= 2,
+	TOOL_BALLSOCKET	= 3,
+	TOOL_PULLEY		= 4,
+	TOOL_EASYWELD	= 5,
+	TOOL_EASYBALL	= 6,
+	TOOL_AXIS		= 7,
+	TOOL_SLIDER		= 8,
+	TOOL_NAILGUN	= 9,
+	TOOL_FACEPOSER	= 10,
+	TOOL_EYESPOSER	= 11,
+	TOOL_REMOVER	= 12,
+	TOOL_IGNITE		= 13,
+	TOOL_PAINT		= 14,
+	TOOL_DUPLICATE	= 15,
+	TOOL_COLOUR		= 16,
+	TOOL_MAGNETISE	= 17,
+	TOOL_NOCOLLIDE	= 18,
+	TOOL_DYNAMITE	= 19,
+	TOOL_MATERIAL	= 20,
+	TOOL_RTCAMERA	= 21,
+	// 22 is unused/reserved in the authentic numbering
+	TOOL_THRUSTER	= 23,
+	TOOL_PHYSPROPS	= 24,
+	TOOL_STATUE		= 25,
+	TOOL_BALLOON	= 26,
+	TOOL_EMITTER	= 27,
+	TOOL_SPRITE		= 28,
+	TOOL_WHEEL		= 29,
+
+	// Auxiliary tools that the real menu reaches via "gm_context <name>" with
+	// no gm_toolmode number at all (Camera/NPC Spawn live outside the
+	// Constraints/Construction/Visual numbered families), plus the resize
+	// tool which has no authentic gm_toolmode slot at all. Given internal
+	// slots here so the existing tool_camera.cpp/tool_npc.cpp/tool_gun.cpp/
+	// tool_inflator.cpp implementations are reachable via direct console
+	// command (bm_toolmode 30-33) even though no menu button wires to them.
+	TOOL_GUN		= 30,
+	TOOL_CAMERA		= 31,
+	TOOL_NPCSPAWN	= 32,
+	TOOL_INFLATOR	= 33,
+
+	TOOL_MAX		= 40	// array bound - must stay above the highest value above
 };
 
 //-----------------------------------------------------------------------------
@@ -65,6 +98,7 @@ enum ToolMode_t
 struct ToolInfo_t
 {
 	const char	*pszName;			// Tool name for localization key
+	const char	*pszDisplayName;	// Human-readable name shown to the player
 	const char	*pszDescription;	// Tool description
 	const char	*pszHelpText;		// Help text
 	const char	*pszViewModel;		// View model path
@@ -117,10 +151,33 @@ public:
 	virtual void	StartToolSound();
 	virtual void	StopToolSound();
 
-	// Tool implementations - override these for specific tools
-	virtual void	OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary ) {}
-	virtual void	OnToolTrace( trace_t &tr, bool bPrimary ) {}
-	virtual void	OnToolThink() {}
+	// Tool implementations - CWeaponTool is the only class ever instantiated
+	// for the "weapon_tool" entity (mode is a runtime int, not a C++ type),
+	// so these dispatch by m_nToolMode to the per-tool free functions declared
+	// in tool_dispatch.h instead of being overridden by a subclass.
+	virtual void	OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary );
+	virtual void	OnToolTrace( trace_t &tr, bool bPrimary );
+	virtual void	OnToolThink();
+
+	// Shared "select first prop, then select second prop" state used by every
+	// constraint-family tool (Rope/Elastic/Weld/Ballsocket/Pulley/EasyWeld/
+	// EasyBall/Axis/Slider/NailGun/NoCollide/Wheel) so those tool_*.cpp files
+	// don't each need their own per-instance storage.
+	CBaseEntity		*GetPendingEntity() const { return m_hPendingEntity.Get(); }
+	const Vector	&GetPendingPos() const { return m_vecPendingPos; }
+	float			GetPendingTime() const { return m_flPendingTime; }
+	void			SetPendingSelection( CBaseEntity *pEntity, const Vector &vecPos )
+	{
+		m_hPendingEntity = pEntity;
+		m_vecPendingPos = vecPos;
+		m_flPendingTime = gpGlobals->curtime;
+	}
+	void			ClearPendingSelection()
+	{
+		m_hPendingEntity = NULL;
+		m_vecPendingPos = vec3_origin;
+		m_flPendingTime = 0.0f;
+	}
 
 	// Utility functions
 	virtual float	GetRange() const;
@@ -153,59 +210,34 @@ protected:
 	EHANDLE			m_hLastTarget;			// Last targeted entity
 	Vector			m_vecLastTargetPos;		// Last target position
 
-	// Tool mode data - array of tool information
-	static ToolInfo_t s_ToolInfo[TOOL_MAX];
+	// Shared constraint-tool pending-selection state (see accessors above)
+	EHANDLE			m_hPendingEntity;
+	Vector			m_vecPendingPos;
+	float			m_flPendingTime;
 
 	// Activity lookup table for different tool modes
 	Activity		GetToolActivity( int nMode, bool bPrimary );
 
-private:
-	// Input handling
-	void			CheckToolInput();
-	void			HandleToolModeSwitch();
+public:
+	// Tool mode data - array of tool information. Public since the free
+	// functions GetToolInfo()/GetToolName()/GetToolDescription() below (the
+	// intended external API for this table) read it from outside the class.
+	static ToolInfo_t s_ToolInfo[TOOL_MAX];
 
+private:
 	// Tool helpers
 	bool			CheckToolConstraints();
 	void			ApplyToolForce( CBaseEntity *pEntity, const Vector &vecForce );
 	void			CreateToolConstraint( CBaseEntity *pEnt1, CBaseEntity *pEnt2, int nType );
 };
 
-//-----------------------------------------------------------------------------
-// Tool mode console variable
-//-----------------------------------------------------------------------------
-extern ConVar bm_toolmode;
 extern ConVar bm_toolsound;
 
 //-----------------------------------------------------------------------------
 // Global tool functions
 //-----------------------------------------------------------------------------
-void ToolMode_Think();
-void ToolMode_Register();
 const ToolInfo_t *GetToolInfo( int nMode );
 const char *GetToolName( int nMode );
 const char *GetToolDescription( int nMode );
-
-//-----------------------------------------------------------------------------
-// Tool registration macros
-//-----------------------------------------------------------------------------
-#define DECLARE_TOOL_MODE( name, mode ) \
-	class CTool##name : public CWeaponTool \
-	{ \
-	public: \
-		virtual void OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary ); \
-		virtual void OnToolTrace( trace_t &tr, bool bPrimary ); \
-		virtual void OnToolThink(); \
-	}; \
-	extern CTool##name g_Tool##name;
-
-#define IMPLEMENT_TOOL_MODE( name, mode ) \
-	CTool##name g_Tool##name; \
-	void CTool##name::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
-
-//-----------------------------------------------------------------------------
-// Console commands
-//-----------------------------------------------------------------------------
-void CC_ToolMode();
-void CC_ToolWeapon();
 
 #endif // WEAPON_TOOL_H

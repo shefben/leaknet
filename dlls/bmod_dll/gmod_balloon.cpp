@@ -10,7 +10,9 @@
 #include "physics.h"
 #include "rope_shared.h"
 #include "rope.h"
-#include "tier1/strtools.h"
+#include "explode.h"
+#include "igamesystem.h"
+#include "vstdlib/strtools.h"
 
 // Initialize static members
 bool CGModBalloonSystem::m_bInitialized = false;
@@ -33,11 +35,14 @@ LINK_ENTITY_TO_CLASS(gmod_balloon, CGModBalloon);
 //-----------------------------------------------------------------------------
 // Network table
 //-----------------------------------------------------------------------------
-IMPLEMENT_SERVERCLASS_ST(CGModBalloon, DT_GMod_Balloon)
-    SendPropFloat(SENDINFO(m_flBalloonPower), 0, SPROP_NOSCALE),
-    SendPropBool(SENDINFO(m_bBalloonReverse)),
-    SendPropBool(SENDINFO(m_bExplodeOnDamage)),
-END_SEND_TABLE()
+// No DECLARE_SERVERCLASS()/IMPLEMENT_SERVERCLASS_ST here - CGModBalloon has no
+// client-side C_GModBalloon/RecvTable, so it must inherit CPhysicsProp's own
+// DT_PhysicsProp SendTable directly (same pattern as CPhysSphere in props.cpp).
+// An empty SendTable of its own still registers a brand-new "DT_GMod_Balloon"
+// class name the client has never heard of, which is exactly what triggered
+// "No matching RecvTable for SendTable 'DT_GMod_Balloon'" / the dt_recv_eng.cpp
+// assert. m_flBalloonPower/m_bBalloonReverse/m_bExplodeOnDamage remain
+// server-side CNetworkVars (used by Think()/InputXXX()), just not sent to the client.
 
 //-----------------------------------------------------------------------------
 // Data description
@@ -56,12 +61,12 @@ BEGIN_DATADESC(CGModBalloon)
     DEFINE_FIELD(CGModBalloon, m_vecLiftForce, FIELD_VECTOR),
 
     // Inputs
-    DEFINE_INPUTFUNC(FIELD_FLOAT, "SetPower", InputSetPower),
-    DEFINE_INPUTFUNC(FIELD_BOOLEAN, "SetReverse", InputSetReverse),
-    DEFINE_INPUTFUNC(FIELD_VOID, "Explode", InputExplode),
+    DEFINE_INPUTFUNC(CGModBalloon, FIELD_FLOAT, "SetPower", InputSetPower),
+    DEFINE_INPUTFUNC(CGModBalloon, FIELD_BOOLEAN, "SetReverse", InputSetReverse),
+    DEFINE_INPUTFUNC(CGModBalloon, FIELD_VOID, "Explode", InputExplode),
 
     // Think function
-    DEFINE_THINKFUNC(Think),
+    DEFINE_THINKFUNC(CGModBalloon, Think),
 END_DATADESC()
 
 //-----------------------------------------------------------------------------
@@ -155,7 +160,8 @@ void CGModBalloon::SetupBalloonPhysics()
     {
         // Make balloon light and bouncy
         pPhysics->SetMass(1.0f);
-        pPhysics->SetDamping(0.8f, 0.8f);
+        float flDamping = 0.8f;
+        pPhysics->SetDamping(&flDamping, &flDamping);
         pPhysics->EnableDrag(false);
     }
 }
@@ -234,14 +240,14 @@ void CGModBalloon::CreateRope(CBaseEntity* pTarget)
     if (!pTarget || HasRope())
         return;
 
-    // Create rope entity
+    // Create rope entity (2-point rope - length is implicit from entity distance,
+    // this API has no separate length param unless the second point is detached)
     CRopeKeyframe* pRope = CRopeKeyframe::Create(
         this,
         pTarget,
         0, // attachment point on balloon
         0, // attachment point on target
-        (int)m_flRopeLength,
-        m_flRopeWidth,
+        (int)m_flRopeWidth,
         "cable/cable.vmt",
         5 // num segments
     );
@@ -337,7 +343,7 @@ void CGModBalloon::InputExplode(inputdata_t &inputdata)
     {
         // Create explosion effect
         Vector origin = GetAbsOrigin();
-        ExplosionCreate(origin, QAngle(0,0,0), this, 50, 100, false, 0.0f, true);
+        ExplosionCreate(origin, QAngle(0,0,0), this, 50, 100, true);
 
         // Remove balloon
         UTIL_Remove(this);

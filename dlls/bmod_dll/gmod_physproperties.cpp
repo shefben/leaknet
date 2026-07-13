@@ -4,7 +4,7 @@
 #include "filesystem.h"
 #include "KeyValues.h"
 #include "physics.h"
-#include "vphysics/objects.h"
+#include "vphysics_interface.h"
 #include "engine/IEngineSound.h"
 #include "te_effect_dispatch.h"
 #include "util.h"
@@ -111,18 +111,18 @@ bool CGModPhysPropertiesSystem::ParsePhysPropertiesFile(const char* pszFilePath)
     KeyValues* pMaterials = pKV->FindKey("materials");
     if (pMaterials)
     {
-        FOR_EACH_SUBKEY(pMaterials, pMaterial)
+        for (KeyValues *pMaterial = pMaterials->GetFirstSubKey(); pMaterial; pMaterial = pMaterial->GetNextKey())
         {
             PhysProperties_t properties;
-            properties.materialName = pMaterial->GetName();
+            Q_strncpy(properties.materialName, pMaterial->GetName(), sizeof(properties.materialName));
 
             if (ParseMaterialSection(pMaterial, &properties))
             {
-                int index = s_PhysProperties.Insert(properties.materialName.Get(), properties);
+                int index = s_PhysProperties.Insert(properties.materialName, properties);
                 if (index != s_PhysProperties.InvalidIndex())
                 {
                     materialCount++;
-                    DevMsg("Loaded physics properties for: %s\n", properties.materialName.Get());
+                    DevMsg("Loaded physics properties for: %s\n", properties.materialName);
                 }
             }
         }
@@ -132,18 +132,18 @@ bool CGModPhysPropertiesSystem::ParsePhysPropertiesFile(const char* pszFilePath)
     KeyValues* pSurfaces = pKV->FindKey("surfaces");
     if (pSurfaces)
     {
-        FOR_EACH_SUBKEY(pSurfaces, pSurface)
+        for (KeyValues *pSurface = pSurfaces->GetFirstSubKey(); pSurface; pSurface = pSurface->GetNextKey())
         {
             SurfaceData_t surface;
-            surface.surfaceName = pSurface->GetName();
+            Q_strncpy(surface.surfaceName, pSurface->GetName(), sizeof(surface.surfaceName));
 
             if (ParseSurfaceSection(pSurface, &surface))
             {
-                int index = s_SurfaceData.Insert(surface.surfaceName.Get(), surface);
+                int index = s_SurfaceData.Insert(surface.surfaceName, surface);
                 if (index != s_SurfaceData.InvalidIndex())
                 {
                     surfaceCount++;
-                    DevMsg("Loaded surface data for: %s\n", surface.surfaceName.Get());
+                    DevMsg("Loaded surface data for: %s\n", surface.surfaceName);
                 }
             }
         }
@@ -176,15 +176,15 @@ bool CGModPhysPropertiesSystem::ParseMaterialSection(KeyValues* pKV, PhysPropert
     pProperties->bBreakable = pKV->GetBool("breakable", false);
 
     // Parse sounds
-    pProperties->impactSoundLight = pKV->GetString("impact_light", "");
-    pProperties->impactSoundHeavy = pKV->GetString("impact_heavy", "");
-    pProperties->breakSound = pKV->GetString("break_sound", "");
-    pProperties->rollSound = pKV->GetString("roll_sound", "");
+    Q_strncpy(pProperties->impactSoundLight, pKV->GetString("impact_light", ""), sizeof(pProperties->impactSoundLight));
+    Q_strncpy(pProperties->impactSoundHeavy, pKV->GetString("impact_heavy", ""), sizeof(pProperties->impactSoundHeavy));
+    Q_strncpy(pProperties->breakSound, pKV->GetString("break_sound", ""), sizeof(pProperties->breakSound));
+    Q_strncpy(pProperties->rollSound, pKV->GetString("roll_sound", ""), sizeof(pProperties->rollSound));
 
     // Parse effects
-    pProperties->breakEffect = pKV->GetString("break_effect", "");
-    pProperties->impactEffect = pKV->GetString("impact_effect", "");
-    pProperties->scrapeEffect = pKV->GetString("scrape_effect", "");
+    Q_strncpy(pProperties->breakEffect, pKV->GetString("break_effect", ""), sizeof(pProperties->breakEffect));
+    Q_strncpy(pProperties->impactEffect, pKV->GetString("impact_effect", ""), sizeof(pProperties->impactEffect));
+    Q_strncpy(pProperties->scrapeEffect, pKV->GetString("scrape_effect", ""), sizeof(pProperties->scrapeEffect));
 
     // Parse gameplay properties
     pProperties->flMassMult = pKV->GetFloat("mass_mult", 1.0f);
@@ -197,7 +197,7 @@ bool CGModPhysPropertiesSystem::ParseMaterialSection(KeyValues* pKV, PhysPropert
     pProperties->materialType = ParseMaterialType(pszType);
 
     // Parse surface property
-    pProperties->surfaceProperty = pKV->GetString("surface", "default");
+    Q_strncpy(pProperties->surfaceProperty, pKV->GetString("surface", "default"), sizeof(pProperties->surfaceProperty));
 
     return true;
 }
@@ -270,7 +270,7 @@ void CGModPhysPropertiesSystem::ApplyDefaultProperties(PhysProperties_t* pProper
     for (int i = 0; i < ARRAYSIZE(defaultMaterials); i++)
     {
         PhysProperties_t defaultProps;
-        defaultProps.materialName = defaultMaterials[i];
+        Q_strncpy(defaultProps.materialName, defaultMaterials[i], sizeof(defaultProps.materialName));
         defaultProps.materialType = (PhysMaterialType_t)i;
 
         // Set type-specific defaults
@@ -280,8 +280,8 @@ void CGModPhysPropertiesSystem::ApplyDefaultProperties(PhysProperties_t* pProper
                 defaultProps.flDensity = 7800.0f;
                 defaultProps.flFriction = 0.8f;
                 defaultProps.flRestitution = 0.2f;
-                defaultProps.impactSoundLight = "Metal.ImpactSoft";
-                defaultProps.impactSoundHeavy = "Metal.ImpactHard";
+                Q_strncpy(defaultProps.impactSoundLight, "Metal.ImpactSoft", sizeof(defaultProps.impactSoundLight));
+                Q_strncpy(defaultProps.impactSoundHeavy, "Metal.ImpactHard", sizeof(defaultProps.impactSoundHeavy));
                 break;
 
             case PHYSMAT_WOOD:
@@ -312,7 +312,7 @@ void CGModPhysPropertiesSystem::ApplyDefaultProperties(PhysProperties_t* pProper
                 break;
         }
 
-        s_PhysProperties.Insert(defaultProps.materialName.Get(), defaultProps);
+        s_PhysProperties.Insert(defaultProps.materialName, defaultProps);
     }
 }
 
@@ -394,16 +394,16 @@ bool CGModPhysPropertiesSystem::ApplyPhysProperties(IPhysicsObject* pPhysicsObje
     if (!pProperties)
         return false;
 
-    // Apply density (affects mass)
-    float volume = pPhysicsObject->GetVolume();
-    if (volume > 0.0f)
+    // NOTE: this engine's IPhysicsObject has no GetVolume(), so density can't
+    // be converted to an absolute mass here - only the surface material
+    // (friction/elasticity) can be applied directly.
+    // Apply surface material properties (friction/elasticity come from this index)
+    if (Q_strlen(pProperties->surfaceProperty) > 0)
     {
-        float mass = volume * pProperties->flDensity;
-        pPhysicsObject->SetMass(mass);
+        int surfaceIndex = physprops->GetSurfaceIndex(pProperties->surfaceProperty);
+        if (surfaceIndex >= 0)
+            pPhysicsObject->SetMaterialIndex(surfaceIndex);
     }
-
-    // Apply material properties
-    physicssurfaceprops->SetWorldMaterialIndexTable(0); // Reset material table
 
     return true;
 }
@@ -421,7 +421,7 @@ bool CGModPhysPropertiesSystem::ApplyPhysPropertiesToEntity(CBaseEntity* pEntity
         return false;
 
     // Apply to physics object if it exists
-    IPhysicsObject* pPhysics = pEntity->GetPhysicsObject();
+    IPhysicsObject* pPhysics = pEntity->VPhysicsGetObject();
     if (pPhysics)
     {
         ApplyPhysProperties(pPhysics, pszMaterialName);
@@ -449,7 +449,7 @@ void CGModPhysPropertiesSystem::UpdateEntityPhysProperties(CBaseEntity* pEntity)
     PhysProperties_t* pProperties = FindPhysPropertiesForEntity(pEntity);
     if (pProperties)
     {
-        ApplyPhysPropertiesToEntity(pEntity, pProperties->materialName.Get());
+        ApplyPhysPropertiesToEntity(pEntity, pProperties->materialName);
     }
 }
 
@@ -467,8 +467,8 @@ void CGModPhysPropertiesSystem::OnImpact(CBaseEntity* pEntity1, CBaseEntity* pEn
 
     // Play impact sound
     const char* pszSound = (impactForce > 500.0f) ?
-        pProperties->impactSoundHeavy.Get() :
-        pProperties->impactSoundLight.Get();
+        pProperties->impactSoundHeavy :
+        pProperties->impactSoundLight;
 
     if (pszSound && *pszSound)
     {
@@ -476,11 +476,11 @@ void CGModPhysPropertiesSystem::OnImpact(CBaseEntity* pEntity1, CBaseEntity* pEn
     }
 
     // Create impact effect
-    if (pProperties->impactEffect.Length() > 0)
+    if (Q_strlen(pProperties->impactEffect) > 0)
     {
         CEffectData data;
         data.m_vOrigin = impactPos;
-        DispatchEffect(pProperties->impactEffect.Get(), data);
+        DispatchEffect(pProperties->impactEffect, data);
     }
 }
 
@@ -497,17 +497,17 @@ void CGModPhysPropertiesSystem::OnBreak(CBaseEntity* pEntity, const Vector& brea
         return;
 
     // Play break sound
-    if (pProperties->breakSound.Length() > 0)
+    if (Q_strlen(pProperties->breakSound) > 0)
     {
-        pEntity->EmitSound(pProperties->breakSound.Get());
+        pEntity->EmitSound(pProperties->breakSound);
     }
 
     // Create break effect
-    if (pProperties->breakEffect.Length() > 0)
+    if (Q_strlen(pProperties->breakEffect) > 0)
     {
         CEffectData data;
         data.m_vOrigin = breakPos;
-        DispatchEffect(pProperties->breakEffect.Get(), data);
+        DispatchEffect(pProperties->breakEffect, data);
     }
 }
 
@@ -524,12 +524,12 @@ void CGModPhysPropertiesSystem::OnScrape(CBaseEntity* pEntity, const Vector& scr
         return;
 
     // Create scrape effect
-    if (pProperties->scrapeEffect.Length() > 0)
+    if (Q_strlen(pProperties->scrapeEffect) > 0)
     {
         CEffectData data;
         data.m_vOrigin = scrapePos;
         data.m_vNormal = scrapeDir;
-        DispatchEffect(pProperties->scrapeEffect.Get(), data);
+        DispatchEffect(pProperties->scrapeEffect, data);
     }
 }
 

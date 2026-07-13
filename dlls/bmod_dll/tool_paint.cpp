@@ -7,15 +7,31 @@
 
 #include "cbase.h"
 #include "weapon_tool.h"
+#include "tool_dispatch.h"
 #include "player.h"
 #include "gamerules.h"
 #include "util.h"
 #include "te_effect_dispatch.h"
 #include "decals.h"
 #include "engine/IEngineSound.h"
+#include "in_buttons.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+//-----------------------------------------------------------------------------
+// ClientPrintf() only substitutes literal param1-4 strings into msg_name - it
+// has no printf-style formatting of its own - so this wrapper formats first.
+//-----------------------------------------------------------------------------
+static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFormat, ... )
+{
+	char szBuf[256];
+	va_list args;
+	va_start( args, pszFormat );
+	Q_vsnprintf( szBuf, sizeof( szBuf ), pszFormat, args );
+	va_end( args );
+	ClientPrint( pPlayer, msg_dest, szBuf );
+}
 
 //-----------------------------------------------------------------------------
 // Console variables for paint tool
@@ -80,56 +96,98 @@ static const char *g_BrushNames[] =
 };
 
 //-----------------------------------------------------------------------------
-// Paint tool class - implements TOOL_PAINT mode
+// Per-weapon paint state - CWeaponTool is not subclassed, so the state that
+// used to live in CToolPaint's member variables now lives here, keyed by the
+// weapon's EHANDLE (mirrors the g_WeldConstraints/g_RopeConstraints registries
+// used by the sibling tool_*.cpp files).
 //-----------------------------------------------------------------------------
-class CToolPaint : public CWeaponTool
+struct PaintState_t
 {
-	DECLARE_CLASS( CToolPaint, CWeaponTool );
+	EHANDLE	hTool;
+	int		nSelectedDecal;		// Currently selected decal index
+	int		nBrushType;			// Current brush type
+	float	flLastPaintTime;	// Last time we painted (for spray effect)
 
-public:
-	CToolPaint() : m_nSelectedDecal(0), m_nBrushType(BRUSH_MEDIUM), m_flLastPaintTime(0.0f) {}
-
-	virtual void OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary );
-	virtual void OnToolTrace( trace_t &tr, bool bPrimary );
-	virtual void OnToolThink();
-
-private:
-	void PaintDecal( trace_t &tr );
-	void CycleDecal();
-	void CycleBrush();
-	void CreatePaintEffect( const Vector &vecPos, const Vector &vecNormal );
-	const char *GetCurrentDecal();
-	int GetPaintSize();
-	bool CanPaint();
-
-	// Paint tool state
-	int		m_nSelectedDecal;	// Currently selected decal index
-	int		m_nBrushType;		// Current brush type
-	float	m_flLastPaintTime;	// Last time we painted (for spray effect)
+	PaintState_t()
+	{
+		nSelectedDecal = 0;
+		nBrushType = BRUSH_MEDIUM;
+		flLastPaintTime = 0.0f;
+	}
 };
+
+static CUtlVector<PaintState_t*> g_PaintStates;
+
+static PaintState_t *FindPaintState( CWeaponTool *pTool )
+{
+	for ( int i = 0; i < g_PaintStates.Count(); i++ )
+	{
+		if ( g_PaintStates[i]->hTool == pTool )
+			return g_PaintStates[i];
+	}
+	return NULL;
+}
+
+static PaintState_t *GetPaintState( CWeaponTool *pTool )
+{
+	PaintState_t *pState = FindPaintState( pTool );
+	if ( !pState )
+	{
+		pState = new PaintState_t;
+		pState->hTool = pTool;
+		g_PaintStates.AddToTail( pState );
+	}
+	return pState;
+}
+
+// Removes state records for weapons that no longer exist.
+static void CleanupPaintStates()
+{
+	for ( int i = g_PaintStates.Count() - 1; i >= 0; i-- )
+	{
+		if ( !g_PaintStates[i]->hTool.Get() )
+		{
+			delete g_PaintStates[i];
+			g_PaintStates.Remove( i );
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Forward declarations of tool helpers
+//-----------------------------------------------------------------------------
+static void PaintDecal( trace_t &tr, PaintState_t *pState );
+static void CycleDecal( CWeaponTool *pTool, PaintState_t *pState );
+static void CycleBrush( CWeaponTool *pTool, PaintState_t *pState );
+static void CreatePaintEffect( const Vector &vecPos, const Vector &vecNormal, PaintState_t *pState );
+static const char *GetCurrentDecal( PaintState_t *pState );
+static int GetPaintSize( PaintState_t *pState );
+static bool CanPaint( PaintState_t *pState );
 
 //-----------------------------------------------------------------------------
 // Tool implementation for Paint mode
 //-----------------------------------------------------------------------------
-void CToolPaint::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
+void Tool_Paint_OnUse( CWeaponTool *pTool, CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 {
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( !pOwner )
 		return;
+
+	PaintState_t *pState = GetPaintState( pTool );
 
 	if ( bPrimary )
 	{
 		// Primary attack - paint decal
-		if ( CanPaint() )
+		if ( CanPaint( pState ) )
 		{
-			PaintDecal( tr );
-			CreatePaintEffect( tr.endpos, tr.plane.normal );
-			PlayToolSound( "garrysmod/balloon_pop_cute.wav" );
+			PaintDecal( tr, pState );
+			CreatePaintEffect( tr.endpos, tr.plane.normal, pState );
+			pTool->PlayToolSound( "garrysmod/balloon_pop_cute.wav" );
 
-			m_flLastPaintTime = gpGlobals->curtime;
+			pState->flLastPaintTime = gpGlobals->curtime;
 
-			const char *pszDecal = GetCurrentDecal();
-			ClientPrint( pOwner, HUD_PRINTTALK, "Painted: %s", pszDecal );
+			const char *pszDecal = GetCurrentDecal( pState );
+			ClientPrintf( pOwner, HUD_PRINTTALK, "Painted: %s", pszDecal );
 		}
 	}
 	else
@@ -137,11 +195,11 @@ void CToolPaint::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 		// Secondary attack - cycle decal or brush based on held buttons
 		if ( pOwner->m_nButtons & IN_USE )
 		{
-			CycleBrush();
+			CycleBrush( pTool, pState );
 		}
 		else
 		{
-			CycleDecal();
+			CycleDecal( pTool, pState );
 		}
 	}
 }
@@ -149,38 +207,40 @@ void CToolPaint::OnToolUse( CBaseEntity *pEntity, trace_t &tr, bool bPrimary )
 //-----------------------------------------------------------------------------
 // Tool trace implementation for Paint mode
 //-----------------------------------------------------------------------------
-void CToolPaint::OnToolTrace( trace_t &tr, bool bPrimary )
+void Tool_Paint_OnTrace( CWeaponTool *pTool, trace_t &tr, bool bPrimary )
 {
+	PaintState_t *pState = GetPaintState( pTool );
+
 	if ( bPrimary )
 	{
 		// Can paint on world surfaces
-		if ( CanPaint() )
+		if ( CanPaint( pState ) )
 		{
-			PaintDecal( tr );
-			CreatePaintEffect( tr.endpos, tr.plane.normal );
-			PlayToolSound( "garrysmod/balloon_pop_cute.wav" );
+			PaintDecal( tr, pState );
+			CreatePaintEffect( tr.endpos, tr.plane.normal, pState );
+			pTool->PlayToolSound( "garrysmod/balloon_pop_cute.wav" );
 
-			m_flLastPaintTime = gpGlobals->curtime;
+			pState->flLastPaintTime = gpGlobals->curtime;
 
-			CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+			CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 			if ( pOwner )
 			{
-				const char *pszDecal = GetCurrentDecal();
-				ClientPrint( pOwner, HUD_PRINTTALK, "Painted: %s", pszDecal );
+				const char *pszDecal = GetCurrentDecal( pState );
+				ClientPrintf( pOwner, HUD_PRINTTALK, "Painted: %s", pszDecal );
 			}
 		}
 	}
 	else
 	{
 		// Secondary attack - cycle options
-		CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+		CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 		if ( pOwner && (pOwner->m_nButtons & IN_USE) )
 		{
-			CycleBrush();
+			CycleBrush( pTool, pState );
 		}
 		else
 		{
-			CycleDecal();
+			CycleDecal( pTool, pState );
 		}
 	}
 }
@@ -188,92 +248,74 @@ void CToolPaint::OnToolTrace( trace_t &tr, bool bPrimary )
 //-----------------------------------------------------------------------------
 // Tool think for Paint mode
 //-----------------------------------------------------------------------------
-void CToolPaint::OnToolThink()
+void Tool_Paint_OnThink( CWeaponTool *pTool )
 {
-	// Paint tool doesn't need continuous thinking
-	// Could add paint dripping effects here
+	// Paint tool doesn't need continuous thinking; just keep the registry tidy
+	CleanupPaintStates();
 }
 
 //-----------------------------------------------------------------------------
 // Paint decal at trace position
 //-----------------------------------------------------------------------------
-void CToolPaint::PaintDecal( trace_t &tr )
+static void PaintDecal( trace_t &tr, PaintState_t *pState )
 {
 	if ( !tr.DidHit() )
 		return;
 
-	const char *pszDecal = GetCurrentDecal();
-	if ( !pszDecal )
+	const char *pszDecal = GetCurrentDecal( pState );
+	if ( !pszDecal || !pszDecal[0] )
 		return;
 
-	// Get decal index
-	int nDecalIndex = DECAL_INDEX( pszDecal );
-	if ( nDecalIndex < 0 )
-	{
-		DevMsg( "Unknown decal: %s\n", pszDecal );
-		return;
-	}
+	// Apply decal to whatever was hit (entity or world)
+	UTIL_DecalTrace( &tr, pszDecal );
 
-	// Create the decal
 	CBaseEntity *pEntity = tr.m_pEnt;
-	if ( pEntity )
-	{
-		// Apply decal to entity
-		int nSize = GetPaintSize();
-
-		// Use entity's model for decal placement
-		if ( pEntity->GetModel() )
-		{
-			UTIL_DecalTrace( &tr, pszDecal );
-		}
-
-		DevMsg( "Painted decal %s at (%f, %f, %f) on %s\n",
-			pszDecal, tr.endpos.x, tr.endpos.y, tr.endpos.z,
-			pEntity ? pEntity->GetClassname() : "world" );
-	}
+	DevMsg( "Painted decal %s at (%f, %f, %f) on %s\n",
+		pszDecal, tr.endpos.x, tr.endpos.y, tr.endpos.z,
+		pEntity ? pEntity->GetClassname() : "world" );
 }
 
 //-----------------------------------------------------------------------------
 // Cycle through decal types
 //-----------------------------------------------------------------------------
-void CToolPaint::CycleDecal()
+static void CycleDecal( CWeaponTool *pTool, PaintState_t *pState )
 {
 	// Find next valid decal
 	do
 	{
-		m_nSelectedDecal++;
-		if ( g_PaintDecals[m_nSelectedDecal] == NULL )
+		pState->nSelectedDecal++;
+		if ( g_PaintDecals[pState->nSelectedDecal] == NULL )
 		{
-			m_nSelectedDecal = 0; // Wrap around
+			pState->nSelectedDecal = 0; // Wrap around
 		}
-	} while ( g_PaintDecals[m_nSelectedDecal] == NULL );
+	} while ( g_PaintDecals[pState->nSelectedDecal] == NULL );
 
 	// Update ConVar
-	bm_paint_decal.SetValue( g_PaintDecals[m_nSelectedDecal] );
+	bm_paint_decal.SetValue( g_PaintDecals[pState->nSelectedDecal] );
 
 	// Inform player
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( pOwner )
 	{
-		ClientPrint( pOwner, HUD_PRINTTALK, "Selected decal: %s",
-			g_PaintDecals[m_nSelectedDecal] );
+		ClientPrintf( pOwner, HUD_PRINTTALK, "Selected decal: %s",
+			g_PaintDecals[pState->nSelectedDecal] );
 	}
 }
 
 //-----------------------------------------------------------------------------
 // Cycle through brush types
 //-----------------------------------------------------------------------------
-void CToolPaint::CycleBrush()
+static void CycleBrush( CWeaponTool *pTool, PaintState_t *pState )
 {
-	m_nBrushType++;
-	if ( m_nBrushType >= BRUSH_MAX )
+	pState->nBrushType++;
+	if ( pState->nBrushType >= BRUSH_MAX )
 	{
-		m_nBrushType = 0;
+		pState->nBrushType = 0;
 	}
 
 	// Adjust paint size based on brush type
 	int nSize = 16; // Default size
-	switch ( m_nBrushType )
+	switch ( pState->nBrushType )
 	{
 		case BRUSH_SMALL:	nSize = 8;	break;
 		case BRUSH_MEDIUM:	nSize = 16;	break;
@@ -286,24 +328,24 @@ void CToolPaint::CycleBrush()
 	bm_paint_size.SetValue( nSize );
 
 	// Inform player
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( pOwner )
 	{
-		ClientPrint( pOwner, HUD_PRINTTALK, "Selected brush: %s (Size: %d)",
-			g_BrushNames[m_nBrushType], nSize );
+		ClientPrintf( pOwner, HUD_PRINTTALK, "Selected brush: %s (Size: %d)",
+			g_BrushNames[pState->nBrushType], nSize );
 	}
 }
 
 //-----------------------------------------------------------------------------
 // Create paint application effect
 //-----------------------------------------------------------------------------
-void CToolPaint::CreatePaintEffect( const Vector &vecPos, const Vector &vecNormal )
+static void CreatePaintEffect( const Vector &vecPos, const Vector &vecNormal, PaintState_t *pState )
 {
 	// Create paint splash effect
 	CEffectData data;
 	data.m_vOrigin = vecPos;
 	data.m_vNormal = vecNormal;
-	data.m_flMagnitude = GetPaintSize();
+	data.m_flMagnitude = GetPaintSize( pState );
 	data.m_flScale = 1.0f;
 
 	// Use paint color
@@ -315,7 +357,7 @@ void CToolPaint::CreatePaintEffect( const Vector &vecPos, const Vector &vecNorma
 	DispatchEffect( "Sparks", data );
 
 	// Create paint particles based on brush type
-	switch ( m_nBrushType )
+	switch ( pState->nBrushType )
 	{
 		case BRUSH_SPRAY:
 			// Multiple small particles for spray effect
@@ -333,7 +375,7 @@ void CToolPaint::CreatePaintEffect( const Vector &vecPos, const Vector &vecNorma
 		case BRUSH_AIRBRUSH:
 			// Fine mist effect
 			data.m_flScale = 0.3f;
-			data.m_flMagnitude = GetPaintSize() * 2;
+			data.m_flMagnitude = GetPaintSize( pState ) * 2;
 			DispatchEffect( "GlowSprite", data );
 			break;
 
@@ -348,7 +390,7 @@ void CToolPaint::CreatePaintEffect( const Vector &vecPos, const Vector &vecNorma
 //-----------------------------------------------------------------------------
 // Get current decal name
 //-----------------------------------------------------------------------------
-const char *CToolPaint::GetCurrentDecal()
+static const char *GetCurrentDecal( PaintState_t *pState )
 {
 	// Find decal matching the current ConVar
 	const char *pszCurrentDecal = bm_paint_decal.GetString();
@@ -357,7 +399,7 @@ const char *CToolPaint::GetCurrentDecal()
 	{
 		if ( !Q_stricmp( g_PaintDecals[i], pszCurrentDecal ) )
 		{
-			m_nSelectedDecal = i;
+			pState->nSelectedDecal = i;
 			return g_PaintDecals[i];
 		}
 	}
@@ -369,12 +411,12 @@ const char *CToolPaint::GetCurrentDecal()
 //-----------------------------------------------------------------------------
 // Get paint size with brush modifications
 //-----------------------------------------------------------------------------
-int CToolPaint::GetPaintSize()
+static int GetPaintSize( PaintState_t *pState )
 {
 	int nBaseSize = bm_paint_size.GetInt();
 
 	// Modify size based on brush type
-	switch ( m_nBrushType )
+	switch ( pState->nBrushType )
 	{
 		case BRUSH_SMALL:	return nBaseSize / 2;
 		case BRUSH_LARGE:	return nBaseSize * 2;
@@ -387,12 +429,12 @@ int CToolPaint::GetPaintSize()
 //-----------------------------------------------------------------------------
 // Check if we can paint (rate limiting)
 //-----------------------------------------------------------------------------
-bool CToolPaint::CanPaint()
+static bool CanPaint( PaintState_t *pState )
 {
 	float flDelay = 0.1f; // Default delay
 
 	// Adjust delay based on brush type
-	switch ( m_nBrushType )
+	switch ( pState->nBrushType )
 	{
 		case BRUSH_SPRAY:	flDelay = 0.05f; break; // Fast spray
 		case BRUSH_AIRBRUSH: flDelay = 0.03f; break; // Very fast airbrush
@@ -400,7 +442,7 @@ bool CToolPaint::CanPaint()
 		default:			flDelay = 0.1f;  break;
 	}
 
-	return (gpGlobals->curtime - m_flLastPaintTime) >= flDelay;
+	return (gpGlobals->curtime - pState->flLastPaintTime) >= flDelay;
 }
 
 //-----------------------------------------------------------------------------
@@ -416,24 +458,24 @@ CON_COMMAND( bm_context_paint, "Opens paint tool context menu" )
 	CWeaponTool *pTool = dynamic_cast<CWeaponTool*>( pPlayer->GetActiveWeapon() );
 	if ( !pTool || pTool->GetToolMode() != TOOL_PAINT )
 	{
-		ClientPrint( pPlayer, HUD_PRINTTALK, "Paint tool must be equipped and selected" );
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "Paint tool must be equipped and selected" );
 		return;
 	}
 
 	// Show available decals
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Available decals:" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Available decals:" );
 
 	for ( int i = 0; g_PaintDecals[i]; i++ )
 	{
-		ClientPrint( pPlayer, HUD_PRINTTALK, "  %s", g_PaintDecals[i] );
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "  %s", g_PaintDecals[i] );
 	}
 
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Current decal: %s", bm_paint_decal.GetString() );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Paint size: %d", bm_paint_size.GetInt() );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Color: R%d G%d B%d",
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Current decal: %s", bm_paint_decal.GetString() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Paint size: %d", bm_paint_size.GetInt() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Color: R%d G%d B%d",
 		bm_paint_color_r.GetInt(), bm_paint_color_g.GetInt(), bm_paint_color_b.GetInt() );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Secondary fire: cycle decals" );
-	ClientPrint( pPlayer, HUD_PRINTTALK, "Use + Secondary fire: cycle brushes" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Secondary fire: cycle decals" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Use + Secondary fire: cycle brushes" );
 }
 
 //-----------------------------------------------------------------------------
@@ -446,6 +488,6 @@ CON_COMMAND( bm_paint_clear, "Clear all painted decals" )
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( pPlayer )
 	{
-		ClientPrint( pPlayer, HUD_PRINTTALK, "All temporary paint cleared" );
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "All temporary paint cleared" );
 	}
 }

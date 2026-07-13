@@ -191,6 +191,7 @@ BEGIN_SRC( CLIENT_BASE_SOURCE_FILES "Source Files" )
 			"mathproxy.cpp"
 			"matrixproxy.cpp"
 			"mat_stub.cpp"
+			"MonitorMaterialProxy.cpp"
 			"menu.cpp"
 			"message.cpp"
 			"movehelper_client.cpp"
