@@ -860,6 +860,12 @@ void CNetworkStringTableContainerClient::ParseUpdate( void )
 	int nPayloadStart = MSG_GetReadBuf()->GetNumBitsRead();
 	int nPayloadEnd = nPayloadStart + nDataBits;
 
+	if ( !Q_stricmp( table->GetTableName(), MODEL_PRECACHE_TABLENAME ) )
+	{
+		Con_Printf( "[modeldbg] CL ParseUpdate table='%s' entries=%i bits=%i numStrings(before)=%i\n",
+			table->GetTableName(), nEntries, nDataBits, table->GetNumStrings() );
+	}
+
 	table->ParseUpdate2007( nEntries );
 
 	int nBitsRead = MSG_GetReadBuf()->GetNumBitsRead();
@@ -974,6 +980,15 @@ void LocalNetworkBackDoor_DirectStringTableUpdate( int tableId, int entryIndex, 
 	if ( !table )
 	{
 		Sys_Error( "Bogus table id in network string table backdoor!(%i)", tableId );
+	}
+
+	bool bIsModelTable = !Q_stricmp( table->GetTableName(), MODEL_PRECACHE_TABLENAME );
+	bool bWouldOverwrite = entryIndex < table->GetNumStrings();
+	if ( bIsModelTable || bWouldOverwrite )
+	{
+		Con_Printf( "[modeldbg] CL DirectUpdate tableId=%i resolved='%s' entryIndex=%i str='%s' numStrings=%i mode=%s\n",
+			tableId, table->GetTableName(), entryIndex, string, table->GetNumStrings(),
+			bWouldOverwrite ? "OVERWRITE" : "GROW" );
 	}
 
 	table->DirectUpdate( entryIndex, string, userdatalength, userdata );

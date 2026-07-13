@@ -1332,6 +1332,9 @@ CAmmoDef *GetAmmoDef()
 		def.AddAmmoType("SMG1_Grenade",		DMG_BURN,					TRACER_NONE, "sk_plr_dmg_ar2_grenade",	"sk_npc_dmg_ar2_grenade",	"sk_max_ar2_grenade",	0 );
 		def.AddAmmoType("AR2",				DMG_BULLET,					TRACER_LINE, "sk_plr_dmg_medium_round",	"sk_npc_dmg_medium_round",	"sk_max_medium_round",	BULLET_IMPULSE(200, 1225) );
 		def.AddAmmoType("AR2AltFire",		DMG_SHOCK,					TRACER_NONE, 0,	0, 3, 0.0f );
+		def.AddAmmoType("357",				DMG_BULLET,					TRACER_LINE, "sk_plr_dmg_large_round",	"sk_npc_dmg_large_round",	"sk_max_large_round",	BULLET_IMPULSE(250, 1180) );
+		def.AddAmmoType("RPG_Round",		DMG_BURN,					TRACER_NONE, "sk_plr_dmg_ml_grenade",	"sk_npc_dmg_ml_grenade",	"sk_max_ml_grenade",	0 );
+		def.AddAmmoType("XBowBolt",			DMG_BULLET,					TRACER_LINE, "sk_plr_dmg_sniper_round",	"sk_npc_dmg_sniper_round",	"sk_max_sniper_round",	BULLET_IMPULSE(800, 8000) );
 	}
 
 	return &def;

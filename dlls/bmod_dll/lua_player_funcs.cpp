@@ -648,7 +648,15 @@ int Lua_PlayerGiveAmmo_New(lua_State *L)
 
 	int ammoIndex = GetAmmoDef()->Index(ammoType);
 	if (ammoIndex == -1)
-		return CLuaUtility::LuaError(L, "_PlayerGiveAmmo: Invalid ammo type");
+	{
+		// Do NOT raise a Lua error here: GMod 9 loadout scripts give many ammo
+		// types in a row, and an error aborts the whole GiveDefaultItems function
+		// (players then never receive the physgun/tool gun that come after the
+		// ammo lines). Unknown type = warn and give nothing, like retail.
+		Warning("_PlayerGiveAmmo: unknown ammo type '%s' (player %d)\n", ammoType ? ammoType : "", playerID);
+		lua_pushinteger(L, 0);
+		return 1;
+	}
 
 	int given = pPlayer->GiveAmmo(amount, ammoIndex, true);
 	lua_pushinteger(L, given);

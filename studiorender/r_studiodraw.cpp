@@ -2222,10 +2222,6 @@ int CStudioRender::R_StudioDrawPoints( int skin, void /*IClientEntity*/ *pClient
 
 	// draw each mesh
 	int numStudioMeshes = StudioModel_GetNumMeshes(m_pStudioHdr, m_pSubModel);
-	bool bV44DebugLog = StudioHdr_IsV44Plus(m_pStudioHdr);
-	if ( bV44DebugLog )
-		Con_DPrintf( "[v44dbg] R_StudioDrawPoints model=%s numStudioMeshes=%d translucentPass=%d\n",
-			m_pStudioHdr ? m_pStudioHdr->name : "?", numStudioMeshes, m_bDrawTranslucentSubModels );
 	for ( i = 0; i < numStudioMeshes; ++i)
 	{
 		mstudiomesh_t	*pmesh		= StudioModel_GetMesh(m_pStudioHdr, m_pSubModel, i);
@@ -2235,10 +2231,6 @@ int CStudioRender::R_StudioDrawPoints( int skin, void /*IClientEntity*/ *pClient
 
 		int material = StudioMesh_GetMaterial(m_pStudioHdr, pmesh);
 		IMaterial* pMaterial = R_StudioSetupSkin( pskinref[ material ], ppMaterials, pClientEntity );
-		if ( bV44DebugLog )
-			Con_DPrintf( "[v44dbg]   mesh %d meshid=%d numGroup=%d material=%d pskinref[material]=%d pMaterial=%p (%s)\n",
-				i, meshid, pMeshData->m_NumGroup, material, pskinref[material], pMaterial,
-				pMaterial ? pMaterial->GetName() : "NULL" );
 		if( !pMaterial )
 			continue;
 

@@ -587,13 +587,15 @@ struct mstudioikrule_t
 
 
 
+// v37 binary layout: exactly 12 bytes. Do NOT add the 2007 flags/unused fields
+// here - that changes the array stride and corrupts every v37 iklock past the
+// first (wild ikchain pointer crash in AddAutoplayLocks). v44+ models use the
+// separate 32-byte mstudioiklock_v44_t in studiohdr_v44.h.
 struct mstudioiklock_t
 {
 	int			chain;
 	float		flPosWeight;
 	float		flLocalQWeight;
-	int			flags;			// 2007 Source Engine addition
-	int			unused[4];		// 2007 Source Engine padding
 };
 
 // animation frames
