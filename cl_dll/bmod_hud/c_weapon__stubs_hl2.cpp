@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -46,6 +46,7 @@ STUB_WEAPON_CLASS( weapon_gauss, WeaponGaussGun, C_BaseHLCombatWeapon );
 STUB_WEAPON_CLASS( weapon_manhack, Weapon_Manhack, C_BaseHLCombatWeapon );
 STUB_WEAPON_CLASS( weapon_cubemap, WeaponCubemap, C_BaseCombatWeapon );
 STUB_WEAPON_CLASS( weapon_hopwire, WeaponHopWire, C_BaseHLCombatWeapon );
+STUB_WEAPON_CLASS( weapon_scripted, WeaponScripted, C_BaseHLCombatWeapon );
 
 //STUB_WEAPON_CLASS( weapon_stickylauncher, WeaponStickyLauncher, C_BaseHLCombatWeapon );
 

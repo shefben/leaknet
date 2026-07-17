@@ -18,6 +18,7 @@
 #include <vgui_controls/Panel.h>
 #include <vgui_controls/Frame.h>
 #include <vgui_controls/EditablePanel.h>
+#include <vgui_controls/Slider.h>
 #include "filesystem.h"
 #include "KeyValues.h"
 #include "convar.h"
@@ -547,6 +548,12 @@ void CClientSpawnDialog::OnKeyCodePressed( vgui::KeyCode code )
 			ShowPanel( false );
 			break;
 
+		// Q is the +menu bind; while the menu is open the frame captures
+		// keyboard input, so close it here to get toggle behavior.
+		case vgui::KEY_Q:
+			ShowPanel( false );
+			break;
+
 		default:
 			BaseClass::OnKeyCodePressed( code );
 			break;
@@ -836,13 +843,27 @@ void CToolButtonsPanel::LoadToolButtonsFromFile( const char *fileName )
 		return;
 	}
 
-	KeyValues *pClear = pConfig->FindKey( "clear" );
-	if ( pClear && pClear->GetInt() != 0 )
+	// LoadFromFile renames the root key to the file's first section (e.g.
+	// "menu"), and chains any further top-level sections via GetNextKey - so
+	// look for "menu"/"clear" along the root chain, not as subkeys.
+	KeyValues *pMenu = NULL;
+	for ( KeyValues *pRoot = pConfig; pRoot; pRoot = pRoot->GetNextKey() )
 	{
-		ClearToolButtons();
+		if ( Q_stricmp( pRoot->GetName(), "clear" ) == 0 && pRoot->GetInt() != 0 )
+		{
+			ClearToolButtons();
+		}
+		else if ( Q_stricmp( pRoot->GetName(), "menu" ) == 0 && !pMenu )
+		{
+			pMenu = pRoot;
+		}
 	}
 
-	KeyValues *pMenu = pConfig->FindKey( "menu" );
+	if ( !pMenu )
+	{
+		pMenu = pConfig->FindKey( "menu" );
+	}
+
 	if ( pMenu )
 	{
 		for ( KeyValues *pEntry = pMenu->GetFirstSubKey(); pEntry; pEntry = pEntry->GetNextKey() )
@@ -1072,6 +1093,9 @@ void CContextPanel::ClearContextContent()
 		m_pContextContent->MarkForDeletion();
 		m_pContextContent = NULL;
 	}
+
+	m_Controls.RemoveAll();
+	m_ComboCommands.RemoveAll();
 }
 
 static void BM_FlushContextRow( int &x, int &y, int &rowTall )
@@ -1141,25 +1165,165 @@ void CContextPanel::AddContextButton( const char *text, const char *command, int
 		BM_FlushContextRow( x, y, rowTall );
 }
 
-void CContextPanel::AddContextKeyValueButtons( KeyValues *pControl, int &x, int &y, int &rowTall, int columns )
+//-----------------------------------------------------------------------------
+// "toggle" control - a check button bound to a convar (e.g. "Bloom On")
+//-----------------------------------------------------------------------------
+void CContextPanel::AddContextToggle( KeyValues *pControl, int &x, int &y, int &rowTall )
 {
-	if ( !pControl )
+	if ( !m_pContextContent || !pControl )
 		return;
 
-	const char *label = pControl->GetString( "label", "" );
-	if ( label[0] )
+	BM_FlushContextRow( x, y, rowTall );
+
+	const char *name = pControl->GetString( "name", "" );
+	const char *label = pControl->GetString( "label", name );
+
+	char panelName[64];
+	Q_snprintf( panelName, sizeof(panelName), "ContextToggle%d", m_Controls.Count() );
+
+	vgui::CheckButton *pCheck = new vgui::CheckButton( m_pContextContent, panelName, label );
+	pCheck->AddActionSignalTarget( this );
+	pCheck->SetBounds( 4, y, max( GetWide() - 28, 160 ), 20 );
+	pCheck->SetVisible( true );
+	pCheck->SetMouseInputEnabled( true );
+	pCheck->SetScheme( GetScheme() );
+
+	const ConVar *pVar = cvar->FindVar( name );
+	if ( pVar )
 	{
-		AddContextLabel( label, x, y, rowTall, 16 );
+		pCheck->SetSelected( pVar->GetInt() != 0 );
 	}
+
+	ContextControl_t control;
+	memset( &control, 0, sizeof(control) );
+	control.type = CONTEXT_CTRL_TOGGLE;
+	Q_strncpy( control.szConVar, name, sizeof(control.szConVar) );
+	control.pControl = pCheck;
+	m_Controls.AddToTail( control );
+
+	y += 20 + 3;
+}
+
+//-----------------------------------------------------------------------------
+// "slider" control - label + slider + live value readout bound to a convar
+//-----------------------------------------------------------------------------
+void CContextPanel::AddContextSlider( KeyValues *pControl, int &x, int &y, int &rowTall )
+{
+	if ( !m_pContextContent || !pControl )
+		return;
+
+	BM_FlushContextRow( x, y, rowTall );
+
+	const char *name = pControl->GetString( "name", "" );
+	const char *label = pControl->GetString( "label", name );
+	const float flMin = pControl->GetFloat( "min", 0.0f );
+	const float flMax = pControl->GetFloat( "max", 1.0f );
+	const bool bInteger = pControl->GetInt( "integer", 0 ) != 0;
+
+	const int contentWide = max( GetWide() - 28, 160 );
+	const int labelWide = 64;
+	const int valueWide = 36;
+	const int sliderWide = max( contentWide - labelWide - valueWide - 4, 40 );
+	const int rowHigh = 20;
+
+	char panelName[64];
+	Q_snprintf( panelName, sizeof(panelName), "ContextSliderLabel%d", m_Controls.Count() );
+
+	vgui::Label *pLabel = new vgui::Label( m_pContextContent, panelName, label );
+	pLabel->SetContentAlignment( vgui::Label::a_west );
+	pLabel->SetFgColor( Color( 235, 235, 205, 255 ) );
+	pLabel->SetPaintBackgroundEnabled( false );
+	pLabel->SetBounds( 4, y, labelWide, rowHigh );
+	pLabel->SetMouseInputEnabled( false );
+
+	Q_snprintf( panelName, sizeof(panelName), "ContextSlider%d", m_Controls.Count() );
+
+	vgui::Slider *pSlider = new vgui::Slider( m_pContextContent, panelName );
+	pSlider->AddActionSignalTarget( this );
+	pSlider->SetBounds( 4 + labelWide, y, sliderWide, rowHigh );
+	pSlider->SetVisible( true );
+	pSlider->SetMouseInputEnabled( true );
+	pSlider->SetScheme( GetScheme() );
+
+	Q_snprintf( panelName, sizeof(panelName), "ContextSliderValue%d", m_Controls.Count() );
+
+	vgui::Label *pValue = new vgui::Label( m_pContextContent, panelName, "" );
+	pValue->SetContentAlignment( vgui::Label::a_east );
+	pValue->SetFgColor( Color( 235, 235, 205, 255 ) );
+	pValue->SetPaintBackgroundEnabled( false );
+	pValue->SetBounds( 4 + labelWide + sliderWide + 2, y, valueWide, rowHigh );
+	pValue->SetMouseInputEnabled( false );
+
+	ContextControl_t control;
+	memset( &control, 0, sizeof(control) );
+	control.type = CONTEXT_CTRL_SLIDER;
+	Q_strncpy( control.szConVar, name, sizeof(control.szConVar) );
+	control.flMin = flMin;
+	control.flMax = flMax;
+	control.bInteger = bInteger;
+	control.pControl = pSlider;
+	control.pValueLabel = pValue;
+
+	// Integer sliders step whole values; float sliders use 200 steps
+	float flCurrent = flMin;
+	const ConVar *pVar = cvar->FindVar( name );
+	if ( pVar )
+	{
+		flCurrent = pVar->GetFloat();
+	}
+	if ( flCurrent < flMin ) flCurrent = flMin;
+	if ( flCurrent > flMax ) flCurrent = flMax;
+
+	if ( bInteger )
+	{
+		pSlider->SetRange( (int)flMin, (int)flMax );
+		pSlider->SetValue( (int)flCurrent, false );
+	}
+	else
+	{
+		pSlider->SetRange( 0, 200 );
+		const float flRange = ( flMax > flMin ) ? ( flMax - flMin ) : 1.0f;
+		pSlider->SetValue( (int)( ( flCurrent - flMin ) / flRange * 200.0f + 0.5f ), false );
+	}
+
+	UpdateSliderValueLabel( control, flCurrent );
+	m_Controls.AddToTail( control );
+
+	y += rowHigh + 3;
+}
+
+//-----------------------------------------------------------------------------
+// "keyvaluecombobox" control - preset dropdown loaded from a kv file
+// (e.g. bloom presets). Selecting an item applies its settings.
+//-----------------------------------------------------------------------------
+void CContextPanel::AddContextComboBox( KeyValues *pControl, int &x, int &y, int &rowTall )
+{
+	if ( !m_pContextContent || !pControl )
+		return;
+
+	BM_FlushContextRow( x, y, rowTall );
 
 	const char *kvFile = pControl->GetString( "kvfile", "" );
 	if ( !kvFile[0] )
 		return;
 
 	const char *settingName = pControl->GetString( "name", "" );
+
+	char panelName[64];
+	Q_snprintf( panelName, sizeof(panelName), "ContextCombo%d", m_Controls.Count() );
+
+	vgui::ComboBox *pCombo = new vgui::ComboBox( m_pContextContent, panelName, 8, false );
+	pCombo->AddActionSignalTarget( this );
+	pCombo->SetBounds( 4, y, max( GetWide() - 28, 160 ), 20 );
+	pCombo->SetVisible( true );
+	pCombo->SetMouseInputEnabled( true );
+	pCombo->SetScheme( GetScheme() );
+
 	KeyValues *pItems = new KeyValues( "ContextItems" );
 	if ( pItems->LoadFromFile( filesystem, kvFile, "MOD" ) )
 	{
+		// LoadFromFile renames the root to the file's first section - the
+		// preset entries are that section's subkeys.
 		for ( KeyValues *pItem = pItems->GetFirstSubKey(); pItem; pItem = pItem->GetNextKey() )
 		{
 			char command[512];
@@ -1179,11 +1343,134 @@ void CContextPanel::AddContextKeyValueButtons( KeyValues *pControl, int &x, int 
 				Q_snprintf( command, sizeof(command), "%s \"%s\"", settingName, pItem->GetString() );
 			}
 
-			AddContextButton( pItem->GetName(), command, x, y, rowTall, columns );
+			ContextComboCommand_t comboCommand;
+			Q_strncpy( comboCommand.szCommand, command, sizeof(comboCommand.szCommand) );
+			int commandIndex = m_ComboCommands.AddToTail( comboCommand );
+
+			KeyValues *pUserData = new KeyValues( "ComboItem", "command_index", commandIndex );
+			pCombo->AddItem( pItem->GetName(), pUserData );
+			pUserData->deleteThis();
 		}
 	}
 	pItems->deleteThis();
+
+	ContextControl_t control;
+	memset( &control, 0, sizeof(control) );
+	control.type = CONTEXT_CTRL_COMBO;
+	Q_strncpy( control.szConVar, settingName, sizeof(control.szConVar) );
+	control.pControl = pCombo;
+	m_Controls.AddToTail( control );
+
+	y += 20 + 3;
 }
+
+//-----------------------------------------------------------------------------
+// Control lookup + slider math
+//-----------------------------------------------------------------------------
+CContextPanel::ContextControl_t *CContextPanel::FindControl( vgui::Panel *pPanel )
+{
+	for ( int i = 0; i < m_Controls.Count(); i++ )
+	{
+		if ( m_Controls[i].pControl == pPanel )
+			return &m_Controls[i];
+	}
+	return NULL;
+}
+
+float CContextPanel::GetSliderConValue( const ContextControl_t &control, int sliderPos ) const
+{
+	if ( control.bInteger )
+		return (float)sliderPos;
+
+	const float flRange = ( control.flMax > control.flMin ) ? ( control.flMax - control.flMin ) : 1.0f;
+	return control.flMin + flRange * ( (float)sliderPos / 200.0f );
+}
+
+void CContextPanel::UpdateSliderValueLabel( ContextControl_t &control, float value )
+{
+	if ( !control.pValueLabel )
+		return;
+
+	char text[32];
+	if ( control.bInteger )
+	{
+		Q_snprintf( text, sizeof(text), "%d", (int)value );
+	}
+	else
+	{
+		Q_snprintf( text, sizeof(text), "%.2f", value );
+	}
+	control.pValueLabel->SetText( text );
+}
+
+//-----------------------------------------------------------------------------
+// Action signal handlers
+//-----------------------------------------------------------------------------
+void CContextPanel::OnSliderMoved( vgui::Panel *panel, int position )
+{
+	ContextControl_t *pControl = FindControl( panel );
+	if ( !pControl || pControl->type != CONTEXT_CTRL_SLIDER || !pControl->szConVar[0] )
+		return;
+
+	float value = GetSliderConValue( *pControl, position );
+	UpdateSliderValueLabel( *pControl, value );
+
+	char command[128];
+	if ( pControl->bInteger )
+	{
+		Q_snprintf( command, sizeof(command), "%s %d\n", pControl->szConVar, (int)value );
+	}
+	else
+	{
+		Q_snprintf( command, sizeof(command), "%s %f\n", pControl->szConVar, value );
+	}
+	engine->ClientCmd( command );
+}
+
+void CContextPanel::OnCheckButtonChecked( vgui::Panel *panel, int state )
+{
+	ContextControl_t *pControl = FindControl( panel );
+	if ( !pControl || pControl->type != CONTEXT_CTRL_TOGGLE || !pControl->szConVar[0] )
+		return;
+
+	char command[128];
+	Q_snprintf( command, sizeof(command), "%s %d\n", pControl->szConVar, state ? 1 : 0 );
+	engine->ClientCmd( command );
+}
+
+void CContextPanel::OnTextChanged( vgui::Panel *panel )
+{
+	ContextControl_t *pControl = FindControl( panel );
+	if ( !pControl || pControl->type != CONTEXT_CTRL_COMBO )
+		return;
+
+	vgui::ComboBox *pCombo = dynamic_cast<vgui::ComboBox *>( panel );
+	if ( !pCombo )
+		return;
+
+	KeyValues *pUserData = pCombo->GetActiveItemUserData();
+	if ( !pUserData )
+		return;
+
+	int commandIndex = pUserData->GetInt( "command_index", -1 );
+	if ( commandIndex < 0 || commandIndex >= m_ComboCommands.Count() )
+		return;
+
+	if ( m_ComboCommands[commandIndex].szCommand[0] )
+	{
+		char command[560];
+		Q_snprintf( command, sizeof(command), "%s\n", m_ComboCommands[commandIndex].szCommand );
+		engine->ClientCmd( command );
+	}
+}
+
+vgui::MessageMapItem_t CContextPanel::m_MessageMap[] =
+{
+	MAP_MESSAGE_PTR_INT( CContextPanel, "SliderMoved", OnSliderMoved, "panel", "position" ),
+	MAP_MESSAGE_PTR_INT( CContextPanel, "CheckButtonChecked", OnCheckButtonChecked, "panel", "state" ),
+	MAP_MESSAGE_PTR( CContextPanel, "TextChanged", OnTextChanged, "panel" ),
+};
+IMPLEMENT_PANELMAP( CContextPanel, vgui::EditablePanel );
 
 bool CContextPanel::LoadContextPanelFile( const char *fileName, const char *contextType )
 {
@@ -1231,22 +1518,19 @@ bool CContextPanel::LoadContextPanelFile( const char *fileName, const char *cont
 			}
 			else if ( Q_stricmp( controlType, "keyvaluecombobox" ) == 0 )
 			{
-				AddContextKeyValueButtons( pControl, x, y, rowTall, columns );
+				AddContextComboBox( pControl, x, y, rowTall );
 			}
 			else if ( Q_stricmp( controlType, "smalltext" ) == 0 || Q_stricmp( controlType, "text" ) == 0 )
 			{
 				AddContextLabel( pControl->GetString( "label", "" ), x, y, rowTall, pControl->GetInt( "tall", 20 ) );
 			}
-			else if ( Q_stricmp( controlType, "toggle" ) == 0 || Q_stricmp( controlType, "Toggle" ) == 0 )
+			else if ( Q_stricmp( controlType, "toggle" ) == 0 )
 			{
-				const char *name = pControl->GetString( "name", "" );
-				char command[256];
-				Q_snprintf( command, sizeof(command), "toggle %s", name );
-				AddContextButton( pControl->GetString( "label", name ), command, x, y, rowTall, columns );
+				AddContextToggle( pControl, x, y, rowTall );
 			}
 			else if ( Q_stricmp( controlType, "slider" ) == 0 )
 			{
-				AddContextLabel( pControl->GetString( "label", pControl->GetString( "name", "Slider" ) ), x, y, rowTall, 16 );
+				AddContextSlider( pControl, x, y, rowTall );
 			}
 		}
 	}

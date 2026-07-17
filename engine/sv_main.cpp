@@ -3482,9 +3482,9 @@ static void SV_SendClientDatagrams ( int clientCount, client_t** clients, CFrame
 		}
 		else
 		{
-			Con_Printf( "[modeldbg] SRV datagram gate CLOSED host_tick=%i fwfa=%i outseq=%i resend=%i\n",
-				host_tickcount, pClient->m_ForceWaitForAck, pClient->netchan.outgoing_sequence,
-				pClient->m_bResendNoDelta ? 1 : 0 );
+			//Con_Printf( "[modeldbg] SRV datagram gate CLOSED host_tick=%i fwfa=%i outseq=%i resend=%i\n",
+			//	host_tickcount, pClient->m_ForceWaitForAck, pClient->netchan.outgoing_sequence,
+			//	pClient->m_bResendNoDelta ? 1 : 0 );
 		}
 
 		if ( pClient->m_ForceWaitForAck == -1 || pClient->m_bResendNoDelta )

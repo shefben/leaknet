@@ -175,12 +175,12 @@ int CServerState::PrecacheModel( char const *name, int flags, model_t *model /*=
 		return -1;
 	}
 
-	Con_DPrintf( "[modeldbg] SV PrecacheModel '%s' -> idx=%d tablecount=%d host_tick=%d cl0_ack=%d cl0_tabledef_ack=%d cl0_maxack=%d\n",
-		name, idx, networkStringTableContainerServer->GetNumStrings( m_hModelPrecacheTable ),
-		host_tickcount,
-		svs.clients ? svs.clients[0].acknowledged_tickcount : -999,
-		svs.clients ? svs.clients[0].tabledef_acknowledged_tickcount : -999,
-		svs.clients ? svs.clients[0].GetMaxAckTickCount() : -999 );
+	//Con_DPrintf( "[modeldbg] SV PrecacheModel '%s' -> idx=%d tablecount=%d host_tick=%d cl0_ack=%d cl0_tabledef_ack=%d cl0_maxack=%d\n",
+	//	name, idx, networkStringTableContainerServer->GetNumStrings( m_hModelPrecacheTable ),
+	//	host_tickcount,
+	//	svs.clients ? svs.clients[0].acknowledged_tickcount : -999,
+	//	svs.clients ? svs.clients[0].tabledef_acknowledged_tickcount : -999,
+	//	svs.clients ? svs.clients[0].GetMaxAckTickCount() : -999 );
 
 	CPrecacheUserData p;
 

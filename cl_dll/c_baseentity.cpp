@@ -1060,8 +1060,8 @@ void C_BaseEntity::SetModelIndex( int index )
 {
 	m_nModelIndex = index;
 	const model_t *pModel = modelinfo->GetModel( GetModelIndex() );
-	DevMsg( 1, "[modeldbg] CL SetModelIndex entidx=%d modelidx=%d pModel=%s\n",
-		entindex(), index, pModel ? "OK" : "NULL" );
+	//DevMsg( 1, "[modeldbg] CL SetModelIndex entidx=%d modelidx=%d pModel=%s\n",
+	//	entindex(), index, pModel ? "OK" : "NULL" );
 	SetModelPointer( pModel );
 }
 

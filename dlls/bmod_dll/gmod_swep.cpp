@@ -89,7 +89,7 @@ void CGModSWEPSystem::LevelInitPostEntity()
     DevMsg("GMod SWEP System: Level initialized, SWEPs reloaded\n");
 }
 
-bool CGModSWEPSystem::RegisterSWEP(const char* pszClassName, const char* pszScriptPath)
+bool CGModSWEPSystem::RegisterSWEP(const char* pszClassName, const char* pszScriptPath, const char* pszCategory)
 {
     if (!pszClassName || !pszScriptPath || !s_bSystemInitialized)
         return false;
@@ -110,7 +110,9 @@ bool CGModSWEPSystem::RegisterSWEP(const char* pszClassName, const char* pszScri
 
     SWEPData_t swepData;
     Q_strncpy(swepData.className, pszClassName, sizeof(swepData.className));
+    Q_strncpy(swepData.printName, pszClassName, sizeof(swepData.printName));
     Q_strncpy(swepData.scriptPath, pszScriptPath, sizeof(swepData.scriptPath));
+    Q_strncpy(swepData.category, pszCategory ? pszCategory : "Other", sizeof(swepData.category));
     swepData.isRegistered = true;
 
     s_SWEPRegistry.AddToTail(swepData);
@@ -291,6 +293,23 @@ void CGModSWEPSystem::SetSWEPLuaContext(CBaseCombatWeapon* pWeapon)
     if (!L)
         return;
 
+    // All SWEPs share one Lua state, so switching to a different weapon's
+    // context must re-run base.lua (restores default getters/hooks) and then
+    // that weapon's script (applies its overrides).
+    static char s_szActiveScript[256] = {0};
+
+    SWEPInstance_t* pInstance = FindSWEPInstance(pWeapon);
+    if (pInstance)
+    {
+        SWEPData_t* pData = FindSWEP(pInstance->className);
+        if (pData && pData->scriptPath[0] && Q_stricmp(s_szActiveScript, pData->scriptPath) != 0)
+        {
+            CGModLuaSystem::LoadScript("lua/weapons/base.lua", LUA_SCRIPT_SWEP);
+            CGModLuaSystem::LoadScript(pData->scriptPath, LUA_SCRIPT_SWEP);
+            Q_strncpy(s_szActiveScript, pData->scriptPath, sizeof(s_szActiveScript));
+        }
+    }
+
     CBasePlayer* pOwner = dynamic_cast<CBasePlayer*>(pWeapon->GetOwner());
     int ownerID = pOwner ? pOwner->entindex() : 0;
 
@@ -424,8 +443,56 @@ void CGModSWEPSystem::LoadAllSWEPs()
 {
     LoadBaseSWEP();
     LoadBuildSWEPs();
+    ScanSWEPDirectories();
 
     DevMsg("Loaded all SWEPs\n");
+}
+
+//-----------------------------------------------------------------------------
+// Scans lua/weapons/<Category>/<Name>.lua and registers every script found.
+// The folder name is the SWEP's spawn menu category (GMod 9 convention).
+//-----------------------------------------------------------------------------
+void CGModSWEPSystem::ScanSWEPDirectories()
+{
+    FileFindHandle_t dirHandle;
+    const char* pDirName = filesystem->FindFirst("lua/weapons/*", &dirHandle);
+
+    while (pDirName)
+    {
+        if (Q_strcmp(pDirName, ".") != 0 && Q_strcmp(pDirName, "..") != 0)
+        {
+            char dirPath[256];
+            Q_snprintf(dirPath, sizeof(dirPath), "lua/weapons/%s", pDirName);
+
+            if (filesystem->IsDirectory(dirPath, "GAME"))
+            {
+                char searchPath[256];
+                Q_snprintf(searchPath, sizeof(searchPath), "%s/*.lua", dirPath);
+
+                FileFindHandle_t fileHandle;
+                const char* pFileName = filesystem->FindFirst(searchPath, &fileHandle);
+                while (pFileName)
+                {
+                    char className[256];
+                    Q_strncpy(className, pFileName, sizeof(className));
+                    char* pExt = Q_stristr(className, ".lua");
+                    if (pExt)
+                        *pExt = '\0';
+
+                    char scriptPath[256];
+                    Q_snprintf(scriptPath, sizeof(scriptPath), "%s/%s", dirPath, pFileName);
+
+                    RegisterSWEP(className, scriptPath, pDirName);
+
+                    pFileName = filesystem->FindNext(fileHandle);
+                }
+                filesystem->FindClose(fileHandle);
+            }
+        }
+
+        pDirName = filesystem->FindNext(dirHandle);
+    }
+    filesystem->FindClose(dirHandle);
 }
 
 void CGModSWEPSystem::LoadBaseSWEP()
@@ -438,11 +505,11 @@ void CGModSWEPSystem::LoadBaseSWEP()
 void CGModSWEPSystem::LoadBuildSWEPs()
 {
     // Load build weapons discovered from lua/weapons/build/ directory analysis
-    RegisterSWEP("weapon_propmaker", "lua/weapons/build/weapon_propmaker.lua");
-    RegisterSWEP("weapon_cratemaker", "lua/weapons/build/weapon_cratemaker.lua");
-    RegisterSWEP("weapon_freeze", "lua/weapons/build/weapon_freeze.lua");
-    RegisterSWEP("weapon_remover", "lua/weapons/build/weapon_remover.lua");
-    RegisterSWEP("weapon_spawn", "lua/weapons/build/weapon_spawn.lua");
+    RegisterSWEP("weapon_propmaker", "lua/weapons/build/weapon_propmaker.lua", "Build");
+    RegisterSWEP("weapon_cratemaker", "lua/weapons/build/weapon_cratemaker.lua", "Build");
+    RegisterSWEP("weapon_freeze", "lua/weapons/build/weapon_freeze.lua", "Build");
+    RegisterSWEP("weapon_remover", "lua/weapons/build/weapon_remover.lua", "Build");
+    RegisterSWEP("weapon_spawn", "lua/weapons/build/weapon_spawn.lua", "Build");
 
     LoadSWEP("weapon_propmaker");
     LoadSWEP("weapon_cratemaker");
@@ -553,6 +620,112 @@ bool CGModSWEPSystem::ValidateSWEPScript(const char* pszScriptPath)
 }
 
 //-----------------------------------------------------------------------------
+// Spawn menu networking - sends the serverside SWEP registry (categorized by
+// lua/weapons/ folder) plus the spawnable HL2 weapons to one client. The
+// client shows these as extra dropdown categories in the build menu.
+//
+// GModSpawnList protocol: byte op, then for ADD:
+//   string category, string displayname, string command, byte entrytype
+// entrytype: 0 = prop model, 1 = ragdoll model, 2 = console command entry
+//-----------------------------------------------------------------------------
+struct SpawnableWeapon_t
+{
+    const char* pszClassName;
+    const char* pszDisplayName;
+};
+
+static const SpawnableWeapon_t s_SpawnableHL2Weapons[] =
+{
+    { "weapon_crowbar",     "Crowbar" },
+    { "weapon_stunstick",   "Stunstick" },
+    { "weapon_pistol",      "Pistol" },
+    { "weapon_357",         "357 Magnum" },
+    { "weapon_smg1",        "SMG" },
+    { "weapon_ar2",         "Pulse Rifle" },
+    { "weapon_shotgun",     "Shotgun" },
+    { "weapon_crossbow",    "Crossbow" },
+    { "weapon_frag",        "Grenade" },
+    { "weapon_rpg",         "RPG" },
+    { "weapon_slam",        "SLAM" },
+    { "weapon_bugbait",     "Bugbait" },
+    { "weapon_physcannon",  "Gravity Gun" },
+    { "weapon_physgun",     "Physics Gun" },
+    { "weapon_alyxgun",     "Alyx Gun" },
+    { "weapon_annabelle",   "Annabelle" },
+};
+
+void CGModSWEPSystem::SendSpawnListToPlayer(CBasePlayer* pPlayer)
+{
+    if (!pPlayer)
+        return;
+
+    CSingleUserRecipientFilter filter(pPlayer);
+    filter.MakeReliable();
+
+    // Clear any previously networked entries
+    UserMessageBegin(filter, "GModSpawnList");
+        WRITE_BYTE(0); // SPAWNMSG_CLEAR
+    MessageEnd();
+
+    // Registered SWEPs, grouped by their lua/weapons/ folder
+    for (int i = 0; i < s_SWEPRegistry.Count(); i++)
+    {
+        const SWEPData_t& swep = s_SWEPRegistry[i];
+        if (!swep.isRegistered)
+            continue;
+
+        // The shared base script isn't a spawnable weapon
+        if (Q_stricmp(swep.className, "weapon_scripted") == 0)
+            continue;
+
+        char category[96];
+        Q_snprintf(category, sizeof(category), "SWEPs - %s", swep.category);
+
+        char command[320];
+        Q_snprintf(command, sizeof(command), "gmod_give_swep \"%s\"", swep.className);
+
+        UserMessageBegin(filter, "GModSpawnList");
+            WRITE_BYTE(1); // SPAWNMSG_ADD
+            WRITE_STRING(category);
+            WRITE_STRING(swep.className);
+            WRITE_STRING(command);
+            WRITE_BYTE(2); // command entry
+        MessageEnd();
+    }
+
+    // Pick-upable HL2 weapons, spawned into the world as entities
+    for (int i = 0; i < (int)(sizeof(s_SpawnableHL2Weapons) / sizeof(s_SpawnableHL2Weapons[0])); i++)
+    {
+        char command[128];
+        Q_snprintf(command, sizeof(command), "gm_makeentity %s", s_SpawnableHL2Weapons[i].pszClassName);
+
+        UserMessageBegin(filter, "GModSpawnList");
+            WRITE_BYTE(1); // SPAWNMSG_ADD
+            WRITE_STRING("Weapons");
+            WRITE_STRING(s_SpawnableHL2Weapons[i].pszDisplayName);
+            WRITE_STRING(command);
+            WRITE_BYTE(2); // command entry
+        MessageEnd();
+    }
+
+    // Tell the client the list is complete so it refreshes the menu
+    UserMessageBegin(filter, "GModSpawnList");
+        WRITE_BYTE(2); // SPAWNMSG_RELOAD
+    MessageEnd();
+
+    DevMsg("GMod SWEP System: Sent spawn list to player %d\n", pPlayer->entindex());
+}
+
+void CMD_gmod_request_sweps(void)
+{
+    CBasePlayer* pPlayer = GetCommandPlayer();
+    if (!pPlayer)
+        return;
+
+    CGModSWEPSystem::SendSpawnListToPlayer(pPlayer);
+}
+
+//-----------------------------------------------------------------------------
 // Console command implementations discovered from IDA analysis
 //-----------------------------------------------------------------------------
 void CMD_gmod_give_swep(void)
@@ -574,11 +747,20 @@ void CMD_gmod_give_swep(void)
         return;
     }
 
-    // Give the weapon to the player
+    // SWEPs with real C++ entity classes (weapon_propmaker etc.) are given
+    // directly; pure Lua SWEPs go through the shared weapon_scripted entity.
     CBaseCombatWeapon* pWeapon = dynamic_cast<CBaseCombatWeapon*>(pPlayer->GiveNamedItem(swepName));
     if (pWeapon)
     {
         CGModSWEPSystem::InitializeSWEPInstance(pWeapon, swepName);
+    }
+    else
+    {
+        pWeapon = GMod_GiveScriptedWeapon(pPlayer, swepName);
+    }
+
+    if (pWeapon)
+    {
         ClientPrint(pPlayer, HUD_PRINTTALK, "Given SWEP: %s", swepName);
     }
     else
@@ -693,6 +875,7 @@ void CMD_gmod_give_spawn(void)
 static ConCommand gmod_give_swep_cmd("gmod_give_swep", CMD_gmod_give_swep, "Give a SWEP to the player");
 static ConCommand gmod_reload_sweps_cmd("gmod_reload_sweps", CMD_gmod_reload_sweps, "Reload all SWEPs");
 static ConCommand gmod_list_sweps_cmd("gmod_list_sweps", CMD_gmod_list_sweps, "List all available SWEPs");
+static ConCommand gmod_request_sweps_cmd("gmod_request_sweps", CMD_gmod_request_sweps, "Send the SWEP spawn list to the requesting client");
 
 // Individual SWEP command registration
 static ConCommand gmod_give_propmaker_cmd("gmod_give_propmaker", CMD_gmod_give_propmaker, "Give prop maker SWEP");

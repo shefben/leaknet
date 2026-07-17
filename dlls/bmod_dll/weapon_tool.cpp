@@ -31,11 +31,12 @@ ConVar bm_toolsound("bm_toolsound", "1", FCVAR_ARCHIVE, "Enable tool sounds");
 
 //-----------------------------------------------------------------------------
 // Tool information table, indexed by the authentic ToolMode_t values.
-// Every tool shares the same view/world model as the real GMod tool gun;
-// only sound/range/delay differ meaningfully.
+// Every tool shares the same view/world model as the real GMod 9 tool gun -
+// the crossbow (matches scripts/weapon_tool.txt, which is what actually
+// drives the equipped model); only sound/range/delay differ meaningfully.
 //-----------------------------------------------------------------------------
-#define TOOLGUN_VM	"models/weapons/v_pistol.mdl"
-#define TOOLGUN_WM	"models/weapons/w_pistol.mdl"
+#define TOOLGUN_VM	"models/weapons/v_crossbow.mdl"
+#define TOOLGUN_WM	"models/weapons/w_crossbow.mdl"
 #define TOOLGUN_SND	"garrysmod/balloon_pop_cute.wav"
 #define TOOLCON_SND	"garrysmod/constraint_sound1.wav"
 
@@ -71,7 +72,7 @@ ToolInfo_t CWeaponTool::s_ToolInfo[TOOL_MAX] =
 	{ "Emitter",	"Emitter",		"Attach a particle emitter","Left click to attach",					TOOLGUN_VM, TOOLGUN_WM, TOOLGUN_SND, 0, 512.0f, 0.5f },	// 27 TOOL_EMITTER
 	{ "Sprite",		"Sprites",		"Attach a sprite",		"Left click to attach",						TOOLGUN_VM, TOOLGUN_WM, TOOLGUN_SND, 0, 512.0f, 0.5f },	// 28 TOOL_SPRITE
 	{ "Wheel",		"Wheels",		"Attach a wheel axle",	"Click a prop, then a second prop",			TOOLGUN_VM, TOOLGUN_WM, TOOLCON_SND, 0, 256.0f, 0.5f },	// 29 TOOL_WHEEL
-	{ "Gun",		"Gun Tool",		"Shoot at things",		"Left click to shoot",							"models/weapons/v_pistol.mdl", "models/weapons/w_pistol.mdl", "Weapon_Pistol.Single", 0, 2048.0f, 0.2f },	// 30 TOOL_GUN
+	{ "Gun",		"Gun Tool",		"Shoot at things",		"Left click to shoot",							TOOLGUN_VM, TOOLGUN_WM, "Weapon_Pistol.Single", 0, 2048.0f, 0.2f },	// 30 TOOL_GUN
 	{ "Camera",		"Camera Tool",	"Take screenshots",	"Left click to take photo",						TOOLGUN_VM, TOOLGUN_WM, "NPC_CScanner.TakePhoto", 0, 1024.0f, 1.0f },	// 31 TOOL_CAMERA
 	{ "NPCSpawn",	"NPC Tool",		"Spawn NPCs",			"Left click to spawn NPC",						TOOLGUN_VM, TOOLGUN_WM, "physics/wood/wood_crate_break5.wav", 0, 512.0f, 0.5f },	// 32 TOOL_NPCSPAWN
 	{ "Inflator",	"Inflator",		"Resize props",			"Left click to grow, right click to shrink",	TOOLGUN_VM, TOOLGUN_WM, TOOLGUN_SND, 0, 256.0f, 0.3f },	// 33 TOOL_INFLATOR
@@ -104,7 +105,9 @@ BEGIN_DATADESC( CWeaponTool )
 	DEFINE_FIELD( CWeaponTool, m_hLastTarget, FIELD_EHANDLE ),
 	DEFINE_FIELD( CWeaponTool, m_vecLastTargetPos, FIELD_POSITION_VECTOR ),
 	DEFINE_FIELD( CWeaponTool, m_hPendingEntity, FIELD_EHANDLE ),
+	DEFINE_FIELD( CWeaponTool, m_bPendingWorld, FIELD_BOOLEAN ),
 	DEFINE_FIELD( CWeaponTool, m_vecPendingPos, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD( CWeaponTool, m_nPendingPhysBone, FIELD_INTEGER ),
 	DEFINE_FIELD( CWeaponTool, m_flPendingTime, FIELD_TIME ),
 END_DATADESC()
 
@@ -130,7 +133,9 @@ CWeaponTool::CWeaponTool()
 	m_hLastTarget = NULL;
 	m_vecLastTargetPos = vec3_origin;
 	m_hPendingEntity = NULL;
+	m_bPendingWorld = false;
 	m_vecPendingPos = vec3_origin;
+	m_nPendingPhysBone = -1;
 	m_flPendingTime = 0.0f;
 }
 
@@ -170,6 +175,11 @@ void CWeaponTool::Precache()
 	PrecacheScriptSound( "garrysmod/balloon_pop_cute.wav" );
 	PrecacheScriptSound( "garrysmod/save_sound1.wav" );
 	PrecacheScriptSound( "garrysmod/constraint_sound1.wav" );
+
+	// Rope material used by the constraint tools' visual ropes
+	// (tool_constraints.cpp) - CRopeKeyframe::SetMaterial does a late
+	// PrecacheModel otherwise.
+	PrecacheModel( "cable/cable.vmt" );
 }
 
 //-----------------------------------------------------------------------------

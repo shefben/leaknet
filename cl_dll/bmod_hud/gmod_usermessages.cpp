@@ -185,13 +185,10 @@ void CGModMaterialRect::SetMaterial(const char *materialPath)
 			m_iTextureID = vgui::surface()->CreateNewTextureID();
 		}
 
-		char texturePath[256];
-		Q_snprintf(texturePath, sizeof(texturePath), "materials/%s.vtf", m_szMaterialPath);
-
-		// Bind a concrete VTF path for VGUI. FindMaterial wants the extensionless
-		// material name, but this older surface path reports missing materials
-		// unless the VTF path includes the materials/ prefix and extension.
-		vgui::surface()->DrawSetTextureFile(m_iTextureID, texturePath, true, false);
+		// The VGUI surface hands this name straight to FindMaterial, which wants
+		// the extensionless material name relative to materials/ - passing a
+		// "materials/x.vtf" path fails the lookup and draws the checkerboard.
+		vgui::surface()->DrawSetTextureFile(m_iTextureID, m_szMaterialPath, true, false);
 	}
 }
 

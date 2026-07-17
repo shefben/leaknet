@@ -67,7 +67,14 @@ public:
 	void SaveModStates();
 	void LoadModStates();
 
+	// Cache manifest - skip rebuilding when the mod set hasn't changed
+	bool IsCacheUpToDate();
+	void SaveCacheManifest();
+
 private:
+	// Compute a signature (file count + newest write time) for one mod folder
+	void BuildModSignature( const char *szFolderName, int &fileCount, long &newestTime );
+	void BuildDirectorySignature( const char *szRelativeDir, int &fileCount, long &newestTime );
 	// Parse modinfo.txt for a mod
 	void ParseModInfo( ModEntry_t &mod );
 
@@ -101,6 +108,7 @@ void CC_ModRefresh();
 //-----------------------------------------------------------------------------
 #define MODCACHE_PATH		"mods/-modcache"
 #define MODCACHE_STATE_FILE	"mods/-modcache/modcache.txt"
+#define MODCACHE_MANIFEST_FILE	"mods/-modcache/cache_manifest.txt"
 #define MODS_FOLDER			"mods"
 #define MODINFO_FILE		"modinfo.txt"
 

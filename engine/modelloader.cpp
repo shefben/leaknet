@@ -3613,6 +3613,56 @@ bool Mod_LoadStudioModelVvdFileIntoTempBuffer( model_t *mod, CUtlMemory<unsigned
 	DevMsg("Loaded VVD: %s (version %d, %d LODs)\n",
 		tempFileName, pVvdHdr->version, pVvdHdr->numLODs);
 
+	// Perform vertex fixups if required
+	if (pVvdHdr->numFixups > 0)
+	{
+		int rootLOD = 0; // Target the highest detail LOD
+
+		// Temporary buffers for sorted data
+		int numSortedVerts = pVvdHdr->numLODVertexes[rootLOD];
+		mstudiovertex_t *pSortedVerts = new mstudiovertex_t[numSortedVerts];
+		Vector4D *pSortedTangents = NULL;
+		
+		if (pVvdHdr->tangentDataStart != 0)
+		{
+			pSortedTangents = new Vector4D[numSortedVerts];
+		}
+
+		vertexFileFixup_t *pFixups = (vertexFileFixup_t *)(((byte *)pVvdHdr) + pVvdHdr->fixupTableStart);
+		mstudiovertex_t *pVerts = (mstudiovertex_t *)(((byte *)pVvdHdr) + pVvdHdr->vertexDataStart);
+		Vector4D *pTangents = pVvdHdr->tangentDataStart ? (Vector4D *)(((byte *)pVvdHdr) + pVvdHdr->tangentDataStart) : NULL;
+
+		int targetVertexID = 0;
+		for (int i = 0; i < pVvdHdr->numFixups; i++)
+		{
+			if (pFixups[i].lod >= rootLOD)
+			{
+				if (targetVertexID + pFixups[i].numVertexes > numSortedVerts)
+				{
+					DevWarning("VVD fixup error: buffer overrun in %s\n", tempFileName);
+					break;
+				}
+
+				memcpy(&pSortedVerts[targetVertexID], &pVerts[pFixups[i].sourceVertexID], pFixups[i].numVertexes * sizeof(mstudiovertex_t));
+				if (pSortedTangents && pTangents)
+				{
+					memcpy(&pSortedTangents[targetVertexID], &pTangents[pFixups[i].sourceVertexID], pFixups[i].numVertexes * sizeof(Vector4D));
+				}
+				targetVertexID += pFixups[i].numVertexes;
+			}
+		}
+
+		// Copy sorted data back to the VVD memory buffer
+		memcpy(pVerts, pSortedVerts, targetVertexID * sizeof(mstudiovertex_t));
+		delete[] pSortedVerts;
+
+		if (pSortedTangents && pTangents)
+		{
+			memcpy(pTangents, pSortedTangents, targetVertexID * sizeof(Vector4D));
+			delete[] pSortedTangents;
+		}
+	}
+
 	return true;
 }
 

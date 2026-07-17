@@ -19,9 +19,19 @@
 #include "util.h"
 #include "physics.h"
 #include "vphysics/constraints.h"
+#include "rope.h"
+#include "physics_prop_ragdoll.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+//-----------------------------------------------------------------------------
+// Invisible point entity used as a keyframe_rope endpoint so the visual rope
+// can be strung between the exact click positions (rope endpoints are entity
+// origins, and there is no plain "info_target" in this codebase). Parented to
+// the clicked prop so it follows it; left unparented for world attach points.
+//-----------------------------------------------------------------------------
+LINK_ENTITY_TO_CLASS( gmod_ropeanchor, CPointEntity );
 
 //-----------------------------------------------------------------------------
 // Console variables
@@ -41,15 +51,20 @@ struct ConstraintInfo_t
 	EHANDLE				hEntity1;
 	EHANDLE				hEntity2;			// invalid/NULL if bWorldAttached
 	bool				bWorldAttached;		// true if this constraint anchors hEntity1 to the world
+	bool				bVisualOnly;		// rope strung between two world points - no physics constraint at all
 	bool				bDisabledCollision;	// true if we disabled collisions between hEntity1/hEntity2
 	IPhysicsConstraint	*pConstraint;		// used by every mode except Elastic
 	IPhysicsSpring		*pSpring;			// used only by Elastic
+	EHANDLE				hRope;				// visual keyframe_rope (rope-like modes only)
+	EHANDLE				hAnchor1;			// gmod_ropeanchor rope endpoints at the click positions
+	EHANDLE				hAnchor2;
 	float				flCreateTime;
 
 	ConstraintInfo_t()
 	{
 		nMode = TOOL_NONE;
 		bWorldAttached = false;
+		bVisualOnly = false;
 		bDisabledCollision = false;
 		pConstraint = NULL;
 		pSpring = NULL;
@@ -102,6 +117,94 @@ static bool SupportsWorldAttach( int nMode )
 			return true;
 	}
 	return false;
+}
+
+// Rope-like modes get a visible cable strung between the two click points.
+static bool WantsRopeVisual( int nMode )
+{
+	switch ( nMode )
+	{
+		case TOOL_ROPE:
+		case TOOL_ELASTIC:
+		case TOOL_PULLEY:
+		case TOOL_SLIDER:
+			return true;
+	}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Resolves the physics object a click actually landed on. Ragdolls are made
+// of many physics objects (one per phys bone), so constraining a ragdoll must
+// use the clicked limb's object (trace physicsbone), not VPhysicsGetObject()
+// - that's what lets ropes tied to a hand/foot make swings.
+//-----------------------------------------------------------------------------
+static IPhysicsObject *PhysObjectFromBone( CBaseEntity *pEntity, int nPhysBone )
+{
+	if ( !pEntity )
+		return NULL;
+
+	CRagdollProp *pRagdollProp = dynamic_cast<CRagdollProp*>( pEntity );
+	if ( pRagdollProp )
+	{
+		ragdoll_t *pRagdoll = pRagdollProp->GetRagdoll();
+
+		if ( nPhysBone >= 0 && nPhysBone < pRagdoll->listCount && pRagdoll->list[nPhysBone].pObject )
+			return pRagdoll->list[nPhysBone].pObject;
+
+		return ( pRagdoll->listCount > 0 ) ? pRagdoll->list[0].pObject : NULL;
+	}
+
+	return pEntity->VPhysicsGetObject();
+}
+
+//-----------------------------------------------------------------------------
+// Creates a gmod_ropeanchor at vecPos, parented to pAttachTo (or free-standing
+// for a world attach point), for use as a keyframe_rope endpoint.
+//-----------------------------------------------------------------------------
+static CBaseEntity *CreateRopeAnchor( CBaseEntity *pAttachTo, const Vector &vecPos )
+{
+	CBaseEntity *pAnchor = CBaseEntity::Create( "gmod_ropeanchor", vecPos, vec3_angle, NULL );
+	if ( !pAnchor )
+		return NULL;
+
+	if ( pAttachTo )
+		pAnchor->SetParent( pAttachTo );
+
+	return pAnchor;
+}
+
+//-----------------------------------------------------------------------------
+// Strings the visible cable between the two click points and stores the
+// created entities on pInfo. Purely cosmetic - failure here never fails the
+// constraint itself.
+//-----------------------------------------------------------------------------
+static void AttachRopeVisual( ConstraintInfo_t *pInfo, CBaseEntity *pEnt1, const Vector &vecPos1,
+							   CBaseEntity *pEnt2, const Vector &vecPos2 )
+{
+	CBaseEntity *pAnchor1 = CreateRopeAnchor( pEnt1, vecPos1 );
+	CBaseEntity *pAnchor2 = CreateRopeAnchor( pEnt2, vecPos2 );
+
+	if ( !pAnchor1 || !pAnchor2 )
+	{
+		if ( pAnchor1 )
+			UTIL_Remove( pAnchor1 );
+		if ( pAnchor2 )
+			UTIL_Remove( pAnchor2 );
+		return;
+	}
+
+	CRopeKeyframe *pRope = CRopeKeyframe::Create( pAnchor1, pAnchor2, 0, 0, 2, "cable/cable.vmt", 8 );
+	if ( !pRope )
+	{
+		UTIL_Remove( pAnchor1 );
+		UTIL_Remove( pAnchor2 );
+		return;
+	}
+
+	pInfo->hAnchor1 = pAnchor1;
+	pInfo->hAnchor2 = pAnchor2;
+	pInfo->hRope = pRope;
 }
 
 //-----------------------------------------------------------------------------
@@ -234,6 +337,24 @@ static void DestroyConstraintInfo( ConstraintInfo_t *pInfo )
 		pInfo->pSpring = NULL;
 	}
 
+	if ( pInfo->hRope.Get() )
+	{
+		UTIL_Remove( pInfo->hRope.Get() );
+		pInfo->hRope = NULL;
+	}
+
+	if ( pInfo->hAnchor1.Get() )
+	{
+		UTIL_Remove( pInfo->hAnchor1.Get() );
+		pInfo->hAnchor1 = NULL;
+	}
+
+	if ( pInfo->hAnchor2.Get() )
+	{
+		UTIL_Remove( pInfo->hAnchor2.Get() );
+		pInfo->hAnchor2 = NULL;
+	}
+
 	if ( pInfo->bDisabledCollision )
 	{
 		CBaseEntity *pEnt1 = pInfo->hEntity1.Get();
@@ -251,41 +372,88 @@ static void DestroyConstraintInfo( ConstraintInfo_t *pInfo )
 }
 
 //-----------------------------------------------------------------------------
-// Attempts to build and register a constraint between pEnt1 and pEnt2.
-// pEnt2 may be NULL to mean "attach to the world" (only valid for modes
-// where SupportsWorldAttach() is true - caller is expected to have checked).
+// Attempts to build and register a constraint between the two click points.
+// Either entity may be NULL to mean "that click landed on the world":
+//  - one NULL: attach the other entity to the world (modes where
+//    SupportsWorldAttach() is true - caller is expected to have checked)
+//  - both NULL: purely visual rope strung between two world points
+//    (TOOL_ROPE only - caller is expected to have checked)
 //-----------------------------------------------------------------------------
-static bool CreateAndRegisterConstraint( int nMode, CBaseEntity *pEnt1, CBaseEntity *pEnt2,
-										  const Vector &vecPos1, const Vector &vecPos2 )
+static bool CreateAndRegisterConstraint( int nMode, CBaseEntity *pEnt1, const Vector &vecClick1, int nBone1,
+										  CBaseEntity *pEnt2, const Vector &vecClick2, int nBone2 )
 {
-	if ( !pEnt1 )
-		return false;
+	// Keep the real physics entity in slot 1 so the registry/cleanup logic
+	// has one shape regardless of which click hit the world.
+	CBaseEntity *pFirst = pEnt1;
+	CBaseEntity *pSecond = pEnt2;
+	Vector vecPos1 = vecClick1;
+	Vector vecPos2 = vecClick2;
+	int nFirstBone = nBone1;
+	int nSecondBone = nBone2;
 
-	IPhysicsObject *pPhys1 = pEnt1->VPhysicsGetObject();
-	IPhysicsObject *pPhys2 = pEnt2 ? pEnt2->VPhysicsGetObject() : g_PhysWorldObject;
-
-	if ( !pPhys1 || !pPhys2 )
-		return false;
-
-	IPhysicsSpring *pSpring = NULL;
-	IPhysicsConstraint *pConstraint = CreateConstraintForMode( nMode, pPhys1, pPhys2, vecPos1, vecPos2, &pSpring );
-
-	if ( !pConstraint && !pSpring )
-		return false;
+	if ( !pFirst && pSecond )
+	{
+		pFirst = pSecond;
+		pSecond = NULL;
+		vecPos1 = vecClick2;
+		vecPos2 = vecClick1;
+		nFirstBone = nBone2;
+		nSecondBone = nBone1;
+	}
 
 	ConstraintInfo_t *pInfo = new ConstraintInfo_t;
 	pInfo->nMode = nMode;
-	pInfo->hEntity1 = pEnt1;
-	pInfo->hEntity2 = pEnt2;
-	pInfo->bWorldAttached = ( pEnt2 == NULL );
-	pInfo->pConstraint = pConstraint;
-	pInfo->pSpring = pSpring;
 	pInfo->flCreateTime = gpGlobals->curtime;
 
-	if ( ( nMode == TOOL_WELD || nMode == TOOL_EASYWELD ) && pEnt2 && bm_weld_nocollide.GetBool() )
+	if ( !pFirst )
 	{
-		physenv->DisableCollisions( pPhys1, pPhys2 );
-		pInfo->bDisabledCollision = true;
+		// World-to-world: no physics, just the cable.
+		pInfo->bVisualOnly = true;
+		pInfo->bWorldAttached = true;
+	}
+	else
+	{
+		IPhysicsObject *pPhys1 = PhysObjectFromBone( pFirst, nFirstBone );
+		IPhysicsObject *pPhys2 = pSecond ? PhysObjectFromBone( pSecond, nSecondBone ) : g_PhysWorldObject;
+
+		if ( !pPhys1 || !pPhys2 )
+		{
+			delete pInfo;
+			return false;
+		}
+
+		IPhysicsSpring *pSpring = NULL;
+		IPhysicsConstraint *pConstraint = CreateConstraintForMode( nMode, pPhys1, pPhys2, vecPos1, vecPos2, &pSpring );
+
+		if ( !pConstraint && !pSpring )
+		{
+			delete pInfo;
+			return false;
+		}
+
+		pInfo->hEntity1 = pFirst;
+		pInfo->hEntity2 = pSecond;
+		pInfo->bWorldAttached = ( pSecond == NULL );
+		pInfo->pConstraint = pConstraint;
+		pInfo->pSpring = pSpring;
+
+		if ( ( nMode == TOOL_WELD || nMode == TOOL_EASYWELD ) && pSecond && bm_weld_nocollide.GetBool() )
+		{
+			physenv->DisableCollisions( pPhys1, pPhys2 );
+			pInfo->bDisabledCollision = true;
+		}
+	}
+
+	if ( WantsRopeVisual( nMode ) )
+	{
+		AttachRopeVisual( pInfo, pFirst, vecPos1, pSecond, vecPos2 );
+	}
+
+	if ( pInfo->bVisualOnly && !pInfo->hRope.Get() )
+	{
+		// Nothing physical and the cable failed - nothing to keep.
+		delete pInfo;
+		return false;
 	}
 
 	g_ToolConstraints.AddToTail( pInfo );
@@ -326,6 +494,44 @@ static void RemoveConstraintsOnEntity( CBasePlayer *pOwner, CBaseEntity *pEntity
 }
 
 //-----------------------------------------------------------------------------
+// Removes world-to-world ropes with an endpoint near vecPos (right-click on
+// the world - those ropes touch no prop, so RemoveConstraintsOnEntity can
+// never reach them).
+//-----------------------------------------------------------------------------
+static void RemoveVisualOnlyRopesNear( CBasePlayer *pOwner, const Vector &vecPos )
+{
+	int nRemoved = 0;
+
+	for ( int i = g_ToolConstraints.Count() - 1; i >= 0; i-- )
+	{
+		ConstraintInfo_t *pInfo = g_ToolConstraints[i];
+		if ( !pInfo->bVisualOnly )
+			continue;
+
+		CBaseEntity *pAnchor1 = pInfo->hAnchor1.Get();
+		CBaseEntity *pAnchor2 = pInfo->hAnchor2.Get();
+
+		bool bNear = ( pAnchor1 && pAnchor1->GetAbsOrigin().DistTo( vecPos ) < 64.0f ) ||
+					 ( pAnchor2 && pAnchor2->GetAbsOrigin().DistTo( vecPos ) < 64.0f );
+
+		if ( bNear )
+		{
+			DestroyConstraintInfo( pInfo );
+			g_ToolConstraints.Remove( i );
+			delete pInfo;
+			nRemoved++;
+		}
+	}
+
+	if ( nRemoved && pOwner )
+	{
+		char szBuf[64];
+		Q_snprintf( szBuf, sizeof( szBuf ), "Removed %d rope(s)", nRemoved );
+		ClientPrint( pOwner, HUD_PRINTTALK, szBuf );
+	}
+}
+
+//-----------------------------------------------------------------------------
 // Clears out constraints whose entities have gone away (removed/killed).
 //-----------------------------------------------------------------------------
 static void CleanupConstraints()
@@ -333,13 +539,23 @@ static void CleanupConstraints()
 	for ( int i = g_ToolConstraints.Count() - 1; i >= 0; i-- )
 	{
 		ConstraintInfo_t *pInfo = g_ToolConstraints[i];
-		CBaseEntity *pEnt1 = pInfo->hEntity1.Get();
-		CBaseEntity *pEnt2 = pInfo->hEntity2.Get();
 
-		bool bInvalid = ( !pEnt1 || !pEnt1->VPhysicsGetObject() );
+		bool bInvalid;
+		if ( pInfo->bVisualOnly )
+		{
+			// No entities to validate - only dies if the rope itself is gone.
+			bInvalid = ( pInfo->hRope.Get() == NULL );
+		}
+		else
+		{
+			CBaseEntity *pEnt1 = pInfo->hEntity1.Get();
+			CBaseEntity *pEnt2 = pInfo->hEntity2.Get();
 
-		if ( !pInfo->bWorldAttached && ( !pEnt2 || !pEnt2->VPhysicsGetObject() ) )
-			bInvalid = true;
+			bInvalid = ( !pEnt1 || !pEnt1->VPhysicsGetObject() );
+
+			if ( !pInfo->bWorldAttached && ( !pEnt2 || !pEnt2->VPhysicsGetObject() ) )
+				bInvalid = true;
+		}
 
 		if ( bInvalid )
 		{
@@ -365,18 +581,16 @@ void Tool_Constraint_OnUse( CWeaponTool *pTool, int nMode, CBaseEntity *pEntity,
 		return;
 	}
 
-	CBaseEntity *pPending = pTool->GetPendingEntity();
-
-	if ( !pPending )
+	if ( !pTool->HasPendingSelection() )
 	{
-		IPhysicsObject *pPhys = pEntity->VPhysicsGetObject();
+		IPhysicsObject *pPhys = PhysObjectFromBone( pEntity, tr.physicsbone );
 		if ( !pPhys )
 		{
 			ClientPrint( pOwner, HUD_PRINTTALK, "That object has no physics" );
 			return;
 		}
 
-		pTool->SetPendingSelection( pEntity, tr.endpos );
+		pTool->SetPendingSelection( pEntity, tr.endpos, tr.physicsbone );
 		pTool->PlayToolSound( "buttons/button14.wav" );
 
 		if ( IsVerboseConstraintMode( nMode ) )
@@ -388,27 +602,31 @@ void Tool_Constraint_OnUse( CWeaponTool *pTool, int nMode, CBaseEntity *pEntity,
 		return;
 	}
 
-	if ( pPending == pEntity )
+	CBaseEntity *pPending = pTool->GetPendingEntity();	// NULL when the first click landed on the world
+
+	if ( pPending && pPending == pEntity )
 	{
 		pTool->ClearPendingSelection();
 		ClientPrint( pOwner, HUD_PRINTTALK, "Selection cancelled" );
 		return;
 	}
 
-	IPhysicsObject *pPhys2 = pEntity->VPhysicsGetObject();
+	IPhysicsObject *pPhys2 = PhysObjectFromBone( pEntity, tr.physicsbone );
 	if ( !pPhys2 )
 	{
 		ClientPrint( pOwner, HUD_PRINTTALK, "That object has no physics" );
 		return;
 	}
 
-	bool bOk = CreateAndRegisterConstraint( nMode, pPending, pEntity, pTool->GetPendingPos(), tr.endpos );
+	bool bOk = CreateAndRegisterConstraint( nMode, pPending, pTool->GetPendingPos(), pTool->GetPendingPhysBone(),
+											pEntity, tr.endpos, tr.physicsbone );
 
 	char szBuf[128];
 	if ( bOk )
 	{
 		pTool->PlayToolSound( "weapons/physcannon/energy_sing_loop4.wav" );
-		Q_snprintf( szBuf, sizeof( szBuf ), "%s created between %s and %s", GetConstraintModeName( nMode ), pPending->GetClassname(), pEntity->GetClassname() );
+		Q_snprintf( szBuf, sizeof( szBuf ), "%s created between %s and %s", GetConstraintModeName( nMode ),
+			pPending ? pPending->GetClassname() : "world", pEntity->GetClassname() );
 	}
 	else
 	{
@@ -429,11 +647,33 @@ void Tool_Constraint_OnTrace( CWeaponTool *pTool, int nMode, trace_t &tr, bool b
 		return;
 
 	if ( !bPrimary )
+	{
+		// Right-click on the world: clean up world-to-world ropes near the
+		// hit point (they touch no prop, so entity-based removal misses them).
+		if ( tr.fraction < 1.0f )
+			RemoveVisualOnlyRopesNear( pOwner, tr.endpos );
 		return;
+	}
 
-	CBaseEntity *pPending = pTool->GetPendingEntity();
-	if ( !pPending )
+	if ( !pTool->HasPendingSelection() )
+	{
+		// First click landed on the world - a valid rope starting point for
+		// the world-attach modes; other constraint modes keep waiting for a
+		// prop.
+		if ( SupportsWorldAttach( nMode ) && tr.fraction < 1.0f )
+		{
+			pTool->SetPendingSelection( NULL, tr.endpos );
+			pTool->PlayToolSound( "buttons/button14.wav" );
+
+			if ( IsVerboseConstraintMode( nMode ) )
+			{
+				char szBuf[128];
+				Q_snprintf( szBuf, sizeof( szBuf ), "%s: selected world point - click a prop or another point", GetConstraintModeName( nMode ) );
+				ClientPrint( pOwner, HUD_PRINTTALK, szBuf );
+			}
+		}
 		return;
+	}
 
 	if ( !SupportsWorldAttach( nMode ) )
 	{
@@ -442,7 +682,21 @@ void Tool_Constraint_OnTrace( CWeaponTool *pTool, int nMode, trace_t &tr, bool b
 		return;
 	}
 
-	bool bOk = CreateAndRegisterConstraint( nMode, pPending, NULL, pTool->GetPendingPos(), tr.endpos );
+	if ( tr.fraction >= 1.0f )
+		return;	// shot into the sky - keep the pending selection
+
+	CBaseEntity *pPending = pTool->GetPendingEntity();
+
+	if ( !pPending && nMode != TOOL_ROPE )
+	{
+		// Both clicks on the world only makes sense as a decorative rope.
+		pTool->ClearPendingSelection();
+		ClientPrint( pOwner, HUD_PRINTTALK, "Selection cancelled - aim at a prop" );
+		return;
+	}
+
+	bool bOk = CreateAndRegisterConstraint( nMode, pPending, pTool->GetPendingPos(), pTool->GetPendingPhysBone(),
+											NULL, tr.endpos, -1 );
 
 	char szBuf[128];
 	if ( bOk )
@@ -464,8 +718,7 @@ void Tool_Constraint_OnTrace( CWeaponTool *pTool, int nMode, trace_t &tr, bool b
 //-----------------------------------------------------------------------------
 void Tool_Constraint_OnThink( CWeaponTool *pTool, int nMode )
 {
-	CBaseEntity *pPending = pTool->GetPendingEntity();
-	if ( pPending && ( gpGlobals->curtime - pTool->GetPendingTime() ) > 10.0f )
+	if ( pTool->HasPendingSelection() && ( gpGlobals->curtime - pTool->GetPendingTime() ) > 10.0f )
 	{
 		pTool->ClearPendingSelection();
 

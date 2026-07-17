@@ -111,24 +111,10 @@ void CNetworkStringTableServer::CheckDirectUpdate( client_t *client )
 		// Client is up to date
 		if ( p->GetTickCount() <= client_ack )
 		{
-#ifndef SWDS
-			if ( !Q_stricmp( GetTableName(), MODEL_PRECACHE_TABLENAME ) )
-			{
-				Con_Printf( "[modeldbg] SRV CheckDirectUpdate SKIP table='%s' i=%i str='%s' tick=%i client_ack=%i (ack=%i tabledef_ack=%i)\n",
-					GetTableName(), i, GetString( i ), p->GetTickCount(), client_ack,
-					client->acknowledged_tickcount, client->tabledef_acknowledged_tickcount );
-			}
-#endif
 			continue;
 		}
 
 #ifndef SWDS
-		if ( !Q_stricmp( GetTableName(), MODEL_PRECACHE_TABLENAME ) )
-		{
-			Con_Printf( "[modeldbg] SRV CheckDirectUpdate table='%s' id=%i i=%i str='%s' tick=%i client_ack=%i\n",
-				GetTableName(), GetTableId(), i, GetString( i ), p->GetTickCount(), client_ack );
-		}
-
 		// Oh yeah, gotta slam these strings directly for the backdoor thing to work...
 		LocalNetworkBackDoor_DirectStringTableUpdate( GetTableId(),
 			i, GetString( i ), p->GetUserDataLength(), p->GetUserData() );
@@ -155,29 +141,6 @@ bool CNetworkStringTableServer::NeedsUpdate( client_t *client )
 
 	int count = GetNumStrings();
 
-#ifndef SWDS
-	// [modeldbg] Throttled gate diagnostic for the model precache table
-	if ( !Q_stricmp( GetTableName(), MODEL_PRECACHE_TABLENAME ) )
-	{
-		static int s_nLastLogTick = -1000;
-		if ( host_tickcount - s_nLastLogTick >= 100 )
-		{
-			s_nLastLogTick = host_tickcount;
-			int maxItemTick = 0;
-			for ( int j = 0; j < count; j++ )
-			{
-				int t = GetItem( j )->GetTickCount();
-				if ( t > maxItemTick )
-					maxItemTick = t;
-			}
-			Con_Printf( "[modeldbg] SRV NeedsUpdate gate count=%i maxItemTick=%i client_ack=%i ack=%i tabledef_ack=%i host_tick=%i backdoor=%i\n",
-				count, maxItemTick, client_ack, client->acknowledged_tickcount,
-				client->tabledef_acknowledged_tickcount, host_tickcount,
-				client->m_bUsedLocalNetworkBackdoor ? 1 : 0 );
-		}
-	}
-#endif
-
 	for ( int i = 0; i < count; i++ )
 	{
 		CNetworkStringTableItem *p = GetItem( i );
@@ -200,12 +163,6 @@ bool CNetworkStringTableServer::NeedsUpdate( client_t *client )
 			continue;
 		}
 #endif
-
-		if ( !Q_stricmp( GetTableName(), MODEL_PRECACHE_TABLENAME ) )
-		{
-			Con_Printf( "[modeldbg] SRV NeedsUpdate PENDING i=%i str='%s' tick=%i client_ack=%i host_tick=%i\n",
-				i, GetString( i ), p->GetTickCount(), client_ack, host_tickcount );
-		}
 
 		return true;
 	}
@@ -244,12 +201,6 @@ void CNetworkStringTableServer::SendClientUpdate( client_t *client, bf_write *ms
 	// If nothing changed, don't send anything
 	if ( changedEntries.Count() == 0 )
 		return;
-
-	if ( !Q_stricmp( GetTableName(), MODEL_PRECACHE_TABLENAME ) )
-	{
-		Con_Printf( "[modeldbg] SRV SendClientUpdate entries=%i first=%i last=%i client_ack=%i\n",
-			changedEntries.Count(), changedEntries[0], changedEntries[changedEntries.Count()-1], client_ack );
-	}
 
 	// 2007 protocol: Write entry data to temp buffer first to calculate data length
 	static unsigned char tempBuffer[65536];

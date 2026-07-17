@@ -548,11 +548,12 @@ void IN_MenuDown(void)
 	KeyDown(&in_menu);
 
 #ifdef BMOD_CLIENT_DLL
-	// Q is bound to +menu. Open the already-created client panel directly so
-	// the binding does not depend on a second console-command dispatch.
+	// Q is bound to +menu. Toggle the already-created client panel directly so
+	// the binding does not depend on a second console-command dispatch:
+	// opens the build menu when closed, closes it when already open.
 	if ( g_pSpawnMenu )
 	{
-		g_pSpawnMenu->ShowPanel( true );
+		g_pSpawnMenu->ShowPanel( !g_pSpawnMenu->IsVisible() );
 	}
 #else
 	engine->ClientCmd_Unrestricted("spawnmenu\n");

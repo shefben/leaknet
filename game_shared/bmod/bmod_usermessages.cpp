@@ -73,6 +73,11 @@ void RegisterBModUserMessages( void )
 	// GMod system messages
 	// =======================================
 	usermessages->Register( "GModVersion", -1 );      // Version info exchange
+	// IMPORTANT: this list must match RegisterUserMessages in
+	// game_shared/usermessages.cpp exactly (the client registers from that
+	// list) - message IDs are positional, and a missing entry here shifts
+	// every later ID and disconnects the client with a dispatch Host_Error.
+	usermessages->Register( "GModPlayerOption", -1 ); // _PlayerOption: named option/menu + timeout
 
 	// =======================================
 	// GMod Spawn menu messages (original GMod 9 format)

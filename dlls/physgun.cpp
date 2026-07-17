@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -19,6 +19,7 @@
 #include "engine/IEngineSound.h"
 #include "ndebugoverlay.h"
 #include "physics_saverestore.h"
+#include "physics_prop_ragdoll.h"
 
 ConVar phys_gunmass("phys_gunmass", "200");
 ConVar phys_gunvel("phys_gunvel", "400");
@@ -30,6 +31,37 @@ static int g_physgunBeam;
 #define PHYSGUN_BEAM_SPRITE		"sprites/physbeam.vmt"
 
 #define MAX_PELLETS	16
+
+// Networked beam/glow state - values must match PhysGunEffectState_t on the
+// client (cl_dll/bmod_hud/c_weapon_gravitygun.cpp).
+enum
+{
+	PHYSGUN_EFFECT_NONE = 0,
+	PHYSGUN_EFFECT_READY,
+	PHYSGUN_EFFECT_HOLDING,
+	PHYSGUN_EFFECT_LAUNCH,
+};
+
+//-----------------------------------------------------------------------------
+// Resolves the physics object a trace actually hit. Ragdolls are many physics
+// objects (one per phys bone) - grabbing/freezing must target the clicked
+// limb (trace physicsbone), not the root, so individual joints can be posed.
+//-----------------------------------------------------------------------------
+static IPhysicsObject *PhysObjFromEntityBone( CBaseEntity *pEntity, int physicsBone )
+{
+	if ( !pEntity )
+		return NULL;
+
+	CRagdollProp *pRagdollProp = dynamic_cast<CRagdollProp*>( pEntity );
+	if ( pRagdollProp )
+	{
+		ragdoll_t *pRagdoll = pRagdollProp->GetRagdoll();
+		if ( physicsBone >= 0 && physicsBone < pRagdoll->listCount && pRagdoll->list[physicsBone].pObject )
+			return pRagdoll->list[physicsBone].pObject;
+	}
+
+	return pEntity->VPhysicsGetObject();
+}
 
 class CWeaponGravityGun;
 
@@ -176,6 +208,16 @@ public:
 	QAngle			m_targetRotation;
 	float			m_timeToArrive;
 
+	// Desired world-space angular velocity for the held object. Zero means
+	// "hold the current orientation rigidly" (GMod carry feel); the weapon
+	// sets it non-zero while the player rotates with USE+mouse or turns.
+	Vector			m_targetAngVel;
+
+	// The exact physics object grabbed (a ragdoll limb, not the root).
+	// Runtime only - not saved; DetachEntity falls back to the entity's root
+	// object if this is NULL after a restore.
+	IPhysicsObject	*m_attachedPhys;
+
 	IPhysicsMotionController *m_controller;
 };
 
@@ -197,6 +239,7 @@ BEGIN_SIMPLE_DATADESC( CGravControllerPoint )
 	DEFINE_FIELD( CGravControllerPoint,	m_attachedEntity,		FIELD_EHANDLE ),
 	DEFINE_FIELD( CGravControllerPoint,	m_targetRotation,		FIELD_VECTOR ),
 	DEFINE_FIELD( CGravControllerPoint,	m_timeToArrive,			FIELD_FLOAT ),
+	DEFINE_FIELD( CGravControllerPoint,	m_targetAngVel,			FIELD_VECTOR ),
 
 	// Physptrs can't be saved in embedded classes... this is to silence classcheck
 	// DEFINE_PHYSPTR( CGravControllerPoint, m_controller ),
@@ -207,6 +250,8 @@ END_DATADESC()
 CGravControllerPoint::CGravControllerPoint( void )
 {
 	m_attachedEntity = NULL;
+	m_attachedPhys = NULL;
+	m_targetAngVel = vec3_origin;
 }
 
 CGravControllerPoint::~CGravControllerPoint( void )
@@ -218,6 +263,8 @@ CGravControllerPoint::~CGravControllerPoint( void )
 void CGravControllerPoint::AttachEntity( CBaseEntity *pEntity, IPhysicsObject *pPhys, const Vector &position )
 {
 	m_attachedEntity = pEntity;
+	m_attachedPhys = pPhys;
+	m_targetAngVel = vec3_origin;
 	pPhys->WorldToLocal( m_localPosition, position );
 	m_worldPosition = position;
 	pPhys->GetDamping( NULL, &m_saveDamping );
@@ -238,7 +285,9 @@ void CGravControllerPoint::DetachEntity( void )
 	CBaseEntity *pEntity = m_attachedEntity;
 	if ( pEntity )
 	{
-		IPhysicsObject *pPhys = pEntity->VPhysicsGetObject();
+		// Use the exact grabbed object (ragdoll limb); the runtime pointer is
+		// lost across save/restore, so fall back to the root object then.
+		IPhysicsObject *pPhys = m_attachedPhys ? m_attachedPhys : pEntity->VPhysicsGetObject();
 		if ( pPhys )
 		{
 			// on the odd chance that it's gone to sleep while under anti-gravity
@@ -247,6 +296,8 @@ void CGravControllerPoint::DetachEntity( void )
 		}
 	}
 	m_attachedEntity = NULL;
+	m_attachedPhys = NULL;
+	m_targetAngVel = vec3_origin;
 	physenv->DestroyMotionController( m_controller );
 	m_controller = NULL;
 
@@ -437,11 +488,28 @@ IMotionEvent::simresult_e CGravControllerPoint::Simulate( IPhysicsMotionControll
 		Vector accel;
 		AngularImpulse angAccel;
 		pObject->CalculateForceOffset( delta, world, accel, angAccel );
-		
+
 		linear += accel;
 		angular += angAccel;
+
+		// GMod-style rigid carry: servo the object's angular velocity toward
+		// m_targetAngVel (zero = hold current orientation; non-zero while the
+		// player is rotating it with USE+mouse or turning) instead of letting
+		// it swing freely from the offset torque above.
+		QAngle shadowAngles;
+		Vector shadowOrigin;
+		pObject->GetShadowPosition( &shadowOrigin, &shadowAngles );
+		VMatrix objMatrix = SetupMatrixOrgAngles( shadowOrigin, shadowAngles );
+		AngularImpulse localTargetAngVel = WorldToLocalRotation( objMatrix, m_targetAngVel, 1 );
+		AngularImpulse angCorrection = ( localTargetAngVel - angVel ) * invDeltaTime;
+		for ( int i = 0; i < 3; i++ )
+		{
+			float maxAngAccel = m_maxAngularAcceleration[i] * invDeltaTime;
+			angCorrection[i] = clamp( angCorrection[i], -maxAngAccel, maxAngAccel );
+		}
+		angular += angCorrection;
 	}
-	
+
 	return SIM_GLOBAL_ACCELERATION;
 }
 
@@ -494,8 +562,12 @@ public:
 
 	bool HasAnyAmmo( void );
 
-	void AttachObject( CBaseEntity *pEdict, const Vector& start, const Vector &end, float distance );
+	void AttachObject( CBaseEntity *pEdict, const Vector& start, const Vector &end, float distance, int physicsBone );
 	void DetachObject( void );
+
+	// GMod physgun behavior
+	void FreezeHeldObject( void );
+	bool TryUnfreezeTarget( void );
 
 	void EffectCreate( void );
 	void EffectUpdate( void );
@@ -549,7 +621,6 @@ public:
 
 private:
 	CNetworkVar( int, m_active );
-	bool		m_useDown;
 	EHANDLE		m_hObject;
 	float		m_distance;
 	float		m_movementLength;
@@ -558,11 +629,23 @@ private:
 	CNetworkVar( int, m_viewModelIndex );
 	Vector		m_originalObjectPosition;
 
+	// GMod physgun state
+	bool		m_bRotating;					// USE held while carrying - mouse rotates the object
+	QAngle		m_lockedAngles;					// view angles locked while rotating (ARGG technique)
+	bool		m_bBlockAttackUntilReleased;	// after freezing, the still-held +attack must not re-grab
+
+	// Extra networked state the client beam/glow renderer reads
+	CNetworkHandle( CBaseEntity, m_heldObject );
+	CNetworkVar( int, m_effectState );
+	CNetworkVar( bool, m_bIsCurrentlyRotating );
+	CNetworkVar( bool, m_bIsCurrentlyHolding );
+	CNetworkVar( int, m_serversidebeams );
+
 	CGravControllerPoint		m_gravCallback;
 	pelletlist_t m_activePellets[MAX_PELLETS];
 	int			m_pelletCount;
 	int			m_objectPelletCount;
-	
+
 	int			m_pelletHeld;
 	int			m_pelletAttract;
 	float		m_glueTime;
@@ -575,6 +658,13 @@ IMPLEMENT_SERVERCLASS_ST( CWeaponGravityGun, DT_WeaponGravityGun )
 	SendPropInt( SENDINFO(m_active), 1, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_glueTouching), 1, SPROP_UNSIGNED ),
 	SendPropModelIndex( SENDINFO(m_viewModelIndex) ),
+	// Extra state the client beam/glow renderer reads (names must match the
+	// RecvTable in cl_dll/bmod_hud/c_weapon_gravitygun.cpp)
+	SendPropEHandle( SENDINFO(m_heldObject) ),
+	SendPropInt( SENDINFO(m_effectState), 3, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO(m_bIsCurrentlyRotating), 1, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO(m_bIsCurrentlyHolding), 1, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO(m_serversidebeams), 1, SPROP_UNSIGNED ),
 END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS( weapon_physgun, CWeaponGravityGun );
@@ -594,8 +684,15 @@ END_DATADESC()
 BEGIN_DATADESC( CWeaponGravityGun )
 
 	DEFINE_FIELD( CWeaponGravityGun, m_active,				FIELD_INTEGER ),
-	DEFINE_FIELD( CWeaponGravityGun, m_useDown,				FIELD_BOOLEAN ),
 	DEFINE_FIELD( CWeaponGravityGun, m_hObject,				FIELD_EHANDLE ),
+	DEFINE_FIELD( CWeaponGravityGun, m_bRotating,			FIELD_BOOLEAN ),
+	DEFINE_FIELD( CWeaponGravityGun, m_lockedAngles,		FIELD_VECTOR ),
+	DEFINE_FIELD( CWeaponGravityGun, m_bBlockAttackUntilReleased, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CWeaponGravityGun, m_heldObject,			FIELD_EHANDLE ),
+	DEFINE_FIELD( CWeaponGravityGun, m_effectState,			FIELD_INTEGER ),
+	DEFINE_FIELD( CWeaponGravityGun, m_bIsCurrentlyRotating, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CWeaponGravityGun, m_bIsCurrentlyHolding,	FIELD_BOOLEAN ),
+	DEFINE_FIELD( CWeaponGravityGun, m_serversidebeams,		FIELD_INTEGER ),
 	DEFINE_FIELD( CWeaponGravityGun, m_distance,			FIELD_FLOAT ),
 	DEFINE_FIELD( CWeaponGravityGun, m_movementLength,		FIELD_FLOAT ),
 	DEFINE_FIELD( CWeaponGravityGun, m_lastYaw,				FIELD_FLOAT ),
@@ -637,6 +734,14 @@ CWeaponGravityGun::CWeaponGravityGun()
 {
 	m_active = false;
 	m_bFiresUnderwater = true;
+	m_bRotating = false;
+	m_lockedAngles = vec3_angle;
+	m_bBlockAttackUntilReleased = false;
+	m_heldObject = NULL;
+	m_effectState = PHYSGUN_EFFECT_NONE;
+	m_bIsCurrentlyRotating = false;
+	m_bIsCurrentlyHolding = false;
+	m_serversidebeams = 0;
 	m_pelletAttract = -1;
 	m_pelletHeld = -1;
 }
@@ -722,49 +827,85 @@ void CWeaponGravityGun::EffectUpdate( void )
 		ClearMultiDamage();
 		pEntity->DispatchTraceAttack( CTakeDamageInfo( pOwner, pOwner, 0, DMG_PHYSGUN ), forward, &tr );
 		ApplyMultiDamage();
-		AttachObject( pEntity, start, tr.endpos, distance );
+		AttachObject( pEntity, start, tr.endpos, distance, tr.physicsbone );
 		m_lastYaw = pOwner->EyeAngles().y;
 	}
 
-	// Add the incremental player yaw to the target transform
-	matrix3x4_t curMatrix, incMatrix, nextMatrix;
-	AngleMatrix( m_gravCallback.m_targetRotation, curMatrix );
-	AngleMatrix( QAngle(0,pOwner->EyeAngles().y - m_lastYaw,0), incMatrix );
-	ConcatTransforms( incMatrix, curMatrix, nextMatrix );
-	MatrixAngles( nextMatrix, m_gravCallback.m_targetRotation );
-	m_lastYaw = pOwner->EyeAngles().y;
-
 	CBaseEntity *pObject = m_hObject;
+
+	// Rotation mode (the ARGG technique): while USE is held with an object
+	// grabbed, the view is locked in place and mouse deltas rotate the object
+	// instead. Releasing USE resumes normal aiming.
+	bool bWantRotate = ( pObject != NULL ) && ( pOwner->m_nButtons & IN_USE ) != 0;
+	if ( bWantRotate && !m_bRotating )
+	{
+		m_lockedAngles = pOwner->EyeAngles();
+		m_bRotating = true;
+	}
+	else if ( !bWantRotate )
+	{
+		m_bRotating = false;
+	}
+	m_bIsCurrentlyRotating = m_bRotating;
+
+	QAngle viewAngles = pOwner->EyeAngles();
+	Vector targetAngVel = vec3_origin;
+
+	if ( m_bRotating )
+	{
+		pOwner->SetPhysicsFlag( PFLAG_DIROVERRIDE, true );
+
+		// Mouse deltas relative to the locked view: yaw spins the object
+		// around world Z, pitch around the player's (locked) right axis.
+		float dYaw = AngleDiff( viewAngles.y, m_lockedAngles.y );
+		float dPitch = AngleDiff( viewAngles.x, m_lockedAngles.x );
+
+		Vector lockedForward, lockedRight;
+		AngleVectors( m_lockedAngles, &lockedForward, &lockedRight, NULL );
+
+		if ( gpGlobals->frametime > 0 )
+		{
+			float invFrame = 1.0f / gpGlobals->frametime;
+			targetAngVel = Vector( 0, 0, 1 ) * ( dYaw * invFrame ) + lockedRight * ( dPitch * invFrame );
+		}
+
+		// Keep carrying along the locked aim direction, and put the player's
+		// view back so only the object turns.
+		forward = lockedForward;
+		pOwner->SnapEyeAngles( m_lockedAngles );
+
+		// USE + W/S adjusts hold distance while rotating
+		if ( pOwner->m_nButtons & IN_FORWARD )
+		{
+			m_distance = UTIL_Approach( 1024, m_distance, gpGlobals->frametime * 100 );
+		}
+		if ( pOwner->m_nButtons & IN_BACK )
+		{
+			m_distance = UTIL_Approach( 40, m_distance, gpGlobals->frametime * 100 );
+		}
+	}
+	else if ( pObject )
+	{
+		// Not rotating: the carried object follows the player's turn (yaw) so
+		// it keeps its orientation relative to the view, GMod-style.
+		float dYaw = AngleDiff( viewAngles.y, m_lastYaw );
+		if ( gpGlobals->frametime > 0 )
+		{
+			targetAngVel = Vector( 0, 0, dYaw / gpGlobals->frametime );
+		}
+	}
+
+	m_lastYaw = viewAngles.y;
+	m_gravCallback.m_targetAngVel = targetAngVel;
+
+	// Networked state for the client beam/glow renderer
+	m_heldObject = pObject;
+	m_bIsCurrentlyHolding = ( pObject != NULL );
+	m_effectState = pObject ? PHYSGUN_EFFECT_HOLDING : PHYSGUN_EFFECT_READY;
+
 	if ( pObject )
 	{
-		if ( m_useDown )
-		{
-			if ( pOwner->m_afButtonPressed & IN_USE )
-			{
-				m_useDown = false;
-			}
-		}
-		else 
-		{
-			if ( pOwner->m_afButtonPressed & IN_USE )
-			{
-				m_useDown = true;
-			}
-		}
-
-		if ( m_useDown )
-		{
-			pOwner->SetPhysicsFlag( PFLAG_DIROVERRIDE, true );
-			if ( pOwner->m_nButtons & IN_FORWARD )
-			{
-				m_distance = UTIL_Approach( 1024, m_distance, gpGlobals->frametime * 100 );
-			}
-			if ( pOwner->m_nButtons & IN_BACK )
-			{
-				m_distance = UTIL_Approach( 40, m_distance, gpGlobals->frametime * 100 );
-			}
-		}
-
+		// Mouse wheel (client maps it to IN_WEAPON1/2 while attacking)
 		if ( pOwner->m_nButtons & IN_WEAPON1 )
 		{
 			m_distance = UTIL_Approach( 1024, m_distance, m_distance * 0.1 );
@@ -1166,6 +1307,7 @@ IPhysicsObject *CWeaponGravityGun::GetPelletPhysObject( int pelletIndex )
 void CWeaponGravityGun::EffectDestroy( void )
 {
 	m_active = false;
+	m_effectState = PHYSGUN_EFFECT_NONE;
 	SoundStop();
 
 	DetachObject();
@@ -1178,6 +1320,11 @@ void CWeaponGravityGun::DetachObject( void )
 	m_glueTouching = false;
 	SetObjectPelletsColor( 255, 0, 0 );
 	m_objectPelletCount = 0;
+
+	m_heldObject = NULL;
+	m_bIsCurrentlyHolding = false;
+	m_bIsCurrentlyRotating = false;
+	m_bRotating = false;
 
 	if ( m_hObject )
 	{
@@ -1192,14 +1339,21 @@ void CWeaponGravityGun::DetachObject( void )
 	}
 }
 
-void CWeaponGravityGun::AttachObject( CBaseEntity *pObject, const Vector& start, const Vector &end, float distance )
+void CWeaponGravityGun::AttachObject( CBaseEntity *pObject, const Vector& start, const Vector &end, float distance, int physicsBone )
 {
 	m_hObject = pObject;
-	m_useDown = false;
-	IPhysicsObject *pPhysics = pObject ? (pObject->VPhysicsGetObject()) : NULL;
+	// Grab the exact physics object hit - for ragdolls that's the clicked
+	// limb, which is what makes posing/swings possible.
+	IPhysicsObject *pPhysics = pObject ? PhysObjFromEntityBone( pObject, physicsBone ) : NULL;
 	if ( pPhysics && pObject->GetMoveType() == MOVETYPE_VPHYSICS )
 	{
 		m_distance = distance;
+
+		// GMod behavior: grabbing a frozen object thaws it into your grip
+		if ( !pPhysics->IsMoveable() )
+		{
+			pPhysics->EnableMotion( true );
+		}
 
 		m_gravCallback.AttachEntity( pObject, pPhysics, end );
 		float mass = pPhysics->GetMass();
@@ -1250,77 +1404,93 @@ void CWeaponGravityGun::PrimaryAttack( void )
 	}
 }
 
+//-----------------------------------------------------------------------------
+// GMod physgun secondary: freeze what you're holding (release it locked in
+// place), or unfreeze a frozen object you're aiming at. The beta glue-pellet
+// secondary is gone - the pellet machinery below only stays for save compat.
+//-----------------------------------------------------------------------------
 void CWeaponGravityGun::SecondaryAttack( void )
 {
-	m_flNextSecondaryAttack = gpGlobals->curtime + 0.1;
+	m_flNextSecondaryAttack = gpGlobals->curtime + 0.5;
+
+	if ( m_active && m_hObject )
+	{
+		FreezeHeldObject();
+		return;
+	}
+
 	if ( m_active )
 	{
+		// beam on but nothing grabbed - just switch off
 		EffectDestroy();
 		SoundDestroy();
 		return;
 	}
 
-	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
-	Assert( pOwner );
+	TryUnfreezeTarget();
+}
 
-	if ( pOwner->GetAmmoCount(m_iSecondaryAmmoType) <= 0 )
+//-----------------------------------------------------------------------------
+// Freezes the exact physics object being held (a ragdoll limb keeps its
+// joint frozen individually, so multiple joints can be posed one by one).
+//-----------------------------------------------------------------------------
+void CWeaponGravityGun::FreezeHeldObject( void )
+{
+	// capture before EffectDestroy clears the controller
+	IPhysicsObject *pPhys = m_gravCallback.m_attachedPhys;
+	CBaseEntity *pObject = m_hObject;
+	if ( !pPhys && pObject )
+	{
+		pPhys = pObject->VPhysicsGetObject();
+	}
+
+	EffectDestroy();
+	SoundDestroy();
+
+	if ( !pPhys )
 		return;
 
-	m_viewModelIndex = pOwner->entindex();
-	// Make sure I've got a view model
-	CBaseViewModel *vm = pOwner->GetViewModel();
-	if ( vm )
-	{
-		m_viewModelIndex = vm->entindex();
-	}
+	AngularImpulse angZero( 0, 0, 0 );
+	pPhys->SetVelocity( &vec3_origin, &angZero );
+	pPhys->EnableMotion( false );
+
+	EmitSound( "weapons/physgun_off.wav" );
+
+	// The player is almost certainly still holding +attack; don't let the
+	// next frame's PrimaryAttack instantly re-grab (and thaw) the object.
+	m_bBlockAttackUntilReleased = true;
+}
+
+//-----------------------------------------------------------------------------
+// Aiming at a frozen object with nothing held: right-click unfreezes it.
+//-----------------------------------------------------------------------------
+bool CWeaponGravityGun::TryUnfreezeTarget( void )
+{
+	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	if ( !pOwner )
+		return false;
 
 	Vector forward;
 	pOwner->EyeVectors( &forward );
-
 	Vector start = pOwner->Weapon_ShootPosition();
-	Vector end = start + forward * 4096;
 
 	trace_t tr;
-	UTIL_TraceLine( start, end, MASK_SHOT, pOwner, COLLISION_GROUP_NONE, &tr );
-	if ( tr.fraction == 1.0 || (tr.surface.flags & SURF_SKY) )
-		return;
+	UTIL_TraceLine( start, start + forward * 4096, MASK_SHOT, pOwner, COLLISION_GROUP_NONE, &tr );
+	if ( !tr.DidHitNonWorldEntity() )
+		return false;
 
-	CBaseEntity *pHit = tr.m_pEnt;
-	
-	if ( pHit->entindex() == 0 )
-	{
-		pHit = NULL;
-	}
-	else
-	{
-		// if the object has no physics object, or isn't a physprop or brush entity, then don't glue
-		if ( !pHit->VPhysicsGetObject() || pHit->GetMoveType() != MOVETYPE_VPHYSICS )
-			return;
-	}
+	CBaseEntity *pEntity = tr.m_pEnt;
+	if ( pEntity->GetMoveType() != MOVETYPE_VPHYSICS )
+		return false;
 
-	QAngle angles;
-	WeaponSound( SINGLE );
-	pOwner->RemoveAmmo( 1, m_iSecondaryAmmoType );
+	IPhysicsObject *pPhys = PhysObjFromEntityBone( pEntity, tr.physicsbone );
+	if ( !pPhys || pPhys->IsMoveable() )
+		return false;
 
-	VectorAngles( tr.plane.normal, angles );
-	Vector endPoint = tr.endpos + tr.plane.normal;
-	CGravityPellet *pPellet = (CGravityPellet *)CBaseEntity::Create( "gravity_pellet", endPoint, angles, this );
-	if ( pHit )
-	{
-		pPellet->SetParent( pHit );
-	}
-	AddPellet( pPellet, pHit, tr.plane.normal );
-
-	// UNDONE: Probably should just do this client side
-	CBaseEntity *pEnt = GetBeamEntity();
-	CBeam *pBeam = CBeam::BeamCreate( PHYSGUN_BEAM_SPRITE, 1.5 );
-	pBeam->PointEntInit( endPoint, pEnt );
-	pBeam->SetEndAttachment( 1 );
-	pBeam->SetBrightness( 255 );
-	pBeam->SetColor( 255, 0, 0 );
-	pBeam->RelinkBeam();
-	pBeam->LiveForTime( 0.1 );
-
+	pPhys->EnableMotion( true );
+	pPhys->Wake();
+	EmitSound( "weapons/physgun_on.wav" );
+	return true;
 }
 
 void CWeaponGravityGun::WeaponIdle( void )
@@ -1354,6 +1524,18 @@ void CWeaponGravityGun::ItemPostFrame( void )
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
 	if (!pOwner)
 		return;
+
+	// After freezing, ignore the (still held) attack buttons until released
+	// so the frozen object isn't immediately re-grabbed and thawed.
+	if ( m_bBlockAttackUntilReleased )
+	{
+		if ( pOwner->m_nButtons & (IN_ATTACK | IN_ATTACK2) )
+		{
+			WeaponIdle();
+			return;
+		}
+		m_bBlockAttackUntilReleased = false;
+	}
 
 	if ( pOwner->m_afButtonPressed & IN_ATTACK2 )
 	{

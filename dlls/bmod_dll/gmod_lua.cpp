@@ -330,6 +330,7 @@ void CGModLuaSystem::ShutdownLua()
     {
         CLuaWrapper::ShutdownLua();
         s_pLuaState = NULL;
+		CLuaIntegration::SetLuaState(NULL);
     }
 }
 

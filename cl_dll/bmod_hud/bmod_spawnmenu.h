@@ -201,18 +201,58 @@ public:
 	void LoadContextConfiguration();
 	bool IsContextVisible() const { return m_bContextVisible; }
 
+	// Action signal handlers for the live controls (sliders/toggles/combos)
+	void OnSliderMoved( vgui::Panel *panel, int position );
+	void OnCheckButtonChecked( vgui::Panel *panel, int state );
+	void OnTextChanged( vgui::Panel *panel );
+
+	DECLARE_PANELMAP();
+
 private:
+	// Live control bookkeeping - each interactive control drives one convar
+	enum ContextControlType_t
+	{
+		CONTEXT_CTRL_TOGGLE = 0,
+		CONTEXT_CTRL_SLIDER,
+		CONTEXT_CTRL_COMBO,
+	};
+
+	struct ContextControl_t
+	{
+		int				type;			// ContextControlType_t
+		char			szConVar[64];
+		float			flMin;
+		float			flMax;
+		bool			bInteger;
+		vgui::Panel		*pControl;
+		vgui::Label		*pValueLabel;	// sliders show their current value
+	};
+
+	struct ContextComboCommand_t
+	{
+		char			szCommand[512];
+	};
+
 	bool LoadContextPanel( const char *contextType );
 	bool LoadContextPanelFile( const char *fileName, const char *contextType );
 	bool LoadContextPanelFromDirectory( const char *directory, const char *contextType );
 	void AddContextLabel( const char *text, int &x, int &y, int &rowTall, int tall = 18 );
 	void AddContextButton( const char *text, const char *command, int &x, int &y, int &rowTall, int columns );
-	void AddContextKeyValueButtons( KeyValues *pControl, int &x, int &y, int &rowTall, int columns );
+	void AddContextToggle( KeyValues *pControl, int &x, int &y, int &rowTall );
+	void AddContextSlider( KeyValues *pControl, int &x, int &y, int &rowTall );
+	void AddContextComboBox( KeyValues *pControl, int &x, int &y, int &rowTall );
 	void ClearContextContent();
+
+	ContextControl_t *FindControl( vgui::Panel *pPanel );
+	float GetSliderConValue( const ContextControl_t &control, int sliderPos ) const;
+	void UpdateSliderValueLabel( ContextControl_t &control, float value );
 
 	char			m_szCurrentContext[64];
 	bool			m_bContextVisible;
 	vgui::Panel		*m_pContextContent;
+
+	CUtlVector<ContextControl_t>		m_Controls;
+	CUtlVector<ContextComboCommand_t>	m_ComboCommands;
 };
 
 //-----------------------------------------------------------------------------

@@ -790,19 +790,27 @@ void CPropCategoryList::LoadCategories()
 		const char *pModPath = engine->GetGameDirectory();
 		if ( pModPath )
 		{
-			char spawnicons_path[MAX_PATH];
-			Q_snprintf( spawnicons_path, sizeof(spawnicons_path), "%s/mods/spawnicons", pModPath );
+			// Icons typically live in the mod cache's spawnicons folder
+			// (mods/-modcache/spawnicons/materials/gmod/...); a loose
+			// mods/spawnicons folder is also supported.
+			const char *iconDirs[] = { "mods/-modcache/spawnicons", "mods/spawnicons" };
+			for ( int i = 0; i < 2; i++ )
+			{
+				char spawnicons_path[MAX_PATH];
+				Q_snprintf( spawnicons_path, sizeof(spawnicons_path), "%s/%s", pModPath, iconDirs[i] );
 
-			// Check if the directory exists before adding
-			if ( g_pFullFilesystem->IsDirectory( spawnicons_path, NULL ) )
-			{
-				g_pFullFilesystem->AddSearchPath( spawnicons_path, "GAME", PATH_ADD_TO_TAIL );
-				Msg( "SpawnMenu: Added spawnicons search path: %s\n", spawnicons_path );
-				bSpawniconsPathAdded = true;
+				if ( g_pFullFilesystem->IsDirectory( spawnicons_path, NULL ) )
+				{
+					g_pFullFilesystem->AddSearchPath( spawnicons_path, "GAME", PATH_ADD_TO_TAIL );
+					Msg( "SpawnMenu: Added spawnicons search path: %s\n", spawnicons_path );
+					bSpawniconsPathAdded = true;
+				}
 			}
-			else
+
+			if ( !bSpawniconsPathAdded )
 			{
-				Msg( "SpawnMenu: Spawnicons directory not found: %s\n", spawnicons_path );
+				Msg( "SpawnMenu: No spawnicons directory found under %s/mods\n", pModPath );
+				bSpawniconsPathAdded = true; // don't rescan every reload
 			}
 		}
 	}
@@ -826,6 +834,65 @@ void CPropCategoryList::LoadCategories()
 	}
 
 	InvalidateLayout();
+}
+
+//-----------------------------------------------------------------------------
+// Server-driven categories (SWEPs / spawnable weapons networked from the
+// server). These have no backing file; their entries are filled directly.
+//-----------------------------------------------------------------------------
+PropCategory_t *CPropCategoryList::FindOrCreateNetworkedCategory( const char *pszName )
+{
+	if ( !pszName || !pszName[0] )
+		return NULL;
+
+	for ( int i = 0; i < m_Categories.Count(); i++ )
+	{
+		if ( Q_stricmp( m_Categories[i].szName, pszName ) == 0 )
+			return &m_Categories[i];
+	}
+
+	PropCategory_t cat;
+	Q_strncpy( cat.szName, pszName, sizeof( cat.szName ) );
+	cat.bLoaded = true;
+	cat.bNetworked = true;
+
+	int index = m_Categories.AddToTail( cat );
+	m_Categories[index].pEntries = new CUtlVector<PropEntry_t>();
+
+	m_pCombo->AddItem( pszName, NULL );
+
+	return &m_Categories[index];
+}
+
+void CPropCategoryList::RemoveNetworkedCategories()
+{
+	bool bRemovedAny = false;
+	for ( int i = m_Categories.Count() - 1; i >= 0; i-- )
+	{
+		if ( m_Categories[i].bNetworked )
+		{
+			m_Categories.Remove( i );
+			bRemovedAny = true;
+		}
+	}
+
+	if ( !bRemovedAny )
+		return;
+
+	// Rebuild the dropdown to match the surviving categories
+	m_pCombo->DeleteAllItems();
+	for ( int i = 0; i < m_Categories.Count(); i++ )
+	{
+		m_pCombo->AddItem( m_Categories[i].szName, NULL );
+	}
+
+	if ( m_nSelectedCategory >= m_Categories.Count() )
+		m_nSelectedCategory = m_Categories.Count() - 1;
+
+	if ( m_nSelectedCategory >= 0 && m_Categories.Count() > 0 )
+	{
+		m_pCombo->ActivateItem( m_nSelectedCategory );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -1040,6 +1107,74 @@ MessageMapItem_t CPropPanel::m_MessageMap[] =
 	MAP_MESSAGE_INT( CPropPanel, "ScrollBarSliderMoved", OnScrollBarSliderMoved, "position" ),
 };
 IMPLEMENT_PANELMAP( CPropPanel, Panel );
+
+//-----------------------------------------------------------------------------
+// Server-driven spawn list entries (SWEPs / spawnable weapons)
+//-----------------------------------------------------------------------------
+void CPropPanel::AddNetworkedEntry( const char *pszCategory, const char *pszDisplayName, const char *pszCommand )
+{
+	PropCategory_t *pCategory = m_pCategoryList->FindOrCreateNetworkedCategory( pszCategory );
+	if ( !pCategory || !pCategory->pEntries )
+		return;
+
+	PropEntry_t entry;
+	memset( &entry, 0, sizeof( entry ) );
+
+	// '+' marks a custom-command entry: OnMousePressed runs szModelPath verbatim
+	Q_snprintf( entry.szDisplayName, sizeof( entry.szDisplayName ), "+%s", pszDisplayName ? pszDisplayName : "" );
+	Q_strncpy( entry.szModelPath, pszCommand ? pszCommand : "", sizeof( entry.szModelPath ) );
+
+	pCategory->pEntries->AddToTail( entry );
+}
+
+void CPropPanel::ClearNetworkedEntries()
+{
+	// The grid may hold a pointer into the category vector - drop it first
+	m_pPropGrid->SetCategory( NULL );
+	m_pCategoryList->RemoveNetworkedCategories();
+	RefreshAfterNetworkUpdate();
+}
+
+void CPropPanel::RefreshAfterNetworkUpdate()
+{
+	// Category storage may have been reallocated while entries were added, so
+	// re-resolve the selected category and rebind the grid to it.
+	int selected = m_pCategoryList->GetSelectedCategory();
+	if ( selected < 0 )
+		selected = 0;
+
+	m_pPropGrid->SetCategory( NULL );
+
+	PropCategory_t *pCategory = m_pCategoryList->GetCategory( selected );
+	if ( !pCategory )
+	{
+		pCategory = m_pCategoryList->GetCategory( 0 );
+	}
+	if ( pCategory )
+	{
+		m_pPropGrid->SetCategory( pCategory );
+	}
+
+	InvalidateLayout();
+}
+
+void CPropPanel::SelectCategoryByName( const char *pszName )
+{
+	if ( !pszName || !pszName[0] )
+		return;
+
+	for ( int i = 0; i < m_pCategoryList->GetCategoryCount(); i++ )
+	{
+		PropCategory_t *pCategory = m_pCategoryList->GetCategory( i );
+		if ( pCategory && Q_stricmp( pCategory->szName, pszName ) == 0 )
+		{
+			m_pCategoryList->SelectCategory( i );
+			m_pPropGrid->SetCategory( m_pCategoryList->GetCategory( i ) );
+			PerformLayout();
+			return;
+		}
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Reload props

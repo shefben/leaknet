@@ -126,6 +126,12 @@ CON_COMMAND( bmod_modrefresh, "Refresh the mod cache (copy enabled mod files)" )
 	GetModCacheManager()->RefreshModCache();
 }
 
+CON_COMMAND( bmod_modclear, "Clear the mod cache (forces a rebuild on next startup)" )
+{
+	filesystem->RemoveFile( MODCACHE_MANIFEST_FILE, "MOD" );
+	Msg( "BarrysMod: Mod cache manifest cleared - cache will rebuild on next startup\n" );
+}
+
 //-----------------------------------------------------------------------------
 // CModCacheManager implementation
 //-----------------------------------------------------------------------------
@@ -155,6 +161,7 @@ void CModCacheManager::Initialize()
 	g_pFullFilesystem->CreateDirHierarchy( "mods/-modcache/resource", "MOD" );
 	g_pFullFilesystem->CreateDirHierarchy( "mods/-modcache/cfg", "MOD" );
 	g_pFullFilesystem->CreateDirHierarchy( "mods/-modcache/particles", "MOD" );
+	g_pFullFilesystem->CreateDirHierarchy( "mods/-modcache/spawnicons", "MOD" );
 
 	AddModCacheSearchPaths();
 
@@ -162,7 +169,17 @@ void CModCacheManager::Initialize()
 	ScanForMods();
 
 	LoadModStates();
-	RefreshModCache();
+
+	// Only rebuild the cache when the mod set actually changed (new/removed
+	// mods, enable state flips, or modified files) or the cache was cleared.
+	if ( IsCacheUpToDate() )
+	{
+		Msg( "BarrysMod: Mod cache is up to date, skipping rebuild\n" );
+	}
+	else
+	{
+		RefreshModCache();
+	}
 
 	m_bInitialized = true;
 
@@ -306,6 +323,7 @@ void CModCacheManager::EnableMod( const char *szFolderName )
 	CopyModToCache( szFolderName );
 
 	SaveModStates();
+	SaveCacheManifest();
 
 	Msg( "BarrysMod: Enabled mod '%s'. Restart required for changes to take effect.\n", pMod->szName );
 }
@@ -338,6 +356,10 @@ void CModCacheManager::DisableMod( const char *szFolderName )
 	pMod->bEnabled = false;
 
 	SaveModStates();
+
+	// The disabled mod's files are still in the cache; drop the manifest so
+	// the next startup rebuilds without them.
+	g_pFullFilesystem->RemoveFile( MODCACHE_MANIFEST_FILE, "MOD" );
 
 	Msg( "BarrysMod: Disabled mod '%s'. Restart required for changes to take effect.\n", pMod->szName );
 }
@@ -389,6 +411,7 @@ void CModCacheManager::CopyModToCache( const char *szFolderName )
 	CopyDirectoryToCache( szFolderName, "resource" );
 	CopyDirectoryToCache( szFolderName, "cfg" );
 	CopyDirectoryToCache( szFolderName, "particles" );
+	CopyDirectoryToCache( szFolderName, "spawnicons" );
 
 	// Copy the icon if it exists
 	if ( pMod->szIcon[0] )
@@ -456,6 +479,7 @@ void CModCacheManager::ClearCachedContent()
 	ClearDirectoryFiles( "mods/-modcache/resource" );
 	ClearDirectoryFiles( "mods/-modcache/cfg" );
 	ClearDirectoryFiles( "mods/-modcache/particles" );
+	ClearDirectoryFiles( "mods/-modcache/spawnicons" );
 }
 
 void CModCacheManager::RefreshModCache()
@@ -476,7 +500,133 @@ void CModCacheManager::RefreshModCache()
 		}
 	}
 
+	SaveCacheManifest();
+
 	Msg( "BarrysMod: Mod cache refresh complete\n" );
+}
+
+//-----------------------------------------------------------------------------
+// Cache manifest - records the mod set the cache was built from so startup
+// can skip the (slow) full rebuild when nothing changed.
+//-----------------------------------------------------------------------------
+void CModCacheManager::BuildDirectorySignature( const char *szRelativeDir, int &fileCount, long &newestTime )
+{
+	char searchPath[256];
+	Q_snprintf( searchPath, sizeof( searchPath ), "%s/*", szRelativeDir );
+
+	FileFindHandle_t findHandle = FILESYSTEM_INVALID_FIND_HANDLE;
+	const char *pFileName = g_pFullFilesystem->FindFirst( searchPath, &findHandle );
+	while ( pFileName )
+	{
+		if ( Q_strcmp( pFileName, "." ) != 0 && Q_strcmp( pFileName, ".." ) != 0 )
+		{
+			char childPath[256];
+			Q_snprintf( childPath, sizeof( childPath ), "%s/%s", szRelativeDir, pFileName );
+
+			if ( g_pFullFilesystem->IsDirectory( childPath, "MOD" ) )
+			{
+				BuildDirectorySignature( childPath, fileCount, newestTime );
+			}
+			else
+			{
+				fileCount++;
+				long fileTime = g_pFullFilesystem->GetFileTime( childPath, "MOD" );
+				if ( fileTime > newestTime )
+					newestTime = fileTime;
+			}
+		}
+
+		pFileName = g_pFullFilesystem->FindNext( findHandle );
+	}
+
+	if ( findHandle != FILESYSTEM_INVALID_FIND_HANDLE )
+	{
+		g_pFullFilesystem->FindClose( findHandle );
+	}
+}
+
+void CModCacheManager::BuildModSignature( const char *szFolderName, int &fileCount, long &newestTime )
+{
+	fileCount = 0;
+	newestTime = 0;
+
+	char modDir[256];
+	Q_snprintf( modDir, sizeof( modDir ), "mods/%s", szFolderName );
+	BuildDirectorySignature( modDir, fileCount, newestTime );
+}
+
+void CModCacheManager::SaveCacheManifest()
+{
+	KeyValues *pKV = new KeyValues( "CacheManifest" );
+
+	for ( int i = 0; i < m_Mods.Count(); i++ )
+	{
+		int fileCount;
+		long newestTime;
+		BuildModSignature( m_Mods[i].szFolderName, fileCount, newestTime );
+
+		KeyValues *pModKV = pKV->CreateNewKey();
+		pModKV->SetName( m_Mods[i].szFolderName );
+		pModKV->SetInt( "enabled", m_Mods[i].bEnabled ? 1 : 0 );
+		pModKV->SetInt( "filecount", fileCount );
+		pModKV->SetInt( "newesttime", (int)newestTime );
+	}
+
+	pKV->SaveToFile( g_pFullFilesystem, MODCACHE_MANIFEST_FILE, "MOD" );
+	pKV->deleteThis();
+}
+
+bool CModCacheManager::IsCacheUpToDate()
+{
+	// No manifest = cache was cleared or never built
+	if ( !g_pFullFilesystem->FileExists( MODCACHE_MANIFEST_FILE, "MOD" ) )
+		return false;
+
+	KeyValues *pKV = new KeyValues( "CacheManifest" );
+	if ( !pKV->LoadFromFile( g_pFullFilesystem, MODCACHE_MANIFEST_FILE, "MOD" ) )
+	{
+		pKV->deleteThis();
+		return false;
+	}
+
+	bool bUpToDate = true;
+
+	// Every current mod must match its recorded signature
+	int manifestCount = 0;
+	for ( KeyValues *pSubKey = pKV->GetFirstSubKey(); pSubKey; pSubKey = pSubKey->GetNextKey() )
+		manifestCount++;
+
+	if ( manifestCount != m_Mods.Count() )
+	{
+		bUpToDate = false;
+	}
+	else
+	{
+		for ( int i = 0; i < m_Mods.Count(); i++ )
+		{
+			KeyValues *pModKV = pKV->FindKey( m_Mods[i].szFolderName );
+			if ( !pModKV )
+			{
+				bUpToDate = false;
+				break;
+			}
+
+			int fileCount;
+			long newestTime;
+			BuildModSignature( m_Mods[i].szFolderName, fileCount, newestTime );
+
+			if ( pModKV->GetInt( "enabled", -1 ) != ( m_Mods[i].bEnabled ? 1 : 0 ) ||
+				 pModKV->GetInt( "filecount", -1 ) != fileCount ||
+				 pModKV->GetInt( "newesttime", -1 ) != (int)newestTime )
+			{
+				bUpToDate = false;
+				break;
+			}
+		}
+	}
+
+	pKV->deleteThis();
+	return bUpToDate;
 }
 
 bool CModCacheManager::CopyFileToCache( const char *szModFolder, const char *szRelativePath )

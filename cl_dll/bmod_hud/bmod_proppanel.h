@@ -62,6 +62,7 @@ struct PropCategory_t
 	char						szFilePath[256];	// Full path to .txt file
 	CUtlVector<PropEntry_t>		*pEntries;			// Pointer to entries (allocated dynamically)
 	bool						bLoaded;			// Whether entries have been parsed
+	bool						bNetworked;			// Entries came from the server (SWEPs/weapons), not a file
 
 	PropCategory_t()
 	{
@@ -69,6 +70,7 @@ struct PropCategory_t
 		szFilePath[0] = '\0';
 		pEntries = NULL;
 		bLoaded = false;
+		bNetworked = false;
 	}
 
 	~PropCategory_t()
@@ -86,6 +88,7 @@ struct PropCategory_t
 		Q_strncpy( szName, other.szName, sizeof(szName) );
 		Q_strncpy( szFilePath, other.szFilePath, sizeof(szFilePath) );
 		bLoaded = other.bLoaded;
+		bNetworked = other.bNetworked;
 		// Create new entries vector and copy contents
 		if ( other.pEntries )
 		{
@@ -108,6 +111,7 @@ struct PropCategory_t
 			Q_strncpy( szName, other.szName, sizeof(szName) );
 			Q_strncpy( szFilePath, other.szFilePath, sizeof(szFilePath) );
 			bLoaded = other.bLoaded;
+			bNetworked = other.bNetworked;
 			if ( pEntries )
 				delete pEntries;
 			if ( other.pEntries )
@@ -232,6 +236,10 @@ public:
 	PropCategory_t *GetCategory( int index );
 	int GetCategoryCount() const { return m_Categories.Count(); }
 
+	// Server-driven categories (SWEPs and spawnable weapons)
+	PropCategory_t *FindOrCreateNetworkedCategory( const char *pszName );
+	void RemoveNetworkedCategories();
+
 private:
 	void ParseCategoryFile( PropCategory_t &category );
 
@@ -260,6 +268,15 @@ public:
 	virtual void OnScrollBarSliderMoved( int position );
 
 	void ReloadProps();
+
+	// Server-driven spawn list entries (SWEPs / spawnable weapons). The entry's
+	// command is executed verbatim when its button is clicked.
+	void AddNetworkedEntry( const char *pszCategory, const char *pszDisplayName, const char *pszCommand );
+	void ClearNetworkedEntries();
+	void RefreshAfterNetworkUpdate();
+
+	// Selects a dropdown category by display name (Spawn_SetCategory message)
+	void SelectCategoryByName( const char *pszName );
 
 private:
 	CPropCategoryList	*m_pCategoryList;

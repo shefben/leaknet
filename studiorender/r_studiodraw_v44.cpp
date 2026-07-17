@@ -1104,7 +1104,7 @@ public:
 		if (nHasTangentSpace)
 		{
 			pStudioTangentS = vertData->TangentS( 0 );
-			Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
+			if (pStudioTangentS) Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
 		}
 
 		// Mouth related stuff...
@@ -1144,7 +1144,7 @@ public:
 				char *pMem = (char*)&pVertices[ntemp[i]];
 				_mm_prefetch( pMem, _MM_HINT_NTA );
 				_mm_prefetch( pMem + 32, _MM_HINT_NTA );
-				if ( nHasTangentSpace )
+				if ( nHasTangentSpace && pStudioTangentS )
 				{
 					_mm_prefetch( (char*)&pStudioTangentS[ntemp[i]], _MM_HINT_NTA );
 				}
@@ -1199,7 +1199,8 @@ public:
 
 				if (nHasTangentSpace)
 				{
-					pSrcTangentS = &pStudioTangentS[n];
+					static Vector4D s_dummyTangent( 1.0f, 0.0f, 0.0f, 1.0f );
+					pSrcTangentS = pStudioTangentS ? &pStudioTangentS[n] : &s_dummyTangent;
 					Assert( pSrcTangentS->w == -1.0f || pSrcTangentS->w == 1.0f );
 				}
 			}
@@ -1213,7 +1214,7 @@ public:
 			{
 				_mm_prefetch( (char*)&pVertices[ntemp[idx]], _MM_HINT_NTA);
 				_mm_prefetch( (char*)&pVertices[ntemp[idx]] + 32, _MM_HINT_NTA );
-				if ( nHasTangentSpace )
+				if ( nHasTangentSpace && pStudioTangentS )
 				{
 					_mm_prefetch( (char*)&pStudioTangentS[ntemp[idx]], _MM_HINT_NTA );
 				}
@@ -2017,7 +2018,7 @@ void CStudioRender::R_StudioProcessFlexedMesh( mstudiomesh_t* pmesh, CMeshBuilde
 	if (vertData->HasTangentData())
 	{
 		pStudioTangentS = vertData->TangentS( 0 );
-		Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
+		if (pStudioTangentS) Assert( pStudioTangentS->w == -1.0f || pStudioTangentS->w == 1.0f );
 
 		for ( int j=0; j < numVertices ; j++)
 		{
@@ -2058,8 +2059,16 @@ void CStudioRender::R_StudioProcessFlexedMesh( mstudiomesh_t* pmesh, CMeshBuilde
 				meshBuilder.BoneMatrix( 3, 0 );
 				meshBuilder.Normal3fv( vert.m_vecNormal.Base() );
 				meshBuilder.TexCoord2fv( 0, vert.m_vecTexCoord.Base() );
-				Assert( pStudioTangentS[n].w == -1.0f || pStudioTangentS[n].w == 1.0f );
-				meshBuilder.UserData( pStudioTangentS[n].Base() );
+				if (pStudioTangentS)
+				{
+					Assert( pStudioTangentS[n].w == -1.0f || pStudioTangentS[n].w == 1.0f );
+					meshBuilder.UserData( pStudioTangentS[n].Base() );
+				}
+				else
+				{
+					static Vector4D s_dummyTangent( 1.0f, 0.0f, 0.0f, 1.0f );
+					meshBuilder.UserData( s_dummyTangent.Base() );
+				}
 			}
 
 			meshBuilder.AdvanceVertex();
@@ -2156,6 +2165,11 @@ template<VertexCompressionType_t T> void CStudioRender::R_StudioRestoreMesh( mst
 		{
 			Assert( pStudioTangentS[n].w == -1.0f || pStudioTangentS[n].w == 1.0f );
 			meshBuilder.CompressedUserData<T>( pStudioTangentS[n].Base() );
+		}
+		else if (bHasTangentSpace)
+		{
+			static Vector4D s_dummyTangent( 1.0f, 0.0f, 0.0f, 1.0f );
+			meshBuilder.CompressedUserData<T>( s_dummyTangent.Base() );
 		}
 
 		meshBuilder.Color4ub( 255, 255, 255, 255 );

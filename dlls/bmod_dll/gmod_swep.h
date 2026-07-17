@@ -44,6 +44,7 @@ struct SWEPData_t
     char className[256];
     char printName[256];
     char scriptPath[256];
+    char category[64];          // Folder name under lua/weapons/ - drives the spawn menu dropdown
     char viewModel[256];
     char worldModel[256];
     char hudMaterial[256];
@@ -94,6 +95,7 @@ struct SWEPData_t
         strcpy(className, "weapon_scripted");
         strcpy(printName, "Scripted Weapon");
         strcpy(scriptPath, "");
+        strcpy(category, "Other");
         strcpy(viewModel, "models/weapons/v_smg_ump45.mdl");
         strcpy(worldModel, "models/weapons/w_smg_ump45.mdl");
         strcpy(hudMaterial, "gmod/SWEP/default");
@@ -152,7 +154,7 @@ public:
     virtual void LevelInitPostEntity();
 
     // SWEP management functions
-    static bool RegisterSWEP(const char* pszClassName, const char* pszScriptPath);
+    static bool RegisterSWEP(const char* pszClassName, const char* pszScriptPath, const char* pszCategory = "Other");
     static bool LoadSWEP(const char* pszClassName);
     static bool UnloadSWEP(const char* pszClassName);
     static SWEPData_t* GetSWEPData(const char* pszClassName);
@@ -188,7 +190,12 @@ public:
     static void LoadAllSWEPs();
     static void LoadBaseSWEP();
     static void LoadBuildSWEPs();
+    static void ScanSWEPDirectories();
     static void ReloadAllSWEPs();
+
+    // Sends the SWEP + spawnable-weapon list to one client's spawn menu
+    // (categorized serverside, delivered via the GModSpawnList usermessage)
+    static void SendSpawnListToPlayer(CBasePlayer* pPlayer);
 
     // Utility functions
     static const char* GetSWEPTypeName(SWEPType_t swepType);
@@ -227,6 +234,10 @@ private:
 
 // Global instance
 extern CGModSWEPSystem g_GMod_SWEPSystem;
+
+// Implemented in weapon_scripted.cpp - creates a weapon_scripted entity bound
+// to the given registered SWEP and gives it to the player.
+CBaseCombatWeapon *GMod_GiveScriptedWeapon( CBasePlayer *pPlayer, const char *pszSWEPClass );
 
 // Console command handlers - discovered from IDA string analysis
 void CMD_gmod_give_swep(void);

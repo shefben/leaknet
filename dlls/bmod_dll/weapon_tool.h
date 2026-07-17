@@ -159,23 +159,32 @@ public:
 	virtual void	OnToolTrace( trace_t &tr, bool bPrimary );
 	virtual void	OnToolThink();
 
-	// Shared "select first prop, then select second prop" state used by every
+	// Shared "select first point, then select second point" state used by every
 	// constraint-family tool (Rope/Elastic/Weld/Ballsocket/Pulley/EasyWeld/
 	// EasyBall/Axis/Slider/NailGun/NoCollide/Wheel) so those tool_*.cpp files
-	// don't each need their own per-instance storage.
+	// don't each need their own per-instance storage. A pending selection with
+	// a NULL entity + m_bPendingWorld set means the first click landed on the
+	// world (only meaningful for tools that support world attachment).
 	CBaseEntity		*GetPendingEntity() const { return m_hPendingEntity.Get(); }
+	bool			IsPendingWorld() const { return m_bPendingWorld; }
+	bool			HasPendingSelection() const { return m_bPendingWorld || m_hPendingEntity.Get() != NULL; }
 	const Vector	&GetPendingPos() const { return m_vecPendingPos; }
+	int				GetPendingPhysBone() const { return m_nPendingPhysBone; }
 	float			GetPendingTime() const { return m_flPendingTime; }
-	void			SetPendingSelection( CBaseEntity *pEntity, const Vector &vecPos )
+	void			SetPendingSelection( CBaseEntity *pEntity, const Vector &vecPos, int nPhysBone = -1 )
 	{
 		m_hPendingEntity = pEntity;
+		m_bPendingWorld = ( pEntity == NULL );
 		m_vecPendingPos = vecPos;
+		m_nPendingPhysBone = nPhysBone;	// trace physicsbone, so ragdolls constrain the clicked limb
 		m_flPendingTime = gpGlobals->curtime;
 	}
 	void			ClearPendingSelection()
 	{
 		m_hPendingEntity = NULL;
+		m_bPendingWorld = false;
 		m_vecPendingPos = vec3_origin;
+		m_nPendingPhysBone = -1;
 		m_flPendingTime = 0.0f;
 	}
 
@@ -212,7 +221,9 @@ protected:
 
 	// Shared constraint-tool pending-selection state (see accessors above)
 	EHANDLE			m_hPendingEntity;
+	bool			m_bPendingWorld;
 	Vector			m_vecPendingPos;
+	int				m_nPendingPhysBone;
 	float			m_flPendingTime;
 
 	// Activity lookup table for different tool modes

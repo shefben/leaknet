@@ -365,11 +365,14 @@ IVP_OV_Node *IVP_OV_Tree_Manager::find_smallest_box(const IVP_OV_Node *master_no
 
 void IVP_OV_Tree_Manager::connect_boxes(IVP_OV_Node *node, IVP_OV_Node *new_node)
 {
+    // iterative (was tail-recursive): descent depth equals the sizelevel gap,
+    // which reaches thousands on corrupted node data and overflowed the stack
+    for (;;) {
     int rasterlevel_diff = node->data.sizelevel - new_node->data.sizelevel;
 
     IVP_ASSERT(rasterlevel_diff>0);
 
-    if ( rasterlevel_diff == 1 ) {
+    if ( rasterlevel_diff <= 1 ) {
 	// new node is exactly one level below -> simply insert it as one of our children
 	new_node->parent = node;
 	node->children.add(new_node);
@@ -458,9 +461,8 @@ void IVP_OV_Tree_Manager::connect_boxes(IVP_OV_Node *node, IVP_OV_Node *new_node
     }	
 #endif
 		    
-    connect_boxes(new_subnode, new_node);
-
-    return;
+    node = new_subnode;
+    }
 }
 
 
@@ -657,7 +659,39 @@ IVP_DOUBLE IVP_OV_Tree_Manager::insert_ov_element(IVP_OV_Element *element,
     if ( element == NULL ) {
         return(0);
     }
-    
+
+    // sanitize inputs: a NaN/huge center or radius makes calc_optimal_box emit
+    // garbage node coords/sizelevels (int overflow -> INT_MIN), expand_tree then
+    // grows the root without bound (its IVP_ASSERT is compiled out under NDEBUG)
+    // and connect_boxes descends thousands of levels -> stack overflow (c00000fd)
+    {
+	const IVP_DOUBLE max_coord = 100000.0f;	// 100km; source maps are < 16km
+	int k;
+	for (k=0; k<3; k++){
+	    IVP_DOUBLE c = element->center.k[k];
+	    if ( !(c >= -max_coord) || !(c <= max_coord) ){	// inverted compares also catch NaN
+		printf("IVP_OV_Tree_Manager - ERROR: object '%s' has invalid center (%g %g %g), clamping\n",
+		       element->real_object ? element->real_object->get_name() : "?",
+		       (double)element->center.k[0], (double)element->center.k[1], (double)element->center.k[2]);
+		element->center.k[k] = ( c > 0.0f ) ? (IVP_FLOAT)max_coord : (( c < 0.0f ) ? (IVP_FLOAT)-max_coord : 0.0f);
+	    }
+	}
+	if ( !(min_radius >= 0.001f) ){
+	    min_radius = 0.001f;
+	}
+	if ( !(min_radius <= max_coord) ){
+	    printf("IVP_OV_Tree_Manager - ERROR: object '%s' has invalid check radius %g, clamping\n",
+		   element->real_object ? element->real_object->get_name() : "?", (double)min_radius);
+	    min_radius = max_coord;
+	}
+	if ( !(max_radius >= min_radius) ){
+	    max_radius = min_radius;
+	}
+	if ( !(max_radius <= max_coord) ){
+	    max_radius = max_coord;
+	}
+    }
+
     IVP_DOUBLE used_radius;
     
     used_radius = calc_optimal_box(element, min_radius, max_radius);
@@ -706,12 +740,21 @@ IVP_DOUBLE IVP_OV_Tree_Manager::insert_ov_element(IVP_OV_Element *element,
 	}
 
 	// check whether root box is already large enough for the element to completely fit in...
+	// expansion is capped: sane (sanitized) inputs need < ~100 doublings; anything
+	// beyond that means corrupted node data and would otherwise loop/recurse forever
+	int n_expansions = 0;
 	for (;;) {
+	    if ( n_expansions > 100 ) {
+		printf("IVP_OV_Tree_Manager - ERROR: tree expansion runaway for object '%s', aborting expansion\n",
+		       element->real_object ? element->real_object->get_name() : "?");
+		break;
+	    }
 	    if ( this->root->data.rasterlevel >= new_node->data.rasterlevel ) {
 		if ( !box_contains_box(&this->root->data, new_node, this->root->data.rasterlevel-new_node->data.rasterlevel) ) {
 		    // new object won't fit into existing tree;
 		    // expand tree until new object at least fits into root of tree...
 		    expand_tree(new_node);
+		    n_expansions++;
 		    continue;
 		}
 	    }
@@ -719,6 +762,7 @@ IVP_DOUBLE IVP_OV_Tree_Manager::insert_ov_element(IVP_OV_Element *element,
 		// new object won't fit into existing tree;
 		// expand tree until new object at least fits into root of tree...
 		expand_tree(new_node);
+		n_expansions++;
 		continue;
 	    }
 	    break;

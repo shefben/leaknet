@@ -1434,7 +1434,11 @@ IVTFTexture *CTexture::LoadTextureBitsFromFile( )
 	buf.EnsureCapacity( nFileSize );
 
 	// Here, the rest of the file (that we care about) gets read in
-	g_pFileSystem->Read( buf.PeekPut(), nFileSize - nHeaderSize, fileHandle );
+	// (the header read may already cover small files, so the count can be <= 0)
+	if ( nFileSize > nHeaderSize )
+	{
+		g_pFileSystem->Read( buf.PeekPut(), nFileSize - nHeaderSize, fileHandle );
+	}
 	g_pFileSystem->Close(fileHandle);
 
 	// Read in that much of the file...

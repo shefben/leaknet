@@ -11,7 +11,10 @@
 #include "igamesystem.h"
 
 extern CBaseEntity *FindPickerEntity( CBasePlayer *pPlayer );
-static CUtlVector<IServerNetworkable*> g_DeleteList;
+// Entity destruction can be triggered while another entity's UpdateOnRemove is
+// running. Keep handles here, not object pointers: a queued object may be
+// destroyed immediately before this list is drained.
+static CUtlVector<CBaseHandle> g_DeleteList;
 
 CGlobalEntityList gEntList;
 CBaseEntityList *g_pEntityList = &gEntList;
@@ -96,12 +99,17 @@ static bool g_fInCleanupDelete;
 // mark an entity as deleted
 void CGlobalEntityList::AddToDeleteList( IServerNetworkable *ent )
 {
-	if ( ent && ent->GetRefEHandle() != INVALID_EHANDLE_INDEX )
+	if ( !ent )
+		return;
+
+	const CBaseHandle hEnt = ent->GetRefEHandle();
+	if ( hEnt != INVALID_EHANDLE_INDEX )
 	{
-		// Check if entity is already in the delete list to prevent double-delete crashes
-		if ( g_DeleteList.Find( ent ) == g_DeleteList.InvalidIndex() )
+		// Check the handle rather than the address. A raw pointer can become stale
+		// before CleanupDeleteList() runs during level shutdown.
+		if ( g_DeleteList.Find( hEnt ) == g_DeleteList.InvalidIndex() )
 		{
-			g_DeleteList.AddToTail( ent );
+			g_DeleteList.AddToTail( hEnt );
 		}
 	}
 }
@@ -120,12 +128,17 @@ void CGlobalEntityList::CleanupDeleteList( void )
 	g_bDisableEhandleAccess = true;
 	for ( int i = 0; i < g_DeleteList.Count(); i++ )
 	{
-		IServerNetworkable *pNetworkable = g_DeleteList[i];
+		const CBaseHandle hEnt = g_DeleteList[i];
+		// Clear the queue entry before deleting. The destructor may otherwise
+		// interact with this list while it is being drained.
+		g_DeleteList[i].Term();
+
+		// A handle resolves to NULL if an UpdateOnRemove callback already
+		// destroyed the queued entity. Never dereference a stale raw pointer.
+		IServerNetworkable *pNetworkable = GetServerNetworkable( hEnt );
 		if ( pNetworkable )
 		{
 			CBaseEntity *pEntity = pNetworkable->GetBaseEntity();
-			// Clear the pointer in the list BEFORE deleting to prevent double-delete
-			g_DeleteList[i] = NULL;
 			if ( pEntity )
 			{
 				delete pEntity;
@@ -839,7 +852,7 @@ void CGlobalEntityList::OnRemoveEntity( IHandleEntity *pEnt, CBaseHandle handle 
 		int i;
 		for ( i = 0; i < g_DeleteList.Count(); i++ )
 		{
-			if ( g_DeleteList[i] == pEnt )
+			if ( g_DeleteList[i] == handle )
 			{
 				g_DeleteList.FastRemove( i );
 				Msg( "ERROR: Entity being destroyed but previously threaded on g_DeleteList\n" );

@@ -84,6 +84,7 @@ BEGIN_SRC( SERVER_BMOD_SOURCE_FILES "Source Files" )
 			"bmod_dll/gmod_balloon.h"
 			"bmod_dll/gmod_swep.cpp"
 			"bmod_dll/gmod_swep.h"
+			"bmod_dll/weapon_scripted.cpp"
 			"bmod_dll/gmod_gamemode.cpp"
 			"bmod_dll/gmod_gamemode.h"
 			"bmod_dll/gmod_make_compat.cpp"

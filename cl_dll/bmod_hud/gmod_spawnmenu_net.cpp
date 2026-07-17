@@ -8,6 +8,8 @@
 #include "parsemsg.h"
 #include "iclientmode.h"
 #include <vgui_controls/Panel.h>
+#include "bmod_spawnmenu.h"
+#include "bmod_proppanel.h"
 
 // Message opcode definitions
 enum GModSpawnMsgType
@@ -17,8 +19,17 @@ enum GModSpawnMsgType
 	SPAWNMSG_RELOAD= 2
 };
 
-// Forward declaration for HUD message binding (2003 protocol).
+// SPAWNMSG_ADD entry types (trailing byte)
+enum GModSpawnEntryType
+{
+	SPAWNENTRY_PROP    = 0,
+	SPAWNENTRY_RAGDOLL = 1,
+	SPAWNENTRY_COMMAND = 2	// server-categorized SWEP / spawnable weapon
+};
+
+// Forward declarations for HUD message binding (2003 protocol).
 void __MsgFunc_GModSpawnList( const char *pszName, int iSize, void *pbuf );
+void __MsgFunc_Spawn_SetCategory( const char *pszName, int iSize, void *pbuf );
 
 // HUD element to receive usermessages and update spawnmenu data.
 class CGModSpawnMenuNet : public CHudElement, public vgui::Panel
@@ -34,11 +45,30 @@ public:
 	virtual void Init( void )
 	{
 		HOOK_MESSAGE( GModSpawnList );
+		HOOK_MESSAGE( Spawn_SetCategory );
+	}
+
+	// Server/Lua tells us which dropdown category to show. Must stay hooked -
+	// dispatching an unhooked usermessage Host_Error-disconnects the client.
+	void MsgFunc_Spawn_SetCategory( const char *pszName, int iSize, void *pbuf )
+	{
+		BEGIN_READ( pbuf, iSize );
+
+		char category[64];
+		Q_strncpy( category, READ_STRING(), sizeof( category ) );
+
+		CPropPanel *pPropPanel = g_pSpawnMenu ? g_pSpawnMenu->GetPropPanel() : NULL;
+		if ( pPropPanel )
+		{
+			pPropPanel->SelectCategoryByName( category );
+		}
 	}
 
 	void MsgFunc_GModSpawnList( const char *pszName, int iSize, void *pbuf )
 	{
 		BEGIN_READ( pbuf, iSize );
+
+		CPropPanel *pPropPanel = g_pSpawnMenu ? g_pSpawnMenu->GetPropPanel() : NULL;
 
 		int op = READ_BYTE();
 		switch ( op )
@@ -46,6 +76,10 @@ public:
 		case SPAWNMSG_CLEAR:
 			CGModSpawnList::Shutdown();
 			CGModSpawnList::Initialize();
+			if ( pPropPanel )
+			{
+				pPropPanel->ClearNetworkedEntries();
+			}
 			break;
 
 		case SPAWNMSG_ADD:
@@ -53,12 +87,22 @@ public:
 			char category[64];
 			char display[128];
 			char model[256];
-			bool ragdoll = false;
 
 			Q_strncpy( category, READ_STRING(), sizeof( category ) );
 			Q_strncpy( display, READ_STRING(), sizeof( display ) );
 			Q_strncpy( model, READ_STRING(), sizeof( model ) );
-			ragdoll = READ_BYTE() ? true : false;
+			int entryType = READ_BYTE();
+
+			if ( entryType == SPAWNENTRY_COMMAND )
+			{
+				// Server-categorized SWEP / weapon: shows up as a dropdown
+				// category in the build menu; clicking runs the command.
+				if ( pPropPanel )
+				{
+					pPropPanel->AddNetworkedEntry( category, display, model );
+				}
+				break;
+			}
 
 			// Add entry to spawn list
 			CGModSpawnList::AddEntry( model, category );
@@ -69,13 +113,17 @@ public:
 			if ( pEntry )
 			{
 				Q_strncpy( pEntry->displayName, display, sizeof( pEntry->displayName ) );
-				pEntry->isRagdoll = ragdoll;
+				pEntry->isRagdoll = ( entryType == SPAWNENTRY_RAGDOLL );
 			}
 			break;
 		}
 
 		case SPAWNMSG_RELOAD:
 			CGModSpawnList::ReloadSpawnMenu();
+			if ( pPropPanel )
+			{
+				pPropPanel->RefreshAfterNetworkUpdate();
+			}
 			break;
 
 		default:
@@ -85,4 +133,21 @@ public:
 };
 
 DECLARE_HUD_MESSAGE( CGModSpawnMenuNet, GModSpawnList );
+DECLARE_HUD_MESSAGE( CGModSpawnMenuNet, Spawn_SetCategory );
 DECLARE_HUDELEMENT( CGModSpawnMenuNet );
+
+//-----------------------------------------------------------------------------
+// Ask the server for its SWEP/weapon spawn list each time a level starts.
+//-----------------------------------------------------------------------------
+class CGModSpawnListRequest : public CAutoGameSystem
+{
+public:
+	CGModSpawnListRequest() : CAutoGameSystem( "CGModSpawnListRequest" ) {}
+
+	virtual void LevelInitPostEntity()
+	{
+		engine->ServerCmd( "gmod_request_sweps\n" );
+	}
+};
+
+static CGModSpawnListRequest g_GModSpawnListRequest;

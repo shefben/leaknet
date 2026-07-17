@@ -378,10 +378,9 @@ bool CServerGameDLL::GameInit( void )
 	// clear out any old game's temporary save data
 //	engine->ClearSaveDir();
 
-	// Initialize Lua integration system (bmod only)
-#ifdef BMOD_DLL
-	CLuaIntegration::Initialize();
-#endif
+	// The BMod Lua state is owned by CGModLuaSystem, an auto game system whose
+	// lifetime spans DLLInit/DLLShutdown.  Do not recreate it for each hosted
+	// game; listen-server disconnects only end the current game.
 
 	return true;
 }
@@ -390,11 +389,6 @@ bool CServerGameDLL::GameInit( void )
 // NOT on level transitions within a game
 void CServerGameDLL::GameShutdown( void )
 {
-	// Shutdown Lua integration system (bmod only)
-#ifdef BMOD_DLL
-	CLuaIntegration::Shutdown();
-#endif
-
 	ResetGlobalState();
 }
 
@@ -1482,4 +1476,3 @@ void MessageWriteBits( const void *pIn, int nBits )
 
 	g_pMsgBuffer->WriteBits( pIn, nBits );
 }
-

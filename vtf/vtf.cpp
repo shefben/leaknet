@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: The VTF file format I/O class to help simplify access to VTF files
 //
@@ -243,6 +243,12 @@ private:
 	// FIXME: Remove
 	// This is to make sure old-format .vtf files are read properly
 	int	m_pVersion[2];
+
+	// v7.2+ files have a header larger than VTFFileHeader_t and (7.3+) locate
+	// their data through a resource dictionary instead of appending it
+	int m_nActualHeaderSize;
+	int m_nLowResDataFileOffset;	// -1 = not present / legacy sequential layout
+	int m_nImageDataFileOffset;		// -1 = legacy sequential layout
 };
 
 
@@ -267,7 +273,10 @@ void DestroyVTFTexture( IVTFTexture *pTexture )
 //-----------------------------------------------------------------------------
 int VTFFileHeaderSize()
 {
-	return sizeof(VTFFileHeader_t);
+	// enough for the v7.3+ extended header (depth/pad/numResources up to file
+	// offset 80) plus 16 resource dictionary entries of 8 bytes each; header-only
+	// Unserialize needs the dictionary to locate the image data
+	return sizeof(VTFFileHeader_t) + 16 + 16 * 8;
 }
 
 
@@ -298,6 +307,10 @@ CVTFTexture::CVTFTexture()
 	m_nLowResImageWidth = 0;
 	m_nLowResImageHeight = 0;
 	m_pLowResImageData = NULL;
+
+	m_nActualHeaderSize = sizeof(VTFFileHeader_t);
+	m_nLowResDataFileOffset = -1;
+	m_nImageDataFileOffset = -1;
 	m_nLowResImageAllocSize = 0;
 }
 
@@ -458,7 +471,7 @@ void CVTFTexture::LowResFileInfo( int *pStartLocation, int *pSizeInBytes) const
 {
 	// Once the header is read in, they indicate where to start reading
 	// other data, and how many bytes to read....
-	*pStartLocation = VTFFileHeaderSize();
+	*pStartLocation = ( m_nLowResDataFileOffset >= 0 ) ? m_nLowResDataFileOffset : m_nActualHeaderSize;
 
 	if ((m_nLowResImageWidth == 0) || (m_nLowResImageHeight == 0))
 	{
@@ -477,11 +490,19 @@ void CVTFTexture::ImageFileInfo( int nFrame, int nFace, int nMipLevel, int *pSta
 	int iMipWidth;
 	int iMipHeight;
 
-	// The image data starts after the low-res image
-	int iLowResSize;
+	// The image data starts after the low-res image (legacy layout), or at the
+	// resource dictionary's image offset (v7.3+)
 	int nOffset;
-	LowResFileInfo( &nOffset, &iLowResSize );
-	nOffset += iLowResSize;
+	if ( m_nImageDataFileOffset >= 0 )
+	{
+		nOffset = m_nImageDataFileOffset;
+	}
+	else
+	{
+		int iLowResSize;
+		LowResFileInfo( &nOffset, &iLowResSize );
+		nOffset += iLowResSize;
+	}
 
 	// get to the right miplevel
 	for( i = m_nMipCount - 1; i > nMipLevel; --i )
@@ -520,11 +541,19 @@ void CVTFTexture::ImageFileInfo( int nFrame, int nFace, int nMipLevel, int *pSta
 
 int CVTFTexture::FileSize( int nMipSkipCount ) const
 {
-	// The image data starts after the low-res image
-	int nLowResSize;
+	// The image data starts after the low-res image (legacy layout), or at the
+	// resource dictionary's image offset (v7.3+)
 	int nOffset;
-	LowResFileInfo( &nOffset, &nLowResSize );
-	nOffset += nLowResSize;
+	if ( m_nImageDataFileOffset >= 0 )
+	{
+		nOffset = m_nImageDataFileOffset;
+	}
+	else
+	{
+		int nLowResSize;
+		LowResFileInfo( &nOffset, &nLowResSize );
+		nOffset += nLowResSize;
+	}
 
 	int nFaceSize = ComputeFaceSize( nMipSkipCount );
 	int nImageSize = nFaceSize * m_nFaceCount * m_nFrameCount;
@@ -647,6 +676,14 @@ bool CVTFTexture::Unserialize( CUtlBuffer &buf, bool bBufferHeaderOnly, int nSki
 		Warning( "*** Encountered VTF invalid texture size!\n" );
 		return false;
 	}
+	// newer (retail) files can use formats this engine has no decoder for
+	// (HDR float formats etc.); reject them instead of indexing the
+	// ImageLoader tables out of bounds
+	if( header.imageFormat < 0 || header.imageFormat >= NUM_IMAGE_FORMATS )
+	{
+		Warning( "*** Encountered VTF with unsupported image format %d!\n", (int)header.imageFormat );
+		return false;
+	}
 
 	m_nWidth = header.width;
 	m_nHeight = header.height;
@@ -672,6 +709,51 @@ bool CVTFTexture::Unserialize( CUtlBuffer &buf, bool bBufferHeaderOnly, int nSki
 	m_pVersion[0] = header.version[0];
 	m_pVersion[1] = header.version[1];
 
+	// v7.2+ headers are larger than VTFFileHeader_t (7.2 appends a depth field,
+	// 7.3+ appends a resource dictionary that locates the data chunks); honor
+	// headerSize / the dictionary or the image bits get decoded from the wrong
+	// file offset (shifted garbage / noise textures)
+	m_nActualHeaderSize = header.headerSize;
+	if ( m_nActualHeaderSize < (int)sizeof(VTFFileHeader_t) )
+	{
+		m_nActualHeaderSize = sizeof(VTFFileHeader_t);
+	}
+	m_nLowResDataFileOffset = -1;
+	m_nImageDataFileOffset = -1;
+
+	if ( header.version[1] >= 3 )
+	{
+		// resource count is at file offset 68; 8-byte entries (3-byte type tag +
+		// 1 flag byte, then a u32 file offset) start at file offset 80
+		buf.SeekGet( CUtlBuffer::SEEK_HEAD, 68 );
+		int nResourceCount = buf.GetInt();
+		buf.SeekGet( CUtlBuffer::SEEK_HEAD, 80 );
+		for ( int i = 0; (i < nResourceCount) && (i < 16) && buf.IsValid(); ++i )
+		{
+			unsigned int nTypeAndFlags = buf.GetUnsignedInt();
+			int nDataOffset = buf.GetInt();
+			switch ( nTypeAndFlags & 0x00FFFFFF )
+			{
+			case 0x01:	// low-res image bits
+				m_nLowResDataFileOffset = nDataOffset;
+				break;
+			case 0x30:	// hi-res image bits
+				m_nImageDataFileOffset = nDataOffset;
+				break;
+			}
+		}
+		if ( m_nImageDataFileOffset < 0 )
+		{
+			Warning("*** VTF v7.%d file has no image data resource!\n", header.version[1]);
+			return false;
+		}
+	}
+	else if ( header.version[1] >= 2 )
+	{
+		// 7.2: data still follows the header sequentially, just further out
+		m_nLowResDataFileOffset = m_nActualHeaderSize;
+	}
+
 	if( header.lowResImageWidth == 0 || header.lowResImageHeight == 0 )
 	{
 		m_nLowResImageWidth = 0;
@@ -688,8 +770,26 @@ bool CVTFTexture::Unserialize( CUtlBuffer &buf, bool bBufferHeaderOnly, int nSki
 	if (bBufferHeaderOnly)
 		return true;
 
+	// for 7.2+ the data does not start at sizeof(VTFFileHeader_t); the buffer
+	// mirrors the file from offset 0, so seek to the real data offsets
+	if ( m_nLowResDataFileOffset >= 0 )
+	{
+		buf.SeekGet( CUtlBuffer::SEEK_HEAD, m_nLowResDataFileOffset );
+	}
+	else if ( m_pVersion[1] >= 3 )
+	{
+		// 7.3+ file without a low-res resource: there is no low-res image
+		m_nLowResImageWidth = 0;
+		m_nLowResImageHeight = 0;
+	}
+
 	if (!LoadLowResData( buf ))
 		return false;
+
+	if ( m_nImageDataFileOffset >= 0 )
+	{
+		buf.SeekGet( CUtlBuffer::SEEK_HEAD, m_nImageDataFileOffset );
+	}
 
 	if (!LoadImageData( buf, header, nSkipMipLevels ))
 		return false;

@@ -40,6 +40,42 @@ static ConVar gm_shiny_overlay(
 	FCVAR_CLIENTDLL | FCVAR_ARCHIVE,
 	"Force gmod/shiny as the screen overlay (overrides gm_overlay_enable when set)");
 
+// GMod 9 post-processing convars. The build menu's "Post Processing" context
+// panels (settings/context_panels/pp_*.txt) bind their toggles/sliders to
+// these exact names. Defaults match GMod 9.0.4b.
+static ConVar pp_bloom( "pp_bloom", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Enable bloom post processing" );
+static ConVar pp_bloom_blurpasses( "pp_bloom_blurpasses", "2", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Bloom blur passes" );
+static ConVar pp_bloom_darken( "pp_bloom_darken", "0.35", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Bloom darken amount" );
+static ConVar pp_bloom_multiply( "pp_bloom_multiply", "0.90", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Bloom multiply amount" );
+static ConVar pp_bloom_colour( "pp_bloom_colour", "0.75", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Bloom colour amount" );
+static ConVar pp_bloom_sizeh( "pp_bloom_sizeh", "6.0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Bloom horizontal size" );
+static ConVar pp_bloom_sizev( "pp_bloom_sizev", "6.0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Bloom vertical size" );
+
+static ConVar pp_colour( "pp_colour", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Enable colour mod post processing" );
+static ConVar pp_colour_addr( "pp_colour_addr", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Colour mod red add" );
+static ConVar pp_colour_addg( "pp_colour_addg", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Colour mod green add" );
+static ConVar pp_colour_addb( "pp_colour_addb", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Colour mod blue add" );
+static ConVar pp_colour_mulr( "pp_colour_mulr", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Colour mod red multiply" );
+static ConVar pp_colour_mulg( "pp_colour_mulg", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Colour mod green multiply" );
+static ConVar pp_colour_mulb( "pp_colour_mulb", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Colour mod blue multiply" );
+static ConVar pp_colour_brightness( "pp_colour_brightness", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Colour mod brightness" );
+static ConVar pp_colour_contrast( "pp_colour_contrast", "1", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Colour mod contrast" );
+static ConVar pp_colour_colour( "pp_colour_colour", "1", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Colour mod saturation" );
+
+static ConVar pp_dof( "pp_dof", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Enable depth of field post processing" );
+static ConVar pp_dof_passes( "pp_dof_passes", "4", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Depth of field passes" );
+static ConVar pp_dof_initialspace( "pp_dof_initialspace", "1", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Depth of field initial spacing" );
+static ConVar pp_dof_size( "pp_dof_size", "1", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Depth of field blur size" );
+static ConVar pp_dof_spacing( "pp_dof_spacing", "1", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Depth of field spacing" );
+
+static ConVar pp_motionblur( "pp_motionblur", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Enable motion blur post processing" );
+static ConVar pp_motionblur_addalpha( "pp_motionblur_addalpha", "0.1", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Motion blur add alpha" );
+static ConVar pp_motionblur_drawalpha( "pp_motionblur_drawalpha", "1", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Motion blur draw alpha" );
+static ConVar pp_motionblur_time( "pp_motionblur_time", "0.05", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Motion blur update time" );
+
+static ConVar pp_overlay( "pp_overlay", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Enable screen overlay post processing" );
+static ConVar pp_overlay_refractamount( "pp_overlay_refractamount", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Screen overlay refract amount" );
+
 static IMaterial *s_pMotionBlurMat = NULL;
 static IMaterial *s_pOverlayMat = NULL;
 static IMaterial *s_pShinyMat = NULL;
@@ -79,7 +115,10 @@ static void ApplyMotionBlurSettings()
 	IMaterialVar *pAlpha = s_pMotionBlurMat->FindVar("$alpha", nullptr, false);
 	if (pAlpha)
 	{
-		pAlpha->SetFloatValue(gm_motionblur_strength.GetFloat());
+		// pp_motionblur_drawalpha (GMod 9 name) takes priority when the pp
+		// toggle is on; gm_motionblur_strength is the legacy fallback.
+		float alpha = pp_motionblur.GetBool() ? pp_motionblur_drawalpha.GetFloat() : gm_motionblur_strength.GetFloat();
+		pAlpha->SetFloatValue(alpha);
 	}
 }
 
@@ -182,14 +221,14 @@ void GModPostProcess_Update(CViewRender &view)
 	}
 
 	// Overlay has priority when enabled; otherwise fallback to motion blur.
-	if (gm_overlay_enable.GetBool())
+	if (gm_overlay_enable.GetBool() || pp_overlay.GetBool())
 	{
 		EnsureOverlayMaterial();
 		if (s_pOverlayMat)
 			return;
 	}
 
-	if (!gm_motionblur_enable.GetBool())
+	if (!gm_motionblur_enable.GetBool() && !pp_motionblur.GetBool())
 	{
 		return;
 	}

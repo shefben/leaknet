@@ -20,9 +20,12 @@ bool CGModToolsSystem::s_bSystemInitialized = false;
 CGModToolsSystem g_GMod_ToolsSystem;
 
 // ConVars for tool system configuration - discovered from IDA analysis
-ConVar gm_toolweapon("gm_toolweapon", "1", FCVAR_GAMEDLL, "Current tool weapon selection");
-ConVar gm_toolmode("gm_toolmode", "0", FCVAR_GAMEDLL, "Current tool mode");
-ConVar gm_wepselmode("gm_wepselmode", "0", FCVAR_GAMEDLL, "Weapon selection mode");
+// NOTE: gm_toolweapon/gm_toolmode/gm_wepselmode are ConCommands (registered at
+// the bottom of this file), NOT ConVars. A ConVar and a ConCommand sharing one
+// name is an engine registration collision - whichever registers second is
+// silently dropped, which can leave the spawn menu's "gm_toolmode <N>" setting
+// a dead ConVar instead of running CMD_gm_toolmode. Per-player tool state
+// lives in s_PlayerToolData, not in global ConVars.
 ConVar gm_tool_delay("gm_tool_delay", "0.5", FCVAR_GAMEDLL, "Delay between tool uses");
 ConVar gm_tool_range("gm_tool_range", "4096", FCVAR_GAMEDLL, "Maximum tool range");
 ConVar gm_context_enabled("gm_context_enabled", "1", FCVAR_GAMEDLL, "Enable context menu system");
@@ -224,7 +227,6 @@ void CGModToolsSystem::SetPlayerTool(CBasePlayer* pPlayer, GMToolType_t toolType
         return;
 
     pData->currentTool = toolType;
-    gm_toolweapon.SetValue((int)toolType);
 
     if (pPlayer)
     {
@@ -251,7 +253,6 @@ void CGModToolsSystem::SetPlayerToolMode(CBasePlayer* pPlayer, int mode)
         return;
 
     pData->toolMode = mode;
-    gm_toolmode.SetValue(mode);
 
     if (pPlayer)
     {

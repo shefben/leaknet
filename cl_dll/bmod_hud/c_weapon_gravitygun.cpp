@@ -335,7 +335,7 @@ void C_BeamQuadratic::RenderOverlayBeam( void )
 
 	// Overlay beam properties - pulsing effect
 	float pulseTime = gpGlobals->curtime * 3.0f;
-	float pulseAlpha = 0.3f + 0.4f * sin( pulseTime );
+	float pulseAlpha = clamp( 0.3f + 0.4f * sin( pulseTime ), 0.0f, 1.0f );
 
 	// ConVar-driven base color
 	float c_r = clamp( physgun_r.GetFloat() / 255.0f, 0.0f, 1.0f );

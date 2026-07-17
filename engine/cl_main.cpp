@@ -2406,8 +2406,8 @@ model_t *CClientState::GetModel( int index )
 
 	if ( index >= networkStringTableContainerClient->GetNumStrings( m_hModelPrecacheTable ) )
 	{
-		Con_DPrintf( "[modeldbg] CL GetModel index=%d OUT OF RANGE tablecount=%d\n",
-			index, networkStringTableContainerClient->GetNumStrings( m_hModelPrecacheTable ) );
+		//Con_DPrintf( "[modeldbg] CL GetModel index=%d OUT OF RANGE tablecount=%d\n",
+		//	index, networkStringTableContainerClient->GetNumStrings( m_hModelPrecacheTable ) );
 		return NULL;
 	}
 
@@ -2427,8 +2427,8 @@ model_t *CClientState::GetModel( int index )
 
 	m = modelloader->GetModelForName( name, IModelLoader::FMODELLOADER_CLIENT );
 
-	Con_DPrintf( "[modeldbg] CL GetModel index=%d name='%s' loaded=%s\n",
-		index, name ? name : "NULL", m ? "yes" : "NO" );
+	//Con_DPrintf( "[modeldbg] CL GetModel index=%d name='%s' loaded=%s\n",
+	//	index, name ? name : "NULL", m ? "yes" : "NO" );
 
 	if ( !m )
 	{
