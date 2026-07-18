@@ -154,6 +154,14 @@ file( MAKE_DIRECTORY "${GAMEDIR}/resource" )
 file( COPY "${SRCDIR}/resource/gameevents.res" DESTINATION "${GAMEDIR}/resource" )
 file( COPY "${SRCDIR}/resource/SpawnMenuScheme.res" DESTINATION "${BMOD_ASSET_DESTINATION}/resource" )
 
+# GMod's build/spawn dialog requests this exact resource path.  The extracted
+# 9.0.4b data references it from client.dll but does not contain the file, so
+# deploy the project-local BMod layout into the active mod instead of allowing
+# a mounted game's Resource/UI file (or no file at all) to satisfy the lookup.
+file( MAKE_DIRECTORY "${BMOD_ASSET_DESTINATION}/resource/ui" )
+file( COPY "${SRCDIR}/resource/ui/menu_toolbuttons.res"
+	DESTINATION "${BMOD_ASSET_DESTINATION}/resource/ui" )
+
 # GameUI only resolves its Create Server pages and localization from the active
 # mod's resource path.  Keep these base UI assets with BMod instead of relying
 # on the mounted HL2 search path, which can be absent after a beta reinstall.

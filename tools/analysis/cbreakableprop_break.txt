@@ -1,0 +1,51 @@
+void CBreakableProp::Break( CBaseEntity *pBreaker, const CTakeDamageInfo *pDamageInfo )
+{
+#if defined( BMOD_DLL )
+	CGModGamemodeSystem::OnPropBreak( this );
+#endif
+
+	m_takedamage = DAMAGE_NO;
+	m_OnBreak.FireOutput( pBreaker, this );
+
+	Vector velocity;
+	AngularImpulse angVelocity;
+	IPhysicsObject *pPhysics = VPhysicsGetObject();
+	Vector origin;
+	QAngle angles;
+	AddSolidFlags( FSOLID_NOT_SOLID );
+	if ( pPhysics )
+	{
+		pPhysics->GetVelocity( &velocity, &angVelocity );
+		pPhysics->GetPosition( &origin, &angles );
+		pPhysics->RecheckCollisionFilter();
+	}
+	else
+	{
+		velocity = GetAbsVelocity();
+		QAngleToAngularImpulse( GetLocalAngularVelocity(), angVelocity );
+		origin = GetAbsOrigin();
+		angles = GetAbsAngles();
+	}
+	UTIL_Relink(this);
+
+	if ( m_explodeDamage > 0 || m_explodeRadius > 0 )
+	{
+		ExplosionCreate( GetAbsOrigin(), GetAbsAngles(), NULL, m_explodeDamage, m_explodeRadius, true );
+	}
+
+	breakablepropparams_t params( GetAbsOrigin(), GetAbsAngles(), velocity, angVelocity );
+	params.impactEnergyScale = m_impactEnergyScale;
+	params.defCollisionGroup = GetCollisionGroup();
+	if ( params.defCollisionGroup == COLLISION_GROUP_NONE )
+	{
+		// don't automatically make anything COLLISION_GROUP_NONE or it will
+		// collide with debris being ejected by breaking
+		params.defCollisionGroup = COLLISION_GROUP_INTERACTIVE;
+	}
+
+	// no damage/damage force? set a burst of 100 for some movement
+	params.defBurstScale = pDamageInfo ? 0 : 100;
+	PropBreakableCreateAll( GetModelIndex(), pPhysics, params );
+
+	UTIL_Remove(this);
+}

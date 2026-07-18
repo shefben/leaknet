@@ -1,0 +1,409 @@
+{
+  "gmod_9_0_4b\\lua\\gamemodes\\melonracer\\controls.lua": {
+    "functions": [
+      {
+        "line": 3,
+        "name": "DoForward",
+        "args": " iPlayer "
+      },
+      {
+        "line": 21,
+        "name": "DoReverse",
+        "args": " iPlayer "
+      },
+      {
+        "line": 38,
+        "name": "DoControls",
+        "args": ""
+      }
+    ],
+    "calls": [
+      {
+        "line": 5,
+        "call": "_PlayerIsKeyDown"
+      },
+      {
+        "line": 7,
+        "call": "_PlayerGetShootAng"
+      },
+      {
+        "line": 15,
+        "call": "_phys.ApplyForceCenter"
+      },
+      {
+        "line": 23,
+        "call": "_PlayerIsKeyDown"
+      },
+      {
+        "line": 25,
+        "call": "_PlayerGetShootAng"
+      },
+      {
+        "line": 33,
+        "call": "_PhysApplyForce"
+      },
+      {
+        "line": 40,
+        "call": "_MaxPlayers"
+      },
+      {
+        "line": 42,
+        "call": "_PlayerInfo"
+      },
+      {
+        "line": 44,
+        "call": "_PlayerInfo"
+      }
+    ]
+  },
+  "gmod_9_0_4b\\lua\\gamemodes\\melonracer\\events.lua": {
+    "functions": [
+      {
+        "line": 7,
+        "name": "eventPlayerKilled",
+        "args": " killed, attacker, weapon "
+      },
+      {
+        "line": 16,
+        "name": "eventPlayerDisconnect",
+        "args": " name, userid, address, steamid, reason "
+      },
+      {
+        "line": 27,
+        "name": "SetSpectatorMode",
+        "args": " userid, iMelon "
+      },
+      {
+        "line": 37,
+        "name": "eventPlayerSpawn",
+        "args": " userid "
+      },
+      {
+        "line": 86,
+        "name": "eventPropBreak",
+        "args": " breakerid, propid "
+      },
+      {
+        "line": 100,
+        "name": "MelonToPlayer",
+        "args": " Melon "
+      },
+      {
+        "line": 119,
+        "name": "HitCheckpoint",
+        "args": " Activator, Caller, NewCP "
+      },
+      {
+        "line": 176,
+        "name": "eventKeyPressed",
+        "args": " userid, in_key "
+      },
+      {
+        "line": 204,
+        "name": "onShowHelp",
+        "args": " userid "
+      }
+    ],
+    "calls": [
+      {
+        "line": 29,
+        "call": "_PlayerSpectatorStart"
+      },
+      {
+        "line": 30,
+        "call": "_PlayerSpectatorTarget"
+      },
+      {
+        "line": 40,
+        "call": "_PlayerInfo"
+      },
+      {
+        "line": 44,
+        "call": "_EntGetPos"
+      },
+      {
+        "line": 48,
+        "call": "_EntCreate"
+      },
+      {
+        "line": 50,
+        "call": "_EntSetModel"
+      },
+      {
+        "line": 51,
+        "call": "_EntSetPos"
+      },
+      {
+        "line": 53,
+        "call": "_EntSpawn"
+      },
+      {
+        "line": 58,
+        "call": "_CurTime"
+      },
+      {
+        "line": 63,
+        "call": "_PlayerSetChaseCamDistance"
+      },
+      {
+        "line": 79,
+        "call": "_phys.EnableMotion"
+      },
+      {
+        "line": 90,
+        "call": "_PlayerAddDeath"
+      },
+      {
+        "line": 102,
+        "call": "_MaxPlayers"
+      },
+      {
+        "line": 163,
+        "call": "_PlayerAddScore"
+      },
+      {
+        "line": 189,
+        "call": "_PlayerSetChaseCamDistance"
+      },
+      {
+        "line": 194,
+        "call": "_PlayerInfo"
+      },
+      {
+        "line": 196,
+        "call": "_PlayerChangeTeam"
+      },
+      {
+        "line": 197,
+        "call": "_EntSpawn"
+      }
+    ]
+  },
+  "gmod_9_0_4b\\lua\\gamemodes\\melonracer\\gamerules.lua": {
+    "functions": [
+      {
+        "line": 3,
+        "name": "gamerulesThink",
+        "args": ""
+      },
+      {
+        "line": 7,
+        "name": "GiveDefaultItems",
+        "args": " playerid "
+      },
+      {
+        "line": 9,
+        "name": "gamerulesStartMap",
+        "args": ""
+      },
+      {
+        "line": 15,
+        "name": "PlayerSpawnChooseModel",
+        "args": " playerid "
+      },
+      {
+        "line": 20,
+        "name": "PickDefaultSpawnTeam",
+        "args": " userid "
+      },
+      {
+        "line": 25,
+        "name": "eventPlayerActive",
+        "args": " name, userid, steamid "
+      },
+      {
+        "line": 29,
+        "name": "PlayerDoneLap",
+        "args": " iPlayer "
+      },
+      {
+        "line": 60,
+        "name": "GetLeader",
+        "args": " First, Second "
+      },
+      {
+        "line": 91,
+        "name": "UpdateTopThree",
+        "args": ""
+      },
+      {
+        "line": 112,
+        "name": "GetPlayerName",
+        "args": " iPlayer "
+      },
+      {
+        "line": 122,
+        "name": "CheckRoundFinished",
+        "args": " iPlayer "
+      },
+      {
+        "line": 137,
+        "name": "StartRound",
+        "args": ""
+      },
+      {
+        "line": 175,
+        "name": "RaceStart",
+        "args": ""
+      },
+      {
+        "line": 195,
+        "name": "PlayerResetStats",
+        "args": " i "
+      },
+      {
+        "line": 209,
+        "name": "BreakPlayersMelon",
+        "args": " i "
+      }
+    ],
+    "calls": [
+      {
+        "line": 16,
+        "call": "_PlayerSetModel"
+      },
+      {
+        "line": 21,
+        "call": "_PlayerChangeTeam"
+      },
+      {
+        "line": 31,
+        "call": "_CurTime"
+      },
+      {
+        "line": 44,
+        "call": "_PlayerInfo"
+      },
+      {
+        "line": 53,
+        "call": "_CurTime"
+      },
+      {
+        "line": 66,
+        "call": "_MaxPlayers"
+      },
+      {
+        "line": 115,
+        "call": "_PlayerInfo"
+      },
+      {
+        "line": 117,
+        "call": "_PlayerInfo"
+      },
+      {
+        "line": 131,
+        "call": "_PlayerInfo"
+      },
+      {
+        "line": 139,
+        "call": "_MaxPlayers"
+      },
+      {
+        "line": 141,
+        "call": "_PlayerInfo"
+      },
+      {
+        "line": 150,
+        "call": "_EntSpawn"
+      },
+      {
+        "line": 153,
+        "call": "_phys.EnableMotion"
+      },
+      {
+        "line": 177,
+        "call": "_MaxPlayers"
+      },
+      {
+        "line": 183,
+        "call": "_PhysEnableMotion"
+      },
+      {
+        "line": 213,
+        "call": "_EntFire"
+      }
+    ]
+  },
+  "gmod_9_0_4b\\lua\\gamemodes\\melonracer\\gui.lua": {
+    "functions": [
+      {
+        "line": 39,
+        "name": "UpdatePlayerLabels",
+        "args": ""
+      },
+      {
+        "line": 91,
+        "name": "DrawIntro",
+        "args": " PlayerID "
+      },
+      {
+        "line": 177,
+        "name": "DrawLapZoom",
+        "args": " iPlayer "
+      },
+      {
+        "line": 207,
+        "name": "DrawStats",
+        "args": " iPlayer "
+      },
+      {
+        "line": 273,
+        "name": "DrawPersonalStats",
+        "args": " iPlayer "
+      },
+      {
+        "line": 309,
+        "name": "DrawRoundStart",
+        "args": " iNumber "
+      },
+      {
+        "line": 341,
+        "name": "DeclareWinner",
+        "args": " WinnerName "
+      }
+    ],
+    "calls": [
+      {
+        "line": 43,
+        "call": "_MaxPlayers"
+      },
+      {
+        "line": 47,
+        "call": "_PlayerInfo"
+      },
+      {
+        "line": 63,
+        "call": "_PlayerInfo"
+      }
+    ]
+  },
+  "gmod_9_0_4b\\lua\\gamemodes\\melonracer\\init.lua": {
+    "functions": [],
+    "calls": [
+      {
+        "line": 29,
+        "call": "_OpenScript"
+      },
+      {
+        "line": 30,
+        "call": "_OpenScript"
+      },
+      {
+        "line": 31,
+        "call": "_OpenScript"
+      },
+      {
+        "line": 32,
+        "call": "_OpenScript"
+      },
+      {
+        "line": 37,
+        "call": "_MaxPlayers"
+      },
+      {
+        "line": 62,
+        "call": "_EntPrecacheModel"
+      }
+    ]
+  }
+}

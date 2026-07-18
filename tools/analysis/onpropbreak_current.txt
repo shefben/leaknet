@@ -1,0 +1,27 @@
+void CGModGamemodeSystem::OnPropBreak(CBaseEntity* pProp)
+{
+    if (!s_pActiveGamemode || !pProp)
+        return;
+
+    lua_State* L = CGModLuaSystem::GetLuaState();
+    if (!L)
+        return;
+
+    lua_getglobal(L, "eventPropBreak");
+    if (!lua_isfunction(L, -1))
+    {
+        lua_pop(L, 1);
+        return;
+    }
+
+    lua_pushnumber(L, pProp->entindex());
+    int result = lua_pcall(L, 1, 0, 0);
+    if (result != 0)
+    {
+        CGModLuaSystem::HandleLuaError(L, "eventPropBreak");
+        DevMsg("GMod Gamemode System: eventPropBreak for entity %d failed\n", pProp->entindex());
+        return;
+    }
+
+    DevMsg("GMod Gamemode System: eventPropBreak for entity %d called\n", pProp->entindex());
+}

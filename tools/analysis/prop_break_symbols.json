@@ -1,0 +1,644 @@
+{
+  "dlls/props.h": [
+    [
+      35,
+      "class CBaseProp : public CBaseAnimating {"
+    ],
+    [
+      50,
+      "virtual bool OverridePropdata() {"
+    ],
+    [
+      60,
+      "class CBreakableProp : public CBaseProp {"
+    ],
+    [
+      87,
+      "virtual bool OverridePropdata() {"
+    ],
+    [
+      100,
+      "Damage modifiers \tvoid\t\t\tSetDmgModBullet( float flDmgMod ) {"
+    ],
+    [
+      123,
+      "class CDynamicProp : public CBreakableProp {"
+    ],
+    [
+      155,
+      "class CPhysicsProp : public CBreakableProp {"
+    ],
+    [
+      161,
+      "CPhysicsProp( void )  \t{"
+    ],
+    [
+      169,
+      "virtual void VPhysicsUpdate( IPhysicsObject *pPhysics ) \t{"
+    ]
+  ],
+  "dlls/props.cpp": [
+    [
+      44,
+      "class CPropData : public CAutoGameSystem {"
+    ],
+    [
+      72,
+      "CPropData::CPropData( void ) {"
+    ],
+    [
+      81,
+      "void CPropData::LevelInitPreEntity( void ) {"
+    ],
+    [
+      89,
+      "void CPropData::ShutdownAllSystems( void ) {"
+    ],
+    [
+      91,
+      "if ( m_pKVPropData ) \t{"
+    ],
+    [
+      100,
+      "void CPropData::ParsePropDataFile( void ) {"
+    ],
+    [
+      103,
+      "if ( !m_pKVPropData->LoadFromFile( filesystem, \"scripts/propdata.txt\" ) ) \t{"
+    ],
+    [
+      115,
+      "int CPropData::ParsePropFromKV( CBaseProp *pProp, KeyValues *pSection ) {"
+    ],
+    [
+      128,
+      "if ( pBreakable ) \t{"
+    ],
+    [
+      135,
+      "Get the health (unless this is an override prop) \t\tif ( !FClassnameIs( pProp, \"prop_physics_override\" ) && !FClassnameIs( pProp, \"prop_dynamic_override\" ) ) \t\t{"
+    ],
+    [
+      148,
+      "int CPropData::ParsePropFromBase( CBaseProp *pProp, const char *pszPropData ) {"
+    ],
+    [
+      161,
+      "Store off the first base data for debugging \tif ( pProp->m_iszBasePropData == NULL_STRING ) \t{"
+    ],
+    [
+      179,
+      "float GetBreakableDamage( const CTakeDamageInfo &inputInfo, CBreakableProp *pProp ) {"
+    ],
+    [
+      187,
+      "if ( pProp ) \t\t{"
+    ],
+    [
+      201,
+      "if ( pProp ) \t\t{"
+    ],
+    [
+      215,
+      "if ( pProp ) \t\t{"
+    ],
+    [
+      241,
+      "void CBaseProp::Spawn( void ) {"
+    ],
+    [
+      256,
+      "if ( !OverridePropdata() ) \t{"
+    ],
+    [
+      303,
+      "void CBaseProp::Precache( void ) {"
+    ],
+    [
+      312,
+      "void CBaseProp::Activate( void ) {"
+    ],
+    [
+      326,
+      "bool CBaseProp::KeyValue( const char *szKeyName, const char *szValue ) {"
+    ],
+    [
+      348,
+      "int CBaseProp::ParsePropData( void ) {"
+    ],
+    [
+      359,
+      "if ( !pkvPropData ) \t{"
+    ],
+    [
+      376,
+      "void CBaseProp::DrawDebugGeometryOverlays( void ) {"
+    ],
+    [
+      403,
+      "void CC_Prop_Debug( void ) {"
+    ],
+    [
+      409,
+      "if ( pProp ) \t\t{"
+    ],
+    [
+      411,
+      "if ( pProp->m_debugOverlays ) \t\t\t{"
+    ],
+    [
+      427,
+      "IMPLEMENT_SERVERCLASS_ST(CBreakableProp, DT_BreakableProp) END_SEND_TABLE()  BEGIN_DATADESC( CBreakableProp )  \tDEFINE_KEYFIELD( CBreakableProp, m_explodeDamage, FIELD_FLOAT, \"ExplodeDamage\"),\t \tDEFINE_KEYFIELD( CBreakab"
+    ],
+    [
+      499,
+      "void CBreakableProp::BreakablePropTouch( CBaseEntity *pOther ) {"
+    ],
+    [
+      506,
+      "if ( flDamage >= m_iHealth ) \t\t{"
+    ],
+    [
+      527,
+      "if ( m_pfnThink != (void (CBaseEntity::*)())&CBreakableProp::BreakThink ) \t\t{"
+    ],
+    [
+      544,
+      "int CBreakableProp::OnTakeDamage( const CTakeDamageInfo &inputInfo ) {"
+    ],
+    [
+      552,
+      "if (!PassesDamageFilter( info.GetAttacker() )) \t{"
+    ],
+    [
+      565,
+      "if ( ( bitsDamageType & DMG_BURN ) == false ) \t{"
+    ],
+    [
+      592,
+      "void CBreakableProp::Event_Killed( const CTakeDamageInfo &info ) {"
+    ],
+    [
+      607,
+      "void CBreakableProp::InputBreak( inputdata_t &inputdata ) {"
+    ],
+    [
+      617,
+      "void CBreakableProp::InputAddHealth( inputdata_t &inputdata ) {"
+    ],
+    [
+      632,
+      "void CBreakableProp::InputRemoveHealth( inputdata_t &inputdata ) {"
+    ],
+    [
+      647,
+      "void CBreakableProp::InputSetHealth( inputdata_t &inputdata ) {"
+    ],
+    [
+      658,
+      "void CBreakableProp::StartFadeOut( float delay ) {"
+    ],
+    [
+      666,
+      "void CBreakableProp::FadeOut( void ) {"
+    ],
+    [
+      691,
+      "void CBreakableProp::BreakThink( void ) {"
+    ],
+    [
+      696,
+      "void CBreakableProp::Precache() {"
+    ],
+    [
+      702,
+      "void CBreakableProp::Break( CBaseEntity *pBreaker, const CTakeDamageInfo *pDamageInfo ) {"
+    ],
+    [
+      732,
+      "if ( m_explodeDamage > 0 || m_explodeRadius > 0 ) \t{"
+    ],
+    [
+      761,
+      "BEGIN_DATADESC( CDynamicProp )  \t// Fields \tDEFINE_KEYFIELD( CDynamicProp, m_bRandomAnimator, FIELD_BOOLEAN, \"RandomAnimation\"),\t \tDEFINE_FIELD(\t CDynamicProp, m_flNextRandAnim, FIELD_TIME ), \tDEFINE_KEYFIELD( CDynamicPr"
+    ],
+    [
+      796,
+      "void CDynamicProp::Spawn( ) {"
+    ],
+    [
+      831,
+      "bool CDynamicProp::CreateVPhysics( void ) {"
+    ],
+    [
+      844,
+      "void CDynamicProp::AnimThink( void ) {"
+    ],
+    [
+      881,
+      "void CDynamicProp::InputSetAnimation( inputdata_t &inputdata ) {"
+    ],
+    [
+      906,
+      "void CDynamicProp::PropSetSequence( int nSequence ) {"
+    ],
+    [
+      918,
+      "off void CDynamicProp::InputTurnOn( inputdata_t &inputdata ) {"
+    ],
+    [
+      924,
+      "void CDynamicProp::InputTurnOff( inputdata_t &inputdata ) {"
+    ],
+    [
+      932,
+      "class COrnamentProp : public CDynamicProp {"
+    ],
+    [
+      953,
+      "BEGIN_DATADESC( COrnamentProp )  \tDEFINE_KEYFIELD( COrnamentProp, m_initialOwner, FIELD_STRING, \"InitialOwner\" ), \t// Inputs \tDEFINE_INPUTFUNC( COrnamentProp,\tFIELD_STRING,\t\"SetAttached\",\tInputSetAttached ), \tDEFINE_INPU"
+    ],
+    [
+      968,
+      "void COrnamentProp::DetachFromOwner() {"
+    ],
+    [
+      977,
+      "void COrnamentProp::Activate() {"
+    ],
+    [
+      987,
+      "void COrnamentProp::InputSetAttached( inputdata_t &inputdata ) {"
+    ],
+    [
+      992,
+      "void COrnamentProp::AttachTo( const char *pAttachName, CBaseEntity *pActivator ) {"
+    ],
+    [
+      1003,
+      "void COrnamentProp::InputDetach( inputdata_t &inputdata ) {"
+    ],
+    [
+      1016,
+      "BEGIN_DATADESC( CPhysicsProp )  \tDEFINE_INPUTFUNC( CPhysicsProp, FIELD_VOID, \"EnableMotion\", InputEnableMotion ), \tDEFINE_INPUTFUNC( CPhysicsProp, FIELD_VOID, \"DisableMotion\", InputDisableMotion ), \tDEFINE_INPUTFUNC( CPh"
+    ],
+    [
+      1076,
+      "bool CPhysicsProp::CreateVPhysics() {"
+    ],
+    [
+      1125,
+      "void CPhysicsProp::InputWake( inputdata_t &inputdata ) {"
+    ],
+    [
+      1137,
+      "void CPhysicsProp::InputSleep( inputdata_t &inputdata ) {"
+    ],
+    [
+      1147,
+      "Purpose: Enable physics motion and collision response (on by default) //----------------------------------------------------------------------------- void CPhysicsProp::InputEnableMotion( inputdata_t &inputdata ) {"
+    ],
+    [
+      1157,
+      "void CPhysicsProp::InputDisableMotion( inputdata_t &inputdata ) {"
+    ],
+    [
+      1169,
+      "void CPhysicsProp::EnableMotion( void ) {"
+    ],
+    [
+      1184,
+      "void CPhysicsProp::OnPhysGunPickup( CBasePlayer *pPhysGunUser ) {"
+    ],
+    [
+      1196,
+      "void CPhysicsProp::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent ) {"
+    ],
+    [
+      1243,
+      "int CPhysicsProp::OnTakeDamage( const CTakeDamageInfo &info ) {"
+    ],
+    [
+      1282,
+      "int CPhysicsProp::DrawDebugTextOverlays(void)  {"
+    ],
+    [
+      1288,
+      "if (VPhysicsGetObject()) \t\t{"
+    ],
+    [
+      1295,
+      "if ( !VPhysicsGetObject()->IsMoveable() ) \t\t\t{"
+    ],
+    [
+      1302,
+      "if ( m_iszBasePropData != NULL_STRING ) \t\t\t{"
+    ],
+    [
+      1331,
+      "class CBreakParser : public IVPhysicsKeyHandler {"
+    ],
+    [
+      1333,
+      "public: \tCBreakParser( float defaultBurstScale, int defaultCollisionGroup )  \t\t: m_defaultBurstScale(defaultBurstScale), m_defaultCollisionGroup(defaultCollisionGroup) {"
+    ],
+    [
+      1403,
+      "static void BreakModelList( CUtlVector<breakmodel_t> &list, int modelindex, float defBurstScale, int defCollisionGroup ) {"
+    ],
+    [
+      1429,
+      "static void BreakModelCreateSingle( CBaseEntity *pOwner, breakmodel_t *pModel, const Vector &position,  \tconst QAngle &angles, const Vector &velocity, const AngularImpulse &angVelocity, int nSkin, const breakableproppara"
+    ],
+    [
+      1452,
+      "if ( pBreakableOwner ) \t\t{"
+    ],
+    [
+      1477,
+      "class CBreakModelsPrecached : public CAutoGameSystem {"
+    ],
+    [
+      1479,
+      "public: \tCBreakModelsPrecached() \t{"
+    ],
+    [
+      1485,
+      "static bool BreakLessFunc( const string_t &lhs, const string_t &rhs ) \t{"
+    ],
+    [
+      1514,
+      "void PropBreakablePrecacheAll( string_t modelName ) {"
+    ],
+    [
+      1532,
+      "void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const breakablepropparams_t &params ) {"
+    ],
+    [
+      1628,
+      "void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const Vector &origin, const QAngle &angles, const Vector &velocity, const AngularImpulse &angularVelocity, float impactEnergyScale, float defBurstSca"
+    ],
+    [
+      1713,
+      "BEGIN_DATADESC_NO_BASE(locksound_t)  \tDEFINE_FIELD( locksound_t, sLockedSound,\tFIELD_STRING), \tDEFINE_FIELD( locksound_t, sLockedSentence,\tFIELD_STRING ), \tDEFINE_FIELD( locksound_t, sUnlockedSound,\tFIELD_STRING ), \tDEFI"
+    ],
+    [
+      1819,
+      "void CBasePropDoor::Precache(void) {"
+    ],
+    [
+      1842,
+      "void CBasePropDoor::RegisterPrivateActivities(void) {"
+    ],
+    [
+      1857,
+      "void CBasePropDoor::Activate(void) {"
+    ],
+    [
+      1867,
+      "void CBasePropDoor::HandleAnimEvent(animevent_t *pEvent) {"
+    ],
+    [
+      1882,
+      "void CBasePropDoor::UpdateAreaPortals(bool isOpen) {"
+    ],
+    [
+      1907,
+      "void CBasePropDoor::Use(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value) {"
+    ],
+    [
+      1945,
+      "void CBasePropDoor::InputClose(inputdata_t &inputdata) {"
+    ],
+    [
+      1958,
+      "void CBasePropDoor::InputLock(inputdata_t &inputdata) {"
+    ],
+    [
+      1967,
+      "void CBasePropDoor::InputOpen(inputdata_t &inputdata) {"
+    ],
+    [
+      1986,
+      "void CBasePropDoor::InputToggle(inputdata_t &inputdata) {"
+    ],
+    [
+      2006,
+      "void CBasePropDoor::InputUnlock(inputdata_t &inputdata) {"
+    ],
+    [
+      2015,
+      "void CBasePropDoor::Lock(void) {"
+    ],
+    [
+      2024,
+      "void CBasePropDoor::Unlock(void) {"
+    ],
+    [
+      2039,
+      "bool CBasePropDoor::DoorActivate() {"
+    ],
+    [
+      2058,
+      "void CBasePropDoor::DoorOpen() {"
+    ],
+    [
+      2086,
+      "void CBasePropDoor::DoorOpened(void) {"
+    ],
+    [
+      2125,
+      "void CBasePropDoor::DoorClose(void) {"
+    ],
+    [
+      2148,
+      "void CBasePropDoor::DoorClosed(void) {"
+    ],
+    [
+      2171,
+      "void CBasePropDoor::StartBlocked(CBaseEntity *pOther) {"
+    ],
+    [
+      2205,
+      "void CBasePropDoor::Blocked(CBaseEntity *pOther) {"
+    ],
+    [
+      2283,
+      "void CBasePropDoor::EndBlocked(void) {"
+    ],
+    [
+      2312,
+      "bool CBasePropDoor::NPCOpenDoor(CAI_BaseNPC *pNPC) {"
+    ],
+    [
+      2327,
+      "class CPropDoorRotating : public CBasePropDoor {"
+    ],
+    [
+      2359,
+      "BEGIN_DATADESC(CPropDoorRotating) \tDEFINE_KEYFIELD(CPropDoorRotating, m_vecAxis, FIELD_VECTOR, \"axis\"), \tDEFINE_KEYFIELD(CPropDoorRotating, m_flDistance, FIELD_FLOAT, \"distance\"), \tDEFINE_FIELD( CPropDoorRotating, m_angR"
+    ],
+    [
+      2406,
+      "void CPropDoorRotating::SetDoorOpen() {"
+    ],
+    [
+      2418,
+      "void CPropDoorRotating::SetDoorClosed() {"
+    ],
+    [
+      2430,
+      "void CPropDoorRotating::MoveDone() {"
+    ],
+    [
+      2441,
+      "GetLocalOrigin() traveling at flSpeed. Just like LinearMove, but rotational. // Input  : vecDestAngle -  //\t\t\tflSpeed -  //----------------------------------------------------------------------------- void CPropDoorRotat"
+    ],
+    [
+      2475,
+      "void CPropDoorRotating::BeginOpening() {"
+    ],
+    [
+      2504,
+      "void CPropDoorRotating::BeginClosing() {"
+    ],
+    [
+      2515,
+      "void CPropDoorRotating::GetNPCOpenData(CAI_BaseNPC *pNPC, opendata_t &opendata) {"
+    ],
+    [
+      2551,
+      "float CPropDoorRotating::GetOpenInterval() {"
+    ],
+    [
+      2565,
+      "class CPhysSphere : public CPhysicsProp {"
+    ],
+    [
+      2568,
+      "public: \tvirtual bool OverridePropdata() {"
+    ],
+    [
+      2570,
+      "bool CreateVPhysics() \t{"
+    ]
+  ],
+  "dlls/func_break.cpp": [
+    [
+      96,
+      "BEGIN_DATADESC( CBreakable )  \tDEFINE_FIELD( CBreakable, m_Material, FIELD_INTEGER ), \tDEFINE_FIELD( CBreakable, m_Explosion, FIELD_INTEGER ), \tDEFINE_FIELD( CBreakable, m_hBreaker, FIELD_EHANDLE ),  \t// Don't need to sa"
+    ],
+    [
+      188,
+      "void CBreakable::Spawn( void ) {"
+    ],
+    [
+      229,
+      "bool CBreakable::CreateVPhysics( void ) {"
+    ],
+    [
+      238,
+      "CBreakable::MaterialSound( Materials precacheMaterial ) {"
+    ],
+    [
+      264,
+      "void CBreakable::MaterialSoundRandom( int entindex, Materials soundMaterial, float volume ) {"
+    ],
+    [
+      280,
+      "void CBreakable::Precache( void ) {"
+    ],
+    [
+      332,
+      "void CBreakable::DamageSound( void ) {"
+    ],
+    [
+      401,
+      "void CBreakable::BreakTouch( CBaseEntity *pOther ) {"
+    ],
+    [
+      405,
+      "only players can break these right now \tif ( !pOther->IsPlayer() || !IsBreakable() ) \t{"
+    ],
+    [
+      416,
+      "if (flDamage >= m_iHealth) \t\t{"
+    ],
+    [
+      450,
+      "void CBreakable::InputAddHealth( inputdata_t &inputdata ) {"
+    ],
+    [
+      465,
+      "void CBreakable::InputBreak( inputdata_t &inputdata ) {"
+    ],
+    [
+      475,
+      "void CBreakable::InputRemoveHealth( inputdata_t &inputdata ) {"
+    ],
+    [
+      490,
+      "void CBreakable::InputSetHealth( inputdata_t &inputdata ) {"
+    ],
+    [
+      518,
+      "void CBreakable::Break( CBaseEntity *pBreaker ) {"
+    ],
+    [
+      520,
+      "if ( IsBreakable() ) \t{"
+    ],
+    [
+      532,
+      "void CBreakable::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr ) {"
+    ],
+    [
+      560,
+      "void CBreakable::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent ) {"
+    ],
+    [
+      603,
+      "int CBreakable::OnTakeDamage( const CTakeDamageInfo &info ) {"
+    ],
+    [
+      613,
+      "Check our damage filter \tif ( !PassesDamageFilter(subInfo.GetAttacker()) ) \t{"
+    ],
+    [
+      663,
+      "if ( ( subInfo.GetDamageType() & DMG_BURN ) == false ) \t\t{"
+    ],
+    [
+      678,
+      "void CBreakable::ResetOnGroundFlags(void) {"
+    ],
+    [
+      710,
+      "void CBreakable::Die( void ) {"
+    ],
+    [
+      827,
+      "bool CBreakable::IsBreakable( void )  {"
+    ],
+    [
+      833,
+      "CBreakable::DamageDecal( int bitsDamageType, int gameMaterial ) {"
+    ],
+    [
+      844,
+      "class CPushable : public CBreakable {"
+    ],
+    [
+      885,
+      "bool CPushable::CreateVPhysics( void ) {"
+    ],
+    [
+      918,
+      "int CPushable::OnTakeDamage( const CTakeDamageInfo &info ) {"
+    ],
+    [
+      929,
+      "void CPushable::VPhysicsCollision( int index, gamevcollisionevent_t *pEvent ) {"
+    ]
+  ]
+}

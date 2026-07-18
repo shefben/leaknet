@@ -1,0 +1,956 @@
+{
+  "cl_dll/bmod_hud/gmod_usermessages.cpp": {
+    "hooks": [
+      [
+        790,
+        "GModHint"
+      ],
+      [
+        791,
+        "GModToolText"
+      ],
+      [
+        792,
+        "GModText"
+      ],
+      [
+        793,
+        "GModTextAnim"
+      ],
+      [
+        794,
+        "GModTextHide"
+      ],
+      [
+        795,
+        "GModTextHideAll"
+      ],
+      [
+        796,
+        "GModRect"
+      ],
+      [
+        797,
+        "GModRectAnim"
+      ],
+      [
+        798,
+        "GModRectHideAll"
+      ],
+      [
+        799,
+        "WQuad"
+      ],
+      [
+        800,
+        "WQuadAnimate"
+      ],
+      [
+        801,
+        "WQuadHide"
+      ],
+      [
+        802,
+        "WQuadHideAll"
+      ]
+    ],
+    "funcs": [
+      {
+        "line": 124,
+        "name": "CGModMaterialRect::SetMaterial",
+        "strings": [
+          "\"materials/%s.vtf\""
+        ],
+        "macros": [
+          "m_iTextureID = vgui::surface()->CreateNewTextureID();",
+          "vgui::surface()->DrawSetTextureFile(m_iTextureID, vtfPath, true, false);"
+        ]
+      },
+      {
+        "line": 154,
+        "name": "CGModMaterialRect::SetRectPosition",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 163,
+        "name": "CGModMaterialRect::SetColor",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 169,
+        "name": "CGModMaterialRect::SetTiming",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 178,
+        "name": "CGModMaterialRect::SetTargetPosition",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 187,
+        "name": "CGModMaterialRect::StartAnimation",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 200,
+        "name": "CGModMaterialRect::Show",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 209,
+        "name": "CGModMaterialRect::Hide",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 225,
+        "name": "CGModMaterialRect::IsExpired",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 238,
+        "name": "CGModMaterialRect::OnThink",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 297,
+        "name": "CGModMaterialRect::Paint",
+        "strings": [],
+        "macros": [
+          "void CGModMaterialRect::Paint()",
+          "vgui::surface()->GetScreenSize(screenWide, screenTall);",
+          "// Draw material or colored rect",
+          "vgui::surface()->DrawSetColor(cr, cg, cb, finalAlpha);",
+          "vgui::surface()->DrawSetTexture(m_iTextureID);",
+          "vgui::surface()->DrawTexturedRect(x, y, x + w, y + h);",
+          "// Draw colored rectangle",
+          "vgui::surface()->DrawSetColor(cr, cg, cb, finalAlpha);",
+          "vgui::surface()->DrawFilledRect(x, y, x + w, y + h);"
+        ]
+      },
+      {
+        "line": 464,
+        "name": "CGModTextDisplay::ApplySchemeSettings",
+        "strings": [
+          "\"Default\""
+        ],
+        "macros": []
+      },
+      {
+        "line": 474,
+        "name": "CGModTextDisplay::SetFont",
+        "strings": [
+          "\"Default\""
+        ],
+        "macros": []
+      },
+      {
+        "line": 481,
+        "name": "CGModTextDisplay::SetText",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 487,
+        "name": "CGModTextDisplay::SetTextPosition",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 494,
+        "name": "CGModTextDisplay::SetColor",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 500,
+        "name": "CGModTextDisplay::SetTiming",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 508,
+        "name": "CGModTextDisplay::SetEntity",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 515,
+        "name": "CGModTextDisplay::SetAlignment",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 521,
+        "name": "CGModTextDisplay::Show",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 530,
+        "name": "CGModTextDisplay::Hide",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 546,
+        "name": "CGModTextDisplay::Animate",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 559,
+        "name": "CGModTextDisplay::IsExpired",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 572,
+        "name": "CGModTextDisplay::OnThink",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 618,
+        "name": "CGModTextDisplay::Paint",
+        "strings": [],
+        "macros": [
+          "void CGModTextDisplay::Paint()",
+          "vgui::surface()->GetScreenSize(screenWide, screenTall);",
+          "vgui::surface()->GetTextSize(m_hFont, ConvertToUnicode(m_szText), textWide, textTall);",
+          "// Draw text",
+          "vgui::surface()->DrawSetTextFont(m_hFont);",
+          "vgui::surface()->DrawSetTextColor(cr, cg, cb, finalAlpha);",
+          "vgui::surface()->DrawSetTextPos(x, y);",
+          "vgui::surface()->DrawPrintText(wtext, wcslen(wtext));"
+        ]
+      },
+      {
+        "line": 788,
+        "name": "CGModHudDisplay::Init",
+        "strings": [],
+        "macros": [
+          "HOOK_MESSAGE(GModHint);",
+          "HOOK_MESSAGE(GModToolText);",
+          "HOOK_MESSAGE(GModText);",
+          "HOOK_MESSAGE(GModTextAnim);",
+          "HOOK_MESSAGE(GModTextHide);",
+          "HOOK_MESSAGE(GModTextHideAll);",
+          "HOOK_MESSAGE(GModRect);",
+          "HOOK_MESSAGE(GModRectAnim);",
+          "HOOK_MESSAGE(GModRectHideAll);",
+          "HOOK_MESSAGE(WQuad);",
+          "HOOK_MESSAGE(WQuadAnimate);",
+          "HOOK_MESSAGE(WQuadHide);",
+          "HOOK_MESSAGE(WQuadHideAll);"
+        ]
+      },
+      {
+        "line": 806,
+        "name": "CGModHudDisplay::VidInit",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 813,
+        "name": "CGModHudDisplay::LevelInit",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 820,
+        "name": "CGModHudDisplay::LevelShutdown",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 827,
+        "name": "CGModHudDisplay::FindOrCreateText",
+        "strings": [
+          "\"GModText_%d\""
+        ],
+        "macros": []
+      },
+      {
+        "line": 845,
+        "name": "CGModHudDisplay::FindOrCreateRect",
+        "strings": [
+          "\"GModRect_%d\""
+        ],
+        "macros": []
+      },
+      {
+        "line": 863,
+        "name": "CGModHudDisplay::RemoveText",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 877,
+        "name": "CGModHudDisplay::RemoveRect",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 891,
+        "name": "CGModHudDisplay::RemoveAllText",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 901,
+        "name": "CGModHudDisplay::RemoveAllRects",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 915,
+        "name": "CGModHudDisplay::MsgFunc_GModHint",
+        "strings": [
+          "\"Default\""
+        ],
+        "macros": [
+          "Q_strncpy(text, READ_STRING(), sizeof(text));"
+        ]
+      },
+      {
+        "line": 933,
+        "name": "CGModHudDisplay::MsgFunc_GModToolText",
+        "strings": [
+          "\"Default\""
+        ],
+        "macros": [
+          "Q_strncpy(text, READ_STRING(), sizeof(text));"
+        ]
+      },
+      {
+        "line": 950,
+        "name": "CGModHudDisplay::MsgFunc_GModText",
+        "strings": [],
+        "macros": [
+          "int textID = READ_SHORT();",
+          "Q_strncpy(fontName, READ_STRING(), sizeof(fontName));",
+          "Q_strncpy(text, READ_STRING(), sizeof(text));",
+          "float x = READ_FLOAT();",
+          "float y = READ_FLOAT();",
+          "int r = READ_BYTE();",
+          "int g = READ_BYTE();",
+          "int b = READ_BYTE();",
+          "int a = READ_BYTE();",
+          "float fadeIn = READ_FLOAT();",
+          "float fadeOut = READ_FLOAT();",
+          "float holdTime = READ_FLOAT();",
+          "int effect = READ_BYTE();",
+          "int entityID = READ_SHORT();",
+          "float offsetX = READ_FLOAT();",
+          "float offsetY = READ_FLOAT();",
+          "float offsetZ = READ_FLOAT();"
+        ]
+      },
+      {
+        "line": 985,
+        "name": "CGModHudDisplay::MsgFunc_GModTextAnim",
+        "strings": [],
+        "macros": [
+          "int textID = READ_SHORT();",
+          "float x = READ_FLOAT();",
+          "float y = READ_FLOAT();",
+          "int r = READ_BYTE();",
+          "int g = READ_BYTE();",
+          "int b = READ_BYTE();",
+          "int a = READ_BYTE();",
+          "float scale = READ_FLOAT();",
+          "float duration = READ_FLOAT();"
+        ]
+      },
+      {
+        "line": 1005,
+        "name": "CGModHudDisplay::MsgFunc_GModTextHide",
+        "strings": [],
+        "macros": [
+          "int textID = READ_SHORT();",
+          "float fadeTime = READ_FLOAT();",
+          "float delay = READ_FLOAT();"
+        ]
+      },
+      {
+        "line": 1024,
+        "name": "CGModHudDisplay::MsgFunc_GModTextHideAll",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1033,
+        "name": "CGModHudDisplay::MsgFunc_GModRect",
+        "strings": [],
+        "macros": [
+          "int rectID = READ_SHORT();",
+          "Q_strncpy(material, READ_STRING(), sizeof(material));",
+          "float x = READ_FLOAT();",
+          "float y = READ_FLOAT();",
+          "float w = READ_FLOAT();",
+          "float h = READ_FLOAT();",
+          "int r = READ_BYTE();",
+          "int g = READ_BYTE();",
+          "int b = READ_BYTE();",
+          "int a = READ_BYTE();",
+          "float holdTime = READ_FLOAT();",
+          "float fadeIn = READ_FLOAT();",
+          "float fadeOut = READ_FLOAT();",
+          "float delay = READ_FLOAT();"
+        ]
+      },
+      {
+        "line": 1062,
+        "name": "CGModHudDisplay::MsgFunc_GModRectAnim",
+        "strings": [],
+        "macros": [
+          "int rectID = READ_SHORT();",
+          "float x = READ_FLOAT();",
+          "float y = READ_FLOAT();",
+          "float w = READ_FLOAT();",
+          "float h = READ_FLOAT();",
+          "int r = READ_BYTE();",
+          "int g = READ_BYTE();",
+          "int b = READ_BYTE();",
+          "int a = READ_BYTE();",
+          "float targetX = READ_FLOAT();",
+          "float targetY = READ_FLOAT();",
+          "float delay = READ_FLOAT();"
+        ]
+      },
+      {
+        "line": 1088,
+        "name": "CGModHudDisplay::MsgFunc_GModRectHideAll",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1097,
+        "name": "CGModHudDisplay::MsgFunc_WQuad",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1104,
+        "name": "CGModHudDisplay::MsgFunc_WQuadAnimate",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1110,
+        "name": "CGModHudDisplay::MsgFunc_WQuadHide",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1116,
+        "name": "CGModHudDisplay::MsgFunc_WQuadHideAll",
+        "strings": [],
+        "macros": []
+      }
+    ]
+  },
+  "cl_dll/bmod_hud/gmod_message.cpp": {
+    "hooks": [],
+    "funcs": [
+      {
+        "line": 110,
+        "name": "CGModMessage::ApplySchemeSettings",
+        "strings": [
+          "\"Default\""
+        ],
+        "macros": []
+      },
+      {
+        "line": 125,
+        "name": "CGModMessage::PerformLayout",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 139,
+        "name": "CGModMessage::OnThink",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 181,
+        "name": "CGModMessage::Paint",
+        "strings": [],
+        "macros": [
+          "void CGModMessage::Paint()",
+          "BaseClass::Paint();"
+        ]
+      },
+      {
+        "line": 192,
+        "name": "CGModMessage::SetText",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 204,
+        "name": "CGModMessage::SetPosition",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 212,
+        "name": "CGModMessage::SetSize",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 220,
+        "name": "CGModMessage::SetColor",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 230,
+        "name": "CGModMessage::SetFont",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 242,
+        "name": "CGModMessage::SetCorner",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 251,
+        "name": "CGModMessage::SetEntity",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 259,
+        "name": "CGModMessage::SetTime",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 267,
+        "name": "CGModMessage::SetDelay",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 275,
+        "name": "CGModMessage::StartAnimation",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 307,
+        "name": "CGModMessage::StopAnimation",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 316,
+        "name": "CGModMessage::ShowMessage",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 329,
+        "name": "CGModMessage::HideAll",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 337,
+        "name": "CGModMessage::GetRemainingTime",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 349,
+        "name": "CGModMessage::IsExpired",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 361,
+        "name": "CGModMessage::UpdateAnimation",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 404,
+        "name": "CGModMessage::OnAnimationComplete",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 417,
+        "name": "CGModMessage::UpdatePosition",
+        "strings": [],
+        "macros": [
+          "surface()->GetScreenSize(screenWide, screenTall);"
+        ]
+      },
+      {
+        "line": 451,
+        "name": "CGModMessage::UpdateFromEntity",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 507,
+        "name": "CGModRect::ApplySchemeSettings",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 516,
+        "name": "CGModRect::Paint",
+        "strings": [],
+        "macros": [
+          "void CGModRect::Paint()",
+          "// Draw filled rectangle",
+          "surface()->DrawSetColor(m_Color);",
+          "surface()->DrawFilledRect(0, 0, wide, tall);",
+          "// Draw border",
+          "surface()->DrawSetColor(m_BorderColor);",
+          "surface()->DrawOutlinedRect(i, i, wide - i, tall - i);"
+        ]
+      },
+      {
+        "line": 542,
+        "name": "CGModRect::OnThink",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 578,
+        "name": "CGModRect::SetPosition",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 587,
+        "name": "CGModRect::SetSize",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 595,
+        "name": "CGModRect::SetColor",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 604,
+        "name": "CGModRect::SetBorderColor",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 612,
+        "name": "CGModRect::SetBorderWidth",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 620,
+        "name": "CGModRect::SetCorner",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 629,
+        "name": "CGModRect::SetTime",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 637,
+        "name": "CGModRect::SetDelay",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 645,
+        "name": "CGModRect::StartAnimation",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 677,
+        "name": "CGModRect::StopAnimation",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 686,
+        "name": "CGModRect::ShowRect",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 699,
+        "name": "CGModRect::HideAll",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 707,
+        "name": "CGModRect::IsExpired",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 719,
+        "name": "CGModRect::UpdateAnimation",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 762,
+        "name": "CGModRect::UpdatePosition",
+        "strings": [],
+        "macros": [
+          "surface()->GetScreenSize(screenWide, screenTall);"
+        ]
+      },
+      {
+        "line": 817,
+        "name": "CGModMessageManager::CreateMessage",
+        "strings": [
+          "\"Created GMod message: %s\\n\"",
+          "\"message_%d\""
+        ],
+        "macros": []
+      },
+      {
+        "line": 838,
+        "name": "CGModMessageManager::CreateRect",
+        "strings": [
+          "\"Created GMod rectangle: %s\\n\"",
+          "\"rect_%d\""
+        ],
+        "macros": []
+      },
+      {
+        "line": 859,
+        "name": "CGModMessageManager::RemoveMessage",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 871,
+        "name": "CGModMessageManager::RemoveRect",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 883,
+        "name": "CGModMessageManager::RemoveAll",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 901,
+        "name": "CGModMessageManager::HideAllMessages",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 912,
+        "name": "CGModMessageManager::HideAllRects",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 923,
+        "name": "CGModMessageManager::HideAll",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 932,
+        "name": "CGModMessageManager::AnimateMessage",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 944,
+        "name": "CGModMessageManager::AnimateRect",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 956,
+        "name": "CGModMessageManager::FindMessage",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 974,
+        "name": "CGModMessageManager::FindRect",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 992,
+        "name": "CGModMessageManager::Update",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1020,
+        "name": "GModTextStart_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1035,
+        "name": "GModTextSetPos_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1045,
+        "name": "GModTextSetColor_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1058,
+        "name": "GModTextSetTime_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1067,
+        "name": "GModTextSetDelay_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1076,
+        "name": "GModTextSetText_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1085,
+        "name": "GModTextSetEntity_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1094,
+        "name": "GModTextAnimate_f",
+        "strings": [
+          "\"fadein\"",
+          "\"fadeout\"",
+          "\"slide\""
+        ],
+        "macros": []
+      },
+      {
+        "line": 1115,
+        "name": "GModTextHide_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1125,
+        "name": "GModTextHideAll_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1134,
+        "name": "GModRectStart_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1143,
+        "name": "GModRectSetPos_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1153,
+        "name": "GModRectSetSize_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1164,
+        "name": "GModRectSetColor_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1177,
+        "name": "GModRectSetTime_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1186,
+        "name": "GModRectSetDelay_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1195,
+        "name": "GModRectAnimate_f",
+        "strings": [
+          "\"fadein\"",
+          "\"fadeout\"",
+          "\"scale\""
+        ],
+        "macros": []
+      },
+      {
+        "line": 1216,
+        "name": "GModRectHide_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1226,
+        "name": "GModRectHideAll_f",
+        "strings": [],
+        "macros": []
+      },
+      {
+        "line": 1239,
+        "name": "InitGModMessageSystem",
+        "strings": [
+          "\"GMod Message System initialized\\n\""
+        ],
+        "macros": []
+      },
+      {
+        "line": 1251,
+        "name": "ShutdownGModMessageSystem",
+        "strings": [
+          "\"GMod Message System shutdown\\n\""
+        ],
+        "macros": []
+      }
+    ]
+  },
+  "cl_dll/bmod_hud/gmod_message.h": {
+    "hooks": [],
+    "funcs": []
+  }
+}

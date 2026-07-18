@@ -1256,6 +1256,7 @@ private:
 		unsigned short	m_FirstShadow;
 
 		IMesh **m_ppColorMeshes;
+		bool m_bStaticPropColorDataValid;
 	};
 
 	// Sets up the render state for a model
@@ -1290,12 +1291,18 @@ private:
 	// Old-style computation of vertex lighting
 	void ComputeModelVertexLightingOld( mstudiomodel_t *pModel, 
 		matrix3x4_t& matrix, const LightingState_t &lightingState, color24 *pLighting );
+	bool ComputeModelVertexLightingOldV44( mstudiomodel_v44_t *pModel,
+		matrix3x4_t& matrix, const LightingState_t &lightingState, color24 *pLighting );
 
 	// New-style computation of vertex lighting
 	void ComputeModelVertexLighting( IHandleEntity *pProp,
 		mstudiomodel_t *pModel, OptimizedModel::ModelLODHeader_t *pVtxLOD,
 		matrix3x4_t& matrix, Vector4D *pTempMem, color24 *pLighting,
 		studiohdr_t *pStudioHdr, bool bVtxIsV6 );
+	bool ComputeModelVertexLightingV44( IHandleEntity *pProp,
+		mstudiomodel_v44_t *pModel, OptimizedModel::ModelLODHeader_t *pVtxLOD,
+		matrix3x4_t& matrix, Vector4D *pTempMem, color24 *pLighting,
+		bool bVtxIsV6 );
 
 	// Model instance data
 	CUtlLinkedList< ModelInstance_t, ModelInstanceHandle_t > m_ModelInstances; 
@@ -1618,6 +1625,7 @@ void CModelRender::RenderModel( DrawModelState_t& state, model_t const *pModel,
 						( !( state.m_pStudioHdr->flags & STUDIOHDR_FLAGS_USES_BUMPMAPPING ) ) && 
 						r_staticlighting.GetBool() &&
 						( instance != MODEL_INSTANCE_INVALID ) &&
+						m_ModelInstances[instance].m_bStaticPropColorDataValid &&
 						g_pMaterialSystemHardwareConfig->SupportsVertexAndPixelShaders();
 	
 	bool bVertexLit = ( pModel->flags & MODELFLAG_VERTEXLIT ) != 0;
@@ -1989,6 +1997,7 @@ static int CountMeshGroups( studiohwdata_t *pStudioHWData )
 // FIXME? : Move this to StudioRender?
 void CModelRender::CreateStaticPropColorData( ModelInstanceHandle_t handle )
 {
+	m_ModelInstances[handle].m_bStaticPropColorDataValid = false;
 	studiohwdata_t *pStudioHWData = &m_ModelInstances[handle].m_pModel->studio.hardwareData;
 	Assert( pStudioHWData );
 	int totalNumMeshGroups = CountMeshGroups( pStudioHWData );
@@ -2003,6 +2012,8 @@ void CModelRender::CreateStaticPropColorData( ModelInstanceHandle_t handle )
 	{
 		return;
 	}
+	memset( m_ModelInstances[handle].m_ppColorMeshes, 0,
+		totalNumMeshGroups * sizeof(IMeshPtr) );
 
 	int i;
 	for( i = 0; i < totalNumMeshGroups; i++ )
@@ -2081,6 +2092,44 @@ void CModelRender::ComputeModelVertexLightingOld( mstudiomodel_t *pModel,
 		pLighting[i].g = FastFToC(destColor[1]);
 		pLighting[i].b = FastFToC(destColor[2]);
 	}
+}
+
+
+//-----------------------------------------------------------------------------
+// Old-style static prop vertex lighting for v44+ models.  Unlike v37, the
+// vertices live in the external VVD buffer wired into model->vertexdata.
+//-----------------------------------------------------------------------------
+bool CModelRender::ComputeModelVertexLightingOldV44( mstudiomodel_v44_t *pModel,
+	matrix3x4_t& matrix, const LightingState_t &lightingState, color24 *pLighting )
+{
+	if ( !pModel || !pLighting || !pModel->vertexdata.pVertexData )
+		return false;
+
+	Vector worldPos, worldNormal, destColor;
+	for ( int i = 0; i < pModel->numvertices; ++i )
+	{
+		Vector *pPos = pModel->vertexdata.Position( i );
+		Vector *pNormal = pModel->vertexdata.Normal( i );
+		if ( !pPos || !pNormal )
+			return false;
+
+		VectorTransform( *pPos, matrix, worldPos );
+		VectorRotate( *pNormal, matrix, worldNormal );
+
+		LightForVert( lightingState, worldPos, worldNormal, destColor );
+
+		destColor[0] = LinearToVertexLight( destColor[0] );
+		destColor[1] = LinearToVertexLight( destColor[1] );
+		destColor[2] = LinearToVertexLight( destColor[2] );
+
+		ColorClampTruncate( destColor );
+
+		pLighting[i].r = FastFToC(destColor[0]);
+		pLighting[i].g = FastFToC(destColor[1]);
+		pLighting[i].b = FastFToC(destColor[2]);
+	}
+
+	return true;
 }
 
 
@@ -2214,6 +2263,153 @@ void CModelRender::ComputeModelVertexLighting( IHandleEntity *pProp,
 }
 
 
+//-----------------------------------------------------------------------------
+// Spherical-sample static prop lighting for v44+ VVD-backed models.
+// This deliberately mirrors the v37 algorithm while using only v44 layouts.
+//-----------------------------------------------------------------------------
+bool CModelRender::ComputeModelVertexLightingV44( IHandleEntity *pProp,
+	mstudiomodel_v44_t *pModel, OptimizedModel::ModelLODHeader_t *pVtxLOD,
+	matrix3x4_t& matrix, Vector4D *pTempMem, color24 *pLighting,
+	bool bVtxIsV6 )
+{
+#ifndef SWDS
+	if ( !pModel || !pVtxLOD || !pTempMem || !pLighting ||
+		!pModel->vertexdata.pVertexData || pModel->numvertices <= 0 )
+	{
+		return false;
+	}
+
+	const int nSolidBytes = ( pModel->numvertices + 7 ) >> 3;
+	unsigned char *pInSolid = (unsigned char*)stackalloc( nSolidBytes );
+	memset( pInSolid, 0, nSolidBytes );
+
+	Vector worldPos, worldNormal;
+	int i;
+	for ( i = 0; i < pModel->numvertices; ++i )
+	{
+		Vector *pPos = pModel->vertexdata.Position( i );
+		Vector *pNormal = pModel->vertexdata.Normal( i );
+		if ( !pPos || !pNormal )
+			return false;
+
+		VectorTransform( *pPos, matrix, worldPos );
+		VectorRotate( *pNormal, matrix, worldNormal );
+		bool bNonSolid = ComputeVertexLightingFromSphericalSamples(
+			worldPos, worldNormal, pProp, &(pTempMem[i].AsVector3D()) );
+
+		const int nByte = i >> 3;
+		const int nBit = i & 0x7;
+		if ( bNonSolid )
+		{
+			pTempMem[i].w = 1.0f;
+			pInSolid[nByte] &= ~(1 << nBit);
+		}
+		else
+		{
+			pTempMem[i].Init();
+			pInSolid[nByte] |= (1 << nBit);
+		}
+	}
+
+	if ( pModel->nummeshes != pVtxLOD->numMeshes )
+		return false;
+
+	for ( int meshID = 0; meshID < pModel->nummeshes; ++meshID )
+	{
+		mstudiomesh_v44_t *pMesh = pModel->pMesh( meshID );
+		OptimizedModel::MeshHeader_t *pVtxMesh = pVtxLOD->pMesh( meshID );
+		if ( !pMesh || !pVtxMesh )
+			return false;
+
+		for ( int stripGroupID = 0; stripGroupID < pVtxMesh->numStripGroups; ++stripGroupID )
+		{
+			OptimizedModel::StripGroupHeader_t *pStripGroup = pVtxMesh->pStripGroup( stripGroupID );
+			if ( !pStripGroup || ( pStripGroup->numIndices % 3 ) != 0 )
+				return false;
+
+			for ( i = 0; i < pStripGroup->numIndices; i += 3 )
+			{
+				unsigned short nIndex[3];
+				nIndex[0] = *pStripGroup->pIndex( i );
+				nIndex[1] = *pStripGroup->pIndex( i + 1 );
+				nIndex[2] = *pStripGroup->pIndex( i + 2 );
+				if ( nIndex[0] >= pStripGroup->numVerts ||
+					nIndex[1] >= pStripGroup->numVerts ||
+					nIndex[2] >= pStripGroup->numVerts )
+				{
+					return false;
+				}
+
+				int v[3];
+				if ( bVtxIsV6 )
+				{
+					v[0] = pStripGroup->pVertex_V37( nIndex[0] )->origMeshVertID + pMesh->vertexoffset;
+					v[1] = pStripGroup->pVertex_V37( nIndex[1] )->origMeshVertID + pMesh->vertexoffset;
+					v[2] = pStripGroup->pVertex_V37( nIndex[2] )->origMeshVertID + pMesh->vertexoffset;
+				}
+				else
+				{
+					v[0] = pStripGroup->pVertex( nIndex[0] )->origMeshVertID + pMesh->vertexoffset;
+					v[1] = pStripGroup->pVertex( nIndex[1] )->origMeshVertID + pMesh->vertexoffset;
+					v[2] = pStripGroup->pVertex( nIndex[2] )->origMeshVertID + pMesh->vertexoffset;
+				}
+
+				if ( v[0] < 0 || v[0] >= pModel->numvertices ||
+					v[1] < 0 || v[1] >= pModel->numvertices ||
+					v[2] < 0 || v[2] >= pModel->numvertices )
+				{
+					return false;
+				}
+
+				bool bSolid[3];
+				bSolid[0] = ( pInSolid[v[0] >> 3] & ( 1 << ( v[0] & 0x7 ) ) ) != 0;
+				bSolid[1] = ( pInSolid[v[1] >> 3] & ( 1 << ( v[1] & 0x7 ) ) ) != 0;
+				bSolid[2] = ( pInSolid[v[2] >> 3] & ( 1 << ( v[2] & 0x7 ) ) ) != 0;
+
+				int nValidCount = 0;
+				int nAverage[3];
+				if ( !bSolid[0] ) nAverage[nValidCount++] = v[0];
+				if ( !bSolid[1] ) nAverage[nValidCount++] = v[1];
+				if ( !bSolid[2] ) nAverage[nValidCount++] = v[2];
+				if ( nValidCount == 3 )
+					continue;
+
+				Vector vecAverage( 0, 0, 0 );
+				for ( int j = 0; j < nValidCount; ++j )
+					vecAverage += pTempMem[nAverage[j]].AsVector3D();
+				if ( nValidCount != 0 )
+					vecAverage /= nValidCount;
+
+				if ( bSolid[0] ) { pTempMem[v[0]].AsVector3D() += vecAverage; pTempMem[v[0]].w += 1.0f; }
+				if ( bSolid[1] ) { pTempMem[v[1]].AsVector3D() += vecAverage; pTempMem[v[1]].w += 1.0f; }
+				if ( bSolid[2] ) { pTempMem[v[2]].AsVector3D() += vecAverage; pTempMem[v[2]].w += 1.0f; }
+			}
+		}
+	}
+
+	Vector destColor;
+	for ( i = 0; i < pModel->numvertices; ++i )
+	{
+		if ( pTempMem[i].w != 0.0f )
+			pTempMem[i] /= pTempMem[i].w;
+
+		destColor[0] = LinearToVertexLight( pTempMem[i][0] );
+		destColor[1] = LinearToVertexLight( pTempMem[i][1] );
+		destColor[2] = LinearToVertexLight( pTempMem[i][2] );
+		ColorClampTruncate( destColor );
+
+		pLighting[i].r = FastFToC(destColor[0]);
+		pLighting[i].g = FastFToC(destColor[1]);
+		pLighting[i].b = FastFToC(destColor[2]);
+	}
+
+	return true;
+#else
+	return false;
+#endif
+}
+
+
 
 //-----------------------------------------------------------------------------
 // Computes the static prop color data
@@ -2226,19 +2422,18 @@ void CModelRender::UpdateStaticPropColorData( IHandleEntity *pProp, ModelInstanc
 	// FIXME? : Move this to StudioRender?
 	ModelInstance_t &inst = m_ModelInstances[handle];
 	Assert( inst.m_pModel );
+	inst.m_bStaticPropColorDataValid = false;
+	if ( !inst.m_pModel || !inst.m_ppColorMeshes )
+		return;
 
 	studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( inst.m_pModel );
 	studiohwdata_t *pStudioHWData = &inst.m_pModel->studio.hardwareData;
-	// v44+ models return NULL from GetExtraData - skip assertion
 	if( !pStudioHdr || !pStudioHWData )
-		return; // v44+ models use independent rendering system
-	if( StudioHdr_IsV44Plus(pStudioHdr) )
-		return; // static prop color baking here assumes embedded v37 vertices
+		return;
 
-#ifdef _DEBUG
-	// Used below to make sure everything's ok
 	int totalNumMeshGroups = CountMeshGroups( pStudioHWData );
-#endif // _DEBUG
+	if ( totalNumMeshGroups <= 0 )
+		return;
 
 	// FIXME!!!!  We should try to load this at the same time that we load the rest of the model.
 	CUtlMemory<unsigned char> tmpVtxMem; 
@@ -2246,12 +2441,13 @@ void CModelRender::UpdateStaticPropColorData( IHandleEntity *pProp, ModelInstanc
 	CUtlMemory<Vector4D> tmpColorMem; 
 
 	// Load the vtx file into a temp buffer that'll go away after we leave this scope.
-#ifdef _DEBUG
-	bool retVal = 
-#endif		
-		Mod_LoadStudioModelVtxFileIntoTempBuffer( inst.m_pModel, tmpVtxMem );
+	bool retVal = Mod_LoadStudioModelVtxFileIntoTempBuffer( inst.m_pModel, tmpVtxMem );
 	Assert( retVal );
+	if ( !retVal || !tmpVtxMem.Base() )
+		return;
 	OptimizedModel::FileHeader_t *pVtxHdr = ( OptimizedModel::FileHeader_t * )tmpVtxMem.Base();
+	if ( !pVtxHdr->IsV6() && !pVtxHdr->IsV7() )
+		return;
 
 	// Sets the model transform state in g_pStudioRender
 	matrix3x4_t matrix;
@@ -2263,6 +2459,149 @@ void CModelRender::UpdateStaticPropColorData( IHandleEntity *pProp, ModelInstanc
 	// Get static lighting only!!  We'll add dynamic and lightstyles in in the vertex shader.
 	LightingState_t lightingState;
 	LightcacheGet( m_LightCacheHandle, lightingState, LIGHTCACHEFLAGS_STATIC );
+
+	// v44+ models use a different serialized MDL layout and keep their vertices
+	// in the external VVD buffer.  Never pass those records through the v37
+	// bodypart/model/mesh accessors below.
+	if ( StudioHdr_IsV44Plus( pStudioHdr ) )
+	{
+		studiohdr_v44_t *pStudioHdr44 = ( studiohdr_v44_t * )pStudioHdr;
+		if ( pVtxHdr->numBodyParts != pStudioHdr44->numbodyparts ||
+			pVtxHdr->numLODs != pStudioHWData->m_NumLODs )
+		{
+			return;
+		}
+
+		int colorMeshID = 0;
+		bool bUseNewLighting = r_newproplighting.GetInt() != 0;
+		for ( int lodID = 0; lodID < pVtxHdr->numLODs; ++lodID )
+		{
+			studioloddata_t *pStudioLODData = &pStudioHWData->m_pLODs[lodID];
+			studiomeshdata_t *pStudioMeshData = pStudioLODData->m_pMeshData;
+			if ( !pStudioMeshData )
+				return;
+
+			for ( int bodyPartID = 0; bodyPartID < pStudioHdr44->numbodyparts; ++bodyPartID )
+			{
+				mstudiobodyparts_v44_t *pBodyPart = pStudioHdr44->pBodypart( bodyPartID );
+				OptimizedModel::BodyPartHeader_t *pVtxBodyPart = pVtxHdr->pBodyPart( bodyPartID );
+				if ( !pBodyPart || !pVtxBodyPart || pVtxBodyPart->numModels != pBodyPart->nummodels )
+					return;
+
+				for ( int modelID = 0; modelID < pBodyPart->nummodels; ++modelID )
+				{
+					mstudiomodel_v44_t *pModel = pBodyPart->pModel( modelID );
+					OptimizedModel::ModelHeader_t *pVtxModel = pVtxBodyPart->pModel( modelID );
+					if ( !pModel || !pVtxModel || lodID >= pVtxModel->numLODs )
+						return;
+
+					OptimizedModel::ModelLODHeader_t *pVtxLOD = pVtxModel->pLOD( lodID );
+					if ( !pVtxLOD || pModel->nummeshes != pVtxLOD->numMeshes )
+						return;
+
+					if ( pModel->numvertices > 0 )
+					{
+						tmpLightingMem.EnsureCapacity( pModel->numvertices );
+						bool bLightingComputed;
+						if ( !bUseNewLighting )
+						{
+							bLightingComputed = ComputeModelVertexLightingOldV44(
+								pModel, matrix, lightingState, tmpLightingMem.Base() );
+						}
+						else
+						{
+							tmpColorMem.EnsureCapacity( pModel->numvertices );
+							bLightingComputed = ComputeModelVertexLightingV44(
+								pProp, pModel, pVtxLOD, matrix, tmpColorMem.Base(),
+								tmpLightingMem.Base(), pVtxHdr->IsV6() );
+						}
+
+						if ( !bLightingComputed )
+							return;
+					}
+
+					for ( int meshID = 0; meshID < pModel->nummeshes; ++meshID )
+					{
+						mstudiomesh_v44_t *pMesh = pModel->pMesh( meshID );
+						OptimizedModel::MeshHeader_t *pVtxMesh = pVtxLOD->pMesh( meshID );
+						if ( !pMesh || !pVtxMesh || pMesh->meshid < 0 ||
+							pMesh->meshid >= pStudioHWData->m_NumStudioMeshes )
+						{
+							return;
+						}
+
+						studiomeshdata_t *pHardwareMesh = &pStudioMeshData[pMesh->meshid];
+						if ( !pHardwareMesh->m_pMeshGroup ||
+							pHardwareMesh->m_NumGroup != pVtxMesh->numStripGroups )
+						{
+							return;
+						}
+
+						for ( int stripGroupID = 0; stripGroupID < pVtxMesh->numStripGroups; ++stripGroupID )
+						{
+							OptimizedModel::StripGroupHeader_t *pStripGroup =
+								pVtxMesh->pStripGroup( stripGroupID );
+							studiomeshgroup_t *pMeshGroup =
+								&pHardwareMesh->m_pMeshGroup[stripGroupID];
+							if ( !pStripGroup || pStripGroup->numVerts != pMeshGroup->m_NumVertices ||
+								colorMeshID >= totalNumMeshGroups ||
+								!inst.m_ppColorMeshes[colorMeshID] )
+							{
+								return;
+							}
+
+							CMeshBuilder meshBuilder;
+							meshBuilder.Begin( inst.m_ppColorMeshes[colorMeshID],
+								MATERIAL_HETEROGENOUS, pStripGroup->numVerts, 0 );
+
+							bool bMeshValid = true;
+							for ( int i = 0; i < pStripGroup->numVerts; ++i )
+							{
+								int nVertIndex;
+								if ( pVtxHdr->IsV6() )
+								{
+									OptimizedModel::Vertex_v37_t *pVtxVertex =
+										pStripGroup->pVertex_V37( i );
+									nVertIndex = pMesh->vertexoffset + pVtxVertex->origMeshVertID;
+								}
+								else
+								{
+									OptimizedModel::Vertex_t *pVtxVertex = pStripGroup->pVertex( i );
+									nVertIndex = pMesh->vertexoffset + pVtxVertex->origMeshVertID;
+								}
+
+								if ( nVertIndex < 0 || nVertIndex >= pModel->numvertices )
+								{
+									bMeshValid = false;
+									meshBuilder.Specular3ub( 255, 255, 255 );
+								}
+								else
+								{
+									meshBuilder.Specular3ub( tmpLightingMem[nVertIndex].r,
+										tmpLightingMem[nVertIndex].g,
+										tmpLightingMem[nVertIndex].b );
+								}
+								meshBuilder.AdvanceVertex();
+							}
+							meshBuilder.End();
+
+							if ( !bMeshValid )
+								return;
+
+							pMeshGroup->m_ColorMeshID = colorMeshID;
+							++colorMeshID;
+						}
+					}
+				}
+			}
+		}
+
+		if ( colorMeshID != totalNumMeshGroups )
+			return;
+
+		inst.m_bStaticPropColorDataValid = true;
+		return;
+	}
 		
 	int colorMeshID = 0;
 	int lodID;
@@ -2356,6 +2695,8 @@ void CModelRender::UpdateStaticPropColorData( IHandleEntity *pProp, ModelInstanc
 		}
 	}
 	Assert( colorMeshID == totalNumMeshGroups );
+	if ( colorMeshID == totalNumMeshGroups )
+		inst.m_bStaticPropColorDataValid = true;
 #endif
 }
 
@@ -2365,6 +2706,7 @@ void CModelRender::UpdateStaticPropColorData( IHandleEntity *pProp, ModelInstanc
 //-----------------------------------------------------------------------------
 void CModelRender::DestroyStaticPropColorData( ModelInstanceHandle_t handle )
 {
+	m_ModelInstances[handle].m_bStaticPropColorDataValid = false;
 #ifndef SWDS
 	studiohwdata_t *pStudioHWData = &m_ModelInstances[handle].m_pModel->studio.hardwareData;
 	Assert( pStudioHWData );
@@ -2398,6 +2740,7 @@ ModelInstanceHandle_t CModelRender::CreateInstance( IClientRenderable *pRenderab
 #endif
 	m_ModelInstances[handle].m_pModel = (model_t*)pRenderable->GetModel();
 	m_ModelInstances[handle].m_ppColorMeshes = NULL;
+	m_ModelInstances[handle].m_bStaticPropColorDataValid = false;
 	m_ModelInstances[handle].m_flLightingTime = CURRENT_LIGHTING_UNINITIALIZED;
 
 	studiohdr_t *pStudioHdr = ( studiohdr_t * )modelloader->GetExtraData( m_ModelInstances[handle].m_pModel );
@@ -2464,7 +2807,8 @@ void CModelRender::DestroyInstance( ModelInstanceHandle_t handle )
 
 bool CModelRender::HasStaticPropColorData( int modelInstanceID )
 {
-	return m_ModelInstances[modelInstanceID].m_ppColorMeshes != NULL;
+	return m_ModelInstances[modelInstanceID].m_ppColorMeshes != NULL &&
+		m_ModelInstances[modelInstanceID].m_bStaticPropColorDataValid;
 }
 
 

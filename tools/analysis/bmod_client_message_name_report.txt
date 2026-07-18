@@ -1,0 +1,77 @@
+cl_dll\BaseModViewport.cpp:133: // MOTD is now registered via DECLARE_MESSAGE/HOOK_MESSAGE system in hud.cpp
+cl_dll\c_terrainmodmgr.cpp:77: HOOK_MESSAGE( TerrainMod );
+cl_dll\death.cpp:102: HOOK_MESSAGE( DeathMsg );
+cl_dll\geiger.cpp:83: HOOK_MESSAGE( Geiger );
+cl_dll\history_resource.cpp:59: HOOK_MESSAGE( ItemPickup );
+cl_dll\hud.cpp:188: HOOK_MESSAGE( ResetHUD );
+cl_dll\hud.cpp:189: HOOK_MESSAGE( GameMode );
+cl_dll\hud.cpp:190: HOOK_MESSAGE( InitHUD );
+cl_dll\hud.cpp:191: HOOK_MESSAGE( TeamChange );
+cl_dll\hud.cpp:192: HOOK_MESSAGE( MOTD );
+cl_dll\hud.cpp:193: // HOOK_MESSAGE( ClearDecals ); // ClearDecals function not available in client build
+cl_dll\hud_chat.cpp:480: HOOK_MESSAGE( SayText );
+cl_dll\hud_chat.cpp:481: HOOK_MESSAGE( TextMsg );
+cl_dll\menu.cpp:67: HOOK_MESSAGE( ShowMenu );
+cl_dll\message.cpp:126: HOOK_MESSAGE( HudText );
+cl_dll\message.cpp:127: HOOK_MESSAGE( GameTitle );
+cl_dll\train.cpp:85: HOOK_MESSAGE( Train );
+cl_dll\bmod_hud\gmod_message.cpp:37: ConCommand _GModText_Animate("_GModText_Animate", GModTextAnimate_f, "Animate text");
+cl_dll\bmod_hud\gmod_message.cpp:1094: void GModTextAnimate_f(void)
+cl_dll\bmod_hud\gmod_message.cpp:37: ConCommand _GModText_Animate("_GModText_Animate", GModTextAnimate_f, "Animate text");
+cl_dll\bmod_hud\gmod_message.cpp:1094: void GModTextAnimate_f(void)
+cl_dll\bmod_hud\gmod_message.cpp:50: ConCommand _GModRect_Animate("_GModRect_Animate", GModRectAnimate_f, "Animate rectangle");
+cl_dll\bmod_hud\gmod_message.cpp:1195: void GModRectAnimate_f(void)
+cl_dll\bmod_hud\gmod_message.cpp:50: ConCommand _GModRect_Animate("_GModRect_Animate", GModRectAnimate_f, "Animate rectangle");
+cl_dll\bmod_hud\gmod_message.cpp:1195: void GModRectAnimate_f(void)
+cl_dll\bmod_hud\gmod_spawnmenu_net.cpp:36: HOOK_MESSAGE( GModSpawnList );
+cl_dll\bmod_hud\gmod_usermessages.cpp:728: void MsgFunc_GModTextAnim(const char *pszName, int iSize, void *pbuf);
+cl_dll\bmod_hud\gmod_usermessages.cpp:756: DECLARE_HUD_MESSAGE(CGModHudDisplay, GModTextAnim);
+cl_dll\bmod_hud\gmod_usermessages.cpp:793: HOOK_MESSAGE(GModTextAnim);
+cl_dll\bmod_hud\gmod_usermessages.cpp:985: void CGModHudDisplay::MsgFunc_GModTextAnim(const char *pszName, int iSize, void *pbuf)
+cl_dll\bmod_hud\gmod_usermessages.cpp:732: void MsgFunc_GModRectAnim(const char *pszName, int iSize, void *pbuf);
+cl_dll\bmod_hud\gmod_usermessages.cpp:760: DECLARE_HUD_MESSAGE(CGModHudDisplay, GModRectAnim);
+cl_dll\bmod_hud\gmod_usermessages.cpp:797: HOOK_MESSAGE(GModRectAnim);
+cl_dll\bmod_hud\gmod_usermessages.cpp:1062: void CGModHudDisplay::MsgFunc_GModRectAnim(const char *pszName, int iSize, void *pbuf)
+cl_dll\bmod_hud\gmod_usermessages.cpp:735: void MsgFunc_WQuadAnimate(const char *pszName, int iSize, void *pbuf);
+cl_dll\bmod_hud\gmod_usermessages.cpp:763: DECLARE_HUD_MESSAGE(CGModHudDisplay, WQuadAnimate);
+cl_dll\bmod_hud\gmod_usermessages.cpp:800: HOOK_MESSAGE(WQuadAnimate);
+cl_dll\bmod_hud\gmod_usermessages.cpp:1104: void CGModHudDisplay::MsgFunc_WQuadAnimate(const char *pszName, int iSize, void *pbuf)
+cl_dll\bmod_hud\gmod_usermessages.cpp:735: void MsgFunc_WQuadAnimate(const char *pszName, int iSize, void *pbuf);
+cl_dll\bmod_hud\gmod_usermessages.cpp:763: DECLARE_HUD_MESSAGE(CGModHudDisplay, WQuadAnimate);
+cl_dll\bmod_hud\gmod_usermessages.cpp:800: HOOK_MESSAGE(WQuadAnimate);
+cl_dll\bmod_hud\gmod_usermessages.cpp:1104: void CGModHudDisplay::MsgFunc_WQuadAnimate(const char *pszName, int iSize, void *pbuf)
+cl_dll\bmod_hud\gmod_usermessages.cpp:790: HOOK_MESSAGE(GModHint);
+cl_dll\bmod_hud\gmod_usermessages.cpp:791: HOOK_MESSAGE(GModToolText);
+cl_dll\bmod_hud\gmod_usermessages.cpp:792: HOOK_MESSAGE(GModText);
+cl_dll\bmod_hud\gmod_usermessages.cpp:793: HOOK_MESSAGE(GModTextAnim);
+cl_dll\bmod_hud\gmod_usermessages.cpp:794: HOOK_MESSAGE(GModTextHide);
+cl_dll\bmod_hud\gmod_usermessages.cpp:795: HOOK_MESSAGE(GModTextHideAll);
+cl_dll\bmod_hud\gmod_usermessages.cpp:796: HOOK_MESSAGE(GModRect);
+cl_dll\bmod_hud\gmod_usermessages.cpp:797: HOOK_MESSAGE(GModRectAnim);
+cl_dll\bmod_hud\gmod_usermessages.cpp:798: HOOK_MESSAGE(GModRectHideAll);
+cl_dll\bmod_hud\gmod_usermessages.cpp:799: HOOK_MESSAGE(WQuad);
+cl_dll\bmod_hud\gmod_usermessages.cpp:800: HOOK_MESSAGE(WQuadAnimate);
+cl_dll\bmod_hud\gmod_usermessages.cpp:801: HOOK_MESSAGE(WQuadHide);
+cl_dll\bmod_hud\gmod_usermessages.cpp:802: HOOK_MESSAGE(WQuadHideAll);
+cl_dll\bmod_hud\hud_battery.cpp:70: HOOK_MESSAGE(Battery);
+cl_dll\bmod_hud\hud_health.cpp:87: HOOK_MESSAGE(Damage);
+cl_dll\cstrike\clientmode_csnormal.cpp:107: HOOK_MESSAGE( VGUIMenu );
+cl_dll\cstrike\cs_hud_health.cpp:84: HOOK_MESSAGE(Damage);
+cl_dll\hl2_hud\hud_battery.cpp:70: HOOK_MESSAGE(Battery);
+cl_dll\hl2_hud\hud_health.cpp:87: HOOK_MESSAGE(Damage);
+cl_dll\tf2_hud\hud_damageindicator.cpp:99: HOOK_MESSAGE( Damage );
+cl_dll\tf2_hud\hud_deathnotice.cpp:112: HOOK_MESSAGE( DeathMsg );
+cl_dll\tf2_hud\hud_minimap.cpp:502: HOOK_MESSAGE( MinimapPulse );
+cl_dll\tf2_hud\hud_resources.cpp:109: HOOK_MESSAGE( PickupRes );
+cl_dll\tf2_hud\hud_technologytreedoc.cpp:88: HOOK_MESSAGE(Technology);
+cl_dll\tf2_hud\tf_clientmode.cpp:87: HOOK_MESSAGE( ActBegin );
+cl_dll\tf2_hud\tf_clientmode.cpp:88: HOOK_MESSAGE( ActEnd );
+cl_dll\c_user_message_register.h:6: // 1. HOOK_MESSAGE macro - for registering at initialization time
+cl_dll\c_user_message_register.h:34: // HOOK_MESSAGE: Traditional registration macro
+cl_dll\c_user_message_register.h:42: //   HOOK_MESSAGE( SayText );
+cl_dll\c_user_message_register.h:44: #define HOOK_MESSAGE( name ) \
+cl_dll\hud_macros.h:20: #define HOOK_MESSAGE(x) usermessages->HookMessage(#x, __MsgFunc_##x );
+cl_dll\bmod_hud\gmod_message.h:258: void GModTextAnimate_f(void);
+cl_dll\bmod_hud\gmod_message.h:258: void GModTextAnimate_f(void);
+cl_dll\bmod_hud\gmod_message.h:269: void GModRectAnimate_f(void);
+cl_dll\bmod_hud\gmod_message.h:269: void GModRectAnimate_f(void);

@@ -2,6 +2,7 @@
 
 basetimeslightmapwet.vsh
 BumpmappedEnvmap.vsh
+BufferClearObeyStencil_vs11.vsh
 Cable.vsh
 //colorstreamtest.vsh
 eyes.vsh
@@ -52,6 +53,8 @@ UnlitGeneric_LightingOnlyWorld.vsh
 UnlitGeneric_VertexColor.vsh
 UnlitTwoTexture.vsh
 UnlitTwoTexture_VertexColor.vsh
+vortwarp_vs11.vsh
+vortwarp_unlit_vs11.vsh
 VertexLitEnvMappedTexture.vsh
 VertexLitEnvMappedTexture_CameraSpace.vsh
 VertexLitEnvMappedTexture_SphereMap.vsh
@@ -99,6 +102,7 @@ alienscale_overbright2_ps11.psh
 alienscale_ps14.psh
 alienscale_overbright2_ps14.psh
 Modulate_ps11.psh
+MonitorScreen.psh
 overlay_fit_ps11.psh
 Refract_ps11.psh
 WaterCheap_ps11.psh
@@ -106,6 +110,7 @@ WaterCheap_ps14.psh
 
 basetimeslightmapwet.psh
 BumpmappedEnvmap.psh
+BufferClearObeyStencil_ps11.psh
 BumpmappedLightmap_OverBright1.psh
 BumpmappedLightmap_OverBright2.psh
 Cable.psh
@@ -207,8 +212,6 @@ WorldVertexTransition_BlendBase2.psh
 WriteEnvMapMaskToAlphaBuffer.psh
 WriteZWithHeightClipPlane.psh
 yuv.psh
+vortwarp_ps11.psh
 //lightmappedgeneric_ps20.psh
-
-
-
 
