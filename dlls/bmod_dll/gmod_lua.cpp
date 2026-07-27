@@ -49,10 +49,13 @@ namespace
     {
         const char* name;
         lua_CFunction function;
+        const char* description;    // original gmod lua_listbinds text
     };
 
     trace_t g_LegacyLuaTrace;
 
+    // Every binding goes through CLuaIntegration so that lua_listbinds sees it and
+    // so that the cfg/lua.txt "Disable" section can strip it, exactly like gmod.
     template <size_t N>
     int RegisterLuaBindings(lua_State* L, const LuaBinding (&bindings)[N])
     {
@@ -61,7 +64,7 @@ namespace
 
         for (const auto& binding : bindings)
         {
-            lua_register(L, binding.name, binding.function);
+            CLuaIntegration::RegisterFunction(binding.name, binding.function, binding.description);
         }
 
         return static_cast<int>(N);
@@ -343,6 +346,14 @@ void CGModLuaSystem::RegisterEngineBindings()
     // via CLuaIntegration::RegisterFunction() use the same state as gamemodes
     CLuaIntegration::SetLuaState(s_pLuaState);
 
+    // Start from a clean bind list so repeated Lua (re)initialisation does not
+    // duplicate every entry in lua_listbinds.
+    CLuaIntegration::ClearRegistrations();
+
+    // cfg/lua.txt gates the "lua"/"lua_openscript" commands and can strip binds
+    // outright via its "Disable" section, so it has to run before registration.
+    CLuaIntegration::LoadLuaConfig();
+
     // Register all the engine functions that GMod scripts expect.
     // NOTE: The extended lua_*_funcs.cpp registrations below run last and win for
     // every duplicated global. The core Register*Functions here only register the
@@ -394,7 +405,7 @@ void CGModLuaSystem::RegisterPlayerFunctions()
     // non-duplicated _PrintMessage remains here (its extended copy in
     // lua_file_funcs.cpp is not reachable in the gamemode Lua state).
     static const LuaBinding bindings[] = {
-        {"_PrintMessage", lua_PrintMessage},
+        {"_PrintMessage", lua_PrintMessage, "Print a message to a specific player. Syntax:  <playerid> <type of message> <string message>"},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
@@ -404,12 +415,12 @@ void CGModLuaSystem::RegisterPlayerFunctions()
 void CGModLuaSystem::RegisterEntityFunctions()
 {
     static const LuaBinding bindings[] = {
-        {"_EntCreate", lua_EntCreate},
-        {"_EntSetKeyValue", lua_EntSetKeyValue},
-        {"_EntSetPos", lua_EntSetPos},
-        {"_EntSetAng", lua_EntSetAng},
-        {"_EntSpawn", lua_EntSpawn},
-        {"_EntRemove", lua_EntRemove},
+        {"_EntCreate", lua_EntCreate, "Creates but doesn't spawn specified entity. Syntax <entname>"},
+        {"_EntSetKeyValue", lua_EntSetKeyValue, "Sets an entity keyvalue (Must be done before spawning!). Syntax <entindex> <string keyname> <string keyvalue>"},
+        {"_EntSetPos", lua_EntSetPos, "Sets the position of the entity. Syntax <entid> <vector3 pos>"},
+        {"_EntSetAng", lua_EntSetAng, "Sets the angle of the entity (using a forward vector). Syntax <entid> <vector3 ang>"},
+        {"_EntSpawn", lua_EntSpawn, "Spawns specified entity. Syntax <entindex>"},
+        {"_EntRemove", lua_EntRemove, "Removes entity.. Syntax <entindex>"},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
@@ -419,10 +430,10 @@ void CGModLuaSystem::RegisterEntityFunctions()
 void CGModLuaSystem::RegisterTraceFunctions()
 {
     static const LuaBinding bindings[] = {
-        {"_TraceLine", lua_TraceLine},
-        {"_TraceEndPos", lua_TraceEndPos},
-        {"_TraceHit", lua_TraceHit},
-        {"_TraceHitWorld", lua_TraceHitWorld},
+        {"_TraceLine", lua_TraceLine, "Traces a line. Syntax <vector start> <vector direction> <length> <ignore (optional)>"},
+        {"_TraceEndPos", lua_TraceEndPos, "Return the endpos from the last trace"},
+        {"_TraceHit", lua_TraceHit, "Return the true if the last trace hit something"},
+        {"_TraceHitWorld", lua_TraceHitWorld, "Return the true if the last trace hit the world"},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
@@ -435,61 +446,31 @@ void CGModLuaSystem::RegisterPhysicsFunctions()
     // _PhysApplyForce are re-registered by lua_physics_funcs.cpp (win) and additionally
     // re-pointed to the _phys table by includes/backcompat.lua, so the core copies are dead.
     static const LuaBinding bindings[] = {
-        {"_PhysSetVelocity", lua_PhysSetVelocity},
+        {"_PhysSetVelocity", lua_PhysSetVelocity, "Sets the velocity of an entity's physics object. Syntax: <entid> <vector3 velocity>"},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
 
     // Register the _phys global table (GMod 9 style)
     // This creates _phys.HasPhysics, _phys.Wake, etc.
-    lua_newtable(s_pLuaState);
-
-    lua_pushcfunction(s_pLuaState, lua_phys_HasPhysics);
-    lua_setfield(s_pLuaState, -2, "HasPhysics");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_IsAsleep);
-    lua_setfield(s_pLuaState, -2, "IsAsleep");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_Wake);
-    lua_setfield(s_pLuaState, -2, "Wake");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_Sleep);
-    lua_setfield(s_pLuaState, -2, "Sleep");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_SetMass);
-    lua_setfield(s_pLuaState, -2, "SetMass");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_GetMass);
-    lua_setfield(s_pLuaState, -2, "GetMass");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_EnableCollisions);
-    lua_setfield(s_pLuaState, -2, "EnableCollisions");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_EnableGravity);
-    lua_setfield(s_pLuaState, -2, "EnableGravity");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_EnableDrag);
-    lua_setfield(s_pLuaState, -2, "EnableDrag");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_EnableMotion);
-    lua_setfield(s_pLuaState, -2, "EnableMotion");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_ApplyForceCenter);
-    lua_setfield(s_pLuaState, -2, "ApplyForceCenter");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_ApplyForceOffset);
-    lua_setfield(s_pLuaState, -2, "ApplyForceOffset");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_ApplyTorqueCenter);
-    lua_setfield(s_pLuaState, -2, "ApplyTorqueCenter");
-
-    lua_pushcfunction(s_pLuaState, lua_phys_ConstraintSetEnts);
-    lua_setfield(s_pLuaState, -2, "ConstraintSetEnts");
+    // Order matches the original gmod registration order so lua_listbinds lines up.
+    CLuaIntegration::RegisterTableFunction("_phys", "EnableMotion", lua_phys_EnableMotion, "Enable/Disable motion. Syntax: <entid> <bool>");
+    CLuaIntegration::RegisterTableFunction("_phys", "EnableDrag", lua_phys_EnableDrag, "Enable/Disable drag. Syntax: <entid> <bool>");
+    CLuaIntegration::RegisterTableFunction("_phys", "EnableGravity", lua_phys_EnableGravity, "Enable/Disable gravity. Syntax: <entid> <bool>");
+    CLuaIntegration::RegisterTableFunction("_phys", "EnableCollisions", lua_phys_EnableCollisions, "Enable/Disable Collisions. Syntax: <entid> <bool>");
+    CLuaIntegration::RegisterTableFunction("_phys", "GetMass", lua_phys_GetMass, "Gets mass. Syntax: <entid>");
+    CLuaIntegration::RegisterTableFunction("_phys", "SetMass", lua_phys_SetMass, "Sets mass. Syntax: <entid> <mass>");
+    CLuaIntegration::RegisterTableFunction("_phys", "Sleep", lua_phys_Sleep, "Make object sleep. Syntax: <entid>");
+    CLuaIntegration::RegisterTableFunction("_phys", "Wake", lua_phys_Wake, "Wake a sleeping object. Syntax: <entid>");
+    CLuaIntegration::RegisterTableFunction("_phys", "IsAsleep", lua_phys_IsAsleep, "Check whether object is rested. Syntax: <entid>");
+    CLuaIntegration::RegisterTableFunction("_phys", "HasPhysics", lua_phys_HasPhysics, "Returns true if entity has a physics object.. Syntax: <entid>");
+    CLuaIntegration::RegisterTableFunction("_phys", "ConstraintSetEnts", lua_phys_ConstraintSetEnts, "Set Entities for constraint.. Syntax: <Constraint Entity> <Entity 1> <Entity 2> ");
+    CLuaIntegration::RegisterTableFunction("_phys", "ApplyForceCenter", lua_phys_ApplyForceCenter, "Pushes an object from the center. Syntax <entid> <vector3 force>");
+    CLuaIntegration::RegisterTableFunction("_phys", "ApplyForceOffset", lua_phys_ApplyForceOffset, "Pushes an object from the center. Syntax <entid> <vector3 force> <vector3 worldpos>");
+    CLuaIntegration::RegisterTableFunction("_phys", "ApplyTorqueCenter", lua_phys_ApplyTorqueCenter, "Applys torque to the object. Syntax <entid> <vector3 force>");
     // Note: GetVelocity/SetVelocity were bmod-only _phys members not present in the
     // original gmod _phys table; removed for exact parity (0 content use). The handlers
     // remain defined (see lua_phys_GetVelocity/SetVelocity) for potential internal use.
-
-    lua_setglobal(s_pLuaState, "_phys");
 
     DevMsg("Lua: Registered %d physics functions + _phys table\n", registered);
 }
@@ -498,9 +479,10 @@ void CGModLuaSystem::RegisterUtilityFunctions()
 {
     // _CurTime is re-registered (and wins) by lua_player_funcs.cpp; removed here.
     static const LuaBinding bindings[] = {
-        {"_RunString", lua_RunString},
-        {"_Msg", lua_Msg},
-        {"_OpenScript", lua_OpenScript},
+        {"_RunString", lua_RunString, "Runs a command in the main gameplay script. <command>"},
+        {"_Msg", lua_Msg, "Outputs message to console. Syntax: <message>"},
+        {"_OpenScript", lua_OpenScript, "Opens a script. Syntax: <filename>"},
+        {"_ALERT", lua_ALERT, "Internal Lua usage. Outputs error message. Syntax: <message>"},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
@@ -512,8 +494,8 @@ void CGModLuaSystem::RegisterGamemodeFunctions()
     // Only AddThinkFunction (drives the timer/think system) and _TeamGetName are unique.
     // The rest are re-registered (and win) by lua_player_funcs.cpp / lua_gameevent_funcs.cpp.
     static const LuaBinding bindings[] = {
-        {"AddThinkFunction", lua_AddThinkFunction},
-        {"_TeamGetName", lua_TeamGetName},
+        {"AddThinkFunction", lua_AddThinkFunction, "Registers a function to be called every think. Syntax: <function>"},
+        {"_TeamGetName", lua_TeamGetName, "Gets the name of the team. Syntax: <teamid>"},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
@@ -523,10 +505,10 @@ void CGModLuaSystem::RegisterGamemodeFunctions()
 void CGModLuaSystem::RegisterConVarFunctions()
 {
     static const LuaBinding bindings[] = {
-        {"_GetConVar_Float", lua_GetConVar_Float},
-        {"_GetConVar_Int", lua_GetConVar_Int},
-        {"_GetConVar_String", lua_GetConVar_String},
-        {"_SetConVar", lua_SetConVar},
+        {"_GetConVar_Float", lua_GetConVar_Float, "Get a server convar float. Syntax: <name>"},
+        {"_GetConVar_Int", lua_GetConVar_Int, "Get a server convar int. Syntax: <name>"},
+        {"_GetConVar_String", lua_GetConVar_String, "Get a server convar string. Syntax: <name>"},
+        {"_SetConVar", lua_SetConVar, "Set a server convar. Syntax: <name> <value>"},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
@@ -536,7 +518,7 @@ void CGModLuaSystem::RegisterConVarFunctions()
 void CGModLuaSystem::RegisterSoundFunctions()
 {
     static const LuaBinding bindings[] = {
-        {"_SWEPSetSound", lua_SWEPSetSound},
+        {"_SWEPSetSound", lua_SWEPSetSound, "Sets SWEP's sound. Syntax: <weapon index> <action> <sound>"},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
@@ -546,12 +528,12 @@ void CGModLuaSystem::RegisterSoundFunctions()
 void CGModLuaSystem::RegisterMathFunctions()
 {
     static const LuaBinding bindings[] = {
-        {"vector3", lua_vector3},
-        {"vecAdd", lua_vecAdd},
-        {"vecSub", lua_vecSub},
-        {"vecMul", lua_vecMul},
-        {"vecLength", lua_vecLength},
-        {"vecNormalize", lua_vecNormalize},
+        {"vector3", lua_vector3, "Creates a vector. Syntax: <x> <y> <z>"},
+        {"vecAdd", lua_vecAdd, "Adds two vectors. Syntax: <vector> <vector>"},
+        {"vecSub", lua_vecSub, "Subtracts two vectors. Syntax: <vector> <vector>"},
+        {"vecMul", lua_vecMul, "Multiplies a vector by a scalar. Syntax: <vector> <scale>"},
+        {"vecLength", lua_vecLength, "Returns the length of a vector. Syntax: <vector>"},
+        {"vecNormalize", lua_vecNormalize, "Normalizes a vector. Syntax: <vector>"},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
@@ -561,27 +543,12 @@ void CGModLuaSystem::RegisterMathFunctions()
 void CGModLuaSystem::RegisterUtilTable()
 {
     // Create _util global table
-    lua_newtable(s_pLuaState);
-
-    lua_pushcfunction(s_pLuaState, lua_util_PlayerByName);
-    lua_setfield(s_pLuaState, -2, "PlayerByName");
-
-    lua_pushcfunction(s_pLuaState, lua_util_PlayerByUserId);
-    lua_setfield(s_pLuaState, -2, "PlayerByUserId");
-
-    lua_pushcfunction(s_pLuaState, lua_util_EntsInBox);
-    lua_setfield(s_pLuaState, -2, "EntsInBox");
-
-    lua_pushcfunction(s_pLuaState, lua_util_DropToFloor);
-    lua_setfield(s_pLuaState, -2, "DropToFloor");
-
-    lua_pushcfunction(s_pLuaState, lua_util_ScreenShake);
-    lua_setfield(s_pLuaState, -2, "ScreenShake");
-
-    lua_pushcfunction(s_pLuaState, lua_util_PointAtEntity);
-    lua_setfield(s_pLuaState, -2, "PointAtEntity");
-
-    lua_setglobal(s_pLuaState, "_util");
+    CLuaIntegration::RegisterTableFunction("_util", "PlayerByName", lua_util_PlayerByName, "Returns playerid of player with name. Syntax: <name>");
+    CLuaIntegration::RegisterTableFunction("_util", "PlayerByUserId", lua_util_PlayerByUserId, "Returns playerid. Syntax: <userid>");
+    CLuaIntegration::RegisterTableFunction("_util", "EntsInBox", lua_util_EntsInBox, "Returns entities contained in a box. Syntax: <min vec> <max vec>");
+    CLuaIntegration::RegisterTableFunction("_util", "DropToFloor", lua_util_DropToFloor, "Drops entity to floor. Syntax: <ent>");
+    CLuaIntegration::RegisterTableFunction("_util", "ScreenShake", lua_util_ScreenShake, "Shakes screen. Syntax: <pos> <amp> <frequency>, <duration> <radius>");
+    CLuaIntegration::RegisterTableFunction("_util", "PointAtEntity", lua_util_PointAtEntity, "Point one entity towards the other. Syntax: <ent> <ent>");
 
     DevMsg("Lua: Registered _util table\n");
 }
@@ -589,27 +556,12 @@ void CGModLuaSystem::RegisterUtilTable()
 void CGModLuaSystem::RegisterPlayerTable()
 {
     // Create _player global table
-    lua_newtable(s_pLuaState);
-
-    lua_pushcfunction(s_pLuaState, lua_player_ShowPanel);
-    lua_setfield(s_pLuaState, -2, "ShowPanel");
-
-    lua_pushcfunction(s_pLuaState, lua_player_SetContextMenu);
-    lua_setfield(s_pLuaState, -2, "SetContextMenu");
-
-    lua_pushcfunction(s_pLuaState, lua_player_GetFlashlight);
-    lua_setfield(s_pLuaState, -2, "GetFlashlight");
-
-    lua_pushcfunction(s_pLuaState, lua_player_SetFlashlight);
-    lua_setfield(s_pLuaState, -2, "SetFlashlight");
-
-    lua_pushcfunction(s_pLuaState, lua_player_LastHitGroup);
-    lua_setfield(s_pLuaState, -2, "LastHitGroup");
-
-    lua_pushcfunction(s_pLuaState, lua_player_ShouldDropWeapon);
-    lua_setfield(s_pLuaState, -2, "ShouldDropWeapon");
-
-    lua_setglobal(s_pLuaState, "_player");
+    CLuaIntegration::RegisterTableFunction("_player", "ShowPanel", lua_player_ShowPanel, "Show/Hide a panel by name. Syntax: <player> <name> <show (bool)>");
+    CLuaIntegration::RegisterTableFunction("_player", "SetContextMenu", lua_player_SetContextMenu, "Set the player's context menu. Syntax: <player> <name>");
+    CLuaIntegration::RegisterTableFunction("_player", "GetFlashlight", lua_player_GetFlashlight, "returns true if flashlight is on. Syntax: <player>");
+    CLuaIntegration::RegisterTableFunction("_player", "SetFlashlight", lua_player_SetFlashlight, "Set player FL on/off. Syntax: <player> <on>");
+    CLuaIntegration::RegisterTableFunction("_player", "LastHitGroup", lua_player_LastHitGroup, "Get the last place the player was hit. Syntax: <player>");
+    CLuaIntegration::RegisterTableFunction("_player", "ShouldDropWeapon", lua_player_ShouldDropWeapon, "Should player drop weapon on death? Syntax: <player> <bool>");
 
     DevMsg("Lua: Registered _player table\n");
 }
@@ -617,21 +569,10 @@ void CGModLuaSystem::RegisterPlayerTable()
 void CGModLuaSystem::RegisterNPCTable()
 {
     // Create _npc global table
-    lua_newtable(s_pLuaState);
-
-    lua_pushcfunction(s_pLuaState, lua_npc_ExitScriptedSequence);
-    lua_setfield(s_pLuaState, -2, "ExitScriptedSequence");
-
-    lua_pushcfunction(s_pLuaState, lua_npc_SetSchedule);
-    lua_setfield(s_pLuaState, -2, "SetSchedule");
-
-    lua_pushcfunction(s_pLuaState, lua_npc_SetLastPosition);
-    lua_setfield(s_pLuaState, -2, "SetLastPosition");
-
-    lua_pushcfunction(s_pLuaState, lua_npc_AddRelationship);
-    lua_setfield(s_pLuaState, -2, "AddRelationship");
-
-    lua_setglobal(s_pLuaState, "_npc");
+    CLuaIntegration::RegisterTableFunction("_npc", "ExitScriptedSequence", lua_npc_ExitScriptedSequence, "Syntax: <ent>");
+    CLuaIntegration::RegisterTableFunction("_npc", "SetSchedule", lua_npc_SetSchedule, "Syntax: <ent> <sched>");
+    CLuaIntegration::RegisterTableFunction("_npc", "SetLastPosition", lua_npc_SetLastPosition, "Syntax: <ent> <vector>");
+    CLuaIntegration::RegisterTableFunction("_npc", "AddRelationship", lua_npc_AddRelationship, "Syntax: <ent> <ent> <disposition> <priority (int)>");
 
     DevMsg("Lua: Registered _npc table\n");
 }
@@ -639,21 +580,10 @@ void CGModLuaSystem::RegisterNPCTable()
 void CGModLuaSystem::RegisterSpawnMenuTable()
 {
     // Create _spawnmenu global table
-    lua_newtable(s_pLuaState);
-
-    lua_pushcfunction(s_pLuaState, lua_spawnmenu_AddItem);
-    lua_setfield(s_pLuaState, -2, "AddItem");
-
-    lua_pushcfunction(s_pLuaState, lua_spawnmenu_RemoveCategory);
-    lua_setfield(s_pLuaState, -2, "RemoveCategory");
-
-    lua_pushcfunction(s_pLuaState, lua_spawnmenu_RemoveAll);
-    lua_setfield(s_pLuaState, -2, "RemoveAll");
-
-    lua_pushcfunction(s_pLuaState, lua_spawnmenu_SetCategory);
-    lua_setfield(s_pLuaState, -2, "SetCategory");
-
-    lua_setglobal(s_pLuaState, "_spawnmenu");
+    CLuaIntegration::RegisterTableFunction("_spawnmenu", "AddItem", lua_spawnmenu_AddItem, "Syntax: <playerid> <category> <name> <model/ent/etc>");
+    CLuaIntegration::RegisterTableFunction("_spawnmenu", "RemoveCategory", lua_spawnmenu_RemoveCategory, "Syntax: <playerid> <category>");
+    CLuaIntegration::RegisterTableFunction("_spawnmenu", "RemoveAll", lua_spawnmenu_RemoveAll, "Syntax: <playerid>");
+    CLuaIntegration::RegisterTableFunction("_spawnmenu", "SetCategory", lua_spawnmenu_SetCategory, "Syntax: <playerid> <category>");
 
     DevMsg("Lua: Registered _spawnmenu table\n");
 }
@@ -663,14 +593,14 @@ void CGModLuaSystem::RegisterGModQuadFunctions()
     // _gmodquad functions are registered as global functions (not as a table)
     // This matches the original GMod 9 behavior
     static const LuaBinding bindings[] = {
-        {"_GModQuad_Hide", lua_GModQuad_Hide},
-        {"_GModQuad_HideAll", lua_GModQuad_HideAll},
-        {"_GModQuad_Start", lua_GModQuad_Start},
-        {"_GModQuad_SetVector", lua_GModQuad_SetVector},
-        {"_GModQuad_SetTimings", lua_GModQuad_SetTimings},
-        {"_GModQuad_SetEntity", lua_GModQuad_SetEntity},
-        {"_GModQuad_Send", lua_GModQuad_Send},
-        {"_GModQuad_SendAnimate", lua_GModQuad_SendAnimate},
+        {"_GModQuad_Hide", lua_GModQuad_Hide, " Hides specified world quads. <player> <index> <fade time> <delay>"},
+        {"_GModQuad_HideAll", lua_GModQuad_HideAll, " Hides All world quads. <player>"},
+        {"_GModQuad_Start", lua_GModQuad_Start, " Initialize the quad. Syntax: <material>"},
+        {"_GModQuad_SetVector", lua_GModQuad_SetVector, " Set a vector of one of the quad's corners. Syntax: <corner [0-3]> <vector>"},
+        {"_GModQuad_SetTimings", lua_GModQuad_SetTimings, " Set Timings. Syntax: <delay> <fadein> <life> <fadeout>"},
+        {"_GModQuad_SetEntity", lua_GModQuad_SetEntity, " SetEntity to follow. Syntax: <entityid>"},
+        {"_GModQuad_Send", lua_GModQuad_Send, " Send a quad to player. All players if player is 0. <player> <index>"},
+        {"_GModQuad_SendAnimate", lua_GModQuad_SendAnimate, " Send a quad to player. All players if player is 0. <player> <index> <length> <ease>"},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
@@ -679,18 +609,10 @@ void CGModLuaSystem::RegisterGModQuadFunctions()
 
 void CGModLuaSystem::RegisterGModTextFunctions()
 {
-    // The primary _GModText_* names and most no-underscore aliases are re-registered
-    // (and win) by lua_effect_funcs.cpp's RegisterLuaEffectFunctions(). Only these four
-    // no-underscore aliases are NOT covered there, so they remain here.
-    static const LuaBinding bindings[] = {
-        {"_GModTextSetTime", lua_GModText_SetTime},
-        {"_GModTextSetEntity", lua_GModText_SetEntity},
-        {"_GModTextSetEntityOffset", lua_GModText_SetEntityOffset},
-        {"_GModTextSendAnimate", lua_GModText_SendAnimate},
-    };
-
-    int registered = RegisterLuaBindings(s_pLuaState, bindings);
-    DevMsg("Lua: Registered %d _GModText functions\n", registered);
+    // Every _GModText_* bind is registered (and wins) by lua_effect_funcs.cpp's
+    // RegisterLuaEffectFunctions(). The no-underscore aliases that used to live here
+    // (_GModTextSetTime and friends) never existed in gmod and no content used them.
+    DevMsg("Lua: _GModText functions are registered by RegisterLuaEffectFunctions\n");
 }
 
 static int lua_GModRect_SetAdditive(lua_State* L)
@@ -707,18 +629,12 @@ static int lua_GModRect_SetEntity(lua_State* L)
 
 void CGModLuaSystem::RegisterGModRectFunctions()
 {
-    // The primary _GModRect_* names and most no-underscore aliases are re-registered
-    // (and win) by lua_effect_funcs.cpp's RegisterLuaEffectFunctions(). Only these eight
-    // (SetAdditive/SetEntity variants + a few no-underscore aliases) are NOT covered there.
+    // The remaining _GModRect_* names are registered (and win) by lua_effect_funcs.cpp's
+    // RegisterLuaEffectFunctions(); only SetAdditive/SetEntity are owned here. The
+    // no-underscore aliases that used to live here never existed in gmod and are gone.
     static const LuaBinding bindings[] = {
-        {"_GModRect_SetAdditive", lua_GModRect_SetAdditive},
-        {"_GModRect_SetEntity", lua_GModRect_SetEntity},
-        {"_GModRectStart", lua_GModRect_Start},
-        {"_GModRectSetAdditive", lua_GModRect_SetAdditive},
-        {"_GModRectSetEntity", lua_GModRect_SetEntity},
-        {"_GModRectSetTime", lua_GModRect_SetTime},
-        {"_GModRectSetDelay", lua_GModRect_SetDelay},
-        {"_GModRectSendAnimate", lua_GModRect_SendAnimate},
+        {"_GModRect_SetAdditive", lua_GModRect_SetAdditive, " Set Additive mode. Syntax: <bool>"},
+        {"_GModRect_SetEntity", lua_GModRect_SetEntity, " Set entity to hover over. Syntax: <entindex>"},
     };
 
     int registered = RegisterLuaBindings(s_pLuaState, bindings);
@@ -728,21 +644,10 @@ void CGModLuaSystem::RegisterGModRectFunctions()
 void CGModLuaSystem::RegisterGameEventTable()
 {
     // Create _gameevent global table
-    lua_newtable(s_pLuaState);
-
-    lua_pushcfunction(s_pLuaState, lua_gameevent_Start);
-    lua_setfield(s_pLuaState, -2, "Start");
-
-    lua_pushcfunction(s_pLuaState, lua_gameevent_SetString);
-    lua_setfield(s_pLuaState, -2, "SetString");
-
-    lua_pushcfunction(s_pLuaState, lua_gameevent_SetInt);
-    lua_setfield(s_pLuaState, -2, "SetInt");
-
-    lua_pushcfunction(s_pLuaState, lua_gameevent_Fire);
-    lua_setfield(s_pLuaState, -2, "Fire");
-
-    lua_setglobal(s_pLuaState, "_gameevent");
+    CLuaIntegration::RegisterTableFunction("_gameevent", "Start", lua_gameevent_Start, "Starts a (fake) gameevent. <name>");
+    CLuaIntegration::RegisterTableFunction("_gameevent", "SetString", lua_gameevent_SetString, "Set Variable. <name> <value>");
+    CLuaIntegration::RegisterTableFunction("_gameevent", "SetInt", lua_gameevent_SetInt, "Set Variable. <name> <value>");
+    CLuaIntegration::RegisterTableFunction("_gameevent", "Fire", lua_gameevent_Fire, "Fire event.");
 
     DevMsg("Lua: Registered _gameevent table\n");
 }
@@ -754,7 +659,8 @@ LuaFunctionResult_t CGModLuaSystem::LoadScript(const char* pszFileName, LuaScrip
 
     char fullPath[MAX_PATH];
 
-    // Check if path already starts with the lua base path to avoid duplication
+    // Original gmod resolves scripts by trying the name verbatim first and only
+    // then falling back to "lua/<name>", with no extension ever appended.
     const char* luaPath = gmod_lua_path.GetString();
     if (Q_strnicmp(pszFileName, luaPath, Q_strlen(luaPath)) == 0 ||
         Q_strnicmp(pszFileName, "lua/", 4) == 0)
@@ -764,13 +670,14 @@ LuaFunctionResult_t CGModLuaSystem::LoadScript(const char* pszFileName, LuaScrip
     }
     else
     {
-        // Add lua/ prefix
-        Q_snprintf(fullPath, sizeof(fullPath), "%s%s", luaPath, pszFileName);
+        Q_strncpy(fullPath, pszFileName, sizeof(fullPath));
+        if (!filesystem->FileExists(fullPath, "GAME"))
+            Q_snprintf(fullPath, sizeof(fullPath), "%s%s", luaPath, pszFileName);
     }
 
     if (!filesystem->FileExists(fullPath, "GAME"))
     {
-        Warning("Lua script not found: %s\n", fullPath);
+        Warning("LUA: Couldn't open script '%s'\n", pszFileName);
         return LUA_RESULT_FILE_NOT_FOUND;
     }
 
@@ -1930,12 +1837,26 @@ int lua_OpenScript(lua_State* L)
 
     const char* fileName = lua_tostring(L, 1);
     if (!fileName)
-        return 0;
+        fileName = "";
 
-    LuaFunctionResult_t result = CGModLuaSystem::LoadScript(fileName, LUA_SCRIPT_INCLUDE);
-    lua_pushboolean(L, result == LUA_RESULT_SUCCESS);
+    // Original gmod's _OpenScript returns no values.
+    CGModLuaSystem::LoadScript(fileName, LUA_SCRIPT_INCLUDE);
+    return 0;
+}
 
-    return 1;
+//-----------------------------------------------------------------------------
+// _ALERT(message) - internal Lua error output hook. Original gmod prints
+// "Lua Error: " as a warning followed by the message and a newline.
+//-----------------------------------------------------------------------------
+int lua_ALERT(lua_State* L)
+{
+    Warning("Lua Error: ");
+
+    const char* message = (lua_gettop(L) >= 1) ? lua_tostring(L, 1) : NULL;
+    Msg("%s", message ? message : "");
+    Msg("\n");
+
+    return 0;
 }
 
 int lua_GetConVar_Float(lua_State* L)

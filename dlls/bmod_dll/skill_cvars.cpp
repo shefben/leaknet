@@ -19,10 +19,8 @@
 ConVar sk_barnacle_health( "sk_barnacle_health", "35" );
 
 // Barney
-ConVar sk_barney_health( "sk_barney_health", "35" );
 
 // Bullseye
-ConVar sk_bullseye_health( "sk_bullseye_health", "35" );
 
 // Bullsquid
 ConVar sk_bullsquid_health( "sk_bullsquid_health", "120" );
@@ -30,25 +28,19 @@ ConVar sk_bullsquid_dmg_bite( "sk_bullsquid_dmg_bite", "15" );
 ConVar sk_bullsquid_dmg_whip( "sk_bullsquid_dmg_whip", "25" );
 
 // Citizen
-ConVar sk_citizen_health( "sk_citizen_health", "40" );
 
 // Conscript
-ConVar sk_conscript_health( "sk_conscript_health", "50" );
 
 // Cremator
 ConVar sk_Cremator_health( "sk_Cremator_health", "100" );
 
 // Combine Soldier
-ConVar sk_combine_s_health( "sk_combine_s_health", "50" );
-ConVar sk_combine_s_kick( "sk_combine_s_kick", "10" );
 
 // Combine Elite
-ConVar sk_combine_elite_health( "sk_combine_elite_health", "70" );
 
 // Combine Guard
 ConVar sk_combine_guard_health( "sk_combine_guard_health", "70" );
 ConVar sk_combine_guard_kick( "sk_combine_guard_kick", "15" );
-ConVar sk_combineguard_health( "sk_combineguard_health", "200" );
 
 // Strider
 ConVar sk_strider_health( "sk_strider_health", "350" );
@@ -57,25 +49,18 @@ ConVar sk_strider_num_missiles2( "sk_strider_num_missiles2", "7" );
 ConVar sk_strider_num_missiles3( "sk_strider_num_missiles3", "7" );
 
 // Headcrab
-ConVar sk_headcrab_health( "sk_headcrab_health", "10" );
-ConVar sk_headcrab_melee_dmg( "sk_headcrab_melee_dmg", "5" );
 
 // Fast Headcrab
-ConVar sk_headcrab_fast_health( "sk_headcrab_fast_health", "10" );
 
 // Poison Headcrab
-ConVar sk_headcrab_poison_health( "sk_headcrab_poison_health", "35" );
 
 // Houndeye
 ConVar sk_houndeye_health( "sk_houndeye_health", "80" );
 ConVar sk_houndeye_dmg_blast( "sk_houndeye_dmg_blast", "25" );
 
 // Manhack
-ConVar sk_manhack_health( "sk_manhack_health", "25" );
-ConVar sk_manhack_melee_dmg( "sk_manhack_melee_dmg", "20" );
 
 // Metropolice
-ConVar sk_metropolice_health( "sk_metropolice_health", "40" );
 ConVar sk_metropolice_stitch_reaction( "sk_metropolice_stitch_reaction", "1.0" );
 ConVar sk_metropolice_stitch_tight_hitcount( "sk_metropolice_stitch_tight_hitcount", "2" );
 ConVar sk_metropolice_stitch_at_hitcount( "sk_metropolice_stitch_at_hitcount", "1" );
@@ -83,35 +68,20 @@ ConVar sk_metropolice_stitch_behind_hitcount( "sk_metropolice_stitch_behind_hitc
 ConVar sk_metropolice_stitch_along_hitcount( "sk_metropolice_stitch_along_hitcount", "2" );
 
 // Mortar Synth
-ConVar sk_mortarsynth_health( "sk_mortarsynth_health", "100" );
 
 // Rollermine
-ConVar sk_rollermine_shock( "sk_rollermine_shock", "10" );
 ConVar sk_rollermine_stun_delay( "sk_rollermine_stun_delay", "3" );
-ConVar sk_rollermine_vehicle_intercept( "sk_rollermine_vehicle_intercept", "1" );
 
 // Scanner (City Scanner)
-ConVar sk_scanner_health( "sk_scanner_health", "30" );
-ConVar sk_scanner_dmg_dive( "sk_scanner_dmg_dive", "25" );
-ConVar sk_scanner_dmg_gas( "sk_scanner_dmg_gas", "10" );
 
 // Shield Scanner
-ConVar sk_sscanner_health( "sk_sscanner_health", "50" );
 
 // Stalker
-ConVar sk_stalker_health( "sk_stalker_health", "50" );
-ConVar sk_stalker_melee_dmg( "sk_stalker_melee_dmg", "5" );
 
 // Vortigaunt
-ConVar sk_vortigaunt_health( "sk_vortigaunt_health", "100" );
-ConVar sk_vortigaunt_dmg_claw( "sk_vortigaunt_dmg_claw", "10" );
-ConVar sk_vortigaunt_dmg_rake( "sk_vortigaunt_dmg_rake", "25" );
-ConVar sk_vortigaunt_dmg_zap( "sk_vortigaunt_dmg_zap", "50" );
 ConVar sk_vortigaunt_armor_charge( "sk_vortigaunt_armor_charge", "30" );
 
 // Waste Scanner
-ConVar sk_wscanner_health( "sk_wscanner_health", "50" );
-ConVar sk_wscanner_laser_dmg( "sk_wscanner_laser_dmg", "10" );
 
 // Zombie (regular zombie defined elsewhere but adding here for completeness)
 // ConVar sk_zombie_health - defined in hl1_npc_zombie.cpp
@@ -123,21 +93,12 @@ ConVar sk_zombie_poison_health( "sk_zombie_poison_health", "175" );
 ConVar sk_zombie_poison_dmg_spit( "sk_zombie_poison_dmg_spit", "20" );
 
 // Antlion
-ConVar sk_antlion_health( "sk_antlion_health", "30" );
-ConVar sk_antlion_swipe_damage( "sk_antlion_swipe_damage", "5" );
-ConVar sk_antlion_jump_damage( "sk_antlion_jump_damage", "5" );
 
 // Antlion Guard
-ConVar sk_antlionguard_health( "sk_antlionguard_health", "500" );
-ConVar sk_antlionguard_dmg_charge( "sk_antlionguard_dmg_charge", "20" );
-ConVar sk_antlionguard_dmg_shove( "sk_antlionguard_dmg_shove", "10" );
 
 // Antlion Grub
-ConVar sk_antliongrub_health( "sk_antliongrub_health", "5" );
 
 // Ichthyosaur
-ConVar sk_ichthyosaur_health( "sk_ichthyosaur_health", "200" );
-ConVar sk_ichthyosaur_melee_dmg( "sk_ichthyosaur_melee_dmg", "8" );
 
 // Combine Gunship
 ConVar sk_gunship_burst_size( "sk_gunship_burst_size", "15" );
@@ -247,12 +208,8 @@ ConVar sk_dmg_tripwire( "sk_dmg_tripwire", "150" );
 ConVar sk_tripwire_radius( "sk_tripwire_radius", "200" );
 
 // Energy Grenade (Mortar Synth)
-ConVar sk_dmg_energy_grenade( "sk_dmg_energy_grenade", "2" );
-ConVar sk_energy_grenade_radius( "sk_energy_grenade_radius", "100" );
 
 // Spit Grenade (Bullsquid)
-ConVar sk_dmg_spit_grenade( "sk_dmg_spit_grenade", "5" );
-ConVar sk_spit_grenade_radius( "sk_spit_grenade_radius", "50" );
 
 // Molotov - defined in hl2_gamerules.cpp
 // sk_plr_dmg_molotov, sk_npc_dmg_molotov

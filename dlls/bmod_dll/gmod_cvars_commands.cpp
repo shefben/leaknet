@@ -173,72 +173,9 @@ void CC_GMod_OptionSelect(void)
 }
 // optionselect is registered in gmod_system.cpp, where it dispatches to Lua.
 
-// lua_run - Run Lua code (server-side)
-void CC_Lua_Run(void)
-{
-	CBasePlayer *pPlayer = UTIL_GetCommandClient();
-
-	// For dedicated servers, allow console use
-	// For listen servers, require admin
-	if (pPlayer)
-	{
-		DevMsg("lua_run: Player %s executed Lua\n", STRING(pPlayer->pl.netname));
-	}
-
-	if (engine->Cmd_Argc() < 2)
-	{
-		Msg("Usage: lua_run <lua code>\n");
-		return;
-	}
-
-	// Concatenate all arguments into the Lua string
-	char luaCode[4096];
-	luaCode[0] = '\0';
-
-	for (int i = 1; i < engine->Cmd_Argc(); i++)
-	{
-		if (i > 1)
-			Q_strncat(luaCode, " ", sizeof(luaCode));
-		Q_strncat(luaCode, engine->Cmd_Argv(i), sizeof(luaCode));
-	}
-
-	DevMsg("lua_run: Executing: %s\n", luaCode);
-
-	// Execute via Lua integration
-	// CLuaIntegration::ExecuteString(luaCode);
-}
-static ConCommand lua_run("lua_run", CC_Lua_Run, "Execute Lua code on the server");
-
-// lua_run_cl - Run Lua code on client (sends to client)
-void CC_Lua_Run_CL(void)
-{
-	CBasePlayer *pPlayer = UTIL_GetCommandClient();
-	if (!pPlayer)
-		return;
-
-	if (engine->Cmd_Argc() < 2)
-	{
-		Msg("Usage: lua_run_cl <lua code>\n");
-		return;
-	}
-
-	// Concatenate arguments
-	char luaCode[4096];
-	luaCode[0] = '\0';
-
-	for (int i = 1; i < engine->Cmd_Argc(); i++)
-	{
-		if (i > 1)
-			Q_strncat(luaCode, " ", sizeof(luaCode));
-		Q_strncat(luaCode, engine->Cmd_Argv(i), sizeof(luaCode));
-	}
-
-	DevMsg("lua_run_cl: Sending to client: %s\n", luaCode);
-
-	// Send to client to execute
-	// This would require a client-side Lua system
-}
-static ConCommand lua_run_cl("lua_run_cl", CC_Lua_Run_CL, "Execute Lua code on the client");
+// The server-side Lua string command is the original gmod "lua" console command,
+// registered in lua_integration.cpp along with lua_openscript and lua_listbinds.
+// gmod 9.0.4b has no client-side Lua VM, so there is no client counterpart.
 
 //=============================================================================
 // ADMIN COMMANDS

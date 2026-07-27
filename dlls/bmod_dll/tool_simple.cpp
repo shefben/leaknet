@@ -14,6 +14,7 @@
 #include "util.h"
 #include "baseanimating.h"
 #include "physics.h"
+#include "ragdoll_shared.h"
 #include "vphysics_interface.h"
 #include "eventqueue.h"
 #include "explode.h"
@@ -24,13 +25,16 @@
 //-----------------------------------------------------------------------------
 // Console variables
 //-----------------------------------------------------------------------------
-ConVar bm_ignite_duration( "bm_ignite_duration", "30", FCVAR_ARCHIVE, "Fire duration (seconds) applied by the Ignite tool" );
+// Authentic GMod 9 cvar names - the build menu's context panels, third-party
+// mods and Lua scripts all reference these exact names.
+ConVar bm_ignite_duration( "gm_firelength", "30", FCVAR_ARCHIVE, "Fire duration (seconds) applied by the Ignite tool" );
 
-ConVar bm_magnetise_force( "bm_magnetise_force", "400", FCVAR_ARCHIVE, "Acceleration (units/s^2) pulling magnetised props together" );
+ConVar bm_magnetise_force( "gm_magnetstrength", "400", FCVAR_ARCHIVE, "Acceleration (units/s^2) pulling magnetised props together" );
 ConVar bm_magnetise_range( "bm_magnetise_range", "512", FCVAR_ARCHIVE, "Max distance between two magnetised props for the pull to apply" );
 
-ConVar bm_dynamite_magnitude( "bm_dynamite_magnitude", "100", FCVAR_ARCHIVE, "env_explosion iMagnitude used by the Dynamite tool" );
-ConVar bm_dynamite_delay( "bm_dynamite_delay", "5", FCVAR_ARCHIVE, "Seconds between attaching dynamite and it detonating" );
+// Dynamite settings live in gmod_dynamite.cpp under their GMod 9 names.
+extern ConVar gm_dynamite_power;
+extern ConVar gm_dynamite_delay;
 
 //-----------------------------------------------------------------------------
 // TOOL_MAGNETISE - entities currently marked magnetic. Every valid pair
@@ -64,6 +68,71 @@ static CUtlVector<EHANDLE> g_PendingDynamite;
 //-----------------------------------------------------------------------------
 // Small shared helpers
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// A ragdoll is many physics objects, one per phys bone. VPhysicsGetObject()
+// only ever returns the root (the pelvis), so freezing or no-colliding a
+// ragdoll through it leaves every other limb loose. VPhysicsGetObjectList() is
+// overridden by CRagdollProp to hand back the whole set, and falls back to the
+// single object for ordinary props.
+//-----------------------------------------------------------------------------
+#define SIMPLE_MAX_PHYSOBJECTS	RAGDOLL_MAX_ELEMENTS
+
+static void Simple_SetEntityMotionEnabled( CBaseEntity *pEntity, bool bEnable )
+{
+	if ( !pEntity )
+		return;
+
+	IPhysicsObject *pList[SIMPLE_MAX_PHYSOBJECTS];
+	int count = pEntity->VPhysicsGetObjectList( pList, ARRAYSIZE(pList) );
+	for ( int i = 0; i < count; i++ )
+	{
+		if ( !pList[i] )
+			continue;
+
+		pList[i]->EnableMotion( bEnable );
+		if ( bEnable )
+		{
+			pList[i]->Wake();
+		}
+	}
+}
+
+static void Simple_SetEntityPairCollisions( CBaseEntity *pEnt1, CBaseEntity *pEnt2, bool bEnable )
+{
+	if ( !pEnt1 || !pEnt2 )
+		return;
+
+	IPhysicsObject *pList1[SIMPLE_MAX_PHYSOBJECTS];
+	IPhysicsObject *pList2[SIMPLE_MAX_PHYSOBJECTS];
+	int count1 = pEnt1->VPhysicsGetObjectList( pList1, ARRAYSIZE(pList1) );
+	int count2 = pEnt2->VPhysicsGetObjectList( pList2, ARRAYSIZE(pList2) );
+
+	for ( int i = 0; i < count1; i++ )
+	{
+		if ( !pList1[i] )
+			continue;
+
+		for ( int j = 0; j < count2; j++ )
+		{
+			if ( !pList2[j] )
+				continue;
+
+			if ( bEnable )
+				physenv->EnableCollisions( pList1[i], pList2[j] );
+			else
+				physenv->DisableCollisions( pList1[i], pList2[j] );
+		}
+
+		pList1[i]->RecheckCollisionFilter();
+	}
+
+	for ( int j = 0; j < count2; j++ )
+	{
+		if ( pList2[j] )
+			pList2[j]->RecheckCollisionFilter();
+	}
+}
+
 static int Simple_FindHandle( CUtlVector<EHANDLE> &list, CBaseEntity *pEntity )
 {
 	for ( int i = 0; i < list.Count(); i++ )
@@ -223,10 +292,7 @@ static void Simple_NoCollide_OnUse( CBasePlayer *pOwner, CWeaponTool *pTool, CBa
 
 			if ( pA == pEntity || pB == pEntity )
 			{
-				if ( pA && pB && pA->VPhysicsGetObject() && pB->VPhysicsGetObject() )
-				{
-					physenv->EnableCollisions( pA->VPhysicsGetObject(), pB->VPhysicsGetObject() );
-				}
+				Simple_SetEntityPairCollisions( pA, pB, true );
 
 				g_NoCollidePairs.Remove( i );
 				delete pInfo;
@@ -278,8 +344,9 @@ static void Simple_NoCollide_OnUse( CBasePlayer *pOwner, CWeaponTool *pTool, CBa
 
 	// physenv->DisableCollisions()/EnableCollisions() is a true pairwise
 	// no-collide (public/vphysics_interface.h) - no need for the
-	// COLLISION_GROUP_DEBRIS approximation fallback.
-	physenv->DisableCollisions( pPhys1, pPhys2 );
+	// COLLISION_GROUP_DEBRIS approximation fallback. Cross every physics object
+	// on both sides so ragdoll limbs are all covered, not just the root.
+	Simple_SetEntityPairCollisions( pPending, pEntity, false );
 
 	NoCollideInfo_t *pInfo = new NoCollideInfo_t;
 	pInfo->hEntity1 = pPending;
@@ -337,14 +404,14 @@ static void Simple_Dynamite_OnUse( CBasePlayer *pOwner, CWeaponTool *pTool, CBas
 	}
 
 	char szMagnitude[16];
-	Q_snprintf( szMagnitude, sizeof(szMagnitude), "%d", bm_dynamite_magnitude.GetInt() );
+	Q_snprintf( szMagnitude, sizeof(szMagnitude), "%d", gm_dynamite_power.GetInt() );
 	pExplosion->KeyValue( "iMagnitude", szMagnitude );
 	pExplosion->AddSpawnFlags( SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS );
 	pExplosion->m_nRenderMode = kRenderTransAdd;
 	pExplosion->SetOwnerEntity( pOwner );
 	pExplosion->Spawn();
 
-	float flDelay = bm_dynamite_delay.GetFloat();
+	float flDelay = gm_dynamite_delay.GetFloat();
 
 	// Delayed detonation via the standard entity I/O event queue (already
 	// used elsewhere in this codebase, e.g. logicrelay.cpp) rather than a
@@ -384,16 +451,17 @@ static void Simple_Statue_OnUse( CBasePlayer *pOwner, CWeaponTool *pTool, CBaseE
 	int idx = Simple_FindHandle( g_StatuedEntities, pEntity );
 	char buf[128];
 
+	// Whole entity, not just the root - a ragdoll frozen through
+	// VPhysicsGetObject() would keep every limb but the pelvis flopping.
 	if ( idx >= 0 )
 	{
-		pPhys->EnableMotion( true );
-		pPhys->Wake();
+		Simple_SetEntityMotionEnabled( pEntity, true );
 		g_StatuedEntities.Remove( idx );
 		Q_snprintf( buf, sizeof(buf), "%s is now unfrozen", pEntity->GetClassname() );
 	}
 	else
 	{
-		pPhys->EnableMotion( false );
+		Simple_SetEntityMotionEnabled( pEntity, false );
 		g_StatuedEntities.AddToTail( pEntity );
 		Q_snprintf( buf, sizeof(buf), "%s is now a statue (frozen)", pEntity->GetClassname() );
 	}
@@ -509,10 +577,7 @@ CON_COMMAND( bm_nocollide_removeall, "Restore collision for all no-collided pair
 		CBaseEntity *pA = pInfo->hEntity1.Get();
 		CBaseEntity *pB = pInfo->hEntity2.Get();
 
-		if ( pA && pB && pA->VPhysicsGetObject() && pB->VPhysicsGetObject() )
-		{
-			physenv->EnableCollisions( pA->VPhysicsGetObject(), pB->VPhysicsGetObject() );
-		}
+		Simple_SetEntityPairCollisions( pA, pB, true );
 
 		delete pInfo;
 		nRemoved++;

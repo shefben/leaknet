@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -10,16 +10,40 @@
 #include "vphysics/constraints.h"
 #include "vcollide_parse.h"
 #include "vphysics_interface.h"
+#include "studio_helpers.h"
+
+static int RagdollBoneIndexForSolid( const studiohdr_t *pStudioHdr, int solidIndex, const char *pSolidName )
+{
+	int boneIndex = Studio_BoneIndexByName( pStudioHdr, pSolidName );
+	if ( boneIndex >= 0 )
+		return boneIndex;
+
+	// Some newer PHY files do not preserve a name that exactly matches the MDL.
+	// The compiled physics-bone index is the authoritative fallback.
+	int numBones = StudioHdr_GetNumBones( pStudioHdr );
+	for ( int i = 0; i < numBones; i++ )
+	{
+		if ( StudioBone_GetPhysicsBone( pStudioHdr, i ) == solidIndex )
+			return i;
+	}
+
+	return -1;
+}
 
 static void RagdollCreateObjects( IPhysicsCollision *pPhysCollision, IPhysicsEnvironment *pPhysEnv, IPhysicsSurfaceProps *pSurfaceDatabase, ragdoll_t &ragdoll, const ragdollparams_t &params )
 {
 	ragdoll.listCount = 0;
 	ragdoll.pGroup = NULL;
 	memset( ragdoll.list, 0, sizeof(ragdoll.list) );
-	if ( !params.pCollide || params.pCollide->solidCount > RAGDOLL_MAX_ELEMENTS )
+	if ( !params.pCollide || !params.pStudioHdr || !params.pCurrentBones ||
+		params.pCollide->solidCount <= 0 || params.pCollide->solidCount > RAGDOLL_MAX_ELEMENTS ||
+		!params.pCollide->pKeyValues )
 		return;
 
 	IVPhysicsKeyParser *pParse = pPhysCollision->VPhysicsKeyParserCreate( params.pCollide->pKeyValues );
+	if ( !pParse )
+		return;
+
 	ragdoll.pGroup = pPhysEnv->CreateConstraintGroup();
 	while ( !pParse->Finished() )
 	{
@@ -32,7 +56,8 @@ static void RagdollCreateObjects( IPhysicsCollision *pPhysCollision, IPhysicsEnv
 			if ( solid.index >= 0 && solid.index < params.pCollide->solidCount)
 			{
 				Assert( ragdoll.listCount == solid.index );
-				int boneIndex = Studio_BoneIndexByName( params.pStudioHdr, solid.name );
+
+				int boneIndex = RagdollBoneIndexForSolid( params.pStudioHdr, solid.index, solid.name );
 				ragdoll.boneIndex[ragdoll.listCount] = boneIndex;
 
 				if ( boneIndex >= 0 )
@@ -45,8 +70,18 @@ static void RagdollCreateObjects( IPhysicsCollision *pPhysCollision, IPhysicsEnv
 						surfaceData = pSurfaceDatabase->GetSurfaceIndex( "default" );
 
 					solid.params.pName = params.pStudioHdr->name;
-					ragdoll.list[ragdoll.listCount].pObject = pPhysEnv->CreatePolyObject( params.pCollide->solids[solid.index], surfaceData, vec3_origin, vec3_angle, &solid.params );
-					ragdoll.list[ragdoll.listCount].pObject->SetPositionMatrix( params.pCurrentBones[boneIndex], true );
+					IPhysicsObject *pObject = pPhysEnv->CreatePolyObject( params.pCollide->solids[solid.index], surfaceData, vec3_origin, vec3_angle, &solid.params );
+					if ( !pObject )
+					{
+						// Skip this solid.  The rest of the ragdoll still simulates,
+						// and TestCollision() falls back to hitboxes for the parts
+						// that have no simulated solid.
+						Warning( "CRagdollProp::CreateObjects: Couldn't create physics solid %d (%s)\n", solid.index, solid.name );
+						continue;
+					}
+
+					ragdoll.list[ragdoll.listCount].pObject = pObject;
+					pObject->SetPositionMatrix( params.pCurrentBones[boneIndex], true );
 					ragdoll.list[ragdoll.listCount].parentIndex = -1;
 
 					ragdoll.listCount++;
@@ -62,7 +97,10 @@ static void RagdollCreateObjects( IPhysicsCollision *pPhysCollision, IPhysicsEnv
 		{
 			constraint_ragdollparams_t constraint;
 			pParse->ParseRagdollConstraint( &constraint, NULL );
-			if ( constraint.childIndex >= 0 && constraint.parentIndex >= 0 )
+			// Silently skip constraints that reference a solid we couldn't create.
+			if ( constraint.childIndex >= 0 && constraint.childIndex < ragdoll.listCount &&
+				constraint.parentIndex >= 0 && constraint.parentIndex < ragdoll.listCount &&
+				constraint.childIndex != constraint.parentIndex )
 			{
 				Assert(constraint.childIndex<ragdoll.listCount);
 
@@ -101,6 +139,7 @@ void RagdollActivate( ragdoll_t &ragdoll )
 {
 	for ( int i = 0; i < ragdoll.listCount; i++ )
 	{
+		PhysSetGameFlags( ragdoll.list[i].pObject, FVPHYSICS_MULTIOBJECT_ENTITY );
 		// now that the relationships are set, activate the collision system
 		ragdoll.list[i].pObject->EnableCollisions( true );
 		ragdoll.list[i].pObject->Wake();
@@ -131,7 +170,9 @@ bool RagdollCreate( ragdoll_t &ragdoll, const ragdollparams_t &params, IPhysicsC
 
 	// distribute half to the forced bone, half to the rest of the model
 	Vector nudgeForce = params.forceVector;
-	if ( forceBone >= 0 && forceBone <= ragdoll.listCount )
+	// NOTE: must be a strict <, a skipped solid makes listCount smaller than the
+	// model's solid count and this indexes ragdoll.list[] directly.
+	if ( forceBone >= 0 && forceBone < ragdoll.listCount )
 	{
 		nudgeForce *= 0.5;
 		ragdoll.list[forceBone].pObject->ApplyForceCenter( nudgeForce );
@@ -214,21 +255,21 @@ void RagdollApplyAnimationAsVelocity( ragdoll_t &ragdoll, matrix3x4_t pBoneToWor
 
 void RagdollDestroy( ragdoll_t &ragdoll )
 {
-	if ( !ragdoll.listCount )
-		return;
-
 	int i;
 	for ( i = 0; i < ragdoll.listCount; i++ )
 	{
-		physenv->DestroyConstraint( ragdoll.list[i].pConstraint );
+		if ( ragdoll.list[i].pConstraint )
+			physenv->DestroyConstraint( ragdoll.list[i].pConstraint );
 		ragdoll.list[i].pConstraint = NULL;
 	}
 	for ( i = 0; i < ragdoll.listCount; i++ )
 	{
-		physenv->DestroyObject( ragdoll.list[i].pObject );
+		if ( ragdoll.list[i].pObject )
+			physenv->DestroyObject( ragdoll.list[i].pObject );
 		ragdoll.list[i].pObject = NULL;
 	}
-	physenv->DestroyConstraintGroup( ragdoll.pGroup );
+	if ( ragdoll.pGroup )
+		physenv->DestroyConstraintGroup( ragdoll.pGroup );
 	ragdoll.pGroup = NULL;
 	ragdoll.listCount = 0;
 }
@@ -251,7 +292,7 @@ int RagdollExtractBoneIndices( int *boneIndexOut, studiohdr_t *pStudioHdr, vcoll
 			{
 				if ( elementCount < RAGDOLL_MAX_ELEMENTS )
 				{
-					boneIndexOut[elementCount] = Studio_BoneIndexByName( pStudioHdr, solid.name );
+					boneIndexOut[elementCount] = RagdollBoneIndexForSolid( pStudioHdr, solid.index, solid.name );
 					elementCount++;
 				}
 			}

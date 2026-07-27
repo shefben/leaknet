@@ -94,6 +94,14 @@ public:
 
 		return true;
 	}
+
+	virtual void	UnregisterConCommandBase( ConCommandBase *pCommand )
+	{
+		if ( cvar )
+		{
+			cvar->UnregisterConCommandBase( pCommand );
+		}
+	}
 };
 
 static CGameDLL_ConVarAccessor g_ConVarAccessor;

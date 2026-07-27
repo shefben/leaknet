@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -32,6 +32,14 @@ public:
 			( ( ConVar * )pCommand )->SetValue( pValue );
 		}
 		return true;
+	}
+
+	virtual void	UnregisterConCommandBase( ConCommandBase *pCommand )
+	{
+		if ( s_pCVar )
+		{
+			s_pCVar->UnregisterConCommandBase( pCommand );
+		}
 	}
 
 };

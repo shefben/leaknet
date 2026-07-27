@@ -48,6 +48,7 @@ public:
 	virtual void Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity );
 	virtual void SetupBones( matrix3x4_t *pBoneToWorld, int boneMask );
 	virtual void VPhysicsUpdate( IPhysicsObject *pPhysics );
+	virtual int VPhysicsGetObjectList( IPhysicsObject **pList, int listMax );
 	virtual void SetObjectCollisionBox( void );
 
 	virtual int DrawDebugTextOverlays(void);

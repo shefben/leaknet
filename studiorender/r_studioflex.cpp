@@ -170,6 +170,62 @@ void CStudioRender::R_StudioEyeballPosition( const mstudioeyeball_t *peyeball, e
 	// FIXME: push out vertices for cornea
 }
 
+//-----------------------------------------------------------------------------
+// v44+ eyeball state. The serialized fields used by the eye shader match the
+// legacy structure, but v44 adds non-FACS eyes. Those must not run through the
+// legacy eyelid-flex indices (which may be -1); they still need iris projection
+// state or the EyeRefract shader renders an untextured white sclera.
+//-----------------------------------------------------------------------------
+void CStudioRender::R_StudioEyeballPosition_v44( const mstudioeyeball_v44_t *peyeball, eyeballstate_t *pstate )
+{
+	if ( !peyeball || !pstate )
+		return;
+
+	const mstudioeyeball_t *pLegacyEye = reinterpret_cast<const mstudioeyeball_t *>( peyeball );
+	if ( !peyeball->m_bNonFACS )
+	{
+		R_StudioEyeballPosition( pLegacyEye, pstate );
+		return;
+	}
+
+	pstate->peyeball = pLegacyEye;
+
+	Vector tmp;
+	VectorCopy( peyeball->org, tmp );
+	tmp[0] += m_Config.fEyeShiftX * sign( tmp[0] );
+	tmp[1] += m_Config.fEyeShiftY * sign( tmp[1] );
+	tmp[2] += m_Config.fEyeShiftZ * sign( tmp[2] );
+
+	VectorTransform( tmp, m_BoneToWorld[peyeball->bone], pstate->org );
+	VectorRotate( peyeball->up, m_BoneToWorld[peyeball->bone], pstate->up );
+
+	VectorSubtract( m_ViewTarget, pstate->org, pstate->forward );
+	VectorNormalize( pstate->forward );
+	if ( !m_Config.bEyeMove )
+	{
+		VectorRotate( peyeball->forward, m_BoneToWorld[peyeball->bone], pstate->forward );
+		VectorScale( pstate->forward, -1, pstate->forward );
+	}
+
+	CrossProduct( pstate->forward, pstate->up, pstate->right );
+	VectorNormalize( pstate->right );
+	VectorMA( pstate->forward, peyeball->zoffset * 2.0f, pstate->right, pstate->forward );
+	VectorNormalize( pstate->forward );
+	CrossProduct( pstate->forward, pstate->up, pstate->right );
+	VectorNormalize( pstate->right );
+	CrossProduct( pstate->right, pstate->forward, pstate->up );
+	VectorNormalize( pstate->up );
+
+	float scale = ( 1.0f / peyeball->iris_scale ) + m_Config.fEyeSize;
+	if ( scale > 0.0f )
+		scale = 1.0f / scale;
+
+	VectorScale( &pstate->right[0], -scale, pstate->mat[0] );
+	VectorScale( &pstate->up[0], -scale, pstate->mat[1] );
+	pstate->mat[0][3] = -DotProduct( &pstate->org[0], pstate->mat[0] ) + 0.5f;
+	pstate->mat[1][3] = -DotProduct( &pstate->org[0], pstate->mat[1] ) + 0.5f;
+}
+
 
 void CStudioRender::MaterialPlanerProjection( const matrix3x4_t& mat, int count, const Vector *psrcverts, Vector2D *pdesttexcoords )
 {

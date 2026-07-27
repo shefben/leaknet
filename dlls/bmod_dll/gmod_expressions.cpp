@@ -120,6 +120,10 @@ void CGModExpressionsSystem::ReloadExpressions()
 
 bool CGModExpressionsSystem::InitializeFlexControllers()
 {
+    // ConCommandBase stores the name and help string by pointer without copying them,
+    // so both have to outlive the ConVar. Keep the help text in static storage.
+    static char s_szFlexDesc[MAX_FLEX_CONTROLLERS][32];
+
     // Initialize flex controller mappings based on IDA strings (gm_facepose_flex0-64)
     for (int i = 0; i < MAX_FLEX_CONTROLLERS; i++)
     {
@@ -127,13 +131,15 @@ bool CGModExpressionsSystem::InitializeFlexControllers()
         Q_snprintf(m_FlexControllers[i].szConVarName, sizeof(m_FlexControllers[i].szConVarName), "gm_facepose_flex%d", i);
         Q_snprintf(m_FlexControllers[i].szFlexName, sizeof(m_FlexControllers[i].szFlexName), "flex_%d", i);
 
-        // Create ConVar for this flex controller
-        char szDesc[64];
-        Q_snprintf(szDesc, sizeof(szDesc), "Flex controller %d value", i);
+        // Already created on a previous init - don't register a duplicate or leak the old one.
+        if (g_FlexConVars[i])
+            continue;
+
+        Q_snprintf(s_szFlexDesc[i], sizeof(s_szFlexDesc[i]), "Flex controller %d value", i);
 
         // Note: These ConVars are created dynamically to match IDA findings
         // In a real implementation, these would be statically defined
-        g_FlexConVars[i] = new ConVar(m_FlexControllers[i].szConVarName, "0.0", FCVAR_NONE, szDesc);
+        g_FlexConVars[i] = new ConVar(m_FlexControllers[i].szConVarName, "0.0", FCVAR_NONE, s_szFlexDesc[i]);
     }
 
     m_iNumFlexControllers = MAX_FLEX_CONTROLLERS;

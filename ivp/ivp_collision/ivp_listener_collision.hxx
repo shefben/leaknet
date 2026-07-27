@@ -39,6 +39,13 @@ public:
      *			at the point of contact
      ********************************************************************************/
     static IVP_FLOAT get_vert_force(IVP_Contact_Point *friction_handle);
+
+    /********************************************************************************
+     *	Name:	       	get_surface_normal_ws
+     *	Description:	returns the normized normal of the contact surface in world
+     *			space, pointing from the first involved object to the second.
+     ********************************************************************************/
+    static void get_surface_normal_ws(IVP_Contact_Point *friction_handle, IVP_U_Float_Point *out_normal);
 };
 
 

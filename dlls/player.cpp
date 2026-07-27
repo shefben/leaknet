@@ -44,6 +44,7 @@
 #include "vcollide_parse.h"
 #include "player_command.h"
 #include "vehicle_base.h"
+#include "physics.h"
 #include "AI_Criteria.h"
 #include "globals.h"
 #include "usermessages.h"
@@ -3357,6 +3358,18 @@ void CBasePlayer::PostThink()
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
+IPhysicsObject *CBasePlayer::GetGroundVPhysics( void )
+{
+	CBaseEntity	*groundentity = GetGroundEntity();
+	if ( groundentity && groundentity->GetMoveType() == MOVETYPE_VPHYSICS )
+	{
+		IPhysicsObject *pPhysGround = groundentity->VPhysicsGetObject();
+		if ( pPhysGround && pPhysGround->IsMoveable() )
+			return pPhysGround;
+	}
+	return NULL;
+}
+
 void CBasePlayer::PostThinkVPhysics( void )
 {
 	// Check to see if things are initialized!
@@ -3367,15 +3380,7 @@ void CBasePlayer::PostThinkVPhysics( void )
 	float frametime = gpGlobals->frametime;
 	if ( frametime <= 0 || frametime > 0.1f )
 		frametime = 0.1f;
-	CBaseEntity	*groundentity = GetGroundEntity();
-	IPhysicsObject *pPhysGround = NULL;
-
-	if ( groundentity && groundentity->GetMoveType() == MOVETYPE_VPHYSICS )
-	{
-		pPhysGround = groundentity->VPhysicsGetObject();
-		if ( pPhysGround && !pPhysGround->IsMoveable() )
-			pPhysGround = NULL;
-	}
+	IPhysicsObject *pPhysGround = GetGroundVPhysics();
 
 	if ( !pPhysGround && m_touchedPhysObject && g_pMoveData->m_outStepHeight <= 0.f )
 	{
@@ -3409,29 +3414,22 @@ void CBasePlayer::PostThinkVPhysics( void )
 		m_pPhysicsController->StepUp( g_pMoveData->m_outStepHeight );
 	}
 	g_pMoveData->m_outStepHeight = 0;
-	UpdateVPhysicsPosition( newPosition, g_pMoveData->m_outWishVel );
+	UpdateVPhysicsPosition( newPosition, g_pMoveData->m_outWishVel, frametime );
 
 	m_oldOrigin = GetAbsOrigin();
 }
 
-void CBasePlayer::UpdateVPhysicsPosition( const Vector &position, const Vector &velocity )
+void CBasePlayer::UpdateVPhysicsPosition( const Vector &position, const Vector &velocity, float secondsToArrival )
 {
-	CBaseEntity	*groundentity = GetGroundEntity();
-	IPhysicsObject *pPhysGround = NULL;
-
 	bool onground = (GetFlags() & FL_ONGROUND) ? true : false;
-	if ( groundentity && groundentity->GetMoveType() == MOVETYPE_VPHYSICS )
-	{
-		pPhysGround = groundentity->VPhysicsGetObject();
-		if ( pPhysGround && !pPhysGround->IsMoveable() )
-			pPhysGround = NULL;
-	}
-	m_pPhysicsController->Update( position, velocity, onground, pPhysGround );
+	IPhysicsObject *pPhysGround = GetGroundVPhysics();
+
+	m_pPhysicsController->Update( position, velocity, secondsToArrival, onground, pPhysGround );
 }
 
 void CBasePlayer::UpdatePhysicsShadowToCurrentPosition()
 {
-	UpdateVPhysicsPosition( GetAbsOrigin(), vec3_origin );
+	UpdateVPhysicsPosition( GetAbsOrigin(), vec3_origin, gpGlobals->frametime );
 }
 
 // checks if the spot is clear of players
@@ -5929,8 +5927,16 @@ void CBasePlayer::SetupVPhysicsShadow( CPhysCollide *pStandModel, const char *pS
 	VPhysicsSetObject( m_pShadowStand );
 
 	// tell physics lists I'm a shadow controller object
-	PhysAddShadow( this );	
+	PhysAddShadow( this );
 	m_pPhysicsController = physenv->CreatePlayerController( m_pShadowStand );
+	// Retail limits: never shove anything heavier than 350kg, and never push anything
+	// faster than 50 in/s. This is what stops the player from driving itself into props
+	// and ragdolls far enough that the solver can't separate them again.
+	m_pPhysicsController->SetPushMassLimit( 350.0f );
+	m_pPhysicsController->SetPushSpeedLimit( 50.0f );
+
+	// Give the controller a valid position so it doesn't do anything rash.
+	UpdatePhysicsShadowToCurrentPosition();
 
 	// init state
 	if ( GetFlags() & FL_DUCKING )
@@ -5967,6 +5973,21 @@ void CBasePlayer::VPhysicsShadowUpdate( IPhysicsObject *pPhysics )
 
 	bool physicsUpdated = m_pPhysicsController->GetShadowPosition( &newPosition, NULL ) > 0 ? true : false;
 
+	if ( pPhysics->GetGameFlags() & FVPHYSICS_PENETRATING )
+	{
+		CUtlVector<CBaseEntity *> list;
+		PhysGetListOfPenetratingEntities( this, list );
+		for ( int i = list.Count()-1; i >= 0; --i )
+		{
+			if ( list[i]->GetMoveType() == MOVETYPE_VPHYSICS )
+			{
+				// Let the shadow solver apply separation velocity when a prop or
+				// ragdoll has simulated into the player's game hull.
+				m_touchedPhysObject = true;
+			}
+		}
+	}
+
 	if ( m_pPhysicsController->IsInContact() )
 	{
 		m_touchedPhysObject = true;
@@ -5986,20 +6007,43 @@ void CBasePlayer::VPhysicsShadowUpdate( IPhysicsObject *pPhysics )
 	if ( !physicsUpdated )
 		return;
 
-	CBaseEntity	*groundentity = GetGroundEntity();
-	IPhysicsObject *pPhysGround = NULL;
-
-	if ( groundentity && groundentity->GetMoveType() == MOVETYPE_VPHYSICS )
-	{
-		pPhysGround = groundentity->VPhysicsGetObject();
-		if ( pPhysGround && !pPhysGround->IsMoveable() )
-			pPhysGround = NULL;
-	}
+	IPhysicsObject *pPhysGround = GetGroundVPhysics();
 
 	Vector newVelocity;
 	pPhysics->GetPosition( &newPosition, 0 );
-	pPhysics->GetVelocity( &newVelocity, NULL );
+	m_pPhysicsController->GetShadowVelocity( &newVelocity );
+	// VPhysics should have returned a non-penetrating shadow position.
+	Vector lastValidPosition = newPosition;
+	bool checkStuck = false;
 	//NDebugOverlay::Box( newPosition, WorldAlignMins(), WorldAlignMaxs(), 0,0,255, 24, 0.01f);
+
+	// The solver froze the player's core this tick. Prefer the game's position if it's
+	// legal, otherwise try to walk out from the (non-penetrating) shadow position -
+	// without this the player can be locked inside whatever it's touching.
+	bool bPhysicsWasFrozen = m_pPhysicsController->WasFrozen();
+	if ( bPhysicsWasFrozen )
+	{
+		trace_t trace;
+		UTIL_TraceEntity( this, GetAbsOrigin(), GetAbsOrigin(),
+			MASK_PLAYERSOLID, this, COLLISION_GROUP_PLAYER_MOVEMENT, &trace );
+		if ( !trace.startsolid )
+		{
+			m_oldOrigin = GetAbsOrigin();
+			return;
+		}
+
+		UTIL_TraceEntity( this, newPosition, GetAbsOrigin(),
+			MASK_PLAYERSOLID, this, COLLISION_GROUP_PLAYER_MOVEMENT, &trace );
+		if ( !trace.startsolid )
+		{
+			// found a valid position between the two?  take it.
+			SetAbsOrigin( trace.endpos );
+			Relink();
+			UpdateVPhysicsPosition( trace.endpos, vec3_origin, 0 );
+			m_oldOrigin = GetAbsOrigin();
+			return;
+		}
+	}
 
 	Vector tmp = GetAbsOrigin() - newPosition;
 	if ( !m_touchedPhysObject && !(GetFlags() & FL_ONGROUND) )
@@ -6013,7 +6057,7 @@ void CBasePlayer::VPhysicsShadowUpdate( IPhysicsObject *pPhysics )
 	{
 		if ( m_touchedPhysObject || pPhysGround )
 		{
-			if ( deltaV >= VPHYS_MAX_VELSQR )
+			if ( deltaV >= VPHYS_MAX_VELSQR && !bPhysicsWasFrozen )
 			{
 				Vector dir = GetAbsVelocity();
 				float len = VectorNormalize(dir);
@@ -6040,18 +6084,7 @@ void CBasePlayer::VPhysicsShadowUpdate( IPhysicsObject *pPhysics )
 		}
 		else
 		{
-			trace_t trace;
-			UTIL_TraceEntity( this, GetAbsOrigin(), GetAbsOrigin(), 
-				MASK_PLAYERSOLID, this, COLLISION_GROUP_PLAYER_MOVEMENT, &trace );
-			
-			// current position is not ok, fixup
-			if ( trace.allsolid || trace.startsolid )
-			{
-				// STUCK!?!?!
-				//Warning( "Stuck on %s!!\n", STRING(trace.u.ent->classname) );
-				SetAbsOrigin( newPosition );
-				Relink();
-			}
+			checkStuck = true;
 		}
 	}
 	else
@@ -6067,10 +6100,23 @@ void CBasePlayer::VPhysicsShadowUpdate( IPhysicsObject *pPhysics )
 			// is current position ok?
 			if ( trace.allsolid || trace.startsolid )
 			{
-				// stuck????!?!?
+				checkStuck = true;
+				lastValidPosition = m_oldOrigin;
 				SetAbsOrigin( newPosition );
 				Relink();
 			}
+		}
+	}
+
+	if ( checkStuck )
+	{
+		trace_t trace;
+		UTIL_TraceEntity( this, GetAbsOrigin(), GetAbsOrigin(),
+			MASK_PLAYERSOLID, this, COLLISION_GROUP_PLAYER_MOVEMENT, &trace );
+		if ( trace.allsolid || trace.startsolid )
+		{
+			SetAbsOrigin( lastValidPosition );
+			Relink();
 		}
 	}
 	m_oldOrigin = GetAbsOrigin();

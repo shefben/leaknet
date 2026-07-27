@@ -39,6 +39,12 @@ public:
 
 	// Get first ConCommandBase to allow iteration
 	virtual ConCommandBase	*GetCommands( void ) = 0;
+
+	// Remove a cvar/command from the engine's list. Must be called before the memory
+	// backing 'variable' goes away, otherwise the engine list is left holding a
+	// dangling pointer (which blows up the next time the list is walked, e.g. in
+	// ConCommandBase::RemoveFlaggedCommands during shutdown).
+	virtual void			UnregisterConCommandBase ( ConCommandBase *variable ) = 0;
 };
 
 #define VENGINE_CVAR_INTERFACE_VERSION "VEngineCvar001"

@@ -66,6 +66,12 @@ void CRagdollProp::Spawn( void )
 
 void CRagdollProp::OnSave()
 {
+	if ( !m_ragdoll.listCount || !m_ragdoll.list[0].pObject )
+	{
+		BaseClass::OnSave();
+		return;
+	}
+
 	// save this for bone reference
 	m_savedListCount = m_ragdoll.listCount;
 	VPhysicsSetObject( NULL );
@@ -149,7 +155,14 @@ void CRagdollProp::UpdateOnRemove( void )
 
 CRagdollProp::CRagdollProp( void )
 {
+	// UpdateOnRemove() calls RagdollDestroy(), which reads pGroup - and
+	// SetObjectCollisionBox() can run from the Relink() in Spawn(), before
+	// InitRagdoll()/CalcRagdollSize() has filled in the saved bounds. Neither
+	// may see uninitialized memory if the ragdoll is torn down early.
+	memset( &m_ragdoll, 0, sizeof(m_ragdoll) );
 	m_ragdoll.listCount = 0;
+	m_savedESMins.Init();
+	m_savedESMaxs.Init();
 	Assert( (1<<RAGDOLL_INDEX_BITS) >=RAGDOLL_MAX_ELEMENTS );
 	m_allAsleep = false;
 }
@@ -207,7 +220,33 @@ void CRagdollProp::InitRagdoll( const Vector &forceVector, int forceBone, const 
 	params.pCurrentBones = pBoneToWorld;
 	params.boneDt = dt;
 	params.jointFrictionScale = 1.0;
-	RagdollCreate( m_ragdoll, params, physcollision, physenv, physprops );
+
+	if ( !params.pStudioHdr || !params.pCollide || params.pCollide->solidCount <= 0 )
+	{
+		Warning( "CRagdollProp::InitRagdoll: Model '%s' has no usable ragdoll collision data\n",
+			STRING( GetModelName() ) );
+	}
+	else if ( params.pCollide->solidCount > RAGDOLL_MAX_ELEMENTS )
+	{
+		Warning( "CRagdollProp::InitRagdoll: Model '%s' has %d physics solids (maximum %d)\n",
+			STRING( GetModelName() ), params.pCollide->solidCount, RAGDOLL_MAX_ELEMENTS );
+	}
+	else if ( !RagdollCreate( m_ragdoll, params, physcollision, physenv, physprops ) )
+	{
+		Warning( "CRagdollProp::InitRagdoll: Failed to create physics for model '%s'\n",
+			STRING( GetModelName() ) );
+		RagdollDestroy( m_ragdoll );
+	}
+
+	if ( !m_ragdoll.listCount || !m_ragdoll.list[0].pObject )
+	{
+		// Nothing simulated.  Don't delete the entity - it stays drawable and
+		// stays solid through the hitbox fallback in TestCollision().  Physics
+		// movement is off because there's no object to drive it.
+		SetMoveType( MOVETYPE_NONE );
+		CalcRagdollSize();
+		return;
+	}
 
 	if ( activateRagdoll )
 	{
@@ -308,72 +347,130 @@ void CRagdollProp::TraceAttack( const CTakeDamageInfo &info, const Vector &dir, 
 
 void CRagdollProp::SetupBones( matrix3x4_t *pBoneToWorld, int boneMask )
 {
+	if ( !m_ragdoll.listCount )
+	{
+		BaseClass::SetupBones( pBoneToWorld, boneMask );
+		return;
+	}
+
 	studiohdr_t *pStudioHdr = GetModelPtr( );
+	if ( !pStudioHdr )
+	{
+		BaseClass::SetupBones( pBoneToWorld, boneMask );
+		return;
+	}
+
 	bool sim[MAXSTUDIOBONES];
-	int numBones = StudioHdr_GetNumBones(pStudioHdr);
-	memset( sim, 0, numBones );
+	Vector defaultPos[MAXSTUDIOBONES];
+	Quaternion defaultQuat[MAXSTUDIOBONES];
+	int numBones = StudioHdr_GetNumBones( pStudioHdr );
+	if ( numBones <= 0 || numBones > MAXSTUDIOBONES )
+	{
+		BaseClass::SetupBones( pBoneToWorld, boneMask );
+		return;
+	}
+	memset( sim, 0, sizeof(sim) );
+	InitPose( pStudioHdr, defaultPos, defaultQuat );
 
 	int i;
 
 	for ( i = 0; i < m_ragdoll.listCount; i++ )
 	{
+		if ( !m_ragdoll.list[i].pObject )
+			continue;
+
 		if ( RagdollGetBoneMatrix( m_ragdoll, pBoneToWorld, i ) )
 		{
-			sim[m_ragdoll.boneIndex[i]] = true;
+			int boneIndex = m_ragdoll.boneIndex[i];
+			if ( boneIndex >= 0 && boneIndex < numBones )
+				sim[boneIndex] = true;
 		}
 	}
 
-	// Use version-aware accessor for v37/v44+ bone structure compatibility
 	for ( i = 0; i < numBones; i++ )
 	{
 		if ( sim[i] )
 			continue;
 
-		int parentBone = pStudioHdr->GetBoneParent( i );
-		MatrixCopy( pBoneToWorld[parentBone], pBoneToWorld[ i ] );
+		if ( !(StudioBone_GetFlags( pStudioHdr, i ) & boneMask) )
+			continue;
+
+		int parentBone = StudioBone_GetParent( pStudioHdr, i );
+		if ( parentBone < 0 || parentBone >= numBones )
+		{
+			BaseClass::SetupBones( pBoneToWorld, boneMask );
+			return;
+		}
+
+		matrix3x4_t matBoneLocal;
+		QuaternionMatrix( defaultQuat[i], defaultPos[i], matBoneLocal );
+		ConcatTransforms( pBoneToWorld[parentBone], matBoneLocal, pBoneToWorld[i] );
 	}
 }
 
 bool CRagdollProp::TestCollision( const Ray_t &ray, unsigned int mask, trace_t& trace )
 {
-	Vector origin = 0.5*(GetAbsMins() + GetAbsMaxs());
-	Vector size = 0.5*(GetAbsMaxs()-GetAbsMins());
-
-	if ( ray.m_IsRay )
-	{
-		return BaseClass::TestCollision( ray, mask, trace );
-	}
-
-	studiohdr_t *pStudioHdr = GetModelPtr( );
-	if (!pStudioHdr)
-		return false;
-
-	vcollide_t *pCollide = modelinfo->GetVCollide( GetModelIndex() );
-
-	// Just iterate all of the elements and trace the box against each one.
-	// NOTE: This is pretty expensive for small/dense characters
+	// Trace the simulated solids first.  tr.physicsbone ends up as the index
+	// into m_ragdoll.list[], which is what the physgun and the tool guns use to
+	// grab the limb that was actually clicked rather than the root.
+	// NOTE: This is pretty expensive for small/dense characters.
+	// NOTE: No studiohdr is needed here, so this works for v37 and v44+ alike.
 	trace_t tr;
 	for ( int i = 0; i < m_ragdoll.listCount; i++ )
 	{
-		physcollision->TraceBox( ray, pCollide->solids[i], m_ragPos[i], m_ragAngles[i], &tr );
+		IPhysicsObject *pObject = m_ragdoll.list[i].pObject;
+		if ( !pObject || !pObject->GetCollide() )
+			continue;
+
+		Vector position;
+		QAngle angles;
+		pObject->GetPosition( &position, &angles );
+		physcollision->TraceBox( ray, pObject->GetCollide(), position, angles, &tr );
 
 		if ( tr.fraction < trace.fraction )
 		{
+			tr.physicsbone = i;
+			tr.surface.surfaceProps = pObject->GetMaterialIndex();
 			trace = tr;
 		}
 	}
 
-	if ( trace.fraction >= 1 )
-	{
-		return false;
-	}
+	if ( trace.fraction < 1 )
+		return true;
 
-	return true;
+	// Nothing simulated, or nothing hit.  FSOLID_CUSTOMRAYTEST makes the engine
+	// skip both its hitbox and its bbox fallbacks for us (see
+	// CEngineTrace::ClipRayToCollideable), so without this the ragdoll would be
+	// completely non-solid whenever the physics list came up empty - bullets and
+	// the physgun would pass straight through it.
+	if ( ray.m_IsRay )
+		return BaseClass::TestCollision( ray, mask, trace );
+
+	return false;
+}
+
+int CRagdollProp::VPhysicsGetObjectList( IPhysicsObject **pList, int listMax )
+{
+	int count = 0;
+	for ( int i = 0; i < m_ragdoll.listCount && count < listMax; i++ )
+	{
+		if ( m_ragdoll.list[i].pObject )
+		{
+			pList[count++] = m_ragdoll.list[i].pObject;
+		}
+	}
+	return count;
 }
 
 
 void CRagdollProp::Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity )
 {
+	if ( !m_ragdoll.listCount || !m_ragdoll.list[0].pObject )
+	{
+		BaseClass::Teleport( newPosition, newAngles, newVelocity );
+		return;
+	}
+
 	matrix3x4_t startMatrixInv;
 	matrix3x4_t startMatrix;
 

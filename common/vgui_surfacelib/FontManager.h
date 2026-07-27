@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -45,7 +45,13 @@ public:
 	CWin32Font *GetFontForChar(HFont, wchar_t wch);
 	bool IsFontAdditive(HFont font);
 
+	// returns the font that windowsFontName falls back to when it isn't installed,
+	// or NULL when there is nothing left to try
+	const char *GetFallbackFontName(const char *windowsFontName);
+
 private:
+	CWin32Font *CreateOrFindWin32Font(const char *windowsFontName, int tall, int weight, int blur, int scanlines, int flags);
+
 	CUtlVector<CFontAmalgam> m_FontAmalgams;
 	CUtlVector<CWin32Font *> m_Win32Fonts;
 };

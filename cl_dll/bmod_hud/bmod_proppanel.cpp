@@ -106,7 +106,7 @@ static void BM_LoadPropCategoriesFromDirectory( CUtlVector<PropCategory_t> &cate
 // Constructor
 //-----------------------------------------------------------------------------
 CPropItemButton::CPropItemButton( Panel *parent, const char *panelName, const PropEntry_t &entry )
-	: BaseClass( parent, panelName, entry.szDisplayName )
+	: BaseClass( parent, panelName, entry.szCleanName[0] ? entry.szCleanName : entry.szDisplayName )
 {
 	m_Entry = entry;
 	m_nTextureID = -1;
@@ -592,10 +592,10 @@ void CPropGridPanel::CreateItemButtons()
 			// Set spawn command
 			Q_strncpy( entry.szCommand, GetSpawnCommand( entry.itemType ), sizeof(entry.szCommand) );
 
-			// Update display name to clean version (without prefix)
-			char cleanDisplayName[128];
-			Q_strncpy( cleanDisplayName, cleanName, sizeof(cleanDisplayName) );
-			Q_strncpy( entry.szDisplayName, cleanDisplayName, sizeof(entry.szDisplayName) );
+			// Stash the prefix-less name for the button to draw. szDisplayName
+			// keeps the prefix - this runs again on every SetCategory(), and
+			// stripping in place would make the entry re-read as PROPITEM_PROP.
+			Q_strncpy( entry.szCleanName, cleanName, sizeof(entry.szCleanName) );
 
 			// Create button
 			char buttonName[64];

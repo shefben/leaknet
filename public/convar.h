@@ -92,6 +92,11 @@ public:
 	// Flags is a combination of FCVAR flags in cvar.h.
 	// hOut is filled in with a handle to the variable.
 	virtual bool RegisterConCommandBase( ConCommandBase *pVar )=0;
+
+	// Called from ~ConCommandBase so the list this accessor linked pVar into
+	// (normally the engine's) drops the pointer before the object dies.
+	// Not pure virtual: accessors that never outlive their cvars can ignore it.
+	virtual void UnregisterConCommandBase( ConCommandBase *pVar ) {}
 };
 
 
@@ -155,6 +160,8 @@ public:
 	// Global methods
 	static ConCommandBase const	*GetCommands( void );
 	static void					AddToList( ConCommandBase *var );
+	// Unlinks var from this module's list and clears any child that was proxying to it.
+	static void					RemoveFromList( ConCommandBase *var );
 	static void					RemoveFlaggedCommands( int flag );
 	static ConCommandBase const	*FindCommand( char const *name );
 

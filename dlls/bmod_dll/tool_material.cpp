@@ -35,7 +35,7 @@ static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFor
 //-----------------------------------------------------------------------------
 // Console variables for material tool
 //-----------------------------------------------------------------------------
-ConVar bm_material_path("bm_material_path", "models/debug/debugwhite", FCVAR_ARCHIVE, "Current material to apply");
+ConVar bm_material_path("gm_matmode", "models/debug/debugwhite", FCVAR_ARCHIVE, "Current material to apply");
 ConVar bm_material_submesh("bm_material_submesh", "0", FCVAR_ARCHIVE, "Target submesh index (0 = all)");
 
 //-----------------------------------------------------------------------------

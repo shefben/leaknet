@@ -287,7 +287,6 @@
     <ClCompile Include="bmod_hud\gmod_commandmenu.cpp" />
     <ClCompile Include="bmod_hud\gmod_teammenu.cpp" />
     <ClCompile Include="bmod_hud\c_weapon_gravitygun.cpp" />
-    <ClCompile Include="bmod_hud\context_panel.cpp" />
     <ClCompile Include="bmod_hud\gmod_message.cpp" />
 
     <!-- Game Shared Files -->

@@ -1118,70 +1118,70 @@ void RegisterLuaEffectFunctions()
 	// GModText functions (original names)
 
 	// GModText aliases with underscore separator (for GMod script compatibility)
-	CLuaIntegration::RegisterFunction("_GModText_Start", Lua_GModTextStart, "Start text message. Syntax: [fontname]");
-	CLuaIntegration::RegisterFunction("_GModText_SetPos", Lua_GModTextSetPos, "Set text position. Syntax: <x> <y>");
-	CLuaIntegration::RegisterFunction("_GModText_SetColor", Lua_GModTextSetColor, "Set text color. Syntax: <r> <g> <b> [a]");
+	CLuaIntegration::RegisterFunction("_GModText_Start", Lua_GModTextStart, " Initialize the text. Syntax: <fontname>");
+	CLuaIntegration::RegisterFunction("_GModText_SetPos", Lua_GModTextSetPos, " Set Position. Syntax: <x> <y>");
+	CLuaIntegration::RegisterFunction("_GModText_SetColor", Lua_GModTextSetColor, " Set Colour. Syntax: <r> <g> <b> <a>");
 	CLuaIntegration::RegisterFunction("_GModText_SetFade", Lua_GModTextSetFade, "Set fade times. Syntax: <fadeIn> <fadeOut> <holdTime>");
-	CLuaIntegration::RegisterFunction("_GModText_SetText", Lua_GModTextSetText, "Set text string. Syntax: <text>");
+	CLuaIntegration::RegisterFunction("_GModText_SetText", Lua_GModTextSetText, " Set Times. Syntax: <text>");
 	CLuaIntegration::RegisterFunction("_GModText_SetEffect", Lua_GModTextSetEffect, "Set text effect. Syntax: <effect>");
 	CLuaIntegration::RegisterFunction("_GModText_SetAlign", Lua_GModTextSetAlign, "Set text alignment. Syntax: <align>");
-	CLuaIntegration::RegisterFunction("_GModText_Send", Lua_GModTextSend, "Send text to player. Syntax: [playerid]");
-	CLuaIntegration::RegisterFunction("_GModText_Hide", Lua_GModTextHide, "Hide text. Syntax: <playerid> <textid> [fadeTime] [delay]");
-	CLuaIntegration::RegisterFunction("_GModText_SetTime", Lua_GModTextSetTime, "Set timing. Syntax: <holdTime> [fadeIn] [fadeOut]");
-	CLuaIntegration::RegisterFunction("_GModText_SetEntity", Lua_GModTextSetEntity, "Attach to entity. Syntax: <entityID>");
-	CLuaIntegration::RegisterFunction("_GModText_SetEntityOffset", Lua_GModTextSetEntityOffset, "Set entity offset. Syntax: <vector3>");
-	CLuaIntegration::RegisterFunction("_GModText_SendAnimate", Lua_GModTextSendAnimate, "Send animated text. Syntax: <playerid> <textid> [scale] [duration]");
+	CLuaIntegration::RegisterFunction("_GModText_Send", Lua_GModTextSend, " If player is 0 it is sent to everyone. Index says which slot this text should fill. <player> <index>");
+	CLuaIntegration::RegisterFunction("_GModText_Hide", Lua_GModTextHide, " Hides specified text. <player> <index> <fade time> <delay>");
+	CLuaIntegration::RegisterFunction("_GModText_SetTime", Lua_GModTextSetTime, " Set Times. Syntax: <duration> <fadein> <fadeout>");
+	CLuaIntegration::RegisterFunction("_GModText_SetEntity", Lua_GModTextSetEntity, " Set entity to hover over. Syntax: <entindex>");
+	CLuaIntegration::RegisterFunction("_GModText_SetEntityOffset", Lua_GModTextSetEntityOffset, " Set entity offset to draw the text at. Syntax: <vector>");
+	CLuaIntegration::RegisterFunction("_GModText_SendAnimate", Lua_GModTextSendAnimate, " The same as normal send but will animate from Send to the new values. <player> <index> <length> <ease>");
 	// Functions the original gmod registers that shipped content uses (were missing -> nil-call errors)
-	CLuaIntegration::RegisterFunction("_GModText_SetDelay", Lua_GModTextSetDelay, "Delay before showing text. Syntax: <seconds>");
-	CLuaIntegration::RegisterFunction("_GModText_AllowOffscreen", Lua_GModTextAllowOffscreen, "Allow entity text offscreen. Syntax: <bool>");
-	CLuaIntegration::RegisterFunction("_GModText_SetAdditive", Lua_GModTextSetAdditive, "Additive blend. Syntax: <bool>");
-	CLuaIntegration::RegisterFunction("_GModText_HideAll", Lua_GModTextHideAll, "Hide all text. Syntax: [playerid]");
+	CLuaIntegration::RegisterFunction("_GModText_SetDelay", Lua_GModTextSetDelay, " Set delay time. Syntax: <delay>");
+	CLuaIntegration::RegisterFunction("_GModText_AllowOffscreen", Lua_GModTextAllowOffscreen, " Allow the text to go offscreen. Syntax: <bool>");
+	CLuaIntegration::RegisterFunction("_GModText_SetAdditive", Lua_GModTextSetAdditive, " Set Additive mode. Syntax: <bool>");
+	CLuaIntegration::RegisterFunction("_GModText_HideAll", Lua_GModTextHideAll, " Hides All texts. <player>");
 
 	// GModRect functions (original names)
 
 	// GModRect aliases with underscore separator (for GMod script compatibility)
-	CLuaIntegration::RegisterFunction("_GModRect_Start", Lua_GModRectStart, "Initialize rect with material. Syntax: [material]");
-	CLuaIntegration::RegisterFunction("_GModRect_SetPos", Lua_GModRectSetPos, "Set rect position. Syntax: <x> <y> [w] [h]");
+	CLuaIntegration::RegisterFunction("_GModRect_Start", Lua_GModRectStart, " Initialize the text. Syntax: <material>");
+	CLuaIntegration::RegisterFunction("_GModRect_SetPos", Lua_GModRectSetPos, " Set Position. Syntax: <x> <y> <width> <height>");
 	CLuaIntegration::RegisterFunction("_GModRect_SetSize", Lua_GModRectSetSize, "Set rect size. Syntax: <w> <h>");
-	CLuaIntegration::RegisterFunction("_GModRect_SetColor", Lua_GModRectSetColor, "Set rect color. Syntax: <r> <g> <b> [a]");
+	CLuaIntegration::RegisterFunction("_GModRect_SetColor", Lua_GModRectSetColor, " Set Colour. Syntax: <r> <g> <b> <a>");
 	CLuaIntegration::RegisterFunction("_GModRect_SetID", Lua_GModRectSetID, "Set rect ID. Syntax: <id>");
-	CLuaIntegration::RegisterFunction("_GModRect_SetTime", Lua_GModRectSetTime, "Set timing. Syntax: <holdTime> [fadeIn] [fadeOut]");
-	CLuaIntegration::RegisterFunction("_GModRect_SetDelay", Lua_GModRectSetDelay, "Set delay. Syntax: <delay>");
-	CLuaIntegration::RegisterFunction("_GModRect_Send", Lua_GModRectSend, "Send rect to player. Syntax: <playerid> [rectid]");
-	CLuaIntegration::RegisterFunction("_GModRect_SendAnimate", Lua_GModRectSendAnimate, "Send animated rect. Syntax: <playerid> <rectid> [targetX] [targetY]");
-	CLuaIntegration::RegisterFunction("_GModRect_Hide", Lua_GModRectHideAll, "Hide all rects. Syntax: [playerid]");
+	CLuaIntegration::RegisterFunction("_GModRect_SetTime", Lua_GModRectSetTime, " Set Times. Syntax: <duration> <fadein> <fadeout>");
+	CLuaIntegration::RegisterFunction("_GModRect_SetDelay", Lua_GModRectSetDelay, " Set delay time. Syntax: <delay>");
+	CLuaIntegration::RegisterFunction("_GModRect_Send", Lua_GModRectSend, " If player is 0 it is sent to everyone. Index says which slot this text should fill. <player> <index>");
+	CLuaIntegration::RegisterFunction("_GModRect_SendAnimate", Lua_GModRectSendAnimate, " If player is 0 it is sent to everyone. Index says which slot this text should fill. <player> <index> <length> <ease>");
+	CLuaIntegration::RegisterFunction("_GModRect_Hide", Lua_GModRectHideAll, " Hides specified rect. <player> <index> <fade time> <delay>");
 	// Original gmod name (bmod previously only had _GModRect_Hide)
-	CLuaIntegration::RegisterFunction("_GModRect_HideAll", Lua_GModRectHideAll, "Hide all rects. Syntax: [playerid]");
+	CLuaIntegration::RegisterFunction("_GModRect_HideAll", Lua_GModRectHideAll, "Hides All rects. <player>");
 
 	// GModQuad (World Quad) functions
-	CLuaIntegration::RegisterFunction("_GModQuad_Start", Lua_GModQuadStart, "Initialize quad. Syntax: <material>");
-	CLuaIntegration::RegisterFunction("_GModQuad_SetVector", Lua_GModQuadSetVector, "Set corner vector. Syntax: <corner 0-3> <x> <y> <z>");
-	CLuaIntegration::RegisterFunction("_GModQuad_SetTimings", Lua_GModQuadSetTimings, "Set timings. Syntax: <delay> <fadeIn> <life> <fadeOut>");
-	CLuaIntegration::RegisterFunction("_GModQuad_SetEntity", Lua_GModQuadSetEntity, "Set entity to follow. Syntax: <entityid>");
-	CLuaIntegration::RegisterFunction("_GModQuad_Send", Lua_GModQuadSend, "Send quad. Syntax: <player> <index>");
-	CLuaIntegration::RegisterFunction("_GModQuad_SendAnimate", Lua_GModQuadSendAnimate, "Send animated quad. Syntax: <player> <index> <length> <ease>");
-	CLuaIntegration::RegisterFunction("_GModQuad_Hide", Lua_GModQuadHide, "Hide quad. Syntax: <player> <index> <fadeTime> <delay>");
-	CLuaIntegration::RegisterFunction("_GModQuad_HideAll", Lua_GModQuadHideAll, "Hide all quads. Syntax: <player>");
+	CLuaIntegration::RegisterFunction("_GModQuad_Start", Lua_GModQuadStart, " Initialize the quad. Syntax: <material>");
+	CLuaIntegration::RegisterFunction("_GModQuad_SetVector", Lua_GModQuadSetVector, " Set a vector of one of the quad's corners. Syntax: <corner [0-3]> <vector>");
+	CLuaIntegration::RegisterFunction("_GModQuad_SetTimings", Lua_GModQuadSetTimings, " Set Timings. Syntax: <delay> <fadein> <life> <fadeout>");
+	CLuaIntegration::RegisterFunction("_GModQuad_SetEntity", Lua_GModQuadSetEntity, " SetEntity to follow. Syntax: <entityid>");
+	CLuaIntegration::RegisterFunction("_GModQuad_Send", Lua_GModQuadSend, " Send a quad to player. All players if player is 0. <player> <index>");
+	CLuaIntegration::RegisterFunction("_GModQuad_SendAnimate", Lua_GModQuadSendAnimate, " Send a quad to player. All players if player is 0. <player> <index> <length> <ease>");
+	CLuaIntegration::RegisterFunction("_GModQuad_Hide", Lua_GModQuadHide, " Hides specified world quads. <player> <index> <fade time> <delay>");
+	CLuaIntegration::RegisterFunction("_GModQuad_HideAll", Lua_GModQuadHideAll, " Hides All world quads. <player>");
 
 	// Effect dispatch (original names)
-	CLuaIntegration::RegisterFunction("_EffectSetOrigin", Lua_EffectSetOrigin, "Set effect origin. Syntax: <x> <y> <z>");
-	CLuaIntegration::RegisterFunction("_EffectSetStart", Lua_EffectSetStart, "Set effect start. Syntax: <x> <y> <z>");
-	CLuaIntegration::RegisterFunction("_EffectSetNormal", Lua_EffectSetNormal, "Set effect normal. Syntax: <x> <y> <z>");
-	CLuaIntegration::RegisterFunction("_EffectSetAngles", Lua_EffectSetAngles, "Set effect angles. Syntax: <p> <y> <r>");
+	CLuaIntegration::RegisterFunction("_EffectSetOrigin", Lua_EffectSetOrigin, "Syntax: <vector>");
+	CLuaIntegration::RegisterFunction("_EffectSetStart", Lua_EffectSetStart, "Syntax: <vector>");
+	CLuaIntegration::RegisterFunction("_EffectSetNormal", Lua_EffectSetNormal, "Syntax: <vector>");
+	CLuaIntegration::RegisterFunction("_EffectSetAngles", Lua_EffectSetAngles, "Syntax: <vector>");
 	CLuaIntegration::RegisterFunction("_EffectSetEntity", Lua_EffectSetEntity, "Set effect entity. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EffectSetScale", Lua_EffectSetScale, "Set effect scale. Syntax: <scale>");
-	CLuaIntegration::RegisterFunction("_EffectSetRadius", Lua_EffectSetRadius_New, "Set effect radius. Syntax: <radius>");
-	CLuaIntegration::RegisterFunction("_EffectSetMagnitude", Lua_EffectSetMagnitude, "Set effect magnitude. Syntax: <magnitude>");
+	CLuaIntegration::RegisterFunction("_EffectSetScale", Lua_EffectSetScale, "Syntax: <float>");
+	CLuaIntegration::RegisterFunction("_EffectSetRadius", Lua_EffectSetRadius_New, "Syntax: <float>");
+	CLuaIntegration::RegisterFunction("_EffectSetMagnitude", Lua_EffectSetMagnitude, "Syntax: <float>");
 	CLuaIntegration::RegisterFunction("_EffectSetColor", Lua_EffectSetColor, "Set effect color. Syntax: <r> <g> <b>");
-	CLuaIntegration::RegisterFunction("_EffectSetFlags", Lua_EffectSetFlags, "Set effect flags. Syntax: <flags>");
-	CLuaIntegration::RegisterFunction("_EffectSetAttachIndex", Lua_EffectSetAttachIndex, "Set effect attachment index. Syntax: <index>");
-	CLuaIntegration::RegisterFunction("_GModRect_SetEntityOffset", Lua_GModRectSetEntityOffset, "Set rect entity offset. Syntax: <vector3>");
+	CLuaIntegration::RegisterFunction("_EffectSetFlags", Lua_EffectSetFlags, "Syntax: <int>");
+	CLuaIntegration::RegisterFunction("_EffectSetAttachIndex", Lua_EffectSetAttachIndex, "Syntax: <int>");
+	CLuaIntegration::RegisterFunction("_GModRect_SetEntityOffset", Lua_GModRectSetEntityOffset, " Set entity offset to draw the text at. Syntax: <vector>");
 	CLuaIntegration::RegisterFunction("_EffectSetMaterialIndex", Lua_EffectSetMaterialIndex, "Set effect material. Syntax: <index>");
-	CLuaIntegration::RegisterFunction("_EffectDispatch", Lua_EffectDispatch, "Dispatch effect. Syntax: <effectname>");
+	CLuaIntegration::RegisterFunction("_EffectDispatch", Lua_EffectDispatch, "Syntax: <name>");
 
 	// Effect aliases for GMod compatibility
-	CLuaIntegration::RegisterFunction("_EffectInit", Lua_EffectSetOrigin, "Initialize effect at origin. Syntax: <x> <y> <z>");
-	CLuaIntegration::RegisterFunction("_EffectSetEnt", Lua_EffectSetEntity, "Set effect entity. Syntax: <entindex>");
+	CLuaIntegration::RegisterFunction("_EffectInit", Lua_EffectSetOrigin, "Resets the effect data");
+	CLuaIntegration::RegisterFunction("_EffectSetEnt", Lua_EffectSetEntity, "Syntax: <entindex>");
 
 	// Sound functions
 	CLuaIntegration::RegisterFunction("_EmitSound", Lua_EmitSound, "Emit sound at pos. Syntax: <x> <y> <z> <sound> [vol] [pitch]");

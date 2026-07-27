@@ -43,7 +43,11 @@ enum PropItemType_t
 //-----------------------------------------------------------------------------
 struct PropEntry_t
 {
-	char			szDisplayName[128];		// Display name shown on button
+	char			szDisplayName[128];		// Raw name straight from the file, prefix included. NEVER strip
+											// this in place - GetItemType() re-reads it every time the
+											// category is shown, and a stripped name reads back as
+											// PROPITEM_PROP (ragdolls would spawn via gmod_makeprop).
+	char			szCleanName[128];		// szDisplayName minus the type prefix - what the button draws
 	char			szModelPath[256];		// Model path for spawning
 	char			szCommand[64];			// Console command to execute
 	char			szIconPath[256];		// Material path for icon (if exists)

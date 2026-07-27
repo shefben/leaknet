@@ -1,224 +1,269 @@
 "npc"
 {
-	"title"				"NPC Spawning"	
-	
+	"title"				"NPC Spawning"
+
+	// Every "gm_spawnnpc" classname below has to be one the server DLL really
+	// registers (LINK_ENTITY_TO_CLASS in dlls/bmod_dll/npc_*.cpp, built by
+	// server_bmod.cmake).  gm_spawnnpc lives in dlls/bmod_dll/tool_npc.cpp;
+	// it replaces npc_create, which is FCVAR_CHEAT and therefore refused on a
+	// release engine unless sv_cheats is on.  Retail-HL2-only names (npc_dog_play, npc_pigeon,
+	// npc_citizen_rebel, ...) do not exist in the 2003 beta code base and only
+	// produce "Attempted to create unknown entity type".
+
 	"controls"
 	{
 		"toggle"
 		{
-		  	"label"			"Enable/Disable AI"		
+		  	"label"			"Enable/Disable AI"
 	  	  	"name"			"ai_disable"
 		}
-		
+
 		"keyvaluecombobox"
 		{
-		  	"label"			"Weapon to give AI"
+			"label"			"Weapon to give AI"
 	  	  	"name"			"ai_spawn_presets"
 	  	  	"kvfile"		"settings/cp_npc_weapons.txt"
 	  	  	"OpenOffsetY"	"-50"
 	  	  	"multisetting"	"1"
 		}
-		
+
 		"smalltext"
 		{
 			"name"			"helptext"
-		  	"label"			"Some NPCs can't use some weapons"
-		  	"tall"			"20"
+			"label"			"Some NPCs can't use some weapons"
+			"tall"			"20"
 		}
-		
-		
+
+
 		"columns"			"2"	// this only applies to buttons at the moment
 
 
 		"button"
 		{
-		  	"label"			"Combine Regular"
-	  	  	"command"		"npc_create npc_combine"
-		}
-		
-		"button"
-		{
-		  	"label"			"Combine Prison"
-	  	  	"command"		"npc_create npc_combine_p"
-		}
-
-		
-		"button"
-		{
-		  	"label"			"Combine Elite"
-	  	  	"command"		"npc_create npc_combine_e"
-		}
-		
-		"button"
-		{
-		  	"label"			"Metro Police"
-	  	  	"command"		"npc_create npc_metropolice"
-		}
-		
-		"button"
-		{
-		  	"label"			"Monk"
-	  	  	"command"		"npc_create npc_monk"
-		}
-		
-		"button"
-		{
-		  	"label"			"Alyx"
-	  	  	"command"		"npc_create npc_alyx"
-		}
-		
-		"button"
-		{
-		  	"label"			"Barney"
-	  	  	"command"		"npc_create npc_barney"
-		}
-		
-
-		"button"
-		{
-		  	"label"			"Citizen"
-	  	  	"command"		"npc_create npc_citizen"
-		}
-		
-		"button"
-		{
-		  	"label"			"Refugee"
-	  	  	"command"		"npc_create npc_citizen_refugee"
-		}
-		
-		"button"
-		{
-		  	"label"			"Rebel"
-	  	  	"command"		"npc_create npc_citizen_rebel"
-		}
-		
-		"button"
-		{
-		  	"label"			"Vortigaunt"
-	  	  	"command"		"npc_create npc_vortigaunt"
-		}
-		
-		
-		"button"
-		{
-		  	"label"			"DOG"
-	  	  	"command"		"npc_create npc_dog_play"
-		}
-		
-		
-		"button"
-		{
-		  	"label"			"Antlion"
-	  	  	"command"		"npc_create npc_antlion"
-		}
-	
-		"button"
-		{
-		  	"label"			"Ant Guard"
-	  	  	"command"		"npc_create npc_antlionguard"
-		}	
-
-		"button"
-		{
-		  	"label"			"Fast Zombie"
-	  	  	"command"		"npc_create npc_fastzombie"
+			"label"			"Combine Regular"
+			"command"		"gm_spawnnpc npc_combine"
 		}
 
 		"button"
 		{
-		  	"label"			"Poison Zombie"
-	  	  	"command"		"npc_create npc_poisonzombie"
-		}
-		
-		
-		"button"
-		{
-		  	"label"			"Zombie"
-	  	  	"command"		"npc_create npc_zombie"
-		}
-		
-		"button"
-		{
-		  	"label"			"Zombie Half"
-	  	  	"command"		"npc_create npc_zombie_torso"
+			"label"			"Combine Soldier"
+			"command"		"gm_spawnnpc npc_combine_s"
 		}
 
+		"button"
+		{
+			"label"			"Combine Elite"
+			"command"		"gm_spawnnpc npc_combineelite"
+		}
 
 		"button"
 		{
-		  	"label"			"Headcrab"
-	  	  	"command"		"npc_create npc_headcrab"
+			"label"			"Combine Guard"
+			"command"		"gm_spawnnpc npc_combineguard"
 		}
-		
-		"button"
-		{
-		  	"label"			"Headcrab Black"
-	  	  	"command"		"npc_create npc_headcrab_black"
-		}
-		"button"
-		{
-		  	"label"			"Headcrab Fast"
-	  	  	"command"		"npc_create npc_headcrab_fast"
-		}
-		
-		"button"
-		{
-		  	"label"			"Headcrab Poison"
-	  	  	"command"		"npc_create npc_headcrab_poison"
-		}
-		
-		"button"
-		{
-		  	"label"			"Manhack"
-	  	  	"command"		"npc_create npc_manhack"
-		}
-		
-		"button"
-		{
-		  	"label"			"City Scanner"
-	  	  	"command"		"npc_create npc_cscanner"
-		}
-		
-		"button"
-		{
-		  	"label"			"Shield Scanner"
-	  	  	"command"		"npc_create npc_sscanner"
-		}
-		
-		"button"
-		{
-		  	"label"			"Turret"
-	  	  	"command"		"npc_create npc_turret_floor"
-		}
-		
-		"button"
-		{
-		  	"label"			"Rollermine"
-	  	  	"command"		"npc_create npc_rollermine"
-		}
-		
-		
-		"button"
-		{
-		  	"label"			"Crow"
-	  	  	"command"		"npc_create npc_crow"
-		}
-		
-		"button"
-		{
-		  	"label"			"Pigeon"
-	  	  	"command"		"npc_create npc_pigeon"
-		}
-		
-		"button"
-		{
-		  	"label"			"Seagull"
-	  	  	"command"		"npc_create npc_seagull"
-		}
-		
 
-		
+		"button"
+		{
+			"label"			"Metro Police"
+			"command"		"gm_spawnnpc npc_metropolice"
+		}
+
+		"button"
+		{
+			"label"			"Monk"
+			"command"		"gm_spawnnpc npc_monk"
+		}
+
+		"button"
+		{
+			"label"			"Alyx"
+			"command"		"gm_spawnnpc npc_alyx"
+		}
+
+		"button"
+		{
+			"label"			"Barney"
+			"command"		"gm_spawnnpc npc_barney"
+		}
+
+		"button"
+		{
+			"label"			"Citizen"
+			"command"		"gm_spawnnpc npc_citizen"
+		}
+
+		"button"
+		{
+			"label"			"Conscript"
+			"command"		"gm_spawnnpc npc_conscript"
+		}
+
+		"button"
+		{
+			"label"			"Kleiner"
+			"command"		"gm_spawnnpc npc_kleiner"
+		}
+
+		"button"
+		{
+			"label"			"Eli"
+			"command"		"gm_spawnnpc npc_eli"
+		}
+
+		"button"
+		{
+			"label"			"Mossman"
+			"command"		"gm_spawnnpc npc_mossman"
+		}
+
+		"button"
+		{
+			"label"			"Breen"
+			"command"		"gm_spawnnpc npc_breen"
+		}
+
+		"button"
+		{
+			"label"			"Odell"
+			"command"		"gm_spawnnpc npc_odell"
+		}
+
+		"button"
+		{
+			"label"			"Vortigaunt"
+			"command"		"gm_spawnnpc npc_vortigaunt"
+		}
+
+		"button"
+		{
+			"label"			"Antlion"
+			"command"		"gm_spawnnpc npc_antlion"
+		}
+
+		"button"
+		{
+			"label"			"Ant Guard"
+			"command"		"gm_spawnnpc npc_antlionguard"
+		}
+
+		"button"
+		{
+			"label"			"Fast Zombie"
+			"command"		"gm_spawnnpc npc_fastzombie"
+		}
+
+		"button"
+		{
+			"label"			"Poison Zombie"
+			"command"		"gm_spawnnpc npc_poisonzombie"
+		}
+
+		"button"
+		{
+			"label"			"Zombie"
+			"command"		"gm_spawnnpc npc_zombie"
+		}
+
+		"button"
+		{
+			"label"			"Zombie Half"
+			"command"		"gm_spawnnpc npc_zombie_torso"
+		}
+
+		"button"
+		{
+			"label"			"Headcrab"
+			"command"		"gm_spawnnpc npc_headcrab"
+		}
+
+		"button"
+		{
+			"label"			"Headcrab Black"
+			"command"		"gm_spawnnpc npc_headcrab_black"
+		}
+
+		"button"
+		{
+			"label"			"Headcrab Fast"
+			"command"		"gm_spawnnpc npc_headcrab_fast"
+		}
+
+		"button"
+		{
+			"label"			"Headcrab Poison"
+			"command"		"gm_spawnnpc npc_headcrab_poison"
+		}
+
+		"button"
+		{
+			"label"			"Barnacle"
+			"command"		"gm_spawnnpc npc_barnacle"
+		}
+
+		"button"
+		{
+			"label"			"Bullsquid"
+			"command"		"gm_spawnnpc npc_bullsquid"
+		}
+
+		"button"
+		{
+			"label"			"Houndeye"
+			"command"		"gm_spawnnpc npc_houndeye"
+		}
+
+		"button"
+		{
+			"label"			"Ichthyosaur"
+			"command"		"gm_spawnnpc npc_ichthyosaur"
+		}
+
+		"button"
+		{
+			"label"			"Stalker"
+			"command"		"gm_spawnnpc npc_stalker"
+		}
+
+		"button"
+		{
+			"label"			"Strider"
+			"command"		"gm_spawnnpc npc_strider"
+		}
+
+		"button"
+		{
+			"label"			"Manhack"
+			"command"		"gm_spawnnpc npc_manhack"
+		}
+
+		"button"
+		{
+			"label"			"City Scanner"
+			"command"		"gm_spawnnpc npc_cscanner"
+		}
+
+		"button"
+		{
+			"label"			"Shield Scanner"
+			"command"		"gm_spawnnpc npc_sscanner"
+		}
+
+		"button"
+		{
+			"label"			"Turret"
+			"command"		"gm_spawnnpc npc_turret_floor"
+		}
+
+		"button"
+		{
+			"label"			"Rollermine"
+			"command"		"gm_spawnnpc npc_rollermine"
+		}
+
+		"button"
+		{
+			"label"			"Crow"
+			"command"		"gm_spawnnpc npc_crow"
+		}
 	}
 }
-
-

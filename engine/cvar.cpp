@@ -394,6 +394,20 @@ void CCvar::RegisterConCommandBase ( ConCommandBase *variable )
 	ConCommandBase::AddToList( variable );
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Drop a cvar/command out of the engine's list. Called from
+//			~ConCommandBase, so it runs while the object is still alive and
+//			before the owning module is unloaded.
+// Input  : *variable -
+//-----------------------------------------------------------------------------
+void CCvar::UnregisterConCommandBase( ConCommandBase *variable )
+{
+	if ( !variable )
+		return;
+
+	ConCommandBase::RemoveFromList( variable );
+}
+
 char const* CCvar::GetCommandLineValue( char const *pVariableName )
 {
 	int nLen = Q_strlen(pVariableName);

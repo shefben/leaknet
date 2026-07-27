@@ -299,7 +299,7 @@ public:
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_0_11078.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_0_32048.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -339,7 +339,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_0[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1_42649.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1_16058.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -391,7 +391,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_2_22166.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_2_6950.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -444,7 +444,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_2[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_3_7840.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_3_34473.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -507,7 +507,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_3[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_4_1256.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_4_38433.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -547,7 +547,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_4[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_5_50111.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_5_62605.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -613,7 +613,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_7[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_8_11144.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_8_10792.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -697,7 +697,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_8[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_9_39703.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_9_12452.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -792,7 +792,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_9[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_10_7194.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_10_55729.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -876,7 +876,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_10[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_11_23780.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_11_4572.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -982,7 +982,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_11[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_12_13932.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_12_5320.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -1085,7 +1085,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_12[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_13_40955.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_13_47523.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -1212,7 +1212,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_15[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_16_41789.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_16_12940.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -1261,7 +1261,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_16[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_17_62081.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_17_49207.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -1321,7 +1321,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_17[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_18_12014.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_18_8548.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -1383,7 +1383,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_18[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_19_56037.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_19_34097.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -1455,7 +1455,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_19[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_20_37799.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_20_21050.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -1536,7 +1536,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_20[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_21_4674.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_21_54961.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -1642,7 +1642,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_23[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_24_32560.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_24_34807.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -1726,7 +1726,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_24[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_25_21524.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_25_13312.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -1829,7 +1829,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_25[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_26_32961.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_26_64703.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -1913,7 +1913,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_26[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_27_32136.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_27_38609.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -2027,7 +2027,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_27[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_28_61485.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_28_23294.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -2130,7 +2130,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_28[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_29_2350.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_29_35123.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -2285,7 +2285,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_31[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_32_59317.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_32_30926.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -2325,7 +2325,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_32[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_33_55919.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_33_64555.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -2377,7 +2377,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_33[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_34_46763.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_34_47331.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -2430,7 +2430,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_34[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_35_26252.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_35_30252.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -2521,7 +2521,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_39[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_40_58261.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_40_35939.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -2615,7 +2615,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_40[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_41_14178.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_41_26208.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -2719,7 +2719,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_41[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_42_2200.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_42_60901.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -2813,7 +2813,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_42[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_43_9986.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_43_21710.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -2957,7 +2957,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_47[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_48_44551.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_48_60923.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -3006,7 +3006,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_48[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_49_10514.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_49_58785.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -3066,7 +3066,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_49[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_50_58101.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_50_44675.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -3128,7 +3128,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_50[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_51_41509.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_51_55365.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -3228,7 +3228,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_55[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_56_54375.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_56_37419.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -3322,7 +3322,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_56[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_57_51977.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_57_61897.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -3435,7 +3435,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_57[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_58_10308.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_58_4698.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -3529,7 +3529,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_58[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_59_4378.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_59_48209.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -3681,7 +3681,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_63[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_64_35187.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_64_48599.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -3721,7 +3721,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_64[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_65_27316.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_65_54227.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -3773,7 +3773,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_65[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_66_48997.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_66_30614.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -3826,7 +3826,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_66[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_67_53711.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_67_47885.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -3889,7 +3889,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_67[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_68_64365.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_68_17616.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -3929,7 +3929,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_68[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_69_9440.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_69_35305.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -3995,7 +3995,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_71[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_72_56077.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_72_63193.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -4040,7 +4040,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_72[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_73_12506.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_73_53557.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -4138,7 +4138,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_73[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_74_5840.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_74_56575.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -4183,7 +4183,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_74[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_75_15818.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_75_28140.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -4292,7 +4292,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_75[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_76_4514.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_76_36771.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -4337,7 +4337,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_76[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_77_49571.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_77_22768.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -4467,7 +4467,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_79[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_80_40293.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_80_60945.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -4516,7 +4516,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_80[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_81_31658.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_81_26232.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -4576,7 +4576,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_81[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_82_28066.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_82_46387.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -4638,7 +4638,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_82[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_83_52555.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_83_788.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -4710,7 +4710,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_83[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_84_63997.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_84_50585.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -4791,7 +4791,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_84[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_85_19378.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_85_60023.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -4896,7 +4896,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_87[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_88_7828.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_88_25594.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -4941,7 +4941,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_88[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_89_57309.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_89_14076.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -5047,7 +5047,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_89[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_90_47249.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_90_38841.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -5092,7 +5092,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_90[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_91_63897.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_91_40731.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -5209,7 +5209,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_91[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_92_62057.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_92_26490.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -5254,7 +5254,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_92[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_93_64545.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_93_57527.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -5636,7 +5636,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_127[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_128_2792.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_128_13394.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -5682,7 +5682,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_128[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_129_49581.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_129_55407.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -5741,7 +5741,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_129[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_130_16238.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_130_63665.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -5798,7 +5798,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_130[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_131_32226.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_131_13804.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -5868,7 +5868,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_131[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_132_16834.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_132_55449.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -5914,7 +5914,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_132[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_133_1352.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_133_50269.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -5987,7 +5987,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_135[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_136_26274.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_136_23816.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -6076,7 +6076,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_136[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_137_12982.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_137_30988.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -6179,7 +6179,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_137[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_138_41599.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_138_1372.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -6278,7 +6278,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_138[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_139_27114.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_139_34869.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -6392,7 +6392,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_139[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_140_38573.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_140_44457.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -6500,7 +6500,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_140[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_141_45377.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_141_17190.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -6636,7 +6636,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_143[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_144_33099.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_144_49547.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -6682,7 +6682,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_144[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_145_10934.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_145_6326.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -6749,7 +6749,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_145[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_146_63301.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_146_28544.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -6806,7 +6806,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_146[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_147_30474.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_147_23592.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -6885,7 +6885,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_147[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_148_1982.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_148_12664.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -6931,7 +6931,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_148[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_149_25724.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_149_5266.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -7044,7 +7044,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_151[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_152_58643.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_152_9098.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -7133,7 +7133,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_152[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_153_54449.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_153_43439.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -7244,7 +7244,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_153[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_154_36873.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_154_60015.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -7343,7 +7343,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_154[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_155_42055.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_155_27006.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -7466,7 +7466,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_155[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_156_26142.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_156_30670.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -7574,7 +7574,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_156[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_157_12490.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_157_15434.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -7737,7 +7737,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_159[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_160_64673.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_160_60137.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -7783,7 +7783,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_160[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_161_32863.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_161_2996.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -7842,7 +7842,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_161[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_162_32430.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_162_16576.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -7899,7 +7899,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_162[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_163_43281.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_163_832.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -7997,7 +7997,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_167[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_168_62563.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_168_40751.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -8097,7 +8097,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_168[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_169_33745.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_169_34809.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -8210,7 +8210,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_169[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_170_36537.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_170_58149.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -8319,7 +8319,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_170[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_171_39495.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_171_11992.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -8471,7 +8471,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_175[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_176_27448.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_176_55935.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -8517,7 +8517,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_176[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_177_13436.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_177_47153.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -8584,7 +8584,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_177[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_178_24526.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_178_22148.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -8641,7 +8641,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_178[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_179_5736.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_179_51499.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -8748,7 +8748,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_183[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_184_24390.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_184_11452.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -8848,7 +8848,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_184[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_185_31628.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_185_25176.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -8969,7 +8969,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_185[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_186_2930.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_186_26626.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -9078,7 +9078,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_186[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_187_53627.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_187_36193.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -9687,7 +9687,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_255[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_256_12944.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_256_31886.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -9727,7 +9727,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_256[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_257_14488.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_257_2576.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -9779,7 +9779,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_257[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_258_25104.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_258_26070.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -9832,7 +9832,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_258[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_259_36063.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_259_34169.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -9895,7 +9895,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_259[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_260_35109.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_260_19982.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -9935,7 +9935,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_260[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_261_18196.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_261_48299.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -10001,7 +10001,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_263[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_264_64097.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_264_56101.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -10085,7 +10085,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_264[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_265_35081.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_265_30364.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -10180,7 +10180,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_265[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_266_5060.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_266_40431.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -10264,7 +10264,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_266[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_267_48745.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_267_8116.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -10370,7 +10370,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_267[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_268_37205.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_268_33915.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -10473,7 +10473,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_268[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_269_1490.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_269_41939.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -10600,7 +10600,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_271[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_272_12032.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_272_47399.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -10649,7 +10649,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_272[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_273_46195.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_273_35313.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -10709,7 +10709,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_273[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_274_57971.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_274_9374.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -10771,7 +10771,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_274[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_275_22842.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_275_61283.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -10843,7 +10843,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_275[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_276_48881.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_276_63759.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -10924,7 +10924,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_276[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_277_19088.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_277_28400.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -11030,7 +11030,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_279[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_280_41163.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_280_25092.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -11114,7 +11114,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_280[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_281_42171.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_281_57991.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -11217,7 +11217,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_281[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_282_12122.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_282_52241.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -11301,7 +11301,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_282[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_283_19740.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_283_58635.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -11415,7 +11415,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_283[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_284_47191.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_284_21690.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -11518,7 +11518,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_284[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_285_45313.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_285_41921.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -12345,7 +12345,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_383[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_384_72.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_384_62165.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -12391,7 +12391,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_384[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_385_11660.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_385_36345.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -12450,7 +12450,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_385[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_386_32742.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_386_60615.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -12507,7 +12507,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_386[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_387_63555.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_387_25494.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -12577,7 +12577,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_387[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_388_51009.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_388_23008.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -12623,7 +12623,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_388[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_389_40675.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_389_43465.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -12696,7 +12696,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_391[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_392_900.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_392_55577.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -12785,7 +12785,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_392[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_393_26362.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_393_18402.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -12888,7 +12888,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_393[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_394_3316.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_394_30652.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -12987,7 +12987,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_394[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_395_40137.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_395_40051.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -13101,7 +13101,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_395[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_396_3934.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_396_5862.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -13209,7 +13209,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_396[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_397_56119.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_397_23964.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -13345,7 +13345,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_399[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_400_61259.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_400_38823.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -13391,7 +13391,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_400[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_401_9484.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_401_44507.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -13458,7 +13458,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_401[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_402_9014.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_402_53659.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -13515,7 +13515,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_402[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_403_60005.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_403_39197.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -13594,7 +13594,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_403[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_404_61487.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_404_63673.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -13640,7 +13640,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_404[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_405_27554.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_405_19556.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -13753,7 +13753,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_407[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_408_63031.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_408_47941.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -13842,7 +13842,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_408[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_409_62863.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_409_27880.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -13953,7 +13953,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_409[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_410_55445.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_410_10636.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -14052,7 +14052,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_410[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_411_53563.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_411_39395.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -14175,7 +14175,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_411[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_412_45941.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_412_34159.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -14283,7 +14283,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_412[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_413_5164.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_413_65263.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -15118,7 +15118,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_511[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_512_6206.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_512_34905.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -15162,7 +15162,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_512[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_513_25676.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_513_35643.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -15217,7 +15217,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_513[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_514_38591.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_514_41621.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -15273,7 +15273,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_514[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_515_56679.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_515_33895.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -15340,7 +15340,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_515[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_516_35269.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_516_20406.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -15384,7 +15384,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_516[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_517_13446.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_517_25184.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -15453,7 +15453,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_519[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_520_4628.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_520_63493.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -15537,7 +15537,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_520[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_521_38883.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_521_52225.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -15635,7 +15635,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_521[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_522_870.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_522_6056.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -15719,7 +15719,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_522[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_523_16622.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_523_51925.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -15828,7 +15828,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_523[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_524_9094.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_524_43085.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -15931,7 +15931,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_524[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_525_55303.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_525_32442.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -16061,7 +16061,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_527[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_528_39943.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_528_13142.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -16112,7 +16112,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_528[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_529_18528.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_529_24768.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -16174,7 +16174,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_529[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_530_936.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_530_40475.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -16237,7 +16237,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_530[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_531_5316.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_531_7968.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -16310,7 +16310,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_531[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_532_3322.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_532_54069.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -16393,7 +16393,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_532[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_533_17556.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_533_60013.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -16500,7 +16500,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_535[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_536_54377.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_536_65453.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -16584,7 +16584,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_536[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_537_15068.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_537_20254.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -16689,7 +16689,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_537[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_538_6162.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_538_21416.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -16773,7 +16773,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_538[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_539_55211.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_539_3160.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -16889,7 +16889,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_539[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_540_30862.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_540_12980.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -16992,7 +16992,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_540[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_541_50861.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_541_25664.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -17148,7 +17148,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_543[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_544_23124.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_544_40997.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -17192,7 +17192,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_544[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_545_29748.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_545_49071.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -17247,7 +17247,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_545[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_546_15242.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_546_39097.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -17303,7 +17303,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_546[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_547_27772.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_547_53885.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -17398,7 +17398,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_551[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_552_29472.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_552_4842.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -17492,7 +17492,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_552[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_553_34735.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_553_21348.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -17600,7 +17600,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_553[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_554_29168.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_554_44055.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -17694,7 +17694,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_554[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_555_55087.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_555_30080.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -17841,7 +17841,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_559[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_560_59347.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_560_47385.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -17892,7 +17892,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_560[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_561_28584.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_561_16298.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -17954,7 +17954,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_561[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_562_47701.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_562_42309.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -18017,7 +18017,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_562[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_563_34215.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_563_16494.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -18118,7 +18118,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_567[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_568_44023.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_568_25448.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -18212,7 +18212,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_568[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_569_33055.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_569_37895.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -18326,7 +18326,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_569[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_570_1726.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_570_20700.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -18420,7 +18420,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_570[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_571_20090.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_571_23594.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -18574,7 +18574,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_575[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_576_46561.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_576_27456.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -18618,7 +18618,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_576[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_577_60083.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_577_18390.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -18673,7 +18673,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_577[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_578_5760.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_578_15846.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -18729,7 +18729,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_578[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_579_37441.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_579_15398.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -18795,7 +18795,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_579[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_580_34789.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_580_38001.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -18839,7 +18839,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_580[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_581_47375.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_581_13646.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -18908,7 +18908,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_583[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_584_34989.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_584_60635.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -18953,7 +18953,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_584[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_585_42085.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_585_45479.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -19054,7 +19054,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_585[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_586_5620.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_586_62285.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -19099,7 +19099,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_586[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_587_50693.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_587_1810.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -19211,7 +19211,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_587[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_588_12032.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_588_9978.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -19256,7 +19256,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_588[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_589_29276.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_589_34185.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -19389,7 +19389,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_591[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_592_61377.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_592_16224.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -19440,7 +19440,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_592[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_593_55811.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_593_57389.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -19502,7 +19502,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_593[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_594_51517.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_594_9786.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -19565,7 +19565,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_594[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_595_61813.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_595_41105.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -19638,7 +19638,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_595[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_596_6014.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_596_31362.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -19721,7 +19721,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_596[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_597_51247.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_597_1704.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -19828,7 +19828,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_599[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_600_53533.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_600_46505.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -19873,7 +19873,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_600[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_601_23338.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_601_18982.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -19981,7 +19981,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_601[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_602_27880.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_602_21652.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -20026,7 +20026,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_602[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_603_52449.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_603_22660.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -20145,7 +20145,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_603[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_604_32438.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_604_62049.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -20190,7 +20190,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_604[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_605_49109.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_605_34211.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -20574,7 +20574,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_639[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_640_5380.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_640_13214.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -20622,7 +20622,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_640[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_641_63153.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_641_54087.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -20684,7 +20684,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_641[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_642_44385.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_642_54499.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -20744,7 +20744,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_642[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_643_63499.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_643_5672.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -20818,7 +20818,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_643[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_644_50749.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_644_18554.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -20866,7 +20866,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_644[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_645_57849.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_645_62991.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -20942,7 +20942,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_647[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_648_51493.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_648_11016.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -21032,7 +21032,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_648[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_649_31830.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_649_12488.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -21138,7 +21138,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_649[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_650_24848.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_650_38899.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -21241,7 +21241,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_650[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_651_36587.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_651_17930.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -21359,7 +21359,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_651[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_652_27808.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_652_10848.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -21469,7 +21469,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_652[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_653_11142.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_653_25964.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -21608,7 +21608,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_655[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_656_48429.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_656_24702.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -21656,7 +21656,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_656[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_657_39429.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_657_48515.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -21725,7 +21725,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_657[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_658_55141.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_658_17190.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -21785,7 +21785,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_658[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_659_34673.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_659_50699.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -21865,7 +21865,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_659[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_660_4912.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_660_50259.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -21913,7 +21913,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_660[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_661_40747.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_661_28014.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -22027,7 +22027,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_663[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_664_58611.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_664_23454.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -22117,7 +22117,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_664[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_665_28744.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_665_54389.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -22230,7 +22230,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_665[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_666_60081.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_666_8222.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -22333,7 +22333,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_666[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_667_3878.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_667_6512.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -22457,7 +22457,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_667[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_668_44049.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_668_7168.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -22567,7 +22567,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_668[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_669_58955.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_669_16034.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -22732,7 +22732,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_671[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_672_62719.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_672_63007.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -22780,7 +22780,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_672[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_673_16296.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_673_5726.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -22842,7 +22842,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_673[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_674_28352.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_674_29412.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -22902,7 +22902,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_674[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_675_55845.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_675_61805.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -23004,7 +23004,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_679[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_680_48193.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_680_54745.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -23105,7 +23105,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_680[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_681_64991.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_681_13138.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -23221,7 +23221,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_681[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_682_662.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_682_64033.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -23334,7 +23334,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_682[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_683_37803.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_683_35307.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -23490,7 +23490,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_687[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_688_36639.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_688_10298.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -23538,7 +23538,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_688[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_689_27514.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_689_62759.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -23607,7 +23607,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_689[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_690_22960.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_690_25664.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -23667,7 +23667,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_690[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_691_46881.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_691_44327.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -23775,7 +23775,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_695[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_696_37095.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_696_18490.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -23876,7 +23876,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_696[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_697_28198.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_697_60555.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -23999,7 +23999,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_697[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_698_21532.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_698_39515.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -24112,7 +24112,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_698[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_699_28936.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_699_20080.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -24722,7 +24722,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_767[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_768_22074.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_768_53263.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -24766,7 +24766,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_768[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_769_31142.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_769_28292.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -24821,7 +24821,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_769[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_770_33207.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_770_45707.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -24877,7 +24877,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_770[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_771_53343.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_771_27676.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -24944,7 +24944,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_771[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_772_63023.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_772_33487.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -24988,7 +24988,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_772[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_773_64591.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_773_30574.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -25057,7 +25057,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_775[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_776_64671.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_776_26318.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -25141,7 +25141,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_776[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_777_55159.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_777_19162.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -25239,7 +25239,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_777[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_778_63487.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_778_47765.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -25323,7 +25323,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_778[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_779_13850.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_779_148.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -25432,7 +25432,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_779[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_780_1044.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_780_13414.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -25535,7 +25535,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_780[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_781_19246.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_781_46959.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -25665,7 +25665,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_783[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_784_1324.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_784_49971.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -25716,7 +25716,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_784[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_785_49695.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_785_36905.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -25778,7 +25778,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_785[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_786_32734.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_786_52181.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -25841,7 +25841,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_786[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_787_51389.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_787_22276.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -25914,7 +25914,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_787[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_788_51239.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_788_2382.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -25997,7 +25997,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_788[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_789_39593.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_789_19424.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -26104,7 +26104,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_791[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_792_5188.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_792_63797.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -26188,7 +26188,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_792[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_793_10756.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_793_36329.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -26293,7 +26293,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_793[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_794_57213.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_794_34313.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -26377,7 +26377,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_794[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_795_57273.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_795_21982.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -26493,7 +26493,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_795[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_796_61023.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_796_44323.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -26596,7 +26596,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_796[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_797_49221.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_797_1256.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -27424,7 +27424,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_895[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_896_19832.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_896_20280.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -27472,7 +27472,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_896[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_897_10256.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_897_48215.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -27534,7 +27534,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_897[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_898_61715.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_898_20010.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -27594,7 +27594,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_898[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_899_28030.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_899_21758.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -27668,7 +27668,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_899[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_900_19528.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_900_46071.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -27716,7 +27716,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_900[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_901_42161.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_901_50059.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -27792,7 +27792,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_903[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_904_27250.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_904_64169.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -27882,7 +27882,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_904[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_905_9248.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_905_57773.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -27988,7 +27988,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_905[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_906_61109.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_906_52707.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -28091,7 +28091,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_906[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_907_57075.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_907_53841.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -28209,7 +28209,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_907[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_908_63897.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_908_58171.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -28319,7 +28319,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_908[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_909_54625.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_909_27078.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -28458,7 +28458,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_911[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_912_30010.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_912_61105.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -28506,7 +28506,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_912[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_913_22784.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_913_51487.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -28575,7 +28575,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_913[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_914_52523.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_914_26016.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -28635,7 +28635,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_914[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_915_22024.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_915_22182.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -28715,7 +28715,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_915[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_916_49073.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_916_53861.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -28763,7 +28763,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_916[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_917_55517.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_917_2962.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -28877,7 +28877,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_919[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_920_57901.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_920_4134.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -28967,7 +28967,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_920[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_921_16802.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_921_20998.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -29080,7 +29080,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_921[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_922_50053.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_922_65009.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -29183,7 +29183,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_922[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_923_42497.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_923_1136.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -29307,7 +29307,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_923[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_924_27504.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_924_13710.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -29417,7 +29417,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_924[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=0 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_925_25694.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_925_10820.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -30254,7 +30254,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1023[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1024_28234.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1024_12894.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -30298,7 +30298,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1024[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1025_33093.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1025_27710.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -30353,7 +30353,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1025[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1026_2422.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1026_14708.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -30408,7 +30408,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1026[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1027_45903.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1027_36133.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -30475,7 +30475,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1027[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1028_56553.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1028_23668.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -30519,7 +30519,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1028[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1029_40833.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1029_6714.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -30588,7 +30588,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1031[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1032_64225.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1032_15676.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -30673,7 +30673,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1032[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1033_23344.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1033_41253.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -30771,7 +30771,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1033[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1034_20314.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1034_59627.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -30856,7 +30856,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1034[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1035_28294.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1035_42983.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -30965,7 +30965,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1035[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1036_60763.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1036_21876.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -31069,7 +31069,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1036[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1037_60843.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1037_1338.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -31199,7 +31199,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1039[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1040_49325.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1040_58631.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -31249,7 +31249,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1040[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1041_27824.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1041_44829.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -31311,7 +31311,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1041[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1042_38643.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1042_61373.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -31373,7 +31373,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1042[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1043_13612.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1043_16148.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -31446,7 +31446,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1043[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1044_35789.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1044_54209.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -31528,7 +31528,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1044[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1045_56035.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1045_60037.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -31635,7 +31635,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1047[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1048_49169.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1048_37179.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -31720,7 +31720,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1048[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1049_46875.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1049_8186.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -31825,7 +31825,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1049[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1050_1180.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1050_40825.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -31910,7 +31910,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1050[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1051_37155.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1051_170.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -32026,7 +32026,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1051[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1052_58843.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1052_38255.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -32130,7 +32130,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1052[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1053_27824.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1053_10236.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -32286,7 +32286,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1055[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1056_28056.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1056_36883.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -32330,7 +32330,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1056[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1057_48521.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1057_16760.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -32385,7 +32385,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1057[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1058_7446.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1058_5548.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -32440,7 +32440,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1058[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1059_47663.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1059_28618.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -32535,7 +32535,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1063[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1064_12812.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1064_44453.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -32633,7 +32633,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1064[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1065_54747.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1065_7762.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -32741,7 +32741,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1065[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1066_23960.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1066_41203.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -32839,7 +32839,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1066[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1067_11452.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1067_8436.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -32986,7 +32986,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1071[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1072_52399.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1072_30622.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -33036,7 +33036,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1072[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1073_33677.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1073_42121.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -33098,7 +33098,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1073[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1074_56873.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1074_60523.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -33160,7 +33160,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1074[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1075_1692.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1075_1204.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -33261,7 +33261,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1079[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1080_17112.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1080_22636.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -33359,7 +33359,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1080[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1081_53829.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1081_49777.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -33473,7 +33473,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1081[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1082_43247.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1082_9272.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -33571,7 +33571,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1082[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1083_8700.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1083_12602.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -33725,7 +33725,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1087[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1088_39959.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1088_48549.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -33769,7 +33769,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1088[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1089_26860.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1089_40679.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -33822,7 +33822,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1089[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1090_4184.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1090_1258.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -33877,7 +33877,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1090[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1091_12862.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1091_23914.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -33942,7 +33942,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1091[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1092_15976.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1092_15542.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -33986,7 +33986,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1092[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1093_5420.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1093_52047.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -34053,7 +34053,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1095[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1096_11380.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1096_25964.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -34099,7 +34099,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1096[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1097_60351.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1097_58161.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -34198,7 +34198,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1097[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1098_38615.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1098_44025.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -34244,7 +34244,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1098[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1099_29062.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1099_38955.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -34355,7 +34355,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1099[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1100_2292.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1100_22878.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -34401,7 +34401,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1100[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1101_6686.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1101_63559.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -34533,7 +34533,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1103[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1104_63143.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1104_39027.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -34583,7 +34583,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1104[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1105_60875.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1105_21528.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -34643,7 +34643,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1105[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1106_43899.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1106_37899.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -34705,7 +34705,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1106[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1107_11522.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1107_9582.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -34777,7 +34777,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1107[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1108_3330.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1108_65517.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -34859,7 +34859,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1108[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1109_556.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1109_48471.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -34965,7 +34965,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1111[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1112_39577.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1112_13256.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -35011,7 +35011,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1112[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1113_17258.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1113_33867.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -35117,7 +35117,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1113[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1114_58637.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1114_47007.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -35163,7 +35163,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1114[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1115_54463.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1115_28124.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -35281,7 +35281,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1115[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1116_3366.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1116_40411.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -35327,7 +35327,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1116[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1117_15720.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1117_52131.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -35709,7 +35709,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1151[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1152_53421.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1152_26464.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -35757,7 +35757,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1152[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1153_6544.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1153_35281.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -35818,7 +35818,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1153[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1154_27180.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1154_37613.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -35876,7 +35876,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1154[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1155_56437.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1155_45603.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -35948,7 +35948,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1155[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1156_10136.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1156_33083.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -35996,7 +35996,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1156[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1157_29974.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1157_30876.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -36071,7 +36071,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1159[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1160_16728.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1160_9190.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -36161,7 +36161,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1160[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1161_31288.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1161_44975.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -36266,7 +36266,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1161[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1162_17152.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1162_7604.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -36367,7 +36367,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1162[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1163_10574.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1163_61545.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -36483,7 +36483,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1163[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1164_25560.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1164_44893.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -36593,7 +36593,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1164[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1165_24004.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1165_42273.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -36730,7 +36730,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1167[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1168_40391.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1168_9298.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -36778,7 +36778,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1168[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1169_21818.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1169_7224.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -36845,7 +36845,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1169[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1170_17860.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1170_36735.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -36903,7 +36903,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1170[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1171_14184.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1171_29336.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -36982,7 +36982,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1171[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1172_33055.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1172_43225.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -37030,7 +37030,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1172[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1173_36587.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1173_9304.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -37143,7 +37143,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1175[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1176_20494.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1176_41075.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -37233,7 +37233,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1176[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1177_51959.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1177_1086.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -37345,7 +37345,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1177[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1178_9646.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1178_58607.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -37446,7 +37446,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1178[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1179_8200.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1179_57725.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -37569,7 +37569,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1179[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1180_19166.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1180_18244.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -37679,7 +37679,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1180[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1181_20624.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1181_56715.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -37842,7 +37842,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1183[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1184_45373.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1184_46659.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -37890,7 +37890,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1184[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1185_44243.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1185_576.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -37951,7 +37951,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1185[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1186_34953.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1186_8522.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -38009,7 +38009,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1186[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1187_37855.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1187_43803.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -38109,7 +38109,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1191[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1192_63709.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1192_2354.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -38212,7 +38212,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1192[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1193_36285.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1193_27426.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -38327,7 +38327,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1193[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1194_63721.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1194_1042.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -38440,7 +38440,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1194[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1195_23026.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1195_58083.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -38594,7 +38594,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1199[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1200_28564.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1200_6130.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -38642,7 +38642,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1200[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1201_41819.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1201_6438.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -38709,7 +38709,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1201[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1202_52559.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1202_30154.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -38767,7 +38767,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1202[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1203_5490.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1203_64261.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -38874,7 +38874,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1207[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1208_10616.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1208_58937.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -38977,7 +38977,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1208[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1209_60673.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1209_20162.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -39098,7 +39098,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1209[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1210_54505.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1210_17946.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -39211,7 +39211,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1210[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1211_29048.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1211_16154.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -39820,7 +39820,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1279[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1280_23396.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1280_57703.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -39864,7 +39864,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1280[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1281_43455.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1281_21372.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -39919,7 +39919,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1281[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1282_14762.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1282_28578.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -39974,7 +39974,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1282[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1283_47821.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1283_52205.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -40041,7 +40041,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1283[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1284_16158.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1284_3374.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -40085,7 +40085,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1284[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1285_19434.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1285_36319.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -40154,7 +40154,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1287[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1288_50607.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1288_59853.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -40239,7 +40239,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1288[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1289_44981.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1289_47573.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -40337,7 +40337,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1289[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1290_50165.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1290_42163.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -40422,7 +40422,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1290[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1291_1828.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1291_16410.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -40531,7 +40531,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1291[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1292_22830.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1292_37705.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -40635,7 +40635,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1292[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1293_48695.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1293_64877.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -40765,7 +40765,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1295[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1296_62459.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1296_38975.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -40815,7 +40815,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1296[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1297_16618.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1297_44777.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -40877,7 +40877,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1297[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1298_47315.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1298_56549.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -40939,7 +40939,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1298[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1299_14566.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1299_1766.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -41012,7 +41012,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1299[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1300_30110.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1300_53095.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -41094,7 +41094,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1300[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1301_43923.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1301_64319.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -41201,7 +41201,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1303[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1304_23734.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1304_23810.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -41286,7 +41286,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1304[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1305_35359.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1305_42951.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -41391,7 +41391,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1305[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1306_4556.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1306_38827.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -41476,7 +41476,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1306[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1307_21474.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1307_30260.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -41592,7 +41592,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1307[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1308_26548.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1308_62313.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -41696,7 +41696,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1308[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1309_60903.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1309_18242.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -42524,7 +42524,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1407[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1408_42671.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1408_10150.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -42572,7 +42572,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1408[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1409_26884.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1409_46997.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -42633,7 +42633,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1409[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1410_28516.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1410_42447.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -42691,7 +42691,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1410[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1411_47643.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1411_60647.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -42763,7 +42763,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1411[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1412_28360.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1412_40625.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -42811,7 +42811,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1412[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1413_1820.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1413_16120.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -42886,7 +42886,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1415[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1416_15478.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1416_56481.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -42976,7 +42976,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1416[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1417_48455.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1417_10758.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -43081,7 +43081,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1417[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1418_1170.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1418_26896.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -43182,7 +43182,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1418[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1419_52303.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1419_59181.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -43298,7 +43298,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1419[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1420_11170.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1420_10370.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -43408,7 +43408,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1420[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1421_48105.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1421_26976.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -43545,7 +43545,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1423[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1424_2742.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1424_28824.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -43593,7 +43593,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1424[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1425_32839.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1425_62555.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -43660,7 +43660,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1425[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1426_22284.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1426_14370.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -43718,7 +43718,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1426[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1427_37945.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1427_44409.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -43797,7 +43797,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1427[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1428_57515.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1428_470.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -43845,7 +43845,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1428[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1429_38461.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1429_1150.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -43958,7 +43958,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1431[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1432_12328.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1432_9906.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -44048,7 +44048,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1432[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1433_4208.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1433_17768.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -44160,7 +44160,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1433[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1434_19428.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1434_52659.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -44261,7 +44261,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1434[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1435_53631.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1435_43629.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -44384,7 +44384,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1435[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1436_45611.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1436_51909.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -44494,7 +44494,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1436[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=0 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1437_61331.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1437_32779.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -45329,7 +45329,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1535[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1536_32112.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1536_61353.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -45373,7 +45373,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1536[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1537_54391.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1537_64359.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -45430,7 +45430,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1537[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1538_54509.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1538_11712.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -45487,7 +45487,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1538[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1539_11454.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1539_58851.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -45555,7 +45555,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1539[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1540_23590.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1540_24668.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -45599,7 +45599,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1540[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1541_57919.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1541_55069.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -45670,7 +45670,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1543[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1544_26708.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1544_54193.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -45755,7 +45755,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1544[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1545_3292.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1545_336.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -45854,7 +45854,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1545[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1546_31572.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1546_48331.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -45939,7 +45939,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1546[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1547_39573.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1547_12852.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -46050,7 +46050,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1547[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1548_54.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1548_64463.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -46154,7 +46154,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1548[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1549_64261.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1549_15710.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -46286,7 +46286,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1551[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1552_42457.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1552_51699.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -46337,7 +46337,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1552[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1553_63601.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1553_11084.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -46401,7 +46401,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1553[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1554_6348.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1554_33101.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -46464,7 +46464,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1554[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1555_47929.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1555_58119.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -46539,7 +46539,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1555[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1556_26076.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1556_40189.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -46622,7 +46622,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1556[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1557_23312.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1557_12946.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -46731,7 +46731,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1559[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1560_7056.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1560_34001.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -46816,7 +46816,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1560[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1561_64425.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1561_48391.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -46922,7 +46922,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1561[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1562_28902.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1562_53217.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -47007,7 +47007,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1562[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1563_57703.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1563_3004.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -47125,7 +47125,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1563[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1564_27812.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1564_34383.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -47229,7 +47229,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1564[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1565_52353.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1565_27158.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -47387,7 +47387,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1567[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1568_24722.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1568_43665.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -47431,7 +47431,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1568[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1569_57419.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1569_62103.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -47488,7 +47488,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1569[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1570_10442.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1570_6014.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -47545,7 +47545,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1570[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1571_1584.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1571_58811.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -47641,7 +47641,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1575[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1576_40885.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1576_43161.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -47739,7 +47739,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1576[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1577_47833.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1577_43543.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -47848,7 +47848,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1577[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1578_48051.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1578_52913.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -47946,7 +47946,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1578[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1579_9774.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1579_20364.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -48095,7 +48095,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1583[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1584_62469.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1584_17240.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -48146,7 +48146,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1584[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1585_58773.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1585_48585.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -48210,7 +48210,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1585[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1586_63233.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1586_41555.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -48273,7 +48273,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1586[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1587_43589.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1587_30972.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -48376,7 +48376,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1591[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1592_35901.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1592_26772.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -48474,7 +48474,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1592[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1593_23526.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1593_48627.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -48590,7 +48590,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1593[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1594_53657.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1594_21690.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -48688,7 +48688,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1594[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1595_29278.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1595_16798.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -48844,7 +48844,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1599[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1600_64207.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1600_34225.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -48888,7 +48888,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1600[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1601_20514.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1601_48653.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -48943,7 +48943,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1601[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1602_30618.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1602_6298.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49000,7 +49000,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1602[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1603_12480.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1603_18932.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49067,7 +49067,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1603[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1604_1278.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1604_36689.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49111,7 +49111,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1604[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1605_24086.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1605_56783.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49180,7 +49180,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1607[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1608_53947.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1608_5614.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49226,7 +49226,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1608[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1609_28894.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1609_1196.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49327,7 +49327,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1609[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1610_44689.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1610_60801.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49373,7 +49373,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1610[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1611_2060.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1611_9398.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49485,7 +49485,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1611[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1612_13120.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1612_63327.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49531,7 +49531,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1612[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1613_15520.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1613_44659.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49665,7 +49665,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1615[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1616_27130.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1616_46171.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49716,7 +49716,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1616[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1617_50777.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1617_30732.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49778,7 +49778,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1617[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1618_16716.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1618_10278.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49841,7 +49841,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1618[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1619_59425.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1619_13370.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49914,7 +49914,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1619[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1620_54517.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1620_4406.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -49997,7 +49997,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1620[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1621_29018.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1621_62327.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -50104,7 +50104,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1623[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1624_57059.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1624_60027.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -50150,7 +50150,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1624[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1625_3080.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1625_36855.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -50258,7 +50258,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1625[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1626_59839.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1626_21572.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -50304,7 +50304,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1626[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1627_19976.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1627_27640.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -50423,7 +50423,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1627[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1628_8768.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1628_61051.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -50469,7 +50469,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1628[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=1 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1629_13888.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1629_41977.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -50853,7 +50853,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1663[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1664_3246.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1664_32452.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -50901,7 +50901,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1664[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1665_34039.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1665_25972.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -50963,7 +50963,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1665[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1666_4290.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1666_37261.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -51023,7 +51023,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1666[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1667_22858.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1667_7330.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -51097,7 +51097,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1667[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1668_56931.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1668_48547.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -51145,7 +51145,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1668[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1669_19428.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1669_17092.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -51221,7 +51221,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1671[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1672_16982.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1672_28240.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -51312,7 +51312,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1672[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1673_33277.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1673_24764.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -51418,7 +51418,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1673[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1674_14962.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1674_47271.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -51521,7 +51521,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1674[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1675_35255.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1675_63541.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -51639,7 +51639,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1675[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1676_5470.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1676_25854.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -51749,7 +51749,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1676[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1677_56281.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1677_6204.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -51888,7 +51888,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1679[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1680_19074.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1680_7708.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -51936,7 +51936,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1680[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1681_15638.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1681_2194.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -52005,7 +52005,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1681[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1682_39703.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1682_50257.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -52065,7 +52065,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1682[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1683_35779.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1683_20868.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -52146,7 +52146,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1683[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1684_5634.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1684_21226.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -52194,7 +52194,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1684[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1685_27994.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1685_5290.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -52308,7 +52308,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1687[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1688_58499.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1688_47865.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -52399,7 +52399,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1688[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1689_26968.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1689_52535.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -52512,7 +52512,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1689[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1690_30276.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1690_44883.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -52615,7 +52615,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1690[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1691_60969.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1691_50527.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -52740,7 +52740,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1691[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1692_55249.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1692_47475.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -52850,7 +52850,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1692[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1693_7846.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1693_30838.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -53015,7 +53015,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1695[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1696_55081.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1696_12308.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -53063,7 +53063,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1696[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1697_48509.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1697_22570.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -53125,7 +53125,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1697[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1698_13894.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1698_60537.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -53185,7 +53185,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1698[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1699_46727.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1699_40367.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -53287,7 +53287,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1703[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1704_44113.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1704_1026.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -53390,7 +53390,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1704[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1705_17436.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1705_38429.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -53506,7 +53506,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1705[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1706_64157.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1706_30704.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -53620,7 +53620,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1706[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1707_8540.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1707_54241.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -53776,7 +53776,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1711[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1712_698.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1712_56891.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -53824,7 +53824,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1712[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1713_16562.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1713_32120.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -53893,7 +53893,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1713[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1714_47101.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1714_39485.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -53953,7 +53953,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1714[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1715_47193.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1715_13414.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -54062,7 +54062,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1719[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1720_5860.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1720_29914.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -54165,7 +54165,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1720[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1721_42315.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1721_26016.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -54288,7 +54288,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1721[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1722_8536.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1722_24648.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -54402,7 +54402,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1722[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=1 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=0 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1723_18252.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1723_57145.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -55013,7 +55013,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1791[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1792_22410.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1792_5122.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -55057,7 +55057,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1792[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1793_12138.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1793_58807.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -55114,7 +55114,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1793[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1794_24914.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1794_4556.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -55171,7 +55171,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1794[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1795_42211.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1795_21958.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -55239,7 +55239,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1795[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1796_48311.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1796_44447.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -55283,7 +55283,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1796[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1797_642.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1797_17826.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -55354,7 +55354,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1799[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1800_27308.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1800_65099.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -55439,7 +55439,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1800[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1801_24956.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1801_46111.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -55538,7 +55538,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1801[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1802_56189.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1802_19848.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -55623,7 +55623,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1802[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1803_3332.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1803_49535.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -55734,7 +55734,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1803[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1804_59691.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1804_53875.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -55838,7 +55838,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1804[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1805_37985.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1805_20704.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -55970,7 +55970,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1807[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1808_40465.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1808_23068.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -56021,7 +56021,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1808[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1809_32748.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1809_26566.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -56085,7 +56085,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1809[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1810_64261.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1810_7690.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -56148,7 +56148,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1810[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1811_20384.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1811_52057.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -56223,7 +56223,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1811[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1812_2172.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1812_35195.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -56306,7 +56306,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1812[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1813_8386.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1813_55745.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -56415,7 +56415,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1815[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1816_23232.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1816_12876.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -56500,7 +56500,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1816[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1817_49725.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1817_4208.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -56606,7 +56606,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1817[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1818_61885.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1818_62239.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -56691,7 +56691,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1818[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1819_48677.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1819_46747.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -56809,7 +56809,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1819[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1820_8604.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1820_224.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -56913,7 +56913,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1820[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=0
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1821_37137.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1821_24020.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -57743,7 +57743,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1919[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1920_6520.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1920_9746.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -57791,7 +57791,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1920[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1921_36561.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1921_63713.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -57853,7 +57853,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1921[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1922_51845.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1922_9012.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -57913,7 +57913,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1922[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1923_28164.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1923_52183.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -57987,7 +57987,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1923[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1924_33299.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1924_43909.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -58035,7 +58035,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1924[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1925_49963.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1925_3734.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -58111,7 +58111,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1927[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1928_40305.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1928_45679.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -58202,7 +58202,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1928[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1929_30166.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1929_26024.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -58308,7 +58308,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1929[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1930_30570.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1930_56843.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -58411,7 +58411,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1930[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1931_4422.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1931_62375.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -58529,7 +58529,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1931[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1932_11078.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1932_6100.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -58639,7 +58639,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1932[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=0 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1933_23660.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1933_22560.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -58778,7 +58778,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1935[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1936_10736.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1936_32046.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -58826,7 +58826,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1936[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1937_33641.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1937_5904.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -58895,7 +58895,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1937[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1938_586.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1938_32168.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -58955,7 +58955,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1938[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1939_61331.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1939_16144.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -59036,7 +59036,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1939[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1940_18004.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1940_58793.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -59084,7 +59084,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1940[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=0
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1941_20766.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1941_21060.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -59198,7 +59198,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1943[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1944_17160.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1944_2204.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -59289,7 +59289,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1944[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1945_63569.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1945_6398.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -59402,7 +59402,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1945[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1946_29110.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1946_22018.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -59505,7 +59505,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1946[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=1 /DBUMPMAP=0 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1947_2734.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1947_47951.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -59630,7 +59630,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1947[] =
 //   fxc /DBASETEXTURE=0 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1948_15800.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1948_33207.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //
@@ -59740,7 +59740,7 @@ static unsigned int pixelShader_vertexlit_and_unlit_generic_ps20_1948[] =
 //   fxc /DBASETEXTURE=1 /DDETAILTEXTURE=0 /DBUMPMAP=1 /DCUBEMAP=1
 //    /DDIFFUSELIGHTING=1 /DENVMAPMASK=0 /DBASEALPHAENVMAPMASK=0 /DSELFILLUM=1
 //    /DNORMALMAPALPHAENVMAPMASK=1 /DVERTEXCOLOR=1 /DVERTEXALPHA=1 /Dmain=main
-//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1949_672.h
+//    /Emain /Tps_2_0 /nologo /Fhout_fxctmp9_nv3x_ps20_1949_59763.h
 //    vertexlit_and_unlit_generic_ps20.fxc
 //
 //

@@ -16,9 +16,12 @@
 #include "ivp_mindist.hxx"
 #include "ivp_core.hxx"
 #include "ivp_friction.hxx"
+#include "ivp_listener_object.hxx"
+#include "ivp_listener_collision.hxx"
 
 #include "mathlib.h"
 #include "tier0/dbg.h"
+#include "utlvector.h"
 
 
 struct vphysics_save_cshadowcontroller_t;
@@ -42,12 +45,12 @@ void ComputePDControllerCoefficients( float *coefficientsOut, const float freque
 	// speed += (coefficientsOut[0] * (targetPos - currentPos) + coefficientsOut[1] * (targetSpeed - currentSpeed)) * dt
 }
 
-void ComputeController( IVP_U_Float_Point &currentSpeed, const IVP_U_Float_Point &delta, const IVP_U_Float_Point &maxSpeed, float scaleDelta, float damping )
+void ComputeController( IVP_U_Float_Point &currentSpeed, const IVP_U_Float_Point &delta, const IVP_U_Float_Point &maxSpeed, float scaleDelta, float damping, IVP_U_Float_Point *pOutImpulse )
 {
 	// scale by timestep
 	IVP_U_Float_Point acceleration;
 	acceleration.set_multiple( &delta, scaleDelta );
-	
+
 	if ( currentSpeed.quad_length() < 1e-6 )
 	{
 		currentSpeed.set_to_zero();
@@ -57,18 +60,82 @@ void ComputeController( IVP_U_Float_Point &currentSpeed, const IVP_U_Float_Point
 
 	for(int i=2; i>=0; i--)
 	{
-		if(IVP_Inline_Math::fabsd(acceleration.k[i]) < maxSpeed.k[i]) 
+		if(IVP_Inline_Math::fabsd(acceleration.k[i]) < maxSpeed.k[i])
 			continue;
-		
+
 		// clip force
 		acceleration.k[i] = (acceleration.k[i] < 0) ? -maxSpeed.k[i] : maxSpeed.k[i];
+	}
+
+	if ( pOutImpulse )
+	{
+		pOutImpulse->set( &acceleration );
 	}
 
 	currentSpeed.add( &acceleration );
 }
 
 
-class CPlayerController : public IVP_Controller_Independent, public IPhysicsPlayerController
+// Retail Source clamps the player's shadow push against every contact normal so the
+// player can never bury itself in a prop or ragdoll. MAX_LIST_NORMALS/CNormalList are
+// that clamp.
+const int MAX_LIST_NORMALS = 8;
+class CNormalList
+{
+public:
+	bool IsFull() { return m_Normals.Count() == MAX_LIST_NORMALS; }
+	void AddNormal( const Vector &normal )
+	{
+		if ( IsFull() )
+			return;
+
+		for ( int i = m_Normals.Count(); --i >= 0; )
+		{
+			if ( DotProduct( m_Normals[i], normal ) > 0.99f )
+				return;
+		}
+		m_Normals.AddToTail( normal );
+	}
+
+	// UNDONE: Handle the case better where we clamp to multiple planes
+	// and still have a projection, but don't exceed limitVel.  Currently that will stop.
+	Vector ClampVector( const Vector &inVector, float limitVel )
+	{
+		if ( m_Normals.Count() > 2 )
+		{
+			for ( int i = 0; i < m_Normals.Count(); i++ )
+			{
+				if ( DotProduct(inVector, m_Normals[i]) > 0 )
+				{
+					return vec3_origin;
+				}
+			}
+		}
+		else
+		{
+			if ( m_Normals.Count() == 2 )
+			{
+				Vector crease;
+				CrossProduct( m_Normals[0], m_Normals[1], crease );
+				float dot = DotProduct( inVector, crease );
+				return crease * dot;
+			}
+			else if ( m_Normals.Count() == 1 )
+			{
+				float dot = DotProduct( inVector, m_Normals[0] );
+				if ( dot > limitVel )
+				{
+					return inVector + m_Normals[0]*(limitVel - dot);
+				}
+			}
+		}
+		return inVector;
+	}
+private:
+	CUtlVector<Vector>	m_Normals;
+};
+
+class CPlayerController : public IVP_Controller_Independent, public IPhysicsPlayerController, public IVP_Listener_Object
 {
 public:
 	CPlayerController( CPhysicsObject *pObject );
@@ -76,17 +143,44 @@ public:
 
 	// ipion interfaces
     void do_simulation_controller( IVP_Event_Sim *es,IVP_U_Vector<IVP_Core> *cores);
-    virtual IVP_CONTROLLER_PRIORITY get_controller_priority() { return IVP_CP_MOTION; }
+    virtual IVP_CONTROLLER_PRIORITY get_controller_priority() { return (IVP_CONTROLLER_PRIORITY)(IVP_CP_MOTION+1); }
 
 	void SetObject( IPhysicsObject *pObject );
 	void SetEventHandler( IPhysicsPlayerControllerEvent *handler );
-	void Update( const Vector& position, const Vector& velocity, bool onground, IPhysicsObject *ground );
+	void Update( const Vector& position, const Vector& velocity, float secondsToArrival, bool onground, IPhysicsObject *ground );
 	void MaxSpeed( const Vector &velocity );
 	bool IsInContact( void );
 	virtual void GetControlVelocity( Vector &outVel )
 	{
 		ConvertPositionToHL( m_currentSpeed, outVel );
 	}
+
+	virtual void GetShadowVelocity( Vector *velocity );
+
+	virtual bool WasFrozen( void )
+	{
+		if ( !m_pObject )
+			return false;
+
+		IVP_Core *pCore = m_pObject->GetObject()->get_core();
+		return pCore->temporarily_unmovable ? true : false;
+	}
+
+	virtual void ForceTeleportToCurrentPosition( void )
+	{
+		m_forceTeleport = true;
+	}
+
+	virtual void SetPushMassLimit( float maxPushMass )	{ m_pushableMassLimit = maxPushMass; }
+	virtual void SetPushSpeedLimit( float maxPushSpeed ){ m_pushableSpeedLimit = maxPushSpeed; }
+	virtual float GetPushMassLimit( void )				{ return m_pushableMassLimit; }
+	virtual float GetPushSpeedLimit( void )				{ return m_pushableSpeedLimit; }
+
+	// IVP_Listener_Object - so m_pGround can never dangle
+	virtual void event_object_deleted( IVP_Event_Object * )	{ m_pGround = NULL; }
+	virtual void event_object_created( IVP_Event_Object * )	{}
+	virtual void event_object_revived( IVP_Event_Object * )	{}
+	virtual void event_object_frozen ( IVP_Event_Object * )	{}
 	int GetShadowPosition( Vector *position, QAngle *angles )
 	{
 		IVP_U_Matrix matrix;
@@ -114,33 +208,71 @@ private:
 	void AttachObject( void );
 	void DetachObject( void );
 	int TryTeleportObject( void );
+	void SetGround( CPhysicsObject *pGroundObject );
 
 	bool				m_enable;
 	bool				m_onground;
+	bool				m_forceTeleport;
+	bool				m_updatedSinceLast;
 	CPhysicsObject		*m_pObject;
+	CPhysicsObject		*m_pGround;		// cleared through the object listener, so safe to hold across frames
 	IVP_U_Float_Point	m_saveRot;
 
 	IPhysicsPlayerControllerEvent	*m_handler;
 	float				m_maxDeltaPosition;
 	float				m_dampFactor;
+	float				m_secondsToArrival;
+	float				m_pushableMassLimit;
+	float				m_pushableSpeedLimit;
 	IVP_U_Point			m_targetPosition;
+	IVP_U_Float_Point	m_groundPosition;
 	IVP_U_Float_Point	m_maxSpeed;
 	IVP_U_Float_Point	m_currentSpeed;
+	IVP_U_Float_Point	m_lastImpulse;
 };
 
 
 CPlayerController::CPlayerController( CPhysicsObject *pObject )
 {
 	m_pObject = pObject;
+	m_pGround = NULL;
 	m_handler = NULL;
 	m_maxDeltaPosition = ConvertDistanceToIVP( 24 );
 	m_dampFactor = 1.0f;
+	m_secondsToArrival = 0;
+	m_enable = false;
+	m_onground = false;
+	m_forceTeleport = false;
+	m_updatedSinceLast = false;
+	m_pushableMassLimit = VPHYSICS_MAX_MASS;
+	m_pushableSpeedLimit = 1e4f;
+	m_targetPosition.set_to_zero();
+	m_groundPosition.set_to_zero();
+	m_maxSpeed.set_to_zero();
+	m_currentSpeed.set_to_zero();
+	m_lastImpulse.set_to_zero();
 	AttachObject();
 }
 
 CPlayerController::~CPlayerController( void ) 
 {
 	DetachObject();
+}
+
+void CPlayerController::SetGround( CPhysicsObject *pGroundObject )
+{
+	if ( m_pGround != pGroundObject )
+	{
+		if ( m_pGround && m_pGround->GetObject() )
+		{
+			m_pGround->GetObject()->remove_listener_object( this );
+		}
+		m_pGround = pGroundObject;
+		if ( m_pGround && m_pGround->GetObject() )
+		{
+			m_pGround->GetObject()->add_listener_object( this );
+		}
+	}
 }
 
 void CPlayerController::AttachObject( void )
@@ -164,6 +296,7 @@ void CPlayerController::DetachObject( void )
 	pCore->calc_calc();
 	m_pObject = NULL;
 	pivp->get_environment()->get_controller_manager()->remove_controller_from_core( this, pCore );
+	SetGround( NULL );
 }
 
 void CPlayerController::SetObject( IPhysicsObject *pObject )
@@ -179,7 +312,7 @@ void CPlayerController::SetObject( IPhysicsObject *pObject )
 
 int CPlayerController::TryTeleportObject( void )
 {
-	if ( m_handler )
+	if ( m_handler && !m_forceTeleport )
 	{
 		Vector hlPosition;
 		ConvertPositionToHL( m_targetPosition, hlPosition );
@@ -204,11 +337,15 @@ int CPlayerController::TryTeleportObject( void )
 		pivp->beam_object_to_new_position( &targetOrientation, &m_targetPosition, IVP_TRUE );
 	}
 
+	m_forceTeleport = false;
 	return 1;
 }
 
 void CPlayerController::StepUp( float height )
 {
+	if ( height == 0.0f )
+		return;
+
 	Vector step( 0, 0, height );
 
 	IVP_Real_Object *pIVP = m_pObject->GetObject();
@@ -238,9 +375,22 @@ void CPlayerController::do_simulation_controller( IVP_Event_Sim *es,IVP_U_Vector
 	const IVP_U_Matrix *m_world_f_core = pCore->get_m_world_f_core_PSI();
 	const IVP_U_Point *cur_pos_ws = m_world_f_core->get_position();
 
+	IVP_U_Float_Point baseVelocity;
+	baseVelocity.set_to_zero();
+
 	// ---------------------------------------------------------
 	// Translation
 	// ---------------------------------------------------------
+
+	// Standing on a moving physics object: work in that object's frame so the player
+	// rides it instead of being dragged through it.
+	if ( m_pGround && m_pGround->GetObject() )
+	{
+		const IVP_U_Matrix *pMatrix = m_pGround->GetObject()->get_core()->get_m_world_f_core_PSI();
+		pMatrix->vmult4( &m_groundPosition, &m_targetPosition );
+		m_pGround->GetObject()->get_core()->get_surface_speed( &m_groundPosition, &baseVelocity );
+		pCore->speed.subtract( &baseVelocity );
+	}
 
 	IVP_U_Float_Point delta_position;  delta_position.subtract( &m_targetPosition, cur_pos_ws);
 
@@ -257,22 +407,152 @@ void CPlayerController::do_simulation_controller( IVP_Event_Sim *es,IVP_U_Vector
 
 	// UNDONE: This is totally bogus!  Measure error using last known estimate
 	// not current position!
-	if ( qdist > m_maxDeltaPosition * m_maxDeltaPosition )
+	if ( m_forceTeleport || qdist > m_maxDeltaPosition * m_maxDeltaPosition )
 	{
 		if ( TryTeleportObject() )
 			return;
 	}
 
 	// float to allow stepping
+	const IVP_U_Point *pgrav = es->environment->get_gravity();
+	IVP_U_Float_Point gravSpeed;
+	gravSpeed.set_multiple( pgrav, es->delta_time );
 	if ( m_onground )
 	{
-		const IVP_U_Point *pgrav = es->environment->get_gravity();
-		IVP_U_Float_Point gravSpeed;
-		gravSpeed.set_multiple( pgrav, es->delta_time );
 		pCore->speed.subtract( &gravSpeed );
 	}
 
-	ComputeController( pCore->speed, delta_position, m_maxSpeed, psiScale / es->delta_time, m_dampFactor );
+	float fraction = 1.0f;
+	if ( m_secondsToArrival > 0 )
+	{
+		fraction = es->delta_time / m_secondsToArrival;
+		if ( fraction > 1 )
+		{
+			fraction = 1;
+		}
+	}
+
+	if ( !m_updatedSinceLast )
+	{
+		// We haven't received an update from the game code since the last controller
+		// step, so the position error hasn't had our own motion folded back into it and
+		// is exaggerated. Cap this tick's impulse to the last known good one.
+		float len = m_lastImpulse.real_length();
+		IVP_U_Float_Point tmp;
+		tmp.set( len, len, len );
+		ComputeController( pCore->speed, delta_position, tmp, fraction * psiScale / es->delta_time, m_dampFactor, NULL );
+	}
+	else
+	{
+		ComputeController( pCore->speed, delta_position, m_maxSpeed, fraction * psiScale / es->delta_time, m_dampFactor, &m_lastImpulse );
+	}
+	pCore->speed.add( &baseVelocity );
+	m_updatedSinceLast = false;
+
+	// Clamp the impulse we just applied against everything we're touching. Without this
+	// the controller keeps driving the shadow into props and ragdolls until the solver
+	// can no longer separate them, which is what leaves the player stuck on objects.
+	Vector lastImpulseHL;
+	ConvertPositionToHL( pCore->speed, lastImpulseHL );
+
+	bool bGround = false;
+	float invMass = pCore->get_inv_mass();
+	float limitVel = m_pushableSpeedLimit;
+	CNormalList normalList;
+
+	if ( pivp->flags.collision_detection_enabled )
+	{
+		extern IVP_Real_Object *GetOppositeSynapseObject( IVP_Synapse_Friction *pfriction );
+
+		for ( IVP_Synapse_Friction *pfriction = pivp->get_first_friction_synapse(); pfriction; pfriction = pfriction->get_next() )
+		{
+			IVP_Contact_Point *pContact = pfriction->get_contact_point();
+			if ( !pContact )
+				continue;
+
+			// The stored normal points from synapse(0)'s object to synapse(1)'s object.
+			int synapseIndex = ( pfriction == pContact->get_synapse(0) ) ? 0 : 1;
+			IVP_U_Float_Point normalIVP;
+			IVP_Contact_Point_API::get_surface_normal_ws( pContact, &normalIVP );
+
+			Vector normal;
+			ConvertDirectionToHL( normalIVP, normal );
+			if ( synapseIndex )
+			{
+				normal = -normal;
+			}
+			if ( VectorNormalize( normal ) <= 0.0f )
+				continue;
+
+			// The normal now points from the shadow towards whatever it's touching, so
+			// the thing we're standing on reads as z ~ -1.
+			if ( normal.z < -0.7f )
+			{
+				bGround = true;
+			}
+
+			// remove this when clamp works better
+			if ( normal.z > -0.99f )
+			{
+				IVP_Real_Object *pOtherIVP = GetOppositeSynapseObject( pfriction );
+				IPhysicsObject *pOther = pOtherIVP ? static_cast<IPhysicsObject *>( pOtherIVP->client_data ) : NULL;
+				if ( !pOther || !pOther->IsMoveable() || pOther->GetMass() > m_pushableMassLimit )
+				{
+					limitVel = 0.0f;
+				}
+
+				float pushSpeed = DotProduct( lastImpulseHL, normal );
+				float contactVel = IVP_Contact_Point_API::get_vert_force( pContact ) * invMass;
+				if ( pushSpeed + contactVel > limitVel )
+				{
+					normalList.AddNormal( normal );
+				}
+			}
+		}
+	}
+
+	Vector clamped = normalList.ClampVector( lastImpulseHL, limitVel );
+	Vector limit = clamped - lastImpulseHL;
+	IVP_U_Float_Point limitIVP;
+	ConvertPositionToIVP( limit, limitIVP );
+	pCore->speed.add( &limitIVP );
+	m_lastImpulse.add( &limitIVP );
+
+	if ( bGround )
+	{
+		float gravDt = gravSpeed.real_length();
+		// moving down?  Press down with full gravity and no more
+		if ( m_lastImpulse.k[1] >= 0 )
+		{
+			float delta = gravDt - m_lastImpulse.k[1];
+			pCore->speed.k[1] += delta;
+			m_lastImpulse.k[1] += delta;
+		}
+	}
+
+	// if we have time left, subtract it off
+	m_secondsToArrival -= es->delta_time;
+	if ( m_secondsToArrival < 0 )
+	{
+		m_secondsToArrival = 0;
+	}
+}
+
+void CPlayerController::GetShadowVelocity( Vector *velocity )
+{
+	if ( !velocity )
+		return;
+
+	IVP_Core *core = m_pObject->GetObject()->get_core();
+	IVP_U_Float_Point speed;
+	speed.add( &core->speed, &core->speed_change );
+	if ( m_pGround && m_pGround->GetObject() )
+	{
+		IVP_U_Float_Point baseVelocity;
+		m_pGround->GetObject()->get_core()->get_surface_speed( &m_groundPosition, &baseVelocity );
+		speed.subtract( &baseVelocity );
+	}
+	ConvertPositionToHL( speed, *velocity );
 }
 
 void CPlayerController::SetEventHandler( IPhysicsPlayerControllerEvent *handler ) 
@@ -280,14 +560,16 @@ void CPlayerController::SetEventHandler( IPhysicsPlayerControllerEvent *handler 
 	m_handler = handler;
 }
 
-void CPlayerController::Update( const Vector& position, const Vector& velocity, bool onground, IPhysicsObject *ground )
+void CPlayerController::Update( const Vector& position, const Vector& velocity, float secondsToArrival, bool onground, IPhysicsObject *ground )
 {
 	IVP_U_Point	targetPositionIVP;
 	IVP_U_Float_Point targetSpeedIVP;
 
 	ConvertPositionToIVP( position, targetPositionIVP );
 	ConvertPositionToIVP( velocity, targetSpeedIVP );
-	
+
+	m_updatedSinceLast = true;
+
 	// if the object hasn't moved, abort
 	if ( targetSpeedIVP.quad_distance_to( &m_currentSpeed ) < 1e-6 )
 	{
@@ -299,6 +581,7 @@ void CPlayerController::Update( const Vector& position, const Vector& velocity, 
 
 	m_targetPosition = targetPositionIVP;
 	m_currentSpeed = targetSpeedIVP;
+	m_secondsToArrival = secondsToArrival < 0 ? 0 : secondsToArrival;
 
 	IVP_Real_Object *pivp = m_pObject->GetObject();
 	IVP_Core *pCore = pivp->get_core();
@@ -319,6 +602,13 @@ void CPlayerController::Update( const Vector& position, const Vector& velocity, 
 	else
 	{
 		MaxSpeed( velocity );
+	}
+
+	SetGround( static_cast<CPhysicsObject *>( ground ) );
+	if ( m_pGround && m_pGround->GetObject() )
+	{
+		const IVP_U_Matrix *pMatrix = m_pGround->GetObject()->get_core()->get_m_world_f_core_PSI();
+		pMatrix->vimult4( &m_targetPosition, &m_groundPosition );
 	}
 }
 

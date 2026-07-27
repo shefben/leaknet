@@ -462,19 +462,19 @@ void RegisterLuaPhysicsFunctions()
 	CLuaIntegration::RegisterFunction("_PhysIsAsleep", Lua_PhysIsAsleep, "Check if asleep. Syntax: <entid>");
 
 	// Trace functions
-	CLuaIntegration::RegisterFunction("_TraceSetCollisionGroup", Lua_TraceSetCollisionGroup, "Set trace collision group. Syntax: <group>");
-	CLuaIntegration::RegisterFunction("_TraceSetMask", Lua_TraceSetMask, "Set trace mask. Syntax: <mask>");
-	CLuaIntegration::RegisterFunction("_TraceLine", Lua_TraceLine, "Trace a line. Syntax: <x1> <y1> <z1> <x2> <y2> <z2> [ignoreent]");
-	CLuaIntegration::RegisterFunction("_TraceEndPos", Lua_TraceEndPos, "Get trace end position.");
-	CLuaIntegration::RegisterFunction("_TraceFraction", Lua_TraceFraction, "Get trace fraction (0-1).");
-	CLuaIntegration::RegisterFunction("_TraceHitWorld", Lua_TraceHitWorld, "Check if trace hit world.");
-	CLuaIntegration::RegisterFunction("_TraceDidHitHitbox", Lua_TraceDidHitHitbox, "Check if trace hit a hitbox.");
-	CLuaIntegration::RegisterFunction("_TraceAttack", Lua_TraceAttack, "Apply the last trace as an attack.");
-	CLuaIntegration::RegisterFunction("_TraceHitNonWorld", Lua_TraceHitNonWorld, "Check if trace hit entity.");
-	CLuaIntegration::RegisterFunction("_TraceHit", Lua_TraceHit, "Check if trace hit anything.");
-	CLuaIntegration::RegisterFunction("_TraceGetEnt", Lua_TraceGetEnt, "Get entity hit by trace.");
-	CLuaIntegration::RegisterFunction("_TraceGetSurfaceNormal", Lua_TraceGetSurfaceNormal, "Get surface normal from trace.");
-	CLuaIntegration::RegisterFunction("_TraceDidHitSky", Lua_TraceDidHitSky, "Check if trace hit sky.");
-	CLuaIntegration::RegisterFunction("_TraceDidHitWater", Lua_TraceDidHitWater, "Check if trace hit water.");
-	CLuaIntegration::RegisterFunction("_TraceGetTexture", Lua_TraceGetTexture, "Get texture name from trace.");
+	CLuaIntegration::RegisterFunction("_TraceSetCollisionGroup", Lua_TraceSetCollisionGroup, "Sets the collision group for the next trace to use. Syntax <group>");
+	CLuaIntegration::RegisterFunction("_TraceSetMask", Lua_TraceSetMask, "Sets the MASK_ to use for the next trace. Syntax <group>");
+	CLuaIntegration::RegisterFunction("_TraceLine", Lua_TraceLine, "Traces a line. Syntax <vector start> <vector direction> <length> <ignore (optional)>");
+	CLuaIntegration::RegisterFunction("_TraceEndPos", Lua_TraceEndPos, "Return the endpos from the last trace");
+	CLuaIntegration::RegisterFunction("_TraceFraction", Lua_TraceFraction, "Return the fraction of trace completed");
+	CLuaIntegration::RegisterFunction("_TraceHitWorld", Lua_TraceHitWorld, "Return the true if the last trace hit the world");
+	CLuaIntegration::RegisterFunction("_TraceDidHitHitbox", Lua_TraceDidHitHitbox, "Returns true if last hit was some kind of hitbox");
+	CLuaIntegration::RegisterFunction("_TraceAttack", Lua_TraceAttack, "Attack using the last trace. Syntax: <victim> <inflictor ent> <attacker ent> <amount>");
+	CLuaIntegration::RegisterFunction("_TraceHitNonWorld", Lua_TraceHitNonWorld, "Return the true if the last trace hit non world");
+	CLuaIntegration::RegisterFunction("_TraceHit", Lua_TraceHit, "Return the true if the last trace hit something");
+	CLuaIntegration::RegisterFunction("_TraceGetEnt", Lua_TraceGetEnt, "Return the entity that the last trace hit");
+	CLuaIntegration::RegisterFunction("_TraceGetSurfaceNormal", Lua_TraceGetSurfaceNormal, "Return the normal of the surface that the trace hit");
+	CLuaIntegration::RegisterFunction("_TraceDidHitSky", Lua_TraceDidHitSky, "Returns true if last hit was the sky");
+	CLuaIntegration::RegisterFunction("_TraceDidHitWater", Lua_TraceDidHitWater, "Returns true if we hit water");
+	CLuaIntegration::RegisterFunction("_TraceGetTexture", Lua_TraceGetTexture, "Returns the name of the texture that we hit");
 }

@@ -1100,9 +1100,17 @@ void CWeaponGravityGun::SoundUpdate( void )
 			// attenutate the movement sounds over 200 units of movement
 			float distance = UTIL_LineFraction( m_movementLength, 0, 200, 1.0 );
 
-			// blend the "mass" sounds between 50 and 500 kg
-			IPhysicsObject *pPhys = m_hObject->VPhysicsGetObject();
-			
+			// blend the "mass" sounds between 50 and 500 kg. Use the object we
+			// actually grabbed - for a ragdoll that's one limb, and the root
+			// object's mass isn't representative of what's being carried.
+			IPhysicsObject *pPhys = m_gravCallback.m_attachedPhys;
+			if ( !pPhys )
+			{
+				pPhys = m_hObject->VPhysicsGetObject();
+			}
+			if ( !pPhys )
+				break;
+
 			float fade = UTIL_LineFraction( pPhys->GetMass(), 50, 500, 1.0 );
 
 			EmitSound( filter, GetOwner()->entindex(), CHAN_STATIC, pShootSounds[SI_LIGHTOBJECT], 

@@ -1953,118 +1953,109 @@ int Lua_WeaponScriptedAssign(lua_State *L)
 void RegisterLuaPlayerFunctions()
 {
 	// Player control
-	CLuaIntegration::RegisterFunction("_PlayerFreeze", Lua_PlayerFreeze, "Freeze/unfreeze player. Syntax: <playerid> <freeze bool>");
-	CLuaIntegration::RegisterFunction("_PlayerSetSprint", Lua_PlayerSetSprint_New, "Enable/disable sprint. Syntax: <playerid> <bool>");
-	CLuaIntegration::RegisterFunction("_PlayerKill", Lua_PlayerKill, "Kill player. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_PlayerRespawn", Lua_PlayerRespawn, "Respawn player. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_PlayerSilentKill", Lua_PlayerSilentKill, "Kill player silently. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerFreeze", Lua_PlayerFreeze, "Freeze the specified player. Syntax: <playerid> <freeze bool>");
+	CLuaIntegration::RegisterFunction("_PlayerSetSprint", Lua_PlayerSetSprint_New, "Enable/Disable sprint for player. Syntax: <playerid> <freeze bool>");
+	CLuaIntegration::RegisterFunction("_PlayerKill", Lua_PlayerKill, "Kill the specified player. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerRespawn", Lua_PlayerRespawn, "Force player to re-spawn. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerSilentKill", Lua_PlayerSilentKill, "Silently kill a player. Syntax: <playerid> <respawn time> <bool Dissolve>");
 
 	// Player properties
-	CLuaIntegration::RegisterFunction("_PlayerGetShootPos", Lua_PlayerGetShootPos, "Get player eye position vector. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_PlayerGetShootAng", Lua_PlayerGetShootAng, "Get player shoot forward vector. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_PlayerGetActiveWeapon", Lua_PlayerGetActiveWeapon, "Get player's active weapon. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_PlayerSetHealth", Lua_PlayerSetHealth, "Set player health. Syntax: <playerid> <health>");
-	CLuaIntegration::RegisterFunction("_PlayerSetArmor", Lua_PlayerSetArmor, "Set player armor. Syntax: <playerid> <armor>");
-	CLuaIntegration::RegisterFunction("_PlayerSetMaxSpeed", Lua_PlayerSetMaxSpeed, "Set player max speed. Syntax: <playerid> <speed>");
-	CLuaIntegration::RegisterFunction("_PlayerSetModel", Lua_PlayerSetModel_New, "Set player model. Syntax: <playerid> <modelpath>");
-	CLuaIntegration::RegisterFunction("_PlayerSetFOV", Lua_PlayerSetFOV, "Set player FOV. Syntax: <playerid> <fov> [rate]");
-	CLuaIntegration::RegisterFunction("_PlayerInfo", Lua_PlayerInfo, "Get player info. Syntax: <playerid> [field]");
-	CLuaIntegration::RegisterFunction("_PlayerIsKeyDown", Lua_PlayerIsKeyDown, "Check if key pressed. Syntax: <playerid> <key>");
-	CLuaIntegration::RegisterFunction("_PlayerStopZooming", Lua_PlayerStopZooming, "Stop zoom effect. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerGetShootPos", Lua_PlayerGetShootPos, "Returns the vector of the player's shoot position. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerGetShootAng", Lua_PlayerGetShootAng, "Returns the forward vector of the player's shoot angle. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerGetActiveWeapon", Lua_PlayerGetActiveWeapon, "Returns the player's active weapon id. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerSetHealth", Lua_PlayerSetHealth, "Changes a player's health. Syntax: <playerid> <newhealth> ");
+	CLuaIntegration::RegisterFunction("_PlayerSetArmor", Lua_PlayerSetArmor, "Changes a player's armour. Syntax: <playerid> <newarmor> ");
+	CLuaIntegration::RegisterFunction("_PlayerSetMaxSpeed", Lua_PlayerSetMaxSpeed, "Changes a player's max speed. Syntax: <playerid> <speed> ");
+	CLuaIntegration::RegisterFunction("_PlayerSetModel", Lua_PlayerSetModel_New, "Changes a player's model. Syntax: <playerid> <model> ");
+	CLuaIntegration::RegisterFunction("_PlayerSetFOV", Lua_PlayerSetFOV, "Syntax: <playerid> <fov> <time>");
+	CLuaIntegration::RegisterFunction("_PlayerInfo", Lua_PlayerInfo, "Returns info about a specific player (check 'connected' first!). Syntax: <playerid> <request> ");
+	CLuaIntegration::RegisterFunction("_PlayerIsKeyDown", Lua_PlayerIsKeyDown, "Check whether specified key is pressed. Syntax: <playerid> <in_key>");
+	CLuaIntegration::RegisterFunction("_PlayerStopZooming", Lua_PlayerStopZooming, "Syntax: <playerid>");
 
 	// Weapons/Items
-	CLuaIntegration::RegisterFunction("_PlayerGiveAmmo", Lua_PlayerGiveAmmo_New, "Give ammo to player. Syntax: <playerid> <amount> <ammotype> [playsounds]");
-	CLuaIntegration::RegisterFunction("_PlayerGiveItem", Lua_PlayerGiveItem, "Give weapon to player. Syntax: <playerid> <weaponclass>");
-	CLuaIntegration::RegisterFunction("_PlayerGiveSWEP", Lua_PlayerGiveSWEP, "Give SWEP to player. Syntax: <playerid> <swepclass>");
-	CLuaIntegration::RegisterFunction("_PlayerRemoveAllWeapons", Lua_PlayerRemoveAllWeapons, "Remove all weapons. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_PlayerRemoveWeapon", Lua_PlayerRemoveWeapon, "Remove specific weapon. Syntax: <playerid> <weaponclass>");
-	CLuaIntegration::RegisterFunction("_PlayerRemoveAllAmmo", Lua_PlayerRemoveAllAmmo, "Remove all ammo. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_PlayerSelectWeapon", Lua_PlayerSelectWeapon, "Select weapon. Syntax: <playerid> <weaponclass>");
-	CLuaIntegration::RegisterFunction("_PlayerHolsterWeapon", Lua_PlayerHolsterWeapon, "Holster current weapon. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerGiveAmmo", Lua_PlayerGiveAmmo_New, "Give specified player ammo. Syntax: <playerid> <num amount> <string ammotype> <bool playsounds>");
+	CLuaIntegration::RegisterFunction("_PlayerGiveItem", Lua_PlayerGiveItem, "Give player named item. Syntax: <playerid> <item> ");
+	CLuaIntegration::RegisterFunction("_PlayerGiveSWEP", Lua_PlayerGiveSWEP, "Give player scripted weapon. Syntax: <playerid> <weapon script> ");
+	CLuaIntegration::RegisterFunction("_PlayerRemoveAllWeapons", Lua_PlayerRemoveAllWeapons, "Strip all of a player's weapons. Syntax: <playerid> ");
+	CLuaIntegration::RegisterFunction("_PlayerRemoveWeapon", Lua_PlayerRemoveWeapon, "Strip a specific weapon. Syntax: <playerid> <weaponname> ");
+	CLuaIntegration::RegisterFunction("_PlayerRemoveAllAmmo", Lua_PlayerRemoveAllAmmo, "Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerSelectWeapon", Lua_PlayerSelectWeapon, "Select weapon. Syntax: <playerid> <weapon name>");
+	CLuaIntegration::RegisterFunction("_PlayerHolsterWeapon", Lua_PlayerHolsterWeapon, "Syntax: <playerid>");
 
 	// Spectator
-	CLuaIntegration::RegisterFunction("_PlayerSpectatorStart", Lua_PlayerSpectatorStart, "Start spectating. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_PlayerSpectatorTarget", Lua_PlayerSpectatorTarget, "Set spectator target. Syntax: <playerid> <targetid>");
-	CLuaIntegration::RegisterFunction("_PlayerSetChaseCamDistance", Lua_PlayerSetChaseCamDistance, "Set chase cam distance. Syntax: <playerid> <distance>");
+	CLuaIntegration::RegisterFunction("_PlayerSpectatorStart", Lua_PlayerSpectatorStart, "Stop spectating mode. Syntax: <playerid> <mode>");
+	CLuaIntegration::RegisterFunction("_PlayerSpectatorTarget", Lua_PlayerSpectatorTarget, "Set Spectator target for player. Syntax: <playerid> <target>");
+	CLuaIntegration::RegisterFunction("_PlayerSetChaseCamDistance", Lua_PlayerSetChaseCamDistance, "Syntax: <playerid> <distance>");
 
 	// UI
-	CLuaIntegration::RegisterFunction("_PlayerShowScoreboard", Lua_PlayerShowScoreboard, "Show scoreboard. Syntax: <playerid> [show]");
-	CLuaIntegration::RegisterFunction("_PlayerAllowDecalPaint", Lua_PlayerAllowDecalPaint, "Allow decal paint. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerShowScoreboard", Lua_PlayerShowScoreboard, "Shows the scoreboard on the specified players screen. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerAllowDecalPaint", Lua_PlayerAllowDecalPaint, "Allow the player to spraypaint now rather than waiting the 30 or so seconds. Syntax: <playerid> ");
 
 	// Teams/Scoring
-	CLuaIntegration::RegisterFunction("_PlayerChangeTeam", Lua_PlayerChangeTeam, "Change player team. Syntax: <playerid> <teamnum>");
-	CLuaIntegration::RegisterFunction("_PlayerAddScore", Lua_PlayerAddScore, "Add to player score. Syntax: <playerid> <score>");
-	CLuaIntegration::RegisterFunction("_PlayerSetScore", Lua_PlayerSetScore, "Set player score. Syntax: <playerid> <score>");
-	CLuaIntegration::RegisterFunction("_PlayerAddDeath", Lua_PlayerAddDeath, "Add to death count. Syntax: <playerid> [deaths]");
+	CLuaIntegration::RegisterFunction("_PlayerChangeTeam", Lua_PlayerChangeTeam, "Changes a player's team. Syntax: <playerid> <teamid> ");
+	CLuaIntegration::RegisterFunction("_PlayerAddScore", Lua_PlayerAddScore, "Add to players score (can be minus). Syntax: <playerid> <increment> ");
+	CLuaIntegration::RegisterFunction("_PlayerSetScore", Lua_PlayerSetScore, "Sets to players score. Syntax: <playerid> <score> ");
+	CLuaIntegration::RegisterFunction("_PlayerAddDeath", Lua_PlayerAddDeath, "Add to players deaths score (can be minus). Syntax: <playerid> <increment> ");
 
 	// Team functions
-	CLuaIntegration::RegisterFunction("_TeamAddScore", Lua_TeamAddScore, "Add to team score. Syntax: <teamnum> <score>");
-	CLuaIntegration::RegisterFunction("_TeamSetScore", Lua_TeamSetScore, "Set team score. Syntax: <teamnum> <score>");
-	CLuaIntegration::RegisterFunction("_TeamNumPlayers", Lua_TeamNumPlayers, "Get team player count. Syntax: <teamnum>");
-	CLuaIntegration::RegisterFunction("_TeamScore", Lua_TeamScore, "Get team score. Syntax: <teamnum>");
-	CLuaIntegration::RegisterFunction("_TeamCount", Lua_TeamCount, "Get number of teams.");
-	CLuaIntegration::RegisterFunction("_TeamSetName", Lua_TeamSetName, "Set team name. Syntax: <teamnum> <name>");
+	CLuaIntegration::RegisterFunction("_TeamAddScore", Lua_TeamAddScore, "Add score for a team. Syntax: <teamid> <increment> ");
+	CLuaIntegration::RegisterFunction("_TeamSetScore", Lua_TeamSetScore, "Set score for a team. Syntax: <teamid> <score> ");
+	CLuaIntegration::RegisterFunction("_TeamNumPlayers", Lua_TeamNumPlayers, "Get the number of players on a team.. Syntax: <teamid>");
+	CLuaIntegration::RegisterFunction("_TeamScore", Lua_TeamScore, "Returns the total team score. Syntax: <teamid>");
+	CLuaIntegration::RegisterFunction("_TeamCount", Lua_TeamCount, "Returns the number of teams");
+	CLuaIntegration::RegisterFunction("_TeamSetName", Lua_TeamSetName, "Sets the name of the team. Syntax: <teamid> <new name>");
 
 	// Game info
-	CLuaIntegration::RegisterFunction("_MaxPlayers", Lua_MaxPlayers, "Get max players.");
-	CLuaIntegration::RegisterFunction("_CurTime", Lua_CurTime, "Get current server time.");
+	CLuaIntegration::RegisterFunction("_MaxPlayers", Lua_MaxPlayers, "Returns the max players in the server.");
+	CLuaIntegration::RegisterFunction("_CurTime", Lua_CurTime, "Returns the current time in seconds.");
 
 	// SWEP functions
 	CLuaIntegration::RegisterFunction("_SpawnSWEP", Lua_SpawnSWEP, "Spawn SWEP. Syntax: <swepclass> <x> <y> <z>");
-	CLuaIntegration::RegisterFunction("_SWEPUpdateVariables", Lua_SWEPUpdateVariables, "Update SWEP variables. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_SWEPUseAmmo", Lua_SWEPUseAmmo, "Use SWEP ammo. Syntax: <weaponid> <slot> [amount]");
-	CLuaIntegration::RegisterFunction("_SWEPRunString", Lua_SWEPRunString, "Run Lua for SWEP compatibility. Syntax: <weaponid> <code>");
-	CLuaIntegration::RegisterFunction("_SWEPSetSound", Lua_WeaponSetSound, "Set SWEP sound. Syntax: <weaponid> <event> <sound>");
-	CLuaIntegration::RegisterFunction("_WeaponSetModel", Lua_WeaponSetModel, "Set weapon models. Syntax: <weaponid> <viewmodel> [worldmodel]");
-	CLuaIntegration::RegisterFunction("_WeaponSetSlot", Lua_WeaponSetSlot, "Set weapon slot. Syntax: <weaponid> <slot> [position]");
-	CLuaIntegration::RegisterFunction("_WeaponSetSound", Lua_WeaponSetSound, "Set weapon sound. Syntax: <weaponid> <event> <sound>");
-	CLuaIntegration::RegisterFunction("_WeaponSetFOV", Lua_WeaponSetFOV, "Set weapon FOV metadata. Syntax: <weaponid> <fov>");
-	CLuaIntegration::RegisterFunction("_WeaponFlipHands", Lua_WeaponFlipHands, "Set weapon hand flip metadata. Syntax: <weaponid> <flip>");
-	CLuaIntegration::RegisterFunction("_WeaponSetDamage", Lua_WeaponSetDamage, "Set weapon damage metadata. Syntax: <weaponid> <damage> [secondary]");
-	CLuaIntegration::RegisterFunction("_WeaponSetup", Lua_WeaponSetup, "Apply weapon setup from Lua getters. Syntax: <weaponid>");
+	CLuaIntegration::RegisterFunction("_SWEPUpdateVariables", Lua_SWEPUpdateVariables, "Re-reads all the 'fetch' variables. You should call this if you have changed the accuracy etc.. Syntax: <weapon index>");
+	CLuaIntegration::RegisterFunction("_SWEPUseAmmo", Lua_SWEPUseAmmo, "Takes ammo from SWEP gun. Syntax: <weapon index> <clip# [0|1]> <amount>");
+	CLuaIntegration::RegisterFunction("_SWEPRunString", Lua_SWEPRunString, "Runs a LUA string in the weapon's LUA instance Syntax: <weapon index> <string>");
+	CLuaIntegration::RegisterFunction("_SWEPSetSound", Lua_WeaponSetSound, "Sets SWEP's sound. Syntax: <weapon index> <action> <sound>");
+	CLuaIntegration::RegisterFunction("_WeaponSetModel", Lua_WeaponSetModel, "Sets weapon model. Syntax: <weapon name> <model type> <model name>");
+	CLuaIntegration::RegisterFunction("_WeaponSetSlot", Lua_WeaponSetSlot, "Sets weapon slot. Syntax: <weapon name> <slot> <pos>");
+	CLuaIntegration::RegisterFunction("_WeaponSetSound", Lua_WeaponSetSound, "Sets weapon sound. Syntax: <weapon name> <action> <sound>");
+	CLuaIntegration::RegisterFunction("_WeaponSetFOV", Lua_WeaponSetFOV, "Sets a weapon's draw FOV. Syntax: <weapon name> <fov>");
+	CLuaIntegration::RegisterFunction("_WeaponFlipHands", Lua_WeaponFlipHands, "Flips a weapon's hands. Syntax: <weapon name> <bool>");
+	CLuaIntegration::RegisterFunction("_WeaponSetDamage", Lua_WeaponSetDamage, "Sets the damage that a bullet from this gun does. Syntax: <weapon name> <damage>");
+	CLuaIntegration::RegisterFunction("_WeaponSetup", Lua_WeaponSetup, "Sets anim prefix . Syntax: <weapon name> <animprefix> <clipsize1> <clipsize2> <defaultammo1> <defaultammo2> <primaryammo> <secondaryammo>");
 
-	lua_State *pLuaState = CGModLuaSystem::GetLuaState();
-	if (pLuaState)
-	{
-		lua_newtable(pLuaState);
-		lua_pushcfunction(pLuaState, Lua_swep_GetClipAmmo);
-		lua_setfield(pLuaState, -2, "GetClipAmmo");
-		lua_pushcfunction(pLuaState, Lua_swep_SetClipAmmo);
-		lua_setfield(pLuaState, -2, "SetClipAmmo");
-		lua_pushcfunction(pLuaState, Lua_swep_GetDeathIcon);
-		lua_setfield(pLuaState, -2, "GetDeathIcon");
-		lua_setglobal(pLuaState, "_swep");
-	}
+	CLuaIntegration::RegisterTableFunction("_swep", "GetClipAmmo", Lua_swep_GetClipAmmo, "Get amount of ammo in a clip. Syntax: <weapon index> <clip# [0|1]>");
+	CLuaIntegration::RegisterTableFunction("_swep", "SetClipAmmo", Lua_swep_SetClipAmmo, "Get amount of ammo in a clip. Syntax: <weapon index> <clip# [0|1]> <clip>");
+	CLuaIntegration::RegisterTableFunction("_swep", "GetDeathIcon", Lua_swep_GetDeathIcon, "Gets death icon name. Syntax: <weapon index>");
 
 	// Additional GMod 9 compatibility functions
-	CLuaIntegration::RegisterFunction("_PlayerGod", Lua_PlayerGod, "Toggle god mode. Syntax: <playerid> [enable]");
-	CLuaIntegration::RegisterFunction("_PlayerHasWeapon", Lua_PlayerHasWeapon, "Check if player has weapon. Syntax: <playerid> <weaponclass>");
-	CLuaIntegration::RegisterFunction("_PlayerIsCrouching", Lua_PlayerIsCrouching, "Check if crouching. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_PlayerSetDrawViewModel", Lua_PlayerSetDrawViewModel, "Show/hide viewmodel. Syntax: <playerid> [draw]");
-	CLuaIntegration::RegisterFunction("_PlayerSetFlashlight", Lua_PlayerSetFlashlight, "Toggle flashlight. Syntax: <playerid> [enable]");
+	CLuaIntegration::RegisterFunction("_PlayerGod", Lua_PlayerGod, "Give a player God Mode. Syntax: <player> <bool>");
+	CLuaIntegration::RegisterFunction("_PlayerHasWeapon", Lua_PlayerHasWeapon, "Returns true if the player has this weapon. Syntax: <player> <weapon name>");
+	CLuaIntegration::RegisterFunction("_PlayerIsCrouching", Lua_PlayerIsCrouching, "Returns true if a player is crouching. Syntax: <player>");
+	CLuaIntegration::RegisterFunction("_PlayerSetDrawViewModel", Lua_PlayerSetDrawViewModel, "Sets whether to draw the player's view model. Syntax: <playerid> <bool>");
+	CLuaIntegration::RegisterFunction("_PlayerSetFlashlight", Lua_PlayerSetFlashlight, "Syntax: <playerid> <bool (on/off)>");
 	CLuaIntegration::RegisterFunction("_PlayerGetFlashlight", Lua_PlayerGetFlashlight, "Get flashlight state. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_PlayerEnableSprint", Lua_PlayerEnableSprint, "Enable/disable sprint. Syntax: <playerid> [enable]");
-	CLuaIntegration::RegisterFunction("_PlayerLockInPlace", Lua_PlayerLockInPlace, "Lock player in place. Syntax: <playerid> [lock]");
-	CLuaIntegration::RegisterFunction("_PlayerDisableAttack", Lua_PlayerDisableAttack, "Disable attack. Syntax: <playerid> [disable]");
-	CLuaIntegration::RegisterFunction("_PlayerSpectatorEnd", Lua_PlayerSpectatorEnd, "Stop spectating. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_PlayerSetAnimation", Lua_PlayerSetAnimation, "Set animation. Syntax: <playerid> <animation>");
-	CLuaIntegration::RegisterFunction("_PlayerSetVecView", Lua_PlayerSetVecView, "Set view offset. Syntax: <playerid> <x> <y> <z>");
-	CLuaIntegration::RegisterFunction("_PlayerUseVehicle", Lua_PlayerUseVehicle, "Use vehicle. Syntax: <playerid> [vehicleid]");
-	CLuaIntegration::RegisterFunction("_PlayerGetLimit", Lua_PlayerGetLimit, "Get spawn limit. Syntax: <playerid> <limittype>");
+	CLuaIntegration::RegisterFunction("_PlayerEnableSprint", Lua_PlayerEnableSprint, "Syntax: <playerid> <bool>");
+	CLuaIntegration::RegisterFunction("_PlayerLockInPlace", Lua_PlayerLockInPlace, "Syntax: <playerid> <bool>");
+	CLuaIntegration::RegisterFunction("_PlayerDisableAttack", Lua_PlayerDisableAttack, "Syntax: <playerid> <bool>");
+	CLuaIntegration::RegisterFunction("_PlayerSpectatorEnd", Lua_PlayerSpectatorEnd, "Stop spectating mode. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerSetAnimation", Lua_PlayerSetAnimation, "Sets a players animation. Syntax: <player> <int sequence>");
+	CLuaIntegration::RegisterFunction("_PlayerSetVecView", Lua_PlayerSetVecView, "Sets the position of the view vector (0, 0, 64) default. Syntax: <playerid> <vector>");
+	CLuaIntegration::RegisterFunction("_PlayerUseVehicle", Lua_PlayerUseVehicle, "Make a player attempt to enter a vehicle. Syntax: <player> <vehicle>");
+	CLuaIntegration::RegisterFunction("_PlayerGetLimit", Lua_PlayerGetLimit, " Syntax: <playerid> <limit name>");
 	CLuaIntegration::RegisterFunction("_PlayerShowPanel", Lua_PlayerShowPanel, "Show VGUI panel. Syntax: <playerid> <panel> [show]");
 	CLuaIntegration::RegisterFunction("_PlayerLastHitGroup", Lua_PlayerLastHitGroup, "Get last hit group. Syntax: <playerid>");
 
 	// Functions the original gmod registers that shipped content uses (were missing)
-	CLuaIntegration::RegisterFunction("_PlayerOption", Lua_PlayerOption, "Trigger a named client option/menu. Syntax: <playerid> <name> <timeout>");
-	CLuaIntegration::RegisterFunction("_PlayerPreferredModel", Lua_PlayerPreferredModel, "Get player preferred model. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_PlayerViewModelSequence", Lua_PlayerViewModelSequence, "Play viewmodel sequence. Syntax: <playerid> <sequence>");
-	CLuaIntegration::RegisterFunction("_PlayerSetWeaponSequence", Lua_PlayerSetWeaponSequence, "Play weapon sequence. Syntax: <playerid> <sequence>");
-	CLuaIntegration::RegisterFunction("_PlayerShowCrosshair", Lua_PlayerShowCrosshair, "Show/hide crosshair. Syntax: <playerid> <bool>");
-	CLuaIntegration::RegisterFunction("_PlayerSetDrawWorldModel", Lua_PlayerSetDrawWorldModel, "Set weapon world model draw. Syntax: <playerid> <bool>");
-	CLuaIntegration::RegisterFunction("_PlayerSetVecDuck", Lua_PlayerSetVecDuck, "Set duck view offset. Syntax: <playerid> <vector3>");
-	CLuaIntegration::RegisterFunction("_PlayerDetonateTripmines", Lua_PlayerDetonateTripmines, "Detonate player's tripmines. Syntax: <playerid>");
-	CLuaIntegration::RegisterFunction("_PlayerWeaponTranslateSequence", Lua_PlayerWeaponTranslateSequence, "Translate weapon sequence. Syntax: <playerid> <seq>");
-	CLuaIntegration::RegisterFunction("_WeaponScriptedAssign", Lua_WeaponScriptedAssign, "SWEP scripted assign hook.");
+	CLuaIntegration::RegisterFunction("_PlayerOption", Lua_PlayerOption, "Player has an option to select. Syntax: <playerid> <callback> <timeout>");
+	CLuaIntegration::RegisterFunction("_PlayerPreferredModel", Lua_PlayerPreferredModel, "Returns the player's preferred model. Returns a blank if the model isn't valid. Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerViewModelSequence", Lua_PlayerViewModelSequence, "If successful returns the length of the sequence in seconds. Syntax: <playerid> <int sequence>");
+	CLuaIntegration::RegisterFunction("_PlayerSetWeaponSequence", Lua_PlayerSetWeaponSequence, "Sets a players weapon activity. Syntax: <player> <int sequence>");
+	CLuaIntegration::RegisterFunction("_PlayerShowCrosshair", Lua_PlayerShowCrosshair, "Syntax: <playerid> <bool>");
+	CLuaIntegration::RegisterFunction("_PlayerSetDrawWorldModel", Lua_PlayerSetDrawWorldModel, "Sets whether to draw the player's world model. Syntax: <playerid> <bool>");
+	CLuaIntegration::RegisterFunction("_PlayerSetVecDuck", Lua_PlayerSetVecDuck, "Sets the position of the duck view vector (0, 0, 24) default. Syntax: <playerid> <vector>");
+	CLuaIntegration::RegisterFunction("_PlayerDetonateTripmines", Lua_PlayerDetonateTripmines, "Syntax: <playerid>");
+	CLuaIntegration::RegisterFunction("_PlayerWeaponTranslateSequence", Lua_PlayerWeaponTranslateSequence, "Let the player's weapon decide how we should act out specific sequence. Syntax: <player> <int sequence>");
+	CLuaIntegration::RegisterFunction("_WeaponScriptedAssign", Lua_WeaponScriptedAssign, "Assign a script to a weapon scripted. Syntax: <weapon> <script> ");
 
 	// Aliases for GMod script compatibility (underscore style)
 }

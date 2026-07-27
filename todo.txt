@@ -1,11 +1,10 @@
-1. if build menu is open and user presses 'Q', the menu should close.
-2. the text/font is invisible on the build menu.
-3. the gmod_makeragdoll command is missing.
-4. icons/images are missing from the build menu.
-5. the build menu is supposed to have the different tools on the right side and thge spawnable items on the left side, but it seems to be opposite.
-6. some textures are showing up as bright green.
-7. the physgun is missing from the default spawn weapons.
-8. menu font is invisible.
-9. menu dialogs must match gmod 9.0.4b menu dialogs (such as single player dialog and multi player dialog).
-10. fix single/multiplayer menu so that any changes made (checkmarks checked/unchecked, text fields filled in or cleared) are saved and reloaded for the next time.  currently it always starts out blank.
-11. 
+1. all npc entities are unknown when spawning using the npc tool.
+2. the build menu 'advanced' tool menu shows on top of a bunch of buttons in the build menu.
+3. when clciking seclude on the advanced tool menu, it does not close the build menu while keeping the advanced tool menu open.
+4. it does not switch to a crossbow when selecting a tool.
+5. remove the 'GMod Input:' console output strings.
+6. hud font is still blank/invisible.
+7. exiting the game still crashes on this function: void ConCommandBase::RemoveFlaggedCommands.
+8. the client still gets stuck on models and other physical objects, it should use the retail physics code for v37-v44+ phys models so the user no longer gets stuck on any objects or ragdolls.
+
+

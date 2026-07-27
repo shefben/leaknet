@@ -429,6 +429,7 @@ private:
 		const Vector& eyeOrigin, const matrix3x4_t& irisTransform, const matrix3x4_t& glintTransform );
 
 	void R_StudioEyeballPosition( const mstudioeyeball_t *peyeball, eyeballstate_t *pstate );
+	void R_StudioEyeballPosition_v44( const mstudioeyeball_v44_t *peyeball, eyeballstate_t *pstate );
 
 	// Computes the texture projection matrix for the glint texture
 	void ComputeGlintTextureProjection( eyeballstate_t const* pState, 

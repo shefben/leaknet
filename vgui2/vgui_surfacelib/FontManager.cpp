@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -14,6 +14,29 @@
 #include <tier0/memdbgon.h>
 
 static CFontManager s_FontManager;
+
+//-----------------------------------------------------------------------------
+// Purpose: how fonts fall back when the requested typeface isn't installed.
+//			Matches the retail Source table - without this a missing custom font
+//			(HALFLIFE2.ttf and friends) produces an empty amalgam, which draws
+//			nothing at all instead of degrading to a system font.
+//-----------------------------------------------------------------------------
+struct FallbackFont_t
+{
+	const char *font;
+	const char *fallbackFont;
+};
+
+static FallbackFont_t g_FallbackFonts[] =
+{
+	{ "Times New Roman", "Courier New" },
+	{ "Courier New", "Courier" },
+	{ "Verdana", "Arial" },
+	{ "Trebuchet MS", "Arial" },
+	{ "Tahoma", NULL },
+	{ NULL, "Tahoma" },		// every other font falls back to this
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: singleton accessor
 //-----------------------------------------------------------------------------
@@ -66,39 +89,65 @@ vgui::HFont CFontManager::CreateFont()
 //-----------------------------------------------------------------------------
 // Purpose: adds glyphs to a font created by CreateFont()
 //-----------------------------------------------------------------------------
-bool CFontManager::AddGlyphSetToFont(HFont font, const char *windowsFontName, int tall, int weight, int blur, int scanlines, int flags, int lowRange, int highRange)
+CWin32Font *CFontManager::CreateOrFindWin32Font(const char *windowsFontName, int tall, int weight, int blur, int scanlines, int flags)
 {
 	// see if we already have the win32 font
-	CWin32Font *winFont = NULL;
 	int i;
 	for (i = 0; i < m_Win32Fonts.Count(); i++)
 	{
 		if (m_Win32Fonts[i]->IsEqualTo(windowsFontName, tall, weight, blur, scanlines, flags))
 		{
-			winFont = m_Win32Fonts[i];
-			break;
+			return m_Win32Fonts[i];
 		}
 	}
 
 	// create the new win32font if we didn't find it
-	if (!winFont)
+	i = m_Win32Fonts.AddToTail();
+	m_Win32Fonts[i] = new CWin32Font();
+	if (m_Win32Fonts[i]->Create(windowsFontName, tall, weight, blur, scanlines, flags))
 	{
-		i = m_Win32Fonts.AddToTail();
-
-		m_Win32Fonts[i] = new CWin32Font();
-		if (m_Win32Fonts[i]->Create(windowsFontName, tall, weight, blur, scanlines, flags))
-		{
-			// add to the list
-			winFont = m_Win32Fonts[i];
-		}
-		else
-		{
-			// failed to create, remove
-			delete m_Win32Fonts[i];
-			m_Win32Fonts.Remove(i);
-			return false;
-		}
+		return m_Win32Fonts[i];
 	}
+
+	// failed to create, remove
+	delete m_Win32Fonts[i];
+	m_Win32Fonts.Remove(i);
+	return NULL;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: fallback fonts
+//-----------------------------------------------------------------------------
+const char *CFontManager::GetFallbackFontName(const char *windowsFontName)
+{
+	int i;
+	for (i = 0; g_FallbackFonts[i].font != NULL; i++)
+	{
+		if (!_stricmp(g_FallbackFonts[i].font, windowsFontName))
+			return g_FallbackFonts[i].fallbackFont;
+	}
+
+	// the ultimate fallback
+	return g_FallbackFonts[i].fallbackFont;
+}
+
+bool CFontManager::AddGlyphSetToFont(HFont font, const char *windowsFontName, int tall, int weight, int blur, int scanlines, int flags, int lowRange, int highRange)
+{
+	// Walk the fallback chain until something actually resolves to an installed
+	// typeface. Leaving the amalgam empty makes every string drawn with this
+	// font render as nothing (zero height, no glyphs).
+	const char *pFontName = windowsFontName;
+	CWin32Font *winFont = NULL;
+	do
+	{
+		winFont = CreateOrFindWin32Font(pFontName, tall, weight, blur, scanlines, flags);
+		if (winFont)
+			break;
+	}
+	while (NULL != (pFontName = GetFallbackFontName(pFontName)));
+
+	if (!winFont)
+		return false;
 
 	// add to the amalgam
 	m_FontAmalgams[font].AddFont(winFont, lowRange, highRange);

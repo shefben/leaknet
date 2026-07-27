@@ -53,9 +53,9 @@
 	"Fog"					"gm_context fog"
 	
 	"~Other Tools"			""	
-	"Camera"				"gm_context camera;"
+	"Camera"				"gm_toolmode 31; gm_context camera;"
 	"RT Camera"				"gm_toolmode 21; gm_context rendertarget"
-	"NPC Spawn"				"gm_context npc"
+	"NPC Spawn"				"gm_toolmode 32; gm_context npc"
 	"Undo"					"gmod_undo"
 	"#Export to Hammer"		"gm_hammer_export"
 	"Clean Up"				"gm_context clean"

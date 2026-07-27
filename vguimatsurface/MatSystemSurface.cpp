@@ -1271,13 +1271,20 @@ bool CMatSystemSurface::AddCustomFontFile(const char *fontFileName)
 	 	m_CustomFontFileNames.AddToTail(fullPath);
 	}
 
-	// add to windows
-	bool success = (::AddFontResource(fullPath) > 0);
+	// add to windows - prefer the private (process-local) registration, which
+	// doesn't depend on being able to touch the machine-wide font table.
+	bool success = false;
+#if defined( FR_PRIVATE )
+	success = (::AddFontResourceEx(fullPath, FR_PRIVATE, 0) > 0);
+#endif
+	if (!success)
+	{
+		success = (::AddFontResource(fullPath) > 0);
+	}
 	if (!success)
 	{
 		Msg("Failed to load custom font file '%s'\n", fullPath);
 	}
-	Assert(success);
 	return success;
 }
 

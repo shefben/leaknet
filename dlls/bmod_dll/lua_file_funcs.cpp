@@ -232,6 +232,23 @@ int Lua_FileDelete(lua_State *L)
 	return 1;
 }
 
+// _file.Rename - Rename a file. Original gmod hands both names straight to
+// IFileSystem::RenameFile with a NULL path ID and returns no values.
+int Lua_FileRename(lua_State *L)
+{
+	const char *before = CLuaUtility::GetString(L, 1);
+	const char *after = CLuaUtility::GetString(L, 2);
+
+	if (!before || !*before || !after || !*after)
+		return 0;
+
+	if (Q_strstr(before, "..") || Q_strstr(after, ".."))
+		return 0;
+
+	filesystem->RenameFile(before, after, NULL);
+	return 0;
+}
+
 // _FileSize - Get file size
 int Lua_FileSize(lua_State *L)
 {
@@ -660,20 +677,20 @@ void RegisterLuaFileFunctions()
 	// File operations
 
 	// Core utility functions (_GetCurrentMap is registered in lua_entity_funcs.cpp)
-	CLuaIntegration::RegisterFunction("_GetRule", Lua_GetRule, "Get gamerule value. Syntax: <rulename>");
-	CLuaIntegration::RegisterFunction("_PrintMessage", Lua_PrintMessage, "Print message to player. Syntax: <playerid> <msgtype> <msg>");
-	CLuaIntegration::RegisterFunction("_PrintMessageAll", Lua_PrintMessageAll, "Print message to all. Syntax: <msgtype> <msg>");
-	CLuaIntegration::RegisterFunction("_PlaySound", Lua_PlaySound, "Play sound. Syntax: <sound> [x] [y] [z] [vol] [pitch]");
-	CLuaIntegration::RegisterFunction("_PlaySoundPlayer", Lua_PlaySoundPlayer, "Play sound to player. Syntax: <playerid> <sound> [vol] [pitch]");
-	CLuaIntegration::RegisterFunction("_ScreenText", Lua_ScreenText, "Show screen text. Syntax: <playerid> <text> [x] [y] [holdtime]");
-	CLuaIntegration::RegisterFunction("_ForceFileConsistency", Lua_ForceFileConsistency, "Force file consistency. Syntax: <filename>");
+	CLuaIntegration::RegisterFunction("_GetRule", Lua_GetRule, "Gets a rule. Syntax <rule string>");
+	CLuaIntegration::RegisterFunction("_PrintMessage", Lua_PrintMessage, "Print a message to a specific player. Syntax:  <playerid> <type of message> <string message>");
+	CLuaIntegration::RegisterFunction("_PrintMessageAll", Lua_PrintMessageAll, "Print a message to everyone on the server. Syntax: <type of message> <string message> ");
+	CLuaIntegration::RegisterFunction("_PlaySound", Lua_PlaySound, "Play a sound. Syntax: <soundname>");
+	CLuaIntegration::RegisterFunction("_PlaySoundPlayer", Lua_PlaySoundPlayer, "Play a sound to a specific player. Syntax: <playerid> <soundname> ");
+	CLuaIntegration::RegisterFunction("_ScreenText", Lua_ScreenText, "Advanced function to print text to the screen. Syntax: <playerid> <string message> <posx> <posy> <r><g><b><a> <fadein> <fadeout> <holdtime> <effect [0-2]> <channel [0-5]>");
+	CLuaIntegration::RegisterFunction("_ForceFileConsistency", Lua_ForceFileConsistency, "Force the file to be the same on client and server. Should be called after precaching the file. Syntax: <filename>");
 
 	// Console/print
-	CLuaIntegration::RegisterFunction("_Msg", Lua_Msg, "Print to console. Syntax: <message>");
+	CLuaIntegration::RegisterFunction("_Msg", Lua_Msg, "Outputs message to console. Syntax: <message>");
 	CLuaIntegration::RegisterFunction("_MsgN", Lua_MsgN, "Print to console with newline. Syntax: <message>");
 	CLuaIntegration::RegisterFunction("_Warning", Lua_Warning, "Print warning. Syntax: <message>");
 	CLuaIntegration::RegisterFunction("_DevMsg", Lua_DevMsg, "Print developer message. Syntax: <message>");
-	CLuaIntegration::RegisterFunction("_ServerCommand", Lua_ServerCommand, "Execute server command. Syntax: <cmd>");
+	CLuaIntegration::RegisterFunction("_ServerCommand", Lua_ServerCommand, "Runs a console command. Syntax <command>");
 	CLuaIntegration::RegisterFunction("_GetConVarValue", Lua_GetConVarValue, "Get convar value. Syntax: <name>");
 	CLuaIntegration::RegisterFunction("_SetConVarValue", Lua_SetConVarValue, "Set convar value. Syntax: <name> <value>");
 }
@@ -692,16 +709,16 @@ void RegisterLuaFileFunctions()
 //-----------------------------------------------------------------------------
 void RegisterLuaFileGlobalsForGamemode()
 {
-	CLuaIntegration::RegisterFunction("_GetRule", Lua_GetRule, "Get gamerule value. Syntax: <rulename>");
-	CLuaIntegration::RegisterFunction("_PrintMessageAll", Lua_PrintMessageAll, "Print message to all. Syntax: <msgtype> <msg>");
-	CLuaIntegration::RegisterFunction("_PlaySound", Lua_PlaySound, "Play sound. Syntax: <sound> [x] [y] [z] [vol] [pitch]");
-	CLuaIntegration::RegisterFunction("_PlaySoundPlayer", Lua_PlaySoundPlayer, "Play sound to player. Syntax: <playerid> <sound> [vol] [pitch]");
-	CLuaIntegration::RegisterFunction("_ScreenText", Lua_ScreenText, "Show screen text. Syntax: <playerid> <text> [x] [y] [holdtime]");
-	CLuaIntegration::RegisterFunction("_ForceFileConsistency", Lua_ForceFileConsistency, "Force file consistency. Syntax: <filename>");
+	CLuaIntegration::RegisterFunction("_GetRule", Lua_GetRule, "Gets a rule. Syntax <rule string>");
+	CLuaIntegration::RegisterFunction("_PrintMessageAll", Lua_PrintMessageAll, "Print a message to everyone on the server. Syntax: <type of message> <string message> ");
+	CLuaIntegration::RegisterFunction("_PlaySound", Lua_PlaySound, "Play a sound. Syntax: <soundname>");
+	CLuaIntegration::RegisterFunction("_PlaySoundPlayer", Lua_PlaySoundPlayer, "Play a sound to a specific player. Syntax: <playerid> <soundname> ");
+	CLuaIntegration::RegisterFunction("_ScreenText", Lua_ScreenText, "Advanced function to print text to the screen. Syntax: <playerid> <string message> <posx> <posy> <r><g><b><a> <fadein> <fadeout> <holdtime> <effect [0-2]> <channel [0-5]>");
+	CLuaIntegration::RegisterFunction("_ForceFileConsistency", Lua_ForceFileConsistency, "Force the file to be the same on client and server. Should be called after precaching the file. Syntax: <filename>");
 	CLuaIntegration::RegisterFunction("_MsgN", Lua_MsgN, "Print to console with newline. Syntax: <message>");
 	CLuaIntegration::RegisterFunction("_Warning", Lua_Warning, "Print warning. Syntax: <message>");
 	CLuaIntegration::RegisterFunction("_DevMsg", Lua_DevMsg, "Print developer message. Syntax: <message>");
-	CLuaIntegration::RegisterFunction("_ServerCommand", Lua_ServerCommand, "Execute server command. Syntax: <cmd>");
+	CLuaIntegration::RegisterFunction("_ServerCommand", Lua_ServerCommand, "Runs a console command. Syntax <command>");
 	CLuaIntegration::RegisterFunction("_GetConVarValue", Lua_GetConVarValue, "Get convar value. Syntax: <name>");
 	CLuaIntegration::RegisterFunction("_SetConVarValue", Lua_SetConVarValue, "Set convar value. Syntax: <name> <value>");
 }
@@ -717,15 +734,17 @@ void RegisterLuaFileTable(lua_State* L)
 	if (!L)
 		return;
 
-	lua_newtable(L);
-	lua_pushcfunction(L, Lua_FileRead);      lua_setfield(L, -2, "Read");
-	lua_pushcfunction(L, Lua_FileWrite);     lua_setfield(L, -2, "Write");
-	lua_pushcfunction(L, Lua_FileAppend);    lua_setfield(L, -2, "Append");
-	lua_pushcfunction(L, Lua_FileExists);    lua_setfield(L, -2, "Exists");
-	lua_pushcfunction(L, Lua_FileFind);      lua_setfield(L, -2, "Find");
-	lua_pushcfunction(L, Lua_FileIsDir);     lua_setfield(L, -2, "IsDir");
-	lua_pushcfunction(L, Lua_FileDelete);    lua_setfield(L, -2, "Delete");
-	lua_pushcfunction(L, Lua_FileCreateDir); lua_setfield(L, -2, "CreateDir");
-	lua_pushcfunction(L, Lua_FileSize);      lua_setfield(L, -2, "Size");
-	lua_setglobal(L, "_file");
+	// Registration order matches the original gmod so lua_listbinds lines up.
+	CLuaIntegration::RegisterTableFunction("_file", "Exists", Lua_FileExists, "Returns true if file exists. Syntax: <filename>");
+	CLuaIntegration::RegisterTableFunction("_file", "Read", Lua_FileRead, "Reads a file into a string. Syntax: <filename>");
+	CLuaIntegration::RegisterTableFunction("_file", "Write", Lua_FileWrite, "Writes a string to a file. Syntax: <filename> <string>");
+	CLuaIntegration::RegisterTableFunction("_file", "CreateDir", Lua_FileCreateDir, "Creates Dir Hierarchy. Syntax: <folder>");
+	CLuaIntegration::RegisterTableFunction("_file", "IsDir", Lua_FileIsDir, "Returns true if is Dir. Syntax: <folder>");
+	CLuaIntegration::RegisterTableFunction("_file", "Find", Lua_FileFind, "Finds files, returns table, parameter should be like \"maps/*.bsp\". Syntax: <wildcard>");
+	CLuaIntegration::RegisterTableFunction("_file", "Delete", Lua_FileDelete, "Deletes specified file; Syntax: <wildcard>");
+	CLuaIntegration::RegisterTableFunction("_file", "Rename", Lua_FileRename, "Renames specified file; Syntax: <before> <after>");
+
+	// bmod extras that the original gmod _file table does not expose.
+	CLuaIntegration::RegisterTableFunction("_file", "Append", Lua_FileAppend, "Appends a string to a file. Syntax: <filename> <string>");
+	CLuaIntegration::RegisterTableFunction("_file", "Size", Lua_FileSize, "Returns the size of a file in bytes, or -1. Syntax: <filename>");
 }

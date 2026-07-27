@@ -2046,15 +2046,16 @@ void CBaseEntity::UpdatePhysicsShadowToCurrentPosition( float deltaTime )
 int CBaseEntity::VPhysicsGetObjectList( IPhysicsObject **pList, int listMax )
 {
 	IPhysicsObject *pPhys = VPhysicsGetObject();
-	if ( pPhys )
+	if ( !pPhys || listMax <= 0 )
 	{
-		// multi-object entities must implement this function
-		Assert( !(pPhys->GetGameFlags() & FVPHYSICS_MULTIOBJECT_ENTITY) );
-		if ( listMax > 0 )
-		{
-			pList[0] = pPhys;
-		}
+		// NOTE: must be 0, not 1. Reporting a count of 1 with nothing written
+		// leaves the caller reading an uninitialized pList[0].
+		return 0;
 	}
+
+	// multi-object entities must implement this function
+	Assert( !(pPhys->GetGameFlags() & FVPHYSICS_MULTIOBJECT_ENTITY) );
+	pList[0] = pPhys;
 	return 1;
 }
 

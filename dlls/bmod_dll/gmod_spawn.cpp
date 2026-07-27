@@ -25,53 +25,15 @@ static bool LooksLikeRagdoll( const char *psz )
 
 static void SpawnPropModel( CBasePlayer *pPlayer, const char *model )
 {
-	if ( !pPlayer || !model || !model[0] )
-		return;
-
-	// Runtime spawning happens well after the map's own precache phase, so
-	// CBaseEntity::PrecacheModel() (called from prop_physics/prop_ragdoll's
-	// Precache()) would otherwise trip the "too late" assert and, in a debug
-	// build, pop a message box and crash. Temporarily lift the gate exactly
-	// like npc_create does (dlls/ai_concommands.cpp CC_NPC_Create).
-	bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
-	CBaseEntity::SetAllowPrecache( true );
-
-	if ( engine )
-	{
-		int modelIndex = engine->PrecacheModel( model );
-		if ( modelIndex <= 0 )
-		{
-			// Model precache failed (likely table overflow) - fail gracefully
-			Warning( "gm_spawn: Failed to precache model '%s' - too many models precached\n", model );
-			CBaseEntity::SetAllowPrecache( bAllowPrecache );
-			return;
-		}
-	}
-
-	Vector forward;
-	pPlayer->EyeVectors( &forward );
-	Vector start = pPlayer->EyePosition();
-	Vector end   = start + forward * 80.0f;
-
-	trace_t tr;
-	UTIL_TraceLine( start, end, MASK_SOLID, pPlayer, COLLISION_GROUP_NONE, &tr );
-	Vector spawnPos = tr.endpos + tr.plane.normal * 4.0f;
-
-	const char *classname = LooksLikeRagdoll( model ) ? "prop_ragdoll" : "prop_physics";
-
-	CBaseEntity *pEnt = CreateEntityByName( classname );
-	if ( !pEnt )
-	{
-		CBaseEntity::SetAllowPrecache( bAllowPrecache );
-		return;
-	}
-
-	pEnt->KeyValue( "model", model );
-	DispatchSpawn( pEnt );
-	pEnt->Teleport( &spawnPos, &pPlayer->EyeAngles(), NULL );
-	pEnt->Activate();
-
-	CBaseEntity::SetAllowPrecache( bAllowPrecache );
+	// Share the spawn-menu path (gmod_make_compat.cpp): it handles the runtime
+	// precache gate, picks prop_ragdoll / prop_physics / prop_dynamic correctly,
+	// and places the model off the surface it was aimed at. Hardcoding
+	// "prop_physics" here used to make any model without a prop_data section
+	// delete itself inside CBaseProp::Spawn(), so gm_spawn silently did nothing.
+	//
+	// LooksLikeRagdoll() stays as a name-based override for models that have no
+	// jointed .phy for ModelIsRagdoll() to find.
+	GModSpawnModelAtCrosshair( pPlayer, model, LooksLikeRagdoll( model ) );
 }
 
 static void SpawnByClassname( CBasePlayer *pPlayer, const char *classname )

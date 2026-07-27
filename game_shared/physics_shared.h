@@ -31,6 +31,7 @@ extern const objectparams_t g_PhysDefaultObjectParams;
 #define FVPHYSICS_PLAYER_HELD			0x0004		// object is held by the player, so have a very inelastic collision response
 #define FVPHYSICS_PART_OF_RAGDOLL		0x0008		// object is part of a client or server ragdoll
 #define FVPHYSICS_MULTIOBJECT_ENTITY	0x0010		// object is part of a multi-object entity
+#define FVPHYSICS_PENETRATING			0x0040		// object is currently stuck inside another object
 #define FVPHYSICS_NO_SELF_COLLISIONS	0x8000		// don't collide with other objects that are part of the same entity
 
 // Convenience routine

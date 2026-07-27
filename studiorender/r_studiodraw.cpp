@@ -2209,11 +2209,31 @@ int CStudioRender::R_StudioDrawPoints( int skin, void /*IClientEntity*/ *pClient
 		BoneMatToMaterialMat( m_PoseToWorld[i], m_MaterialPoseToWorld[i] );
 	}
 
-	// this has to run here becuase it effects flex targets
-	int numEyeballs = StudioHdr_IsV44Plus(m_pStudioHdr) ? 0 : m_pSubModel->numeyeballs;
-	for ( i = 0; i < numEyeballs; i++)
+	// This has to run here because it affects flex targets and supplies the
+	// projection matrices consumed by the eye material. v44+ models use a
+	// different model/eyeball stride, so never call the v37 accessor on them.
+	int numEyeballs = 0;
+	if ( StudioHdr_IsV44Plus( m_pStudioHdr ) )
 	{
-		R_StudioEyeballPosition( m_pSubModel->pEyeball(i), &m_EyeballState[i] );
+		mstudiomodel_v44_t *pModel44 = reinterpret_cast<mstudiomodel_v44_t *>( m_pSubModel );
+		numEyeballs = min( pModel44->numeyeballs, ARRAYSIZE( m_EyeballState ) );
+		for ( i = 0; i < numEyeballs; i++ )
+		{
+			mstudioeyeball_v44_t *pEye44 = pModel44->pEyeball( i );
+			if ( pEye44 && pEye44->bone >= 0 && pEye44->bone < StudioHdr_GetNumBones( m_pStudioHdr ) &&
+				pEye44->radius > 0.0f && pEye44->iris_scale != 0.0f )
+			{
+				R_StudioEyeballPosition_v44( pEye44, &m_EyeballState[i] );
+			}
+		}
+	}
+	else
+	{
+		numEyeballs = min( m_pSubModel->numeyeballs, ARRAYSIZE( m_EyeballState ) );
+		for ( i = 0; i < numEyeballs; i++ )
+		{
+			R_StudioEyeballPosition( m_pSubModel->pEyeball(i), &m_EyeballState[i] );
+		}
 	}
 
 	// FIXME: Activate sorting on a mesh level
@@ -2264,6 +2284,37 @@ int CStudioRender::R_StudioDrawPoints( int skin, void /*IClientEntity*/ *pClient
 		case 1:	// eyeballs
 			if (StudioHdr_IsV44Plus(m_pStudioHdr))
 			{
+				if ( m_bDrawTranslucentSubModels )
+					break;
+
+				int eyeIndex = StudioMesh_GetMaterialParam( m_pStudioHdr, pmesh );
+				mstudiomodel_v44_t *pModel44 = reinterpret_cast<mstudiomodel_v44_t *>( m_pSubModel );
+				if ( eyeIndex >= 0 && eyeIndex < numEyeballs )
+				{
+					mstudioeyeball_v44_t *pEye44 = pModel44->pEyeball( eyeIndex );
+					if ( pEye44 && pEye44->bone >= 0 && pEye44->bone < StudioHdr_GetNumBones( m_pStudioHdr ) &&
+						pEye44->radius > 0.0f && pEye44->iris_scale != 0.0f && !m_Config.bWireframe )
+					{
+						eyeballstate_t &eyeState = m_EyeballState[eyeIndex];
+						mstudioeyeball_t *pLegacyEye = reinterpret_cast<mstudioeyeball_t *>( pEye44 );
+
+						bool found;
+						IMaterialVar *pGlintVar = pMaterial->FindVar( "$glint", &found, false );
+						if ( found )
+						{
+							R_StudioEyeballGlint( &eyeState, pGlintVar, m_ViewRight, m_ViewUp, m_ViewOrigin );
+						}
+
+						Vector org;
+						VectorTransform( pEye44->org, m_BoneToWorld[pEye44->bone], org );
+						matrix3x4_t glintMat;
+						ComputeGlintTextureProjection( &eyeState, m_ViewRight, m_ViewUp, glintMat );
+						SetEyeMaterialVars( pMaterial, pLegacyEye, org, eyeState.mat, glintMat );
+					}
+				}
+
+				// v44 vertices already use the version-aware normal mesh path. The
+				// eye-specific work above is the shader state that path was missing.
 				numTrianglesRendered += R_StudioDrawMesh( pmesh, pMeshData, lighting, pMaterial, ppColorMeshes );
 				break;
 			}

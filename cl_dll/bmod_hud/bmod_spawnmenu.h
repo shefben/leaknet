@@ -67,9 +67,15 @@ public:
 	void LoadMenuConfiguration();
 	void ReloadSpawnMenu();
 
-	// Shows a tool's settings in the floating context box and reveals the
-	// "Seclude" minimize button that goes with it (used by gm_context).
+	// Shows a tool's settings in the context box and reveals the "Seclude"
+	// button that goes with it (used by gm_context).
 	void ShowToolContext( const char *contextType );
+
+	// "Seclude" closes the build menu (props + tool buttons + frame chrome) but
+	// leaves the tool settings box on screen. Re-opening the menu restores the
+	// full layout.
+	void SetSecluded( bool bSecluded );
+	bool IsSecluded() const { return m_bSecluded; }
 
 	// Panel access
 	CToolButtonsPanel *GetToolButtonsPanel() { return m_pToolButtonsPanel; }
@@ -86,6 +92,7 @@ protected:
 	void CreateToolButtonsPanel();
 	void CreateContextPanel();
 	void CreateMinimizeButton();
+	void LoadBuildMenuResource();
 
 	// Configuration
 	void LoadGModMenuConfiguration();
@@ -121,6 +128,23 @@ private:
 	// Menu state
 	bool			m_bVisible;
 	bool			m_bShowingContext;
+	bool			m_bSecluded;			// only the tool settings box is on screen
+	int				m_nRestoreBounds[4];	// dialog geometry saved while secluded
+	char			m_szLastContext[64];	// context of the currently selected tool, re-shown when the menu reopens
+
+	// Layout values loaded from resource/ui/menu_toolbuttons.res.  The defaults
+	// match the original GMod 9 client and remain as a safe fallback.
+	int				m_nLayoutDialogWide;
+	int				m_nLayoutPanelTop;
+	int				m_nLayoutPanelBottom;
+	int				m_nLayoutPropX;
+	int				m_nLayoutPropWide;
+	int				m_nLayoutToolX;
+	int				m_nLayoutToolWide;
+	int				m_nLayoutContextX;
+	int				m_nLayoutContextWide;
+	int				m_nLayoutContextBottom;
+	int				m_nLayoutColumnGap;
 };
 
 //-----------------------------------------------------------------------------
@@ -153,6 +177,7 @@ private:
 	};
 
 	void ClearToolButtons();
+	void ApplyResourceSettings();
 	void LoadToolButtonsFromFile( const char *fileName );
 	void LoadToolButtonsFromDirectory( const char *directory, bool bSkipDefault, CUtlVector<LoadedMenuFile_t> &loadedFiles );
 	bool HasLoadedMenuFile( CUtlVector<LoadedMenuFile_t> &loadedFiles, const char *fileName );

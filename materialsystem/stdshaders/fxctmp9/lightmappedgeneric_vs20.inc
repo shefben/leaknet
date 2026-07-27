@@ -173,7 +173,7 @@ public:
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_0_53009.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_0_19924.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -294,7 +294,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_0[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_1_43099.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_1_25196.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -424,7 +424,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_1[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_2_41407.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_2_60529.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -555,7 +555,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_2[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_3_33831.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_3_26072.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -694,7 +694,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_3[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_4_54807.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_4_59043.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -815,7 +815,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_4[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_5_17974.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_5_33567.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -945,7 +945,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_5[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_6_20456.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_6_8046.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -1076,7 +1076,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_6[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_7_274.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_7_2596.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -1215,7 +1215,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_7[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_8_28094.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_8_19582.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -1343,7 +1343,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_8[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_9_26272.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_9_14810.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -1479,7 +1479,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_9[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_10_290.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_10_41197.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -1616,7 +1616,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_10[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_11_23678.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_11_30998.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -1761,7 +1761,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_11[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_12_6830.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_12_30670.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -1889,7 +1889,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_12[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_13_64689.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_13_22514.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -2025,7 +2025,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_13[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_14_55497.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_14_19728.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -2162,7 +2162,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_14[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_15_46711.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_15_44529.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -2307,7 +2307,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_15[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_16_24166.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_16_18416.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -2430,7 +2430,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_16[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_17_24340.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_17_19446.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -2561,7 +2561,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_17[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_18_49535.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_18_12872.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -2693,7 +2693,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_18[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_19_836.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_19_61187.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -2833,7 +2833,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_19[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_20_49081.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_20_5394.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -2956,7 +2956,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_20[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_21_20078.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_21_3064.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -3087,7 +3087,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_21[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_22_63979.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_22_62073.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -3219,7 +3219,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_22[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_23_34055.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_23_19000.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -3359,7 +3359,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_23[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_24_64985.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_24_23200.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -3488,7 +3488,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_24[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_25_31824.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_25_46681.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -3626,7 +3626,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_25[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_26_8202.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_26_176.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -3765,7 +3765,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_26[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_27_51695.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_27_31758.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -3912,7 +3912,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_27[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_28_46557.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_28_8748.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -4041,7 +4041,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_28[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_29_47757.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_29_61701.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -4179,7 +4179,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_29[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_30_17134.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_30_41787.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -4318,7 +4318,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_30[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=0 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_31_38617.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_31_35123.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -4465,7 +4465,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_31[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_32_17100.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_32_22226.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -4589,7 +4589,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_32[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_33_31544.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_33_36679.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -4721,7 +4721,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_33[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_34_788.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_34_8800.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -4854,7 +4854,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_34[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_35_42621.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_35_53893.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -4996,7 +4996,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_35[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_36_8226.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_36_43297.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -5120,7 +5120,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_36[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_37_51445.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_37_34315.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -5252,7 +5252,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_37[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_38_18718.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_38_2936.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -5385,7 +5385,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_38[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_39_42257.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_39_60307.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -5527,7 +5527,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_39[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_40_38615.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_40_11146.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -5651,7 +5651,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_40[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_41_24568.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_41_46761.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -5783,7 +5783,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_41[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_42_39711.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_42_61595.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -5916,7 +5916,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_42[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_43_20598.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_43_64425.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -6058,7 +6058,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_43[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_44_64755.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_44_20284.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -6182,7 +6182,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_44[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_45_3928.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_45_38955.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -6314,7 +6314,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_45[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_46_39017.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_46_36047.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -6447,7 +6447,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_46[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=0 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_47_9432.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_47_61793.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -6589,7 +6589,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_47[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_48_20356.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_48_27030.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -6715,7 +6715,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_48[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_49_2820.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_49_18198.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -6849,7 +6849,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_49[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_50_41935.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_50_46247.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -6984,7 +6984,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_50[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_51_32226.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_51_20638.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -7127,7 +7127,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_51[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_52_28462.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_52_27150.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -7253,7 +7253,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_52[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_53_22058.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_53_940.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -7387,7 +7387,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_53[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_54_17520.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_54_64369.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -7522,7 +7522,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_54[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=0
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_55_37979.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_55_58137.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -7665,7 +7665,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_55[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_56_51001.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_56_59535.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -7791,7 +7791,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_56[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_57_60949.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_57_42687.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -7925,7 +7925,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_57[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_58_17654.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_58_29914.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -8060,7 +8060,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_58[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=0 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_59_16472.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_59_4974.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -8203,7 +8203,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_59[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_60_42769.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_60_13426.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -8329,7 +8329,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_60[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=0 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_61_56745.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_61_5368.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -8463,7 +8463,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_61[] =
 //
 //   fxc /DFOG_TYPE=0 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_62_6512.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_62_31508.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:
@@ -8598,7 +8598,7 @@ static unsigned int pixelShader_lightmappedgeneric_vs20_62[] =
 //
 //   fxc /DFOG_TYPE=1 /DENVMAP_MASK=1 /DTANGENTSPACE=1 /DBUMPMAP=1
 //    /DVERTEXCOLOR=1 /DAACLAMP=1 /Dmain=main /Emain /Tvs_2_0 /nologo
-//    /Fhout_fxctmp9_63_59351.h lightmappedgeneric_vs20.fxc
+//    /Fhout_fxctmp9_63_15004.h lightmappedgeneric_vs20.fxc
 //
 //
 // Parameters:

@@ -976,20 +976,12 @@ void CGModGamemodeSystem::OnPlayerInput(CBasePlayer* pPlayer, int buttonsPressed
         int button = 1 << i;
 		if (buttonsPressed & button)
 		{
-			if (button == IN_ATTACK || button == IN_ATTACK2 || button == IN_FORWARD || button == IN_BACK)
-			{
-				DevMsg("GMod Input: eventKeyPressed player %d button %d\n", pPlayer->entindex(), button);
-			}
 			CallLuaPlayerKeyFunction("eventKeyPressed", pPlayer, button);
 			CallLuaKeyEventHook("eventKeyPressed", pPlayer, button);
 		}
 
 		if (buttonsReleased & button)
 		{
-			if (button == IN_ATTACK || button == IN_ATTACK2 || button == IN_FORWARD || button == IN_BACK)
-			{
-				DevMsg("GMod Input: eventKeyReleased player %d button %d\n", pPlayer->entindex(), button);
-			}
 			CallLuaPlayerKeyFunction("eventKeyReleased", pPlayer, button);
 			CallLuaKeyEventHook("eventKeyReleased", pPlayer, button);
 		}

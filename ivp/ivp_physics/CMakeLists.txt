@@ -88,6 +88,7 @@ BEGIN_SRC( IVP_PHYSICS_SOURCE_FILES "Source Files" )
 			"${SRCDIR}/ivp/ivp_utility/ivu_geometry.cxx"
 			"${SRCDIR}/ivp/ivp_utility/ivu_hash.cxx"
 			"${SRCDIR}/ivp/ivp_utility/ivu_linear.cxx"
+			"${SRCDIR}/ivp/ivp_utility/ivu_mapping.cxx"
 			"${SRCDIR}/ivp/ivp_utility/ivu_memory.cxx"
 			"${SRCDIR}/ivp/ivp_utility/ivu_min_hash.cxx"
 			"${SRCDIR}/ivp/ivp_utility/ivu_min_list.cxx"

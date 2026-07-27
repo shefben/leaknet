@@ -44,6 +44,14 @@ public:
 		cvar->RegisterConCommandBase( pCommand );
 		return true;
 	}
+
+	virtual void	UnregisterConCommandBase( ConCommandBase *pCommand )
+	{
+		if ( cvar )
+		{
+			cvar->UnregisterConCommandBase( pCommand );
+		}
+	}
 };
 
 

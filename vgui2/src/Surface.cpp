@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2003, Valve LLC, All rights reserved. ============
 //
 // The copyright to the contents herein is the property of Valve, L.L.C.
 // The contents may be used and/or copied only with the written permission of
@@ -2849,16 +2849,31 @@ void CWin32Surface::GetTextSize(HFont font, const wchar_t *text, int &wide, int 
 //-----------------------------------------------------------------------------
 bool CWin32Surface::AddCustomFontFile(const char *fontFileName)
 {
-//	char fullPath[ MAX_PATH ];
-	char *fullPath = (char *)_alloca(filesystem()->GetLocalPathLen(fontFileName) + 1);
-	filesystem()->GetLocalPath(fontFileName, fullPath);
-#ifdef LATER
-	if ( m_WindowsVersion.dwMajorVersion >= 5 )
+	int pathLen = filesystem()->GetLocalPathLen(fontFileName);
+	if (pathLen <= 0)
 	{
-		return (::AddFontResourceEx( fullpath, FR_PRIVATE, 0 ) > 0 );
+		Msg("Couldn't find custom font file '%s' in any search path\n", fontFileName);
+		return false;
 	}
+
+	char *fullPath = (char *)_alloca(pathLen + 1);
+	if (!filesystem()->GetLocalPath(fontFileName, fullPath))
+	{
+		Msg("Couldn't resolve local path for custom font file '%s'\n", fontFileName);
+		return false;
+	}
+
+#if defined( FR_PRIVATE )
+	if (::AddFontResourceEx(fullPath, FR_PRIVATE, 0) > 0)
+		return true;
 #endif
-	return (::AddFontResource(fullPath) > 0);
+
+	// Pre-Win2000 fallback.
+	if (::AddFontResource(fullPath) > 0)
+		return true;
+
+	Msg("Failed to load custom font file '%s'\n", fullPath);
+	return false;
 }
 
 //-----------------------------------------------------------------------------

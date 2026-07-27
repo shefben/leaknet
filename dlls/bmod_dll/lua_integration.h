@@ -20,6 +20,8 @@ extern "C" {
 
 #include "baseentity.h"
 #include "convar.h"
+#include "utlvector.h"
+#include "utlsymbol.h"
 
 //-----------------------------------------------------------------------------
 // Lua Function Registration System
@@ -28,16 +30,21 @@ extern "C" {
 // Function signature for C++ functions callable from Lua
 typedef int (*LuaCFunction)(lua_State *L);
 
-// Structure to hold registered function information
+// Structure to hold registered function information.
+// Mirrors the original gmod 9.0.4b bind record: a bind is either a plain global
+// (table empty, e.g. "_PlayerGiveAmmo") or a member of one of the eight global
+// tables (_file, _swep, _phys, _npc, _player, _util, _spawnmenu, _gameevent).
 struct LuaFunctionRegistration
 {
-	char			name[128];			// Function name (e.g., "_PlayerGiveAmmo")
+	char			table[64];			// Owning table ("" for plain globals)
+	char			name[128];			// Function name (e.g., "_PlayerGiveAmmo" or "Read")
 	LuaCFunction	function;			// C++ function pointer
 	const char*		description;		// Function description/syntax
 	bool			valid;				// Registration is valid
 
 	LuaFunctionRegistration()
 	{
+		table[0] = '\0';
 		name[0] = '\0';
 		function = NULL;
 		description = NULL;
@@ -57,7 +64,15 @@ public:
 
 	// Function Registration
 	static void		RegisterFunction(const char *pszName, LuaCFunction pFunction, const char *pszDescription = NULL);
+	static void		RegisterTableFunction(const char *pszTable, const char *pszName, LuaCFunction pFunction, const char *pszDescription = NULL);
 	static void		RegisterAllFunctions();
+	static void		ClearRegistrations();
+
+	// cfg/lua.txt handling (original gmod "Lua Config" file)
+	static void		LoadLuaConfig();
+	static bool		IsLuaCommandAllowed()		{ return m_bAllowLuaCommand; }
+	static bool		IsOpenScriptCommandAllowed(){ return m_bAllowOpenScriptCommand; }
+	static bool		IsFunctionDisabled(const char *pszTable, const char *pszName);
 
 	// Script Execution
 	static bool		OpenScript(const char *pszFilename);
@@ -77,14 +92,20 @@ private:
 	static CUtlVector<LuaFunctionRegistration> m_RegisteredFunctions;
 	static bool			m_bInitialized;
 
+	// cfg/lua.txt state
+	static bool			m_bAllowLuaCommand;
+	static bool			m_bAllowOpenScriptCommand;
+	static CUtlVector<CUtlSymbol> m_DisabledFunctions;
+
 	// Internal helpers
 	static int			LuaErrorHandler(lua_State *L);
 	static void			RegisterCoreFunctions();
 };
 
 //-----------------------------------------------------------------------------
-// Lua Console Commands
+// Lua Console Commands (original gmod names: "lua", "lua_openscript", "lua_listbinds")
 //-----------------------------------------------------------------------------
+void LuaRunCommand_f(void);
 void LuaOpenScript_f(void);
 void LuaListBinds_f(void);
 

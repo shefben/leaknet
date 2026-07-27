@@ -98,7 +98,7 @@ public:
 //
 //   fxc /DMULTIPLYBYCOLOR=0 /DMULTIPLYBYALPHA=0
 //    /DMULTIPLYBY_MAX_HDR_OVERBRIGHT=0 /Dmain=main /Emain /Tps_2_0 /nologo
-//    /Fhout_fxctmp9_0_27362.h ShowDestAlpha_ps20.fxc
+//    /Fhout_fxctmp9_0_5630.h ShowDestAlpha_ps20.fxc
 //
     ps_2_0
     def c0, 1, 0, 0, 0
@@ -124,7 +124,7 @@ static unsigned int pixelShader_ShowDestAlpha_ps20_0[] =
 //
 //   fxc /DMULTIPLYBYCOLOR=1 /DMULTIPLYBYALPHA=0
 //    /DMULTIPLYBY_MAX_HDR_OVERBRIGHT=0 /Dmain=main /Emain /Tps_2_0 /nologo
-//    /Fhout_fxctmp9_1_6152.h ShowDestAlpha_ps20.fxc
+//    /Fhout_fxctmp9_1_19550.h ShowDestAlpha_ps20.fxc
 //
 //
 // Parameters:
@@ -169,7 +169,7 @@ static unsigned int pixelShader_ShowDestAlpha_ps20_1[] =
 //
 //   fxc /DMULTIPLYBYCOLOR=0 /DMULTIPLYBYALPHA=1
 //    /DMULTIPLYBY_MAX_HDR_OVERBRIGHT=0 /Dmain=main /Emain /Tps_2_0 /nologo
-//    /Fhout_fxctmp9_2_57215.h ShowDestAlpha_ps20.fxc
+//    /Fhout_fxctmp9_2_51555.h ShowDestAlpha_ps20.fxc
 //
 //
 // Parameters:
@@ -212,7 +212,7 @@ static unsigned int pixelShader_ShowDestAlpha_ps20_2[] =
 //
 //   fxc /DMULTIPLYBYCOLOR=1 /DMULTIPLYBYALPHA=1
 //    /DMULTIPLYBY_MAX_HDR_OVERBRIGHT=0 /Dmain=main /Emain /Tps_2_0 /nologo
-//    /Fhout_fxctmp9_3_41539.h ShowDestAlpha_ps20.fxc
+//    /Fhout_fxctmp9_3_22592.h ShowDestAlpha_ps20.fxc
 //
 //
 // Parameters:
@@ -256,7 +256,7 @@ static unsigned int pixelShader_ShowDestAlpha_ps20_3[] =
 //
 //   fxc /DMULTIPLYBYCOLOR=0 /DMULTIPLYBYALPHA=0
 //    /DMULTIPLYBY_MAX_HDR_OVERBRIGHT=1 /Dmain=main /Emain /Tps_2_0 /nologo
-//    /Fhout_fxctmp9_4_64731.h ShowDestAlpha_ps20.fxc
+//    /Fhout_fxctmp9_4_59077.h ShowDestAlpha_ps20.fxc
 //
     ps_2_0
     def c0, 16, 16, 16, 1
@@ -282,7 +282,7 @@ static unsigned int pixelShader_ShowDestAlpha_ps20_4[] =
 //
 //   fxc /DMULTIPLYBYCOLOR=1 /DMULTIPLYBYALPHA=0
 //    /DMULTIPLYBY_MAX_HDR_OVERBRIGHT=1 /Dmain=main /Emain /Tps_2_0 /nologo
-//    /Fhout_fxctmp9_5_47421.h ShowDestAlpha_ps20.fxc
+//    /Fhout_fxctmp9_5_9036.h ShowDestAlpha_ps20.fxc
 //
 //
 // Parameters:
@@ -329,7 +329,7 @@ static unsigned int pixelShader_ShowDestAlpha_ps20_5[] =
 //
 //   fxc /DMULTIPLYBYCOLOR=0 /DMULTIPLYBYALPHA=1
 //    /DMULTIPLYBY_MAX_HDR_OVERBRIGHT=1 /Dmain=main /Emain /Tps_2_0 /nologo
-//    /Fhout_fxctmp9_6_33019.h ShowDestAlpha_ps20.fxc
+//    /Fhout_fxctmp9_6_26956.h ShowDestAlpha_ps20.fxc
 //
 //
 // Parameters:
@@ -375,7 +375,7 @@ static unsigned int pixelShader_ShowDestAlpha_ps20_6[] =
 //
 //   fxc /DMULTIPLYBYCOLOR=1 /DMULTIPLYBYALPHA=1
 //    /DMULTIPLYBY_MAX_HDR_OVERBRIGHT=1 /Dmain=main /Emain /Tps_2_0 /nologo
-//    /Fhout_fxctmp9_7_36591.h ShowDestAlpha_ps20.fxc
+//    /Fhout_fxctmp9_7_2308.h ShowDestAlpha_ps20.fxc
 //
 //
 // Parameters:

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -17,7 +17,7 @@ extern IPhysicsShadowController *CreateShadowController( CPhysicsObject *pObject
 extern IPhysicsPlayerController *CreatePlayerController( CPhysicsObject *pObject );
 
 
-extern void ComputeController( IVP_U_Float_Point &currentSpeed, const IVP_U_Float_Point &delta, const IVP_U_Float_Point &maxSpeed, float scaleDelta, float damping );
+extern void ComputeController( IVP_U_Float_Point &currentSpeed, const IVP_U_Float_Point &delta, const IVP_U_Float_Point &maxSpeed, float scaleDelta, float damping, IVP_U_Float_Point *pOutImpulse = NULL );
 
 #include "ivp_physics.hxx"
 

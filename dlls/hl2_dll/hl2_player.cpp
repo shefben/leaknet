@@ -424,19 +424,6 @@ void CHL2_Player::PlayerRunCommand(CUserCmd *ucmd, IMoveHelper *moveHelper)
 		if ( ucmd->sidemove > 1.0f )          gmodButtons |= IN_MOVERIGHT;
 		else if ( ucmd->sidemove < -1.0f )    gmodButtons |= IN_MOVELEFT;
 		CGModLuaSystem::UpdatePlayerRawButtons( this, gmodButtons );
-
-		// TEMP diagnostic: confirm what movement input actually reaches the server for the observer.
-		// Separate budgets for alive vs observer so pre-race walking can't exhaust the observer lines.
-		static int s_gmodInputDbgAlive = 0;
-		static int s_gmodInputDbgObs = 0;
-		int &nDbgBudget = IsObserver() ? s_gmodInputDbgObs : s_gmodInputDbgAlive;
-		if ( nDbgBudget < 40 && ( ucmd->buttons != 0 || ucmd->forwardmove != 0.0f || ucmd->sidemove != 0.0f ) )
-		{
-			DevMsg( "GMod Input DBG: obs=%d rawbtn=%d fwd=%.0f side=%.0f -> synthbtn=%d vang=(%.0f %.0f)\n",
-				IsObserver() ? 1 : 0, ucmd->buttons, ucmd->forwardmove, ucmd->sidemove, gmodButtons,
-				ucmd->viewangles.x, ucmd->viewangles.y );
-			++nDbgBudget;
-		}
 	}
 
 	// Handle FL_FROZEN.

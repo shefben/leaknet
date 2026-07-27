@@ -246,18 +246,18 @@ void RegisterLuaGameEventFunctions()
 	// Game event functions (GMod 9 compatibility)
 
 	// Additional ConVar functions (GMod 9 compatibility)
-	CLuaIntegration::RegisterFunction("_GetConVar_Bool", Lua_GetConVar_Bool, "Get convar as bool. Syntax: <name>");
-	CLuaIntegration::RegisterFunction("_GetClientConVar_String", Lua_GetClientConVar_String, "Get client convar. Syntax: <playerid> <name>");
+	CLuaIntegration::RegisterFunction("_GetConVar_Bool", Lua_GetConVar_Bool, "Get a server convar bool. Syntax: <name>");
+	CLuaIntegration::RegisterFunction("_GetClientConVar_String", Lua_GetClientConVar_String, "Get a client convar string. Syntax: <userid> <name>");
 
 	// Team functions - already registered in lua_player_funcs.cpp
 	// _TeamNumPlayers and _TeamCount are registered there
 
 	// Misc missing functions (GMod 9 compatibility)
-	CLuaIntegration::RegisterFunction("_StartNextLevel", Lua_StartNextLevel, "Start next map in rotation.");
-	CLuaIntegration::RegisterFunction("_SetDefaultRelationship", Lua_SetDefaultRelationship, "Set NPC relationship. Syntax: <class1> <class2> <disp>");
-	CLuaIntegration::RegisterFunction("_GameSetTargetIDRules", Lua_GameSetTargetIDRules, "Set target ID rules.");
-	CLuaIntegration::RegisterFunction("_PluginMsg", Lua_PluginMsg, "Send plugin message. Syntax: <playerid> <msg>");
-	CLuaIntegration::RegisterFunction("_PluginText", Lua_PluginText, "Send plugin text to all. Syntax: <msg>");
-	CLuaIntegration::RegisterFunction("_PlayerSetDrawTeamCircle", Lua_PlayerSetDrawTeamCircle, "Set team circle. Syntax: <playerid> <bool>");
-	CLuaIntegration::RegisterFunction("_PlayerGetRandomAllowedModel", Lua_PlayerGetRandomAllowedModel, "Get random allowed model.");
+	CLuaIntegration::RegisterFunction("_StartNextLevel", Lua_StartNextLevel, "Starts the next level");
+	CLuaIntegration::RegisterFunction("_SetDefaultRelationship", Lua_SetDefaultRelationship, " Sets the default relationship between two lifetypes. <class> <class> <disposition>");
+	CLuaIntegration::RegisterFunction("_GameSetTargetIDRules", Lua_GameSetTargetIDRules, "Sets targetID rules. Syntax <int rule>");
+	CLuaIntegration::RegisterFunction("_PluginMsg", Lua_PluginMsg, "Sends a plugin message. Syntax: <userid> <title> <message> <time> <r><g><b><a> <level>");
+	CLuaIntegration::RegisterFunction("_PluginText", Lua_PluginText, "Sends plug in text. Syntax: <userid> <title> <message> <time> <r><g><b><a> <level>");
+	CLuaIntegration::RegisterFunction("_PlayerSetDrawTeamCircle", Lua_PlayerSetDrawTeamCircle, "Sets whether to draw the team circle or not. Syntax: <playerid> <bool>");
+	CLuaIntegration::RegisterFunction("_PlayerGetRandomAllowedModel", Lua_PlayerGetRandomAllowedModel, "Returns a random allowed playermodel.");
 }

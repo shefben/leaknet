@@ -7,11 +7,13 @@
 
 #include "cbase.h"
 #include "lua_integration.h"
+#include "gmod_lua.h"
 #include "player.h"
 #include "filesystem.h"
 #include "convar.h"
 #include "fmtstr.h"
 #include "ammodef.h"
+#include "KeyValues.h"
 
 extern "C" {
 	int luaopen_base(lua_State *L);
@@ -53,10 +55,13 @@ static void LuaOpenAllLibs(lua_State *L)
 ConVar lua_debug("lua_debug", "0", FCVAR_CHEAT, "Enable Lua debugging output");
 
 //-----------------------------------------------------------------------------
-// Console Commands
+// Console Commands - original gmod 9.0.4b names and help strings
 //-----------------------------------------------------------------------------
-ConCommand lua_openscript("lua_openscript", LuaOpenScript_f, "Load and execute a Lua script");
-ConCommand lua_listbinds("lua_listbinds", LuaListBinds_f, "List all registered Lua functions");
+ConCommand lua_command("lua", LuaRunCommand_f, "Runs a LUA string command on the server");
+// Yes, the help text is wrong - the original gmod copy/pastes it here too, and
+// lua_listbinds output is compared against real gmod dumps, so keep it verbatim.
+ConCommand lua_openscript("lua_openscript", LuaOpenScript_f, "Runs a LUA string command on the server");
+ConCommand lua_listbinds("lua_listbinds", LuaListBinds_f, "Lists source engine functions available to LUA");
 
 //-----------------------------------------------------------------------------
 // Static member initialization
@@ -64,6 +69,30 @@ ConCommand lua_listbinds("lua_listbinds", LuaListBinds_f, "List all registered L
 lua_State* CLuaIntegration::m_pLuaState = NULL;
 CUtlVector<LuaFunctionRegistration> CLuaIntegration::m_RegisteredFunctions;
 bool CLuaIntegration::m_bInitialized = false;
+bool CLuaIntegration::m_bAllowLuaCommand = true;
+bool CLuaIntegration::m_bAllowOpenScriptCommand = true;
+CUtlVector<CUtlSymbol> CLuaIntegration::m_DisabledFunctions;
+
+//-----------------------------------------------------------------------------
+// Purpose: Only server admins (or a listen/single-player host) may drive the Lua
+//          console commands, matching the original gmod gate.
+//-----------------------------------------------------------------------------
+static bool LuaCommandAllowedForCaller()
+{
+	// Original gmod accepts the command when it comes from the server console
+	// (dedicated console / rcon) or when the server is a listen/single-player
+	// game; clients on a multiplayer server are refused.
+	return UTIL_GetCommandClient() == NULL || gpGlobals->maxClients <= 1;
+}
+
+static void LuaPrintToCaller(const char *pszMessage)
+{
+	CBasePlayer *pPlayer = UTIL_GetCommandClient();
+	if (pPlayer)
+		ClientPrint(pPlayer, HUD_PRINTCONSOLE, pszMessage);
+	else
+		Msg("%s", pszMessage);
+}
 
 //-----------------------------------------------------------------------------
 // Global instance
@@ -128,8 +157,13 @@ void CLuaIntegration::RegisterFunction(const char *pszName, LuaCFunction pFuncti
 	if (!pszName || !pFunction)
 		return;
 
+	// cfg/lua.txt "Disable" section removes the bind entirely, exactly like the original.
+	if (IsFunctionDisabled(NULL, pszName))
+		return;
+
 	// Create registration entry
 	LuaFunctionRegistration registration;
+	registration.table[0] = '\0';
 	Q_strncpy(registration.name, pszName, sizeof(registration.name));
 	registration.function = pFunction;
 	registration.description = pszDescription;
@@ -149,6 +183,136 @@ void CLuaIntegration::RegisterFunction(const char *pszName, LuaCFunction pFuncti
 			Msg("Lua: Registered function %s - %s\n", pszName, pszDescription ? pszDescription : "No description");
 		}
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Register a C++ function as a member of one of the original gmod
+//          global tables (_file, _swep, _phys, _npc, _player, _util,
+//          _spawnmenu, _gameevent). Creates the table on first use.
+//-----------------------------------------------------------------------------
+void CLuaIntegration::RegisterTableFunction(const char *pszTable, const char *pszName, LuaCFunction pFunction, const char *pszDescription)
+{
+	if (!pszTable || !pszName || !pFunction)
+		return;
+
+	if (IsFunctionDisabled(pszTable, pszName))
+		return;
+
+	LuaFunctionRegistration registration;
+	Q_strncpy(registration.table, pszTable, sizeof(registration.table));
+	Q_strncpy(registration.name, pszName, sizeof(registration.name));
+	registration.function = pFunction;
+	registration.description = pszDescription;
+	registration.valid = true;
+
+	m_RegisteredFunctions.AddToTail(registration);
+
+	if (!m_pLuaState)
+		return;
+
+	lua_getglobal(m_pLuaState, pszTable);
+	if (!lua_istable(m_pLuaState, -1))
+	{
+		lua_pop(m_pLuaState, 1);
+		lua_newtable(m_pLuaState);
+		lua_pushvalue(m_pLuaState, -1);
+		lua_setglobal(m_pLuaState, pszTable);
+	}
+
+	lua_pushcfunction(m_pLuaState, pFunction);
+	lua_setfield(m_pLuaState, -2, pszName);
+	lua_pop(m_pLuaState, 1);
+
+	if (lua_debug.GetBool())
+	{
+		Msg("Lua: Registered function %s.%s - %s\n", pszTable, pszName,
+			pszDescription ? pszDescription : "No description");
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Drop the bind list. Called before rebuilding the bindings so that
+//          repeated Lua (re)initialisation does not accumulate duplicates.
+//-----------------------------------------------------------------------------
+void CLuaIntegration::ClearRegistrations()
+{
+	m_RegisteredFunctions.RemoveAll();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Process cfg/lua.txt, the original gmod "Lua Config" file.
+//          Settings/AllowLuaCommand           - enables the "lua" command
+//          Settings/AllowLua_OpenScriptCommand- enables "lua_openscript"
+//          Disable/<name|table.name>          - stops the bind being registered
+//-----------------------------------------------------------------------------
+void CLuaIntegration::LoadLuaConfig()
+{
+	m_bAllowLuaCommand = true;
+	m_bAllowOpenScriptCommand = true;
+	m_DisabledFunctions.RemoveAll();
+
+	Msg("Processing Lua config file..\n");
+
+	KeyValues *pConfig = new KeyValues("Lua Settings");
+	if (!pConfig)
+	{
+		Msg("Couldn't create keyvalues!..\n");
+		return;
+	}
+
+	if (!pConfig->LoadFromFile(filesystem, "cfg/lua.txt", NULL))
+	{
+		Msg("Couldn't load from \"cfg/lua.txt\"!\n");
+		pConfig->deleteThis();
+		return;
+	}
+
+	KeyValues *pSettings = pConfig->FindKey("Settings");
+	if (pSettings)
+	{
+		m_bAllowLuaCommand = pSettings->GetInt("AllowLuaCommand", 1) == 1;
+		m_bAllowOpenScriptCommand = pSettings->GetInt("AllowLua_OpenScriptCommand", 1) == 1;
+	}
+
+	KeyValues *pDisable = pConfig->FindKey("Disable");
+	if (pDisable)
+	{
+		for (KeyValues *pKey = pDisable->GetFirstSubKey(); pKey; pKey = pKey->GetNextKey())
+		{
+			if (pKey->GetInt() != 1)
+				continue;
+
+			m_DisabledFunctions.AddToTail(CUtlSymbol(pKey->GetName()));
+			Msg("Lua: Removed \"%s\"\n", pKey->GetName());
+		}
+	}
+
+	pConfig->deleteThis();
+	Msg("Finished Lua Config.\n");
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Is this bind listed in the cfg/lua.txt "Disable" section?
+//-----------------------------------------------------------------------------
+bool CLuaIntegration::IsFunctionDisabled(const char *pszTable, const char *pszName)
+{
+	if (m_DisabledFunctions.Count() == 0 || !pszName)
+		return false;
+
+	char szKey[192];
+	if (pszTable && pszTable[0])
+		Q_snprintf(szKey, sizeof(szKey), "%s.%s", pszTable, pszName);
+	else
+		Q_strncpy(szKey, pszName, sizeof(szKey));
+
+	CUtlSymbol symbol(szKey);
+	for (int i = 0; i < m_DisabledFunctions.Count(); i++)
+	{
+		if (m_DisabledFunctions[i] == symbol)
+			return true;
+	}
+
+	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -233,19 +397,23 @@ void CLuaIntegration::DoThinkFunctions()
 //-----------------------------------------------------------------------------
 void CLuaIntegration::ListBinds()
 {
-	Msg("=== Lua Function Bindings ===\n");
-
+	// Output format is the original gmod one, so that wiki dumps of
+	// "lua_listbinds" line up character for character:
+	//     * [[_EntSetPos]] - Sets the position of the entity. ...
+	//     * [[_file]].[[Read]] - Reads a file into a string. ...
 	for (int i = 0; i < m_RegisteredFunctions.Count(); i++)
 	{
 		const LuaFunctionRegistration &registration = m_RegisteredFunctions[i];
-		if (registration.valid)
-		{
-			Msg("%s - %s\n", registration.name,
-				registration.description ? registration.description : "No description");
-		}
-	}
+		if (!registration.valid)
+			continue;
 
-	Msg("Total: %d functions registered\n", m_RegisteredFunctions.Count());
+		Msg("* ");
+		if (registration.table[0])
+			Msg("[[%s]].", registration.table);
+
+		Msg("[[%s]] - %s\n", registration.name,
+			registration.description ? registration.description : "");
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -296,23 +464,62 @@ void CLuaIntegration::RegisterCoreFunctions()
 //=============================================================================
 
 //-----------------------------------------------------------------------------
+// Purpose: "lua" console command - runs a LUA string command on the server
+//-----------------------------------------------------------------------------
+void LuaRunCommand_f(void)
+{
+	if (!CLuaIntegration::IsLuaCommandAllowed())
+	{
+		Msg("The \"lua\" command has been disabled by the server admin\n");
+		return;
+	}
+
+	if (!LuaCommandAllowedForCaller())
+	{
+		LuaPrintToCaller("This command can only be used by server admins.\n");
+		return;
+	}
+
+	if (engine->Cmd_Argc() <= 1)
+	{
+		LuaPrintToCaller("Usage:\n   lua \"<command>\"\n");
+		return;
+	}
+
+	const char *pszCode = engine->Cmd_Args();
+	if (!pszCode || !pszCode[0])
+	{
+		Msg("LUA: Attempted to run a NULL string!?\n");
+		return;
+	}
+
+	CGModLuaSystem::ExecuteString(pszCode);
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: lua_openscript console command
 //-----------------------------------------------------------------------------
 void LuaOpenScript_f(void)
 {
-	if (engine->Cmd_Argc() < 2)
+	if (!CLuaIntegration::IsOpenScriptCommandAllowed())
 	{
-		Msg("Usage: lua_openscript <filename>\n");
+		Msg("The \"lua_openscript\" command has been disabled by the server admin\n");
 		return;
 	}
 
-	if (!CLuaIntegration::IsInitialized())
+	if (!LuaCommandAllowedForCaller())
 	{
-		Warning("Lua system not initialized!\n");
+		LuaPrintToCaller("This command can only be used by server admins. Try using 'lua_openscript' to open scripts on the client side.\n");
 		return;
 	}
 
-	CLuaIntegration::OpenScript(engine->Cmd_Argv(1));
+	if (engine->Cmd_Argc() <= 1)
+	{
+		LuaPrintToCaller("Usage:\n   lua_openscript \"<filename>\"\n");
+		return;
+	}
+
+	CGModLuaSystem::LoadScript(engine->Cmd_Args(), LUA_SCRIPT_MISC);
 }
 
 //-----------------------------------------------------------------------------
@@ -320,9 +527,9 @@ void LuaOpenScript_f(void)
 //-----------------------------------------------------------------------------
 void LuaListBinds_f()
 {
-	if (!CLuaIntegration::IsInitialized())
+	if (!LuaCommandAllowedForCaller())
 	{
-		Warning("Lua system not initialized!\n");
+		LuaPrintToCaller("This command can only be used by server admins.\n");
 		return;
 	}
 

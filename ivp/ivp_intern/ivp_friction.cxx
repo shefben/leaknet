@@ -1067,6 +1067,15 @@ IVP_FLOAT IVP_Contact_Point_API::get_vert_force(IVP_Contact_Point *friction_hand
     return friction_handle->now_friction_pressure;
 };
 
+void IVP_Contact_Point_API::get_surface_normal_ws(IVP_Contact_Point *friction_handle, IVP_U_Float_Point *out_normal){
+    IVP_Impact_Solver_Long_Term *info = friction_handle->get_lt();
+    if ( info ){
+	out_normal->set( &info->surf_normal );
+    } else {
+	out_normal->set_to_zero();
+    }
+};
+
 void IVP_Friction_Info_For_Core::friction_info_insert_friction_dist(IVP_Contact_Point *dist)
 {
     friction_springs.add(dist);

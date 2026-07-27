@@ -16,6 +16,22 @@ class CBasePlayer;
 class CRagdollProp;
 class CDynamicProp;
 
+// True when the model's .phy is a jointed ragdoll (see gmod_make_compat.cpp).
+// Spawn those as prop_ragdoll - as prop_physics/prop_dynamic they come out as
+// rigid floating statues the physgun can't grab.
+bool ModelIsRagdoll( int modelindex );
+
+// Entity class a model should be spawned as: prop_ragdoll for jointed .phy
+// models, prop_physics when the model has prop_data, prop_dynamic otherwise.
+// Never hardcode "prop_physics" - CBaseProp::Spawn() deletes one whose model
+// has no prop_data section, so the spawn silently does nothing.
+const char *PickPropClassForModel( const char *model, int modelindex );
+
+// Precache + create + place a model at the player's crosshair, picking the
+// entity class with PickPropClassForModel(). bForceRagdoll is for the spawn
+// menu's '#' entries. Returns NULL if the model or the entity couldn't be made.
+CBaseEntity *GModSpawnModelAtCrosshair( CBasePlayer *player, const char *model, bool bForceRagdoll );
+
 // Entity creation types discovered in IDA analysis
 enum GMakeEntityType_t
 {

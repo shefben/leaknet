@@ -35,6 +35,10 @@ static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFor
 //-----------------------------------------------------------------------------
 // Console variables for NPC tool
 //-----------------------------------------------------------------------------
+// Weapon the build menu's "Weapon to give AI" combo box sets (owned by
+// dlls/ai_concommands.cpp, shared with npc_create).
+extern ConVar npc_create_equipment;
+
 ConVar bm_npc_type("bm_npc_type", "npc_citizen", FCVAR_ARCHIVE, "Default NPC type to spawn");
 ConVar bm_npc_health("bm_npc_health", "100", FCVAR_ARCHIVE, "Default NPC health");
 ConVar bm_npc_limit("bm_npc_limit", "20", FCVAR_ARCHIVE, "Maximum NPCs per player");
@@ -51,6 +55,10 @@ struct NPCInfo_t
 	bool bRequiresModel;
 };
 
+// Classnames must match the LINK_ENTITY_TO_CLASS names the 2003 beta NPCs
+// actually register (dlls/bmod_dll/npc_*.cpp) - retail HL2 spellings like
+// npc_zombie_fast or npc_scanner do not exist here and CreateEntityByName
+// would just log "Attempted to create unknown entity type".
 static NPCInfo_t g_NPCInfo[] =
 {
 	{ "npc_citizen",		"Citizen",			"Friendly citizen NPC",		100,	false },
@@ -60,14 +68,14 @@ static NPCInfo_t g_NPCInfo[] =
 	{ "npc_kleiner",		"Kleiner",			"Dr. Kleiner",				100,	false },
 	{ "npc_vortigaunt",		"Vortigaunt",		"Friendly Vortigaunt",		100,	false },
 	{ "npc_zombie",			"Zombie",			"Slow zombie",				50,		false },
-	{ "npc_zombie_fast",	"Fast Zombie",		"Fast zombie",				50,		false },
-	{ "npc_zombie_poison",	"Poison Zombie",	"Poison zombie",			175,	false },
+	{ "npc_fastzombie",		"Fast Zombie",		"Fast zombie",				50,		false },
+	{ "npc_poisonzombie",	"Poison Zombie",	"Poison zombie",			175,	false },
 	{ "npc_headcrab",		"Headcrab",			"Standard headcrab",		25,		false },
 	{ "npc_headcrab_fast",	"Fast Headcrab",	"Fast headcrab",			25,		false },
 	{ "npc_headcrab_poison","Poison Headcrab",	"Poison headcrab",			35,		false },
 	{ "npc_combine_s",		"Combine Soldier",	"Civil Protection",			50,		false },
 	{ "npc_metropolice",	"Civil Protection",	"Metro police",				40,		false },
-	{ "npc_scanner",		"Scanner",			"City scanner",				30,		false },
+	{ "npc_cscanner",		"Scanner",			"City scanner",				30,		false },
 	{ "npc_manhack",		"Manhack",			"Flying manhack",			25,		false },
 	{ "npc_antlion",		"Antlion",			"Antlion warrior",			60,		false },
 	{ "npc_antlionguard",	"Antlion Guard",	"Large antlion guard",		500,	false },
@@ -230,10 +238,17 @@ static CBaseEntity *SpawnNPC( CWeaponTool *pTool, const char *pszNPCClass, const
 	if ( !pszNPCClass )
 		return NULL;
 
+	// Models/sounds for an NPC that isn't in the map were never precached at
+	// level load, so open the precache window like npc_create does
+	// (dlls/ai_concommands.cpp) - otherwise Spawn() sets an unprecached model.
+	const bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+	CBaseEntity::SetAllowPrecache( true );
+
 	// Create the NPC entity
 	CBaseEntity *pNPC = CreateEntityByName( pszNPCClass );
 	if ( !pNPC )
 	{
+		CBaseEntity::SetAllowPrecache( bAllowPrecache );
 		DevMsg( "Failed to create NPC of type %s\n", pszNPCClass );
 		return NULL;
 	}
@@ -258,8 +273,11 @@ static CBaseEntity *SpawnNPC( CWeaponTool *pTool, const char *pszNPCClass, const
 	}
 
 	// Spawn the NPC
-	pNPC->Spawn();
+	pNPC->Precache();
+	DispatchSpawn( pNPC );
 	pNPC->Activate();
+
+	CBaseEntity::SetAllowPrecache( bAllowPrecache );
 
 	DevMsg( "Spawned NPC %s at (%f, %f, %f)\n",
 		pszNPCClass, vecPos.x, vecPos.y, vecPos.z );
@@ -406,6 +424,94 @@ static const NPCInfo_t *GetCurrentNPCInfo( NPCToolState_t *pState )
 	// Default to first NPC if not found
 	pState->nSelectedNPC = 0;
 	return &g_NPCInfo[0];
+}
+
+//-----------------------------------------------------------------------------
+// Spawns an NPC where the player is looking. This is what the build menu's NPC
+// panel (settings/context_panels/npc.txt) calls: npc_create is FCVAR_CHEAT, so
+// on a release engine with maxplayers > 1 and sv_cheats 0 it is refused before
+// the game DLL ever sees it.
+//-----------------------------------------------------------------------------
+CON_COMMAND( gm_spawnnpc, "Spawns an NPC of the given class where you are looking" )
+{
+	CBasePlayer *pPlayer = UTIL_GetCommandClient();
+	if ( !pPlayer )
+		return;
+
+	if ( engine->Cmd_Argc() < 2 )
+	{
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "Usage: gm_spawnnpc <npc classname>" );
+		return;
+	}
+
+	const char *pszClass = engine->Cmd_Argv( 1 );
+
+	if ( !CanSpawnNPC( pPlayer ) )
+	{
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "NPC limit reached (%d/%d)",
+			GetPlayerNPCCount( pPlayer ), bm_npc_limit.GetInt() );
+		return;
+	}
+
+	// Where the player is aiming
+	trace_t tr;
+	Vector vecForward;
+	pPlayer->EyeVectors( &vecForward );
+	UTIL_TraceLine( pPlayer->EyePosition(), pPlayer->EyePosition() + vecForward * MAX_TRACE_LENGTH,
+		MASK_NPCSOLID, pPlayer, COLLISION_GROUP_NONE, &tr );
+
+	if ( tr.fraction == 1.0f )
+	{
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "Aim at the ground to spawn an NPC" );
+		return;
+	}
+
+	// Nothing in the map precached this NPC, so open the precache window the
+	// same way npc_create does (dlls/ai_concommands.cpp).
+	const bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+	CBaseEntity::SetAllowPrecache( true );
+
+	CBaseEntity *pEntity = CreateEntityByName( pszClass );
+	if ( !pEntity )
+	{
+		CBaseEntity::SetAllowPrecache( bAllowPrecache );
+		ClientPrintf( pPlayer, HUD_PRINTTALK, "Unknown NPC class %s", pszClass );
+		return;
+	}
+
+	QAngle angSpawn = pPlayer->EyeAngles();
+	angSpawn.x = 0;
+	angSpawn.z = 0;
+
+	Vector vecSpawn = tr.endpos;
+	vecSpawn.z += 12;
+
+	pEntity->SetAbsOrigin( vecSpawn );
+	pEntity->SetAbsAngles( angSpawn );
+	pEntity->SetOwnerEntity( pPlayer );
+
+	const char *pszEquipment = npc_create_equipment.GetString();
+	if ( pszEquipment && pszEquipment[0] )
+	{
+		pEntity->KeyValue( "additionalequipment", pszEquipment );
+	}
+
+	pEntity->Precache();
+	DispatchSpawn( pEntity );
+	pEntity->Activate();
+
+	CBaseEntity::SetAllowPrecache( bAllowPrecache );
+
+	CAI_BaseNPC *pNPC = pEntity->MyNPCPointer();
+	if ( pNPC && !( pNPC->CapabilitiesGet() & bits_CAP_MOVE_FLY ) )
+	{
+		UTIL_DropToFloor( pNPC, MASK_NPCSOLID );
+	}
+
+	CreateSpawnEffect( pEntity->GetAbsOrigin() );
+
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Spawned %s (%d/%d)", pszClass,
+		GetPlayerNPCCount( pPlayer ), bm_npc_limit.GetInt() );
 }
 
 //-----------------------------------------------------------------------------

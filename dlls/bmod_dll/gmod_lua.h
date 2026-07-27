@@ -231,6 +231,7 @@ extern "C" {
     int lua_CurTime(lua_State* L);              // _CurTime()
     int lua_Msg(lua_State* L);                  // _Msg(message)
     int lua_OpenScript(lua_State* L);           // _OpenScript(filename)
+    int lua_ALERT(lua_State* L);                // _ALERT(message)
 
     // ConVar functions
     int lua_GetConVar_Float(lua_State* L);      // _GetConVar_Float(name)

@@ -41,7 +41,7 @@ static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFor
 //-----------------------------------------------------------------------------
 // Console variables
 //-----------------------------------------------------------------------------
-ConVar bm_thruster_force( "bm_thruster_force", "2000", FCVAR_ARCHIVE, "Continuous force (in kg*in/s^2) the Thruster tool applies to attached props" );
+ConVar bm_thruster_force( "gm_thrust_power", "2000", FCVAR_ARCHIVE, "Continuous force (in kg*in/s^2) the Thruster tool applies to attached props" );
 
 // "0 means don't change" for mass, "-1 means don't change" for friction/elasticity,
 // matching the existing "sentinel value" convention used elsewhere in this codebase.

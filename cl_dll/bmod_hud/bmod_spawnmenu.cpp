@@ -117,6 +117,24 @@ CClientSpawnDialog::CClientSpawnDialog( vgui::Panel *parent ) : BaseClass( paren
 	m_bAutoUpdate = true;
 	m_bVisible = false;
 	m_bShowingContext = false;
+	m_bSecluded = false;
+	memset( m_nRestoreBounds, 0, sizeof(m_nRestoreBounds) );
+	m_szLastContext[0] = '\0';
+
+	// Original GMod 9 build-menu layout, recovered from client.dll.  The
+	// resource file can override every value before the dialog is created.
+	m_nLayoutDialogWide = 790;
+	m_nLayoutPanelTop = 10;
+	m_nLayoutPanelBottom = 10;
+	m_nLayoutPropX = 10;
+	m_nLayoutPropWide = 238;
+	m_nLayoutToolX = 270;
+	m_nLayoutToolWide = 510;
+	m_nLayoutContextX = 545;
+	m_nLayoutContextWide = 235;
+	m_nLayoutContextBottom = 15;
+	m_nLayoutColumnGap = 8;
+	LoadBuildMenuResource();
 
 	// Load the scheme
 	vgui::HScheme scheme = vgui::scheme()->LoadSchemeFromFile( SPAWNMENU_SCHEME_FILE, SPAWNMENU_SCHEME_NAME );
@@ -138,7 +156,7 @@ CClientSpawnDialog::CClientSpawnDialog( vgui::Panel *parent ) : BaseClass( paren
 	if ( m_nConsoleHeight < 550 )
 		m_nConsoleHeight = 550;
 
-	const int nWide = 960;
+	const int nWide = m_nLayoutDialogWide;
 	SetSize( nWide, m_nConsoleHeight );
 	SetPos( (screenWide - nWide) / 2, (screenTall - m_nConsoleHeight) / 2 );
 
@@ -244,6 +262,8 @@ void CClientSpawnDialog::CreateContextPanel()
 void CClientSpawnDialog::CreateMinimizeButton()
 {
 	m_pMinimizeButton = new vgui::Button( m_pMainPanel, "ContextMinimize", "Seclude" );
+	m_pMinimizeButton->SetCommand( "ContextMinimize" );
+	m_pMinimizeButton->AddActionSignalTarget( this );
 	m_pMinimizeButton->SetVisible( false );
 }
 
@@ -252,7 +272,37 @@ void CClientSpawnDialog::CreateMinimizeButton()
 //-----------------------------------------------------------------------------
 void CClientSpawnDialog::LoadMenuConfiguration()
 {
+	LoadBuildMenuResource();
 	LoadGModMenuConfiguration();
+}
+
+//-----------------------------------------------------------------------------
+// Load the build-menu geometry from the same VGUI resource used by GMod 9.
+// The resource also contains the templates applied to dynamically-created
+// labels and buttons by CToolButtonsPanel::ApplyResourceSettings.
+//-----------------------------------------------------------------------------
+void CClientSpawnDialog::LoadBuildMenuResource()
+{
+	KeyValues *pResource = new KeyValues( "BuildMenuResource" );
+	if ( pResource->LoadFromFile( filesystem, TOOLBUTTONS_RES_FILE, "MOD" ) )
+	{
+		KeyValues *pLayout = pResource->FindKey( "BuildMenuLayout" );
+		if ( pLayout )
+		{
+			m_nLayoutDialogWide = max( pLayout->GetInt( "dialog_wide", m_nLayoutDialogWide ), 1 );
+			m_nLayoutPanelTop = max( pLayout->GetInt( "panel_top", m_nLayoutPanelTop ), 0 );
+			m_nLayoutPanelBottom = max( pLayout->GetInt( "panel_bottom", m_nLayoutPanelBottom ), 0 );
+			m_nLayoutPropX = max( pLayout->GetInt( "prop_x", m_nLayoutPropX ), 0 );
+			m_nLayoutPropWide = max( pLayout->GetInt( "prop_wide", m_nLayoutPropWide ), 1 );
+			m_nLayoutToolX = max( pLayout->GetInt( "tool_x", m_nLayoutToolX ), 0 );
+			m_nLayoutToolWide = max( pLayout->GetInt( "tool_wide", m_nLayoutToolWide ), 1 );
+			m_nLayoutContextX = max( pLayout->GetInt( "context_x", m_nLayoutContextX ), 0 );
+			m_nLayoutContextWide = max( pLayout->GetInt( "context_wide", m_nLayoutContextWide ), 1 );
+			m_nLayoutContextBottom = max( pLayout->GetInt( "context_bottom", m_nLayoutContextBottom ), 0 );
+			m_nLayoutColumnGap = max( pLayout->GetInt( "column_gap", m_nLayoutColumnGap ), 0 );
+		}
+	}
+	pResource->deleteThis();
 }
 
 //-----------------------------------------------------------------------------
@@ -425,7 +475,15 @@ void CClientSpawnDialog::ReloadSpawnMenu()
 //-----------------------------------------------------------------------------
 void CClientSpawnDialog::ShowPanel( bool bShow )
 {
-	if ( BaseClass::IsVisible() == bShow )
+	// Opening or closing the menu always leaves the secluded state - the whole
+	// dialog is put back together first so both paths start from one layout.
+	const bool bWasSecluded = m_bSecluded;
+	if ( bWasSecluded )
+	{
+		SetSecluded( false );
+	}
+
+	if ( BaseClass::IsVisible() == bShow && !bWasSecluded )
 		return;
 
 	m_bVisible = bShow;
@@ -442,6 +500,12 @@ void CClientSpawnDialog::ShowPanel( bool bShow )
 
 		if ( m_pMainPanel )
 			m_pMainPanel->SetVisible( true );
+
+		// Re-show the selected tool's settings box so the menu always opens the
+		// way GMod 9 does: the floating context panel reflects the current tool
+		// (and re-reads its convar values, picking up console-made changes).
+		if ( m_szLastContext[0] )
+			ShowToolContext( m_szLastContext );
 	}
 	else
 	{
@@ -483,39 +547,127 @@ void CClientSpawnDialog::PerformLayout()
 		m_pMainPanel->SetSize( GetWide(), GetTall() );
 	}
 
-	const int margin = 10;
-	const int gap = 10;
-	const int toolWide = 380;	// tools column - closer to the reference screenshot's near-even split
-	const int contentTall = max( GetTall() - margin * 2, 1 );
-	const int propWide = max( GetWide() - margin * 2 - gap - toolWide, 1 );
-	const int toolX = margin + propWide + gap;
+	// Secluded: the frame has already been shrunk to the settings box, so the
+	// box simply fills it and everything else stays hidden.
+	if ( m_bSecluded )
+	{
+		if ( m_pContextPanel )
+		{
+			m_pContextPanel->SetBounds( 0, 0, GetWide(), GetTall() );
+		}
+		if ( m_pMinimizeButton )
+		{
+			int buttonW, buttonH;
+			m_pMinimizeButton->GetSize( buttonW, buttonH );
+			m_pMinimizeButton->SetPos( max( GetWide() - buttonW - 2, 0 ), 2 );
+			m_pMinimizeButton->MoveToFront();
+		}
+		return;
+	}
+
+	const int contentTall = max( GetTall() - m_nLayoutPanelTop - m_nLayoutPanelBottom, 1 );
+	const int propWide = min( m_nLayoutPropWide, max( GetWide() - m_nLayoutPropX, 1 ) );
+
+	const bool bContextVisible = ( m_pContextPanel && m_pContextPanel->IsContextVisible() );
+	const int boxX = min( m_nLayoutContextX, max( GetWide() - 1, 0 ) );
+	const int boxWide = min( m_nLayoutContextWide, max( GetWide() - boxX, 1 ) );
+
+	int toolWide = min( m_nLayoutToolWide, max( GetWide() - m_nLayoutToolX - m_nLayoutPanelTop, 1 ) );
+	if ( bContextVisible )
+	{
+		// The settings box is a column of its own - clip the tool list so its
+		// buttons reflow to the left of it instead of being covered by it.
+		toolWide = min( toolWide, max( boxX - m_nLayoutToolX - m_nLayoutColumnGap, 1 ) );
+	}
 
 	if ( m_pPropPanel )
 	{
-		m_pPropPanel->SetBounds( margin, margin, propWide, contentTall );
+		m_pPropPanel->SetBounds( m_nLayoutPropX, m_nLayoutPanelTop, propWide, contentTall );
 	}
 	if ( m_pToolButtonsPanel )
 	{
-		m_pToolButtonsPanel->SetBounds( toolX, margin, toolWide, contentTall );
+		m_pToolButtonsPanel->SetBounds( m_nLayoutToolX, m_nLayoutPanelTop, toolWide, contentTall );
 	}
 
-	// The context box floats over the bottom-right corner of the tools
-	// panel (matching the reference screenshot's "Bloom Settings" box) - it
-	// does not take up its own layout column.
 	if ( m_pContextPanel )
 	{
-		const int boxWide = min( toolWide - 20, 260 );
-		const int boxTall = min( contentTall - 40, 260 );
-		const int boxX = toolX + toolWide - boxWide - 4;
-		const int boxY = margin + contentTall - boxTall - 4;
-		m_pContextPanel->SetBounds( boxX, boxY, boxWide, boxTall );
+		const int boxTall = max( GetTall() - m_nLayoutPanelTop - m_nLayoutContextBottom, 1 );
+		m_pContextPanel->SetBounds( boxX, m_nLayoutPanelTop, boxWide, boxTall );
 
 		if ( m_pMinimizeButton )
 		{
 			int buttonW, buttonH;
 			m_pMinimizeButton->GetSize( buttonW, buttonH );
-			m_pMinimizeButton->SetPos( boxX + boxWide - buttonW - 2, boxY + 2 );
+			m_pMinimizeButton->SetPos( boxX + boxWide - buttonW - 2, m_nLayoutPanelTop + 2 );
 		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Seclude / restore - "Seclude" packs the build menu away and keeps only the
+// current tool's settings box on screen; re-opening the menu (or pressing the
+// button again, which now reads "Rejoin") brings the whole dialog back.
+//-----------------------------------------------------------------------------
+void CClientSpawnDialog::SetSecluded( bool bSecluded )
+{
+	if ( m_bSecluded == bSecluded )
+		return;
+
+	if ( bSecluded )
+	{
+		// Nothing to seclude if no tool settings are on screen.
+		if ( !m_pContextPanel || !m_pContextPanel->IsContextVisible() )
+			return;
+
+		GetBounds( m_nRestoreBounds[0], m_nRestoreBounds[1], m_nRestoreBounds[2], m_nRestoreBounds[3] );
+
+		int boxX, boxY, boxWide, boxTall;
+		m_pContextPanel->GetBounds( boxX, boxY, boxWide, boxTall );
+
+		m_bSecluded = true;
+
+		if ( m_pPropPanel )
+			m_pPropPanel->SetVisible( false );
+		if ( m_pToolButtonsPanel )
+			m_pToolButtonsPanel->SetVisible( false );
+		if ( m_pMinimizeButton )
+			m_pMinimizeButton->SetText( "Rejoin" );
+
+		// Drop the frame chrome so what's left looks like the standalone
+		// settings box, and give the keyboard back to the game.
+		SetTitleBarVisible( false );
+		SetPaintBackgroundEnabled( false );
+		SetSizeable( false );
+		SetKeyBoardInputEnabled( false );
+		SetBounds( m_nRestoreBounds[0] + boxX, m_nRestoreBounds[1] + boxY, boxWide, boxTall );
+	}
+	else
+	{
+		m_bSecluded = false;
+
+		SetTitleBarVisible( true );
+		SetPaintBackgroundEnabled( true );
+		SetSizeable( true );
+		SetKeyBoardInputEnabled( IsVisible() );
+		SetBounds( m_nRestoreBounds[0], m_nRestoreBounds[1], m_nRestoreBounds[2], m_nRestoreBounds[3] );
+
+		if ( m_pPropPanel )
+			m_pPropPanel->SetVisible( true );
+		if ( m_pToolButtonsPanel )
+			m_pToolButtonsPanel->SetVisible( true );
+		if ( m_pMinimizeButton )
+			m_pMinimizeButton->SetText( "Seclude" );
+	}
+
+	InvalidateLayout( true );
+	if ( m_pContextPanel )
+	{
+		m_pContextPanel->InvalidateLayout( true );
+		m_pContextPanel->MoveToFront();
+	}
+	if ( m_pMinimizeButton )
+	{
+		m_pMinimizeButton->MoveToFront();
 	}
 }
 
@@ -531,9 +683,38 @@ void CClientSpawnDialog::ShowToolContext( const char *contextType )
 	m_pContextPanel->ShowContext( contextType );
 
 	bool bVisible = m_pContextPanel->IsContextVisible();
+
+	// Track the active tool's context across menu close/open. Tools without a
+	// context clear it so reopening the menu doesn't show a stale panel.
+	if ( bVisible )
+	{
+		Q_strncpy( m_szLastContext, contextType, sizeof(m_szLastContext) );
+	}
+	else
+	{
+		m_szLastContext[0] = '\0';
+	}
+	// A tool without settings collapses the settings column, so the tool list
+	// has to be re-laid out either way.
+	if ( !bVisible && m_bSecluded )
+	{
+		SetSecluded( false );
+	}
+
+	InvalidateLayout( true );
+	if ( bVisible )
+	{
+		m_pContextPanel->InvalidateLayout( true );
+		m_pContextPanel->MoveToFront();
+	}
+
 	if ( m_pMinimizeButton )
 	{
 		m_pMinimizeButton->SetVisible( bVisible );
+		if ( bVisible )
+		{
+			m_pMinimizeButton->MoveToFront();
+		}
 	}
 }
 
@@ -567,17 +748,9 @@ void CClientSpawnDialog::OnCommand( const char *command )
 {
 	if ( Q_stricmp( command, "ContextMinimize" ) == 0 )
 	{
-		// "Seclude" hides just the floating tool-settings box, not the whole
-		// build menu (a previous version of this called ShowPanel(false),
-		// which closed the entire spawn menu instead).
-		if ( m_pContextPanel )
-		{
-			m_pContextPanel->HideContext();
-		}
-		if ( m_pMinimizeButton )
-		{
-			m_pMinimizeButton->SetVisible( false );
-		}
+		// "Seclude" packs the build menu away and keeps the tool settings box
+		// on screen; pressing it again ("Rejoin") brings the menu back.
+		SetSecluded( !m_bSecluded );
 	}
 	else
 	{
@@ -704,6 +877,41 @@ void CToolButtonsPanel::PerformLayout()
 //-----------------------------------------------------------------------------
 // Handle commands
 //-----------------------------------------------------------------------------
+static bool BM_ExtractContextFromCommand( const char *command, char *contextName, int contextNameSize )
+{
+	if ( !contextName || contextNameSize <= 0 )
+		return false;
+
+	contextName[0] = '\0';
+	if ( !command )
+		return false;
+
+	const char *contextCommand = Q_stristr( command, "gm_context" );
+	if ( !contextCommand )
+		return false;
+
+	contextCommand += Q_strlen( "gm_context" );
+	while ( *contextCommand == ' ' || *contextCommand == '\t' )
+	{
+		contextCommand++;
+	}
+
+	int length = 0;
+	while ( *contextCommand && *contextCommand != ';' &&
+		*contextCommand != ' ' && *contextCommand != '\t' &&
+		*contextCommand != '\r' && *contextCommand != '\n' )
+	{
+		if ( length < contextNameSize - 1 )
+		{
+			contextName[length++] = *contextCommand;
+		}
+		contextCommand++;
+	}
+
+	contextName[length] = '\0';
+	return length > 0;
+}
+
 void CToolButtonsPanel::OnCommand( const char *command )
 {
 	if ( Q_strnicmp( command, "menu_entry_", 11 ) == 0 )
@@ -717,6 +925,22 @@ void CToolButtonsPanel::OnCommand( const char *command )
 				if ( entry.toolID >= 0 )
 				{
 					SetToolMode( entry.toolID );
+				}
+
+				// Apply the per-tool settings panel immediately.  Waiting for the
+				// queued console command made the floating dialog unreliable, and
+				// tools without gm_context left the previous tool's panel behind.
+				if ( g_pSpawnMenu )
+				{
+					char contextName[128];
+					if ( BM_ExtractContextFromCommand( entry.szCommand, contextName, sizeof(contextName) ) )
+					{
+						g_pSpawnMenu->ShowToolContext( contextName );
+					}
+					else
+					{
+						g_pSpawnMenu->ShowToolContext( NULL );
+					}
 				}
 
 				char fullCommand[512];
@@ -772,6 +996,40 @@ void CToolButtonsPanel::ClearToolButtons()
 		m_bButtonStates[i] = false;
 	}
 	m_nCurrentToolMode = TOOL_NONE;
+}
+
+void CToolButtonsPanel::ApplyResourceSettings()
+{
+	KeyValues *pResource = new KeyValues( "BuildMenuResource" );
+	if ( !pResource->LoadFromFile( filesystem, TOOLBUTTONS_RES_FILE, "MOD" ) )
+	{
+		pResource->deleteThis();
+		return;
+	}
+
+	KeyValues *pPanelSettings = pResource->FindKey( "ToolButtonsPanel" );
+	if ( pPanelSettings )
+	{
+		ApplySettings( pPanelSettings );
+	}
+
+	KeyValues *pLabelSettings = pResource->FindKey( "BuildMenuLabelTemplate" );
+	KeyValues *pButtonSettings = pResource->FindKey( "BuildMenuButtonTemplate" );
+	KeyValues *pDoubleButtonSettings = pResource->FindKey( "BuildMenuDoubleButtonTemplate" );
+
+	for ( int i = 0; i < m_ToolButtons.Count(); i++ )
+	{
+		ToolButton_t &entry = m_ToolButtons[i];
+		KeyValues *pSettings = entry.bIsLabel ? pLabelSettings :
+			( entry.bDoubleHeight ? pDoubleButtonSettings : pButtonSettings );
+		if ( entry.pPanel && pSettings )
+		{
+			entry.pPanel->ApplySettings( pSettings );
+			entry.pPanel->SetVisible( true );
+		}
+	}
+
+	pResource->deleteThis();
 }
 
 void CToolButtonsPanel::CreateMenuLabel( const char *labelText )
@@ -962,6 +1220,7 @@ void CToolButtonsPanel::LoadToolButtons()
 		CreateToolButton( 4, "Pulley", "gm_toolmode 4; gm_context pulley;" );
 	}
 
+	ApplyResourceSettings();
 	InvalidateLayout();
 }
 
@@ -1603,7 +1862,8 @@ void CContextPanel::ShowContext( const char *contextType )
 	// a tool's settings" back when this box also hosted the prop panel; the
 	// prop panel is now a permanent sibling on the dialog (CClientSpawnDialog::
 	// m_pPropPanel), so those aliases just mean "nothing to show".
-	if ( !contextType || !contextType[0] || Q_stricmp( contextType, "props" ) == 0 || Q_stricmp( contextType, "spawnmenu" ) == 0 )
+	if ( !contextType || !contextType[0] || Q_stricmp( contextType, "null" ) == 0 ||
+		Q_stricmp( contextType, "props" ) == 0 || Q_stricmp( contextType, "spawnmenu" ) == 0 )
 	{
 		HideContext();
 		return;

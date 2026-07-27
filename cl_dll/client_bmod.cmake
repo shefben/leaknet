@@ -21,7 +21,6 @@ BEGIN_SRC( CLIENT_BMOD_SOURCE_FILES "Source Files" )
 			"bmod_hud/bmod_spawnmenu_manager.cpp"
 			"bmod_hud/clientmode_hlnormal.cpp"
 			"bmod_hud/clientmode_hlnormal.h"
-			#"bmod_hud/context_panel.cpp"
 			"bmod_hud/context_panel.h"
 			"bmod_hud/concommand.cpp"
 			"bmod_hud/c_antlion_dust.cpp"

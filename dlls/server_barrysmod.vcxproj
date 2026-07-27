@@ -475,13 +475,10 @@
     <ClCompile Include="bmod_dll\tool_motor.cpp" />
     <ClCompile Include="bmod_dll\tool_muscle.cpp" />
     <ClCompile Include="bmod_dll\tool_nocollide.cpp" />
-    <ClCompile Include="bmod_dll\tool_rope.cpp" />
-    <ClCompile Include="bmod_dll\tool_weld.cpp" />
 
     <!-- New GMod Systems Discovered via IDA Analysis -->
     <ClCompile Include="bmod_dll\gmod_weld.cpp" />
     <ClCompile Include="bmod_dll\gmod_undo.cpp" />
-    <ClCompile Include="bmod_dll\gmod_make.cpp" />
     <ClCompile Include="bmod_dll\gmod_lua.cpp" />
     <ClCompile Include="bmod_dll\gmod_tools.cpp" />
     <ClCompile Include="bmod_dll\gmod_swep.cpp" />

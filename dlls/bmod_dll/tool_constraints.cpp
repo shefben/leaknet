@@ -34,12 +34,49 @@
 LINK_ENTITY_TO_CLASS( gmod_ropeanchor, CPointEntity );
 
 //-----------------------------------------------------------------------------
-// Console variables
+// Console variables - authentic GMod 9 per-mode constraint cvars. The names
+// must match GMod 9 exactly (settings/context_panels/*.txt, third-party mods
+// and Lua scripts all use them).
 //-----------------------------------------------------------------------------
-ConVar bm_rope_length( "bm_rope_length", "200", FCVAR_ARCHIVE, "Maximum rope constraint length in units" );
-ConVar bm_elastic_constant( "bm_elastic_constant", "50", FCVAR_ARCHIVE, "Elastic (spring) constraint spring constant" );
-ConVar bm_elastic_damping( "bm_elastic_damping", "1", FCVAR_ARCHIVE, "Elastic (spring) constraint damping" );
-ConVar bm_weld_nocollide( "bm_weld_nocollide", "1", FCVAR_ARCHIVE, "Disable collision between welded objects" );
+ConVar gm_weld_rope_type( "gm_weld_rope_type", "1", FCVAR_NONE, "Rope tool: visual cable type (1-5)" );
+ConVar gm_weld_rope_width( "gm_weld_rope_width", "2", FCVAR_NONE, "Rope tool: visual cable width" );
+ConVar gm_weld_rope_length( "gm_weld_rope_length", "0", FCVAR_NONE, "Rope tool: extra rope length added to the click distance" );
+ConVar gm_weld_rope_forcelimit( "gm_weld_rope_forcelimit", "0", FCVAR_NONE, "Rope tool: force needed to snap the rope (0 = unbreakable)" );
+ConVar gm_weld_rope_rigid( "gm_weld_rope_rigid", "0", FCVAR_NONE, "Rope tool: rigid rope (objects can't move closer either)" );
+
+ConVar gm_weld_spr_springy( "gm_weld_spr_springy", "50", FCVAR_NONE, "Elastic tool: spring constant" );
+ConVar gm_weld_spr_damping( "gm_weld_spr_damping", "1", FCVAR_NONE, "Elastic tool: spring damping" );
+ConVar gm_weld_spr_type( "gm_weld_spr_type", "1", FCVAR_NONE, "Elastic tool: visual cable type (1-5)" );
+ConVar gm_weld_spr_width( "gm_weld_spr_width", "2", FCVAR_NONE, "Elastic tool: visual cable width" );
+ConVar gm_weld_spr_length( "gm_weld_spr_length", "0", FCVAR_NONE, "Elastic tool: extra natural length added to the click distance" );
+ConVar gm_weld_spr_forcelimit( "gm_weld_spr_forcelimit", "0", FCVAR_NONE, "Elastic tool: force limit when rigid (0 = unbreakable)" );
+ConVar gm_weld_spr_rigid( "gm_weld_spr_rigid", "0", FCVAR_NONE, "Elastic tool: create a rigid rope instead of a spring" );
+
+ConVar gm_weld_weld_forcelimit( "gm_weld_weld_forcelimit", "0", FCVAR_NONE, "Weld tool: force needed to break the weld (0 = unbreakable)" );
+ConVar gm_weld_weld_nocollide( "gm_weld_weld_nocollide", "0", FCVAR_NONE, "Weld tool: don't collide welded objects" );
+ConVar gm_weld_weldez_forcelimit( "gm_weld_weldez_forcelimit", "0", FCVAR_NONE, "Easy Weld tool: force needed to break the weld (0 = unbreakable)" );
+ConVar gm_weld_weldez_nocollide( "gm_weld_weldez_nocollide", "0", FCVAR_NONE, "Easy Weld tool: don't collide welded objects" );
+
+ConVar gm_weld_ball_forcelimit( "gm_weld_ball_forcelimit", "0", FCVAR_NONE, "Ballsocket tool: force needed to break the joint (0 = unbreakable)" );
+ConVar gm_weld_ball_nocollide( "gm_weld_ball_nocollide", "0", FCVAR_NONE, "Ballsocket tool: don't collide joined objects" );
+ConVar gm_weld_ballez_forcelimit( "gm_weld_ballez_forcelimit", "0", FCVAR_NONE, "Easy Ball tool: force needed to break the joint (0 = unbreakable)" );
+ConVar gm_weld_ballez_nocollide( "gm_weld_ballez_nocollide", "0", FCVAR_NONE, "Easy Ball tool: don't collide joined objects" );
+ConVar gm_weld_nail_forcelimit( "gm_weld_nail_forcelimit", "0", FCVAR_NONE, "Nail gun: force needed to break the nail (0 = unbreakable)" );
+ConVar gm_weld_nail_nocollide( "gm_weld_nail_nocollide", "0", FCVAR_NONE, "Nail gun: don't collide nailed objects" );
+
+ConVar gm_weld_pulley_forcelimit( "gm_weld_pulley_forcelimit", "0", FCVAR_NONE, "Pulley tool: force needed to snap the pulley (0 = unbreakable)" );
+ConVar gm_weld_pulley_rigid( "gm_weld_pulley_rigid", "0", FCVAR_NONE, "Pulley tool: rigid pulley rope" );
+ConVar gm_weld_pulley_type( "gm_weld_pulley_type", "1", FCVAR_NONE, "Pulley tool: visual cable type (1-5)" );
+ConVar gm_weld_pulley_width( "gm_weld_pulley_width", "2", FCVAR_NONE, "Pulley tool: visual cable width" );
+
+ConVar gm_weld_slider_forcelimit( "gm_weld_slider_forcelimit", "0", FCVAR_NONE, "Slider tool: force needed to break the slider (0 = unbreakable)" );
+ConVar gm_weld_slider_friction( "gm_weld_slider_friction", "0", FCVAR_NONE, "Slider tool: sliding friction" );
+ConVar gm_weld_slider_type( "gm_weld_slider_type", "1", FCVAR_NONE, "Slider tool: visual cable type (1-5)" );
+ConVar gm_weld_slider_width( "gm_weld_slider_width", "2", FCVAR_NONE, "Slider tool: visual cable width" );
+
+ConVar gm_weld_axis_forcelimit( "gm_weld_axis_forcelimit", "0", FCVAR_NONE, "Axis tool: force needed to break the hinge (0 = unbreakable)" );
+ConVar gm_weld_axis_friction( "gm_weld_axis_friction", "0", FCVAR_NONE, "Axis tool: rotational friction torque" );
+ConVar gm_weld_axis_nocollide( "gm_weld_axis_nocollide", "0", FCVAR_NONE, "Axis tool: don't collide hinged objects" );
 
 //-----------------------------------------------------------------------------
 // Registry of every constraint created by this tool family, so a right-click
@@ -134,6 +171,83 @@ static bool WantsRopeVisual( int nMode )
 }
 
 //-----------------------------------------------------------------------------
+// Per-mode settings lookups, driven by the authentic GMod 9 cvars above.
+//-----------------------------------------------------------------------------
+static float ConstraintForceLimitForMode( int nMode )
+{
+	switch ( nMode )
+	{
+		case TOOL_ROPE:			return gm_weld_rope_forcelimit.GetFloat();
+		case TOOL_ELASTIC:		return gm_weld_spr_forcelimit.GetFloat();
+		case TOOL_WELD:			return gm_weld_weld_forcelimit.GetFloat();
+		case TOOL_EASYWELD:		return gm_weld_weldez_forcelimit.GetFloat();
+		case TOOL_BALLSOCKET:	return gm_weld_ball_forcelimit.GetFloat();
+		case TOOL_EASYBALL:		return gm_weld_ballez_forcelimit.GetFloat();
+		case TOOL_NAILGUN:		return gm_weld_nail_forcelimit.GetFloat();
+		case TOOL_PULLEY:		return gm_weld_pulley_forcelimit.GetFloat();
+		case TOOL_SLIDER:		return gm_weld_slider_forcelimit.GetFloat();
+		case TOOL_AXIS:			return gm_weld_axis_forcelimit.GetFloat();
+	}
+	return 0.0f;
+}
+
+static bool ConstraintNoCollideForMode( int nMode )
+{
+	switch ( nMode )
+	{
+		case TOOL_WELD:			return gm_weld_weld_nocollide.GetBool();
+		case TOOL_EASYWELD:		return gm_weld_weldez_nocollide.GetBool();
+		case TOOL_BALLSOCKET:	return gm_weld_ball_nocollide.GetBool();
+		case TOOL_EASYBALL:		return gm_weld_ballez_nocollide.GetBool();
+		case TOOL_NAILGUN:		return gm_weld_nail_nocollide.GetBool();
+		case TOOL_AXIS:			return gm_weld_axis_nocollide.GetBool();
+	}
+	return false;
+}
+
+// GMod 9 rope "type" picks the cable material used for the visual.
+static const char *RopeMaterialForType( int nType )
+{
+	switch ( nType )
+	{
+		case 2:		return "cable/rope.vmt";
+		case 3:		return "cable/chain.vmt";
+		case 4:		return "cable/redlaser.vmt";
+		case 5:		return "cable/physbeam.vmt";
+	}
+	return "cable/cable.vmt";
+}
+
+static void RopeVisualSettingsForMode( int nMode, const char **ppszMaterial, int *pnWidth )
+{
+	int nType = 1;
+	float flWidth = 2.0f;
+
+	switch ( nMode )
+	{
+		case TOOL_ROPE:
+			nType = gm_weld_rope_type.GetInt();
+			flWidth = gm_weld_rope_width.GetFloat();
+			break;
+		case TOOL_ELASTIC:
+			nType = gm_weld_spr_type.GetInt();
+			flWidth = gm_weld_spr_width.GetFloat();
+			break;
+		case TOOL_PULLEY:
+			nType = gm_weld_pulley_type.GetInt();
+			flWidth = gm_weld_pulley_width.GetFloat();
+			break;
+		case TOOL_SLIDER:
+			nType = gm_weld_slider_type.GetInt();
+			flWidth = gm_weld_slider_width.GetFloat();
+			break;
+	}
+
+	*ppszMaterial = RopeMaterialForType( nType );
+	*pnWidth = max( (int)( flWidth + 0.5f ), 1 );
+}
+
+//-----------------------------------------------------------------------------
 // Resolves the physics object a click actually landed on. Ragdolls are made
 // of many physics objects (one per phys bone), so constraining a ragdoll must
 // use the clicked limb's object (trace physicsbone), not VPhysicsGetObject()
@@ -179,7 +293,7 @@ static CBaseEntity *CreateRopeAnchor( CBaseEntity *pAttachTo, const Vector &vecP
 // created entities on pInfo. Purely cosmetic - failure here never fails the
 // constraint itself.
 //-----------------------------------------------------------------------------
-static void AttachRopeVisual( ConstraintInfo_t *pInfo, CBaseEntity *pEnt1, const Vector &vecPos1,
+static void AttachRopeVisual( ConstraintInfo_t *pInfo, int nMode, CBaseEntity *pEnt1, const Vector &vecPos1,
 							   CBaseEntity *pEnt2, const Vector &vecPos2 )
 {
 	CBaseEntity *pAnchor1 = CreateRopeAnchor( pEnt1, vecPos1 );
@@ -194,7 +308,11 @@ static void AttachRopeVisual( ConstraintInfo_t *pInfo, CBaseEntity *pEnt1, const
 		return;
 	}
 
-	CRopeKeyframe *pRope = CRopeKeyframe::Create( pAnchor1, pAnchor2, 0, 0, 2, "cable/cable.vmt", 8 );
+	const char *pszMaterial = "cable/cable.vmt";
+	int nWidth = 2;
+	RopeVisualSettingsForMode( nMode, &pszMaterial, &nWidth );
+
+	CRopeKeyframe *pRope = CRopeKeyframe::Create( pAnchor1, pAnchor2, 0, 0, nWidth, pszMaterial, 8 );
 	if ( !pRope )
 	{
 		UTIL_Remove( pAnchor1 );
@@ -224,21 +342,34 @@ static IPhysicsConstraint *CreateConstraintForMode( int nMode, IPhysicsObject *p
 		{
 			constraint_lengthparams_t length;
 			length.Defaults();
-			length.InitWorldspace( pPhys1, pPhys2, vecPos1, vecPos2, false );
+			length.InitWorldspace( pPhys1, pPhys2, vecPos1, vecPos2, gm_weld_rope_rigid.GetBool() );
 
-			float flMaxLength = bm_rope_length.GetFloat();
-			if ( length.totalLength > flMaxLength )
-				length.totalLength = flMaxLength;
+			// GMod 9: the rope's length is the click distance plus the "extra
+			// rope length" setting (which may be negative to make it taut).
+			length.totalLength = max( length.totalLength + gm_weld_rope_length.GetFloat(), 1.0f );
+			length.constraint.forceLimit = gm_weld_rope_forcelimit.GetFloat();
 
 			return physenv->CreateLengthConstraint( pPhys1, pPhys2, NULL, length );
 		}
 
 		case TOOL_ELASTIC:
 		{
+			if ( gm_weld_spr_rigid.GetBool() )
+			{
+				// Rigid elastic behaves like a rigid rope in GMod 9.
+				constraint_lengthparams_t length;
+				length.Defaults();
+				length.InitWorldspace( pPhys1, pPhys2, vecPos1, vecPos2, true );
+				length.totalLength = max( length.totalLength + gm_weld_spr_length.GetFloat(), 1.0f );
+				length.constraint.forceLimit = gm_weld_spr_forcelimit.GetFloat();
+
+				return physenv->CreateLengthConstraint( pPhys1, pPhys2, NULL, length );
+			}
+
 			springparams_t spring;
-			spring.constant = bm_elastic_constant.GetFloat();
-			spring.damping = bm_elastic_damping.GetFloat();
-			spring.naturalLength = vecPos1.DistTo( vecPos2 );
+			spring.constant = gm_weld_spr_springy.GetFloat();
+			spring.damping = gm_weld_spr_damping.GetFloat();
+			spring.naturalLength = max( vecPos1.DistTo( vecPos2 ) + gm_weld_spr_length.GetFloat(), 1.0f );
 			spring.startPosition = vecPos1;
 			spring.endPosition = vecPos2;
 			spring.useLocalPositions = false;
@@ -253,6 +384,7 @@ static IPhysicsConstraint *CreateConstraintForMode( int nMode, IPhysicsObject *p
 			constraint_fixedparams_t fixed;
 			fixed.Defaults();
 			fixed.InitWithCurrentObjectState( pPhys1, pPhys2 );
+			fixed.constraint.forceLimit = ConstraintForceLimitForMode( nMode );
 
 			return physenv->CreateFixedConstraint( pPhys1, pPhys2, NULL, fixed );
 		}
@@ -269,6 +401,7 @@ static IPhysicsConstraint *CreateConstraintForMode( int nMode, IPhysicsObject *p
 			ballsocket.Defaults();
 			pPhys1->WorldToLocal( ballsocket.constraintPosition[0], vecShared );
 			pPhys2->WorldToLocal( ballsocket.constraintPosition[1], vecShared );
+			ballsocket.constraint.forceLimit = ConstraintForceLimitForMode( nMode );
 
 			return physenv->CreateBallsocketConstraint( pPhys1, pPhys2, NULL, ballsocket );
 		}
@@ -283,6 +416,8 @@ static IPhysicsConstraint *CreateConstraintForMode( int nMode, IPhysicsObject *p
 			pPhys2->WorldToLocal( pulley.objectPosition[1], vecPos2 );
 			pulley.totalLength = vecPos1.DistTo( vecPos2 );
 			pulley.gearRatio = 1.0f;
+			pulley.isRigid = gm_weld_pulley_rigid.GetBool();
+			pulley.constraint.forceLimit = gm_weld_pulley_forcelimit.GetFloat();
 
 			return physenv->CreatePulleyConstraint( pPhys1, pPhys2, NULL, pulley );
 		}
@@ -296,6 +431,8 @@ static IPhysicsConstraint *CreateConstraintForMode( int nMode, IPhysicsObject *p
 			Vector vecAxis = vecPos2 - vecPos1;
 			VectorNormalize( vecAxis );
 			hinge.worldAxisDirection = vecAxis;
+			hinge.hingeAxis.torque = gm_weld_axis_friction.GetFloat();
+			hinge.constraint.forceLimit = gm_weld_axis_forcelimit.GetFloat();
 
 			return physenv->CreateHingeConstraint( pPhys1, pPhys2, NULL, hinge );
 		}
@@ -311,6 +448,8 @@ static IPhysicsConstraint *CreateConstraintForMode( int nMode, IPhysicsObject *p
 			sliding.InitWithCurrentObjectState( pPhys1, pPhys2, vecDir );
 			sliding.limitMin = 0.0f;
 			sliding.limitMax = flDist;
+			sliding.friction = gm_weld_slider_friction.GetFloat();
+			sliding.constraint.forceLimit = gm_weld_slider_forcelimit.GetFloat();
 
 			return physenv->CreateSlidingConstraint( pPhys1, pPhys2, NULL, sliding );
 		}
@@ -437,7 +576,7 @@ static bool CreateAndRegisterConstraint( int nMode, CBaseEntity *pEnt1, const Ve
 		pInfo->pConstraint = pConstraint;
 		pInfo->pSpring = pSpring;
 
-		if ( ( nMode == TOOL_WELD || nMode == TOOL_EASYWELD ) && pSecond && bm_weld_nocollide.GetBool() )
+		if ( pSecond && ConstraintNoCollideForMode( nMode ) )
 		{
 			physenv->DisableCollisions( pPhys1, pPhys2 );
 			pInfo->bDisabledCollision = true;
@@ -446,7 +585,7 @@ static bool CreateAndRegisterConstraint( int nMode, CBaseEntity *pEnt1, const Ve
 
 	if ( WantsRopeVisual( nMode ) )
 	{
-		AttachRopeVisual( pInfo, pFirst, vecPos1, pSecond, vecPos2 );
+		AttachRopeVisual( pInfo, nMode, pFirst, vecPos1, pSecond, vecPos2 );
 	}
 
 	if ( pInfo->bVisualOnly && !pInfo->hRope.Get() )

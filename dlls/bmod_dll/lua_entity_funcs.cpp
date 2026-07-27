@@ -1205,93 +1205,93 @@ int Lua_EntitySetPhysicsAttacker(lua_State *L)
 void RegisterLuaEntityFunctions()
 {
 	// Position/Angles
-	CLuaIntegration::RegisterFunction("_EntGetPos", Lua_EntGetPos, "Returns entity position as vector3. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntSetPos", Lua_EntSetPos, "Set entity position. Syntax: <entindex> <vector3|x y z>");
-	CLuaIntegration::RegisterFunction("_EntGetAng", Lua_EntGetAng, "Returns entity angles as vector3. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntSetAng", Lua_EntSetAng, "Set entity angles. Syntax: <entindex> <vector3|pitch yaw roll>");
+	CLuaIntegration::RegisterFunction("_EntGetPos", Lua_EntGetPos, "Returns a vector representing the position of the entity");
+	CLuaIntegration::RegisterFunction("_EntSetPos", Lua_EntSetPos, "Sets the position of the entity. Syntax <entid> <vector3 pos>");
+	CLuaIntegration::RegisterFunction("_EntGetAng", Lua_EntGetAng, "Returns the angle as a normalized 'forward' vector. Syntax <entid>");
+	CLuaIntegration::RegisterFunction("_EntSetAng", Lua_EntSetAng, "Sets the angle of the entity (using a forward vector). Syntax <entid> <vector3 ang>");
 	// Original gmod angle-object variants (same behavior as _EntGetAng/_EntSetAng here)
-	CLuaIntegration::RegisterFunction("_EntGetAngAngle", Lua_EntGetAng, "Returns entity angles. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntSetAngAngle", Lua_EntSetAng, "Set entity angles. Syntax: <entindex> <angle>");
+	CLuaIntegration::RegisterFunction("_EntGetAngAngle", Lua_EntGetAng, "Returns the angle as a vector3. Syntax <entid>");
+	CLuaIntegration::RegisterFunction("_EntSetAngAngle", Lua_EntSetAng, "Sets the ANGLE of the entity. Syntax <entid> <vector3 angle>");
 	// Ground entity / move collide (were missing vs original)
-	CLuaIntegration::RegisterFunction("_EntGetGroundEntity", Lua_EntGetGroundEntity, "Get ground entity index. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntSetGroundEntity", Lua_EntSetGroundEntity, "Set ground entity. Syntax: <entindex> <groundindex>");
-	CLuaIntegration::RegisterFunction("_EntGetMoveCollide", Lua_EntGetMoveCollide, "Get move collide type. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntitySetPhysicsAttacker", Lua_EntitySetPhysicsAttacker, "Attribute physics damage to a player. Syntax: <entindex> <playerid>");
-	CLuaIntegration::RegisterFunction("_EntGetVelocity", Lua_EntGetVelocity, "Returns entity velocity as vector3. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntSetVelocity", Lua_EntSetVelocity, "Set entity velocity. Syntax: <entindex> <vector3|x y z>");
-	CLuaIntegration::RegisterFunction("_EntGetForwardVector", Lua_EntGetForwardVector, "Returns entity forward vector. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntGetRightVector", Lua_EntGetRightVector, "Returns entity right vector. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntGetUpVector", Lua_EntGetUpVector, "Returns entity up vector. Syntax: <entindex>");
+	CLuaIntegration::RegisterFunction("_EntGetGroundEntity", Lua_EntGetGroundEntity, "Pass entity as -1 to clear the ground entity. Syntax: <entity> <groundentity>");
+	CLuaIntegration::RegisterFunction("_EntSetGroundEntity", Lua_EntSetGroundEntity, "Pass entity as -1 to clear the ground entity. Syntax: <entity> <groundentity>");
+	CLuaIntegration::RegisterFunction("_EntGetMoveCollide", Lua_EntGetMoveCollide, "Gets the movecollide. Syntax: <entity>");
+	CLuaIntegration::RegisterFunction("_EntitySetPhysicsAttacker", Lua_EntitySetPhysicsAttacker, "Sets the physics attacker on a specified object <entity> <attacker>");
+	CLuaIntegration::RegisterFunction("_EntGetVelocity", Lua_EntGetVelocity, "Gets the enties velocity. Returned as a vector3. Syntax <entid>");
+	CLuaIntegration::RegisterFunction("_EntSetVelocity", Lua_EntSetVelocity, "Sets the velocity of the entity. Syntax <entid> <vector3 newvelocity>");
+	CLuaIntegration::RegisterFunction("_EntGetForwardVector", Lua_EntGetForwardVector, "Returns the forward vector. Syntax <entid>");
+	CLuaIntegration::RegisterFunction("_EntGetRightVector", Lua_EntGetRightVector, "Returns the right vector. Syntax <entid>");
+	CLuaIntegration::RegisterFunction("_EntGetUpVector", Lua_EntGetUpVector, "Returns the up vector. Syntax <entid>");
 
 	// Creation/Destruction
-	CLuaIntegration::RegisterFunction("_EntCreate", Lua_EntCreate, "Create entity by classname. Syntax: <classname>");
-	CLuaIntegration::RegisterFunction("_EntSpawn", Lua_EntSpawn, "Spawn entity. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntActivate", Lua_EntActivate, "Activate entity. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntRemove", Lua_EntRemove_New, "Remove entity. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntExists", Lua_EntExists, "Check if entity exists. Syntax: <entindex>");
+	CLuaIntegration::RegisterFunction("_EntCreate", Lua_EntCreate, "Creates but doesn't spawn specified entity. Syntax <entname>");
+	CLuaIntegration::RegisterFunction("_EntSpawn", Lua_EntSpawn, "Spawns specified entity. Syntax <entindex>");
+	CLuaIntegration::RegisterFunction("_EntActivate", Lua_EntActivate, "Activate an entity. Syntax <entindex>");
+	CLuaIntegration::RegisterFunction("_EntRemove", Lua_EntRemove_New, "Removes entity.. Syntax <entindex>");
+	CLuaIntegration::RegisterFunction("_EntExists", Lua_EntExists, "Check if entity exists.. Syntax <entindex>");
 
 	// Properties
-	CLuaIntegration::RegisterFunction("_EntSetKeyValue", Lua_EntSetKeyValue, "Set entity keyvalue. Syntax: <entindex> <key> <value>");
-	CLuaIntegration::RegisterFunction("_EntSetModel", Lua_EntSetModel, "Set entity model. Syntax: <entindex> <modelpath>");
-	CLuaIntegration::RegisterFunction("_EntGetModel", Lua_EntGetModel, "Get entity model path. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntPrecacheModel", Lua_EntPrecacheModel, "Precache a model. Syntax: <modelpath>");
-	CLuaIntegration::RegisterFunction("_EntSetOwner", Lua_EntSetOwner, "Set entity owner. Syntax: <entindex> <ownerindex>");
-	CLuaIntegration::RegisterFunction("_EntGetOwner", Lua_EntGetOwner, "Get entity owner. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntGetType", Lua_EntGetType, "Get entity classname. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntGetByName", Lua_EntGetByName, "Get entity by targetname. Syntax: <name>");
-	CLuaIntegration::RegisterFunction("_EntGetName", Lua_EntGetName, "Get entity targetname. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntSetName", Lua_EntSetName, "Set entity targetname. Syntax: <entindex> <name>");
+	CLuaIntegration::RegisterFunction("_EntSetKeyValue", Lua_EntSetKeyValue, "Sets an entity keyvalue (Must be done before spawning!). Syntax <entindex> <string keyname> <string keyvalue>");
+	CLuaIntegration::RegisterFunction("_EntSetModel", Lua_EntSetModel, "Sets the model of an entity. PRECACHE THE MODEL FIRST. Syntax: <ent> <modelname>");
+	CLuaIntegration::RegisterFunction("_EntGetModel", Lua_EntGetModel, "Returns the entity's model name. Syntax <entid>");
+	CLuaIntegration::RegisterFunction("_EntPrecacheModel", Lua_EntPrecacheModel, "Precaches a model; Syntax: <modelname>");
+	CLuaIntegration::RegisterFunction("_EntSetOwner", Lua_EntSetOwner, "Sets the owner. Syntax: <ent> <ownerid>");
+	CLuaIntegration::RegisterFunction("_EntGetOwner", Lua_EntGetOwner, "Gets the entity's owner. Syntax: <ent>");
+	CLuaIntegration::RegisterFunction("_EntGetType", Lua_EntGetType, "Returns a entity type name. Syntax: <entid>");
+	CLuaIntegration::RegisterFunction("_EntGetByName", Lua_EntGetByName, "Returns an entity by targetname (0 if not found). Syntax: <name>");
+	CLuaIntegration::RegisterFunction("_EntGetName", Lua_EntGetName, "Gets an entities name. Syntax: <entid>");
+	CLuaIntegration::RegisterFunction("_EntSetName", Lua_EntSetName, "Sets an entities name. Syntax: <entid> <name>");
 
 	// Physics properties
-	CLuaIntegration::RegisterFunction("_EntSetMoveType", Lua_EntSetMoveType, "Set entity move type. Syntax: <entindex> <movetype>");
-	CLuaIntegration::RegisterFunction("_EntGetMoveType", Lua_EntGetMoveType, "Get entity move type. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntSetSolid", Lua_EntSetSolid, "Set entity solid type. Syntax: <entindex> <solidtype>");
-	CLuaIntegration::RegisterFunction("_EntGetSolid", Lua_EntGetSolid, "Get entity solid type. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntSetCollisionGroup", Lua_EntSetCollisionGroup, "Set entity collision group. Syntax: <entindex> <group>");
-	CLuaIntegration::RegisterFunction("_EntGetCollisionGroup", Lua_EntGetCollisionGroup, "Get entity collision group. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntSetGravity", Lua_EntSetGravity, "Set entity gravity scale. Syntax: <entindex> <scale>");
-	CLuaIntegration::RegisterFunction("_EntSetMaterial", Lua_EntSetMaterial, "Set entity material. Syntax: <entindex> <materialpath>");
+	CLuaIntegration::RegisterFunction("_EntSetMoveType", Lua_EntSetMoveType, "Sets the movetype. Syntax: <entity> <type>");
+	CLuaIntegration::RegisterFunction("_EntGetMoveType", Lua_EntGetMoveType, "Gets the movetype. Syntax: <entity>");
+	CLuaIntegration::RegisterFunction("_EntSetSolid", Lua_EntSetSolid, "Sets the solid type. Syntax: <entity> <type>");
+	CLuaIntegration::RegisterFunction("_EntGetSolid", Lua_EntGetSolid, "Gets the solid type. Syntax: <entity>");
+	CLuaIntegration::RegisterFunction("_EntSetCollisionGroup", Lua_EntSetCollisionGroup, "Sets the collision group. Syntax: <entity> <group>");
+	CLuaIntegration::RegisterFunction("_EntGetCollisionGroup", Lua_EntGetCollisionGroup, "Gets the collision group. Syntax: <entity>");
+	CLuaIntegration::RegisterFunction("_EntSetGravity", Lua_EntSetGravity, "Set the gravity for specified entity. Syntax: <entid> <gravity>");
+	CLuaIntegration::RegisterFunction("_EntSetMaterial", Lua_EntSetMaterial, "Set the material of specified entity. Syntax: <entid> <material filename>");
 
 	// Hierarchy
-	CLuaIntegration::RegisterFunction("_EntSetParent", Lua_EntSetParent, "Set entity parent. Syntax: <entindex> <parentindex>");
-	CLuaIntegration::RegisterFunction("_EntGetParent", Lua_EntGetParent, "Get entity parent index. Syntax: <entindex>");
+	CLuaIntegration::RegisterFunction("_EntSetParent", Lua_EntSetParent, "Sets an entities parent. Syntax: <entid> <parent> <attachment>");
+	CLuaIntegration::RegisterFunction("_EntGetParent", Lua_EntGetParent, "Gets an entities parent. Syntax: <entid>");
 
 	// Health
-	CLuaIntegration::RegisterFunction("_EntSetMaxHealth", Lua_EntSetMaxHealth, "Set entity max health. Syntax: <entindex> <maxhealth>");
-	CLuaIntegration::RegisterFunction("_EntGetMaxHealth", Lua_EntGetMaxHealth, "Get entity max health. Syntax: <entindex>");
+	CLuaIntegration::RegisterFunction("_EntSetMaxHealth", Lua_EntSetMaxHealth, "Gets entity max health. Syntax: <entid> <health>");
+	CLuaIntegration::RegisterFunction("_EntGetMaxHealth", Lua_EntGetMaxHealth, "Sets entity max health. Syntax: <entid>");
 	CLuaIntegration::RegisterFunction("_EntGetHealth", Lua_EntGetHealth, "Get entity health. Syntax: <entindex>");
 	CLuaIntegration::RegisterFunction("_EntSetHealth", Lua_EntSetHealth, "Set entity health. Syntax: <entindex> <health>");
-	CLuaIntegration::RegisterFunction("_EntGetWaterLevel", Lua_EntGetWaterLevel, "Get entity water level. Syntax: <entindex>");
+	CLuaIntegration::RegisterFunction("_EntGetWaterLevel", Lua_EntGetWaterLevel, "Returns a number representing how under water an entity is. 0 means not underwater. 3 is totally underwater. Syntax: <entity>");
 
 	// Sounds/Effects
-	CLuaIntegration::RegisterFunction("_EntEmitSound", Lua_EntEmitSound, "Emit sound from entity. Syntax: <entindex> <soundname>");
-	CLuaIntegration::RegisterFunction("_EntEmitSoundEx", Lua_EntEmitSoundEx, "Emit sound with params. Syntax: <entindex> <sound> [vol] [pitch] [channel]");
-	CLuaIntegration::RegisterFunction("_EntFire", Lua_EntFire, "Fire input on entity. Syntax: <entindex> <input> [value] [delay]");
+	CLuaIntegration::RegisterFunction("_EntEmitSound", Lua_EntEmitSound, "Make entity emit sound. Syntax <entid> <soundfilename>");
+	CLuaIntegration::RegisterFunction("_EntEmitSoundEx", Lua_EntEmitSoundEx, "Make entity emit sound. Syntax <entid> <soundfilename> <volume multiplier> <pitch multiplier>");
+	CLuaIntegration::RegisterFunction("_EntFire", Lua_EntFire, "ent_fire an entity. Syntax <entid> <action> <value> <delay> ");
 
 	// Activity/Animation
-	CLuaIntegration::RegisterFunction("_EntSetActivity", Lua_EntSetActivity, "Set entity activity. Syntax: <entindex> <activity>");
-	CLuaIntegration::RegisterFunction("_EntSetMoveCollide", Lua_EntSetMoveCollide, "Set move collide type. Syntax: <entindex> <type>");
+	CLuaIntegration::RegisterFunction("_EntSetActivity", Lua_EntSetActivity, "Sets an activity for an ent. Works for NPC's only. Syntax: <entid> <int sequence>");
+	CLuaIntegration::RegisterFunction("_EntSetMoveCollide", Lua_EntSetMoveCollide, "Sets the movecollide. Syntax: <entity> <type>");
 
 	// Misc
-	CLuaIntegration::RegisterFunction("_EntityGetPhysicsAttacker", Lua_EntityGetPhysicsAttacker, "Get physics attacker. Syntax: <entindex>");
-	CLuaIntegration::RegisterFunction("_EntGetDisposition", Lua_EntGetDisposition, "Get NPC disposition. Syntax: <entindex> <targetindex>");
-	CLuaIntegration::RegisterFunction("_MakeDecal", Lua_MakeDecal, "Create decal. Syntax: <decalname> <x> <y> <z>");
+	CLuaIntegration::RegisterFunction("_EntityGetPhysicsAttacker", Lua_EntityGetPhysicsAttacker, "Returns the last physics attacker.. <entity>");
+	CLuaIntegration::RegisterFunction("_EntGetDisposition", Lua_EntGetDisposition, "Gets an enemy disposition. Syntax: <NPC> <Enity>");
+	CLuaIntegration::RegisterFunction("_MakeDecal", Lua_MakeDecal, "Makes a decal using the last trace. Syntax: <decal>");
 
 	// Finding
-	CLuaIntegration::RegisterFunction("_EntitiesFindByClass", Lua_EntitiesFindByClass, "Find entity by classname. Syntax: <classname> [startindex]");
-	CLuaIntegration::RegisterFunction("_EntitiesFindByName", Lua_EntitiesFindByName, "Find entity by name. Syntax: <name> [startindex]");
-	CLuaIntegration::RegisterFunction("_EntitiesFindInSphere", Lua_EntitiesFindInSphere, "Find entity in sphere. Syntax: <x> <y> <z> <radius> [startindex]");
+	CLuaIntegration::RegisterFunction("_EntitiesFindByClass", Lua_EntitiesFindByClass, "Returns a table of entities (or nil if none): <classname>");
+	CLuaIntegration::RegisterFunction("_EntitiesFindByName", Lua_EntitiesFindByName, "Returns a table of entities (or nil if none): <targetname>");
+	CLuaIntegration::RegisterFunction("_EntitiesFindInSphere", Lua_EntitiesFindInSphere, "Returns a table of entities contained in the sphere: <vector position> <radius>");
 
 	// NPC Functions (GMod 9 compatibility)
 
 	// Utility Functions (GMod 9 compatibility)
 
 	// System Utility Functions
-	CLuaIntegration::RegisterFunction("_GetNextMap", Lua_GetNextMap, "Get next map name.");
-	CLuaIntegration::RegisterFunction("_GetCurrentMap", Lua_GetCurrentMap, "Get current map name.");
-	CLuaIntegration::RegisterFunction("_GetModPath", Lua_GetModPath, "Get mod folder path.");
-	CLuaIntegration::RegisterFunction("_IsLinux", Lua_IsLinux, "Check if running on Linux.");
-	CLuaIntegration::RegisterFunction("_IsDedicatedServer", Lua_IsDedicatedServer, "Check if dedicated server.");
+	CLuaIntegration::RegisterFunction("_GetNextMap", Lua_GetNextMap, "Returns next map name");
+	CLuaIntegration::RegisterFunction("_GetCurrentMap", Lua_GetCurrentMap, "Returns current map name");
+	CLuaIntegration::RegisterFunction("_GetModPath", Lua_GetModPath, "Gets the path to the gmod folder (on the server). No trailing slash. ");
+	CLuaIntegration::RegisterFunction("_IsLinux", Lua_IsLinux, "Returns whether linux or not.");
+	CLuaIntegration::RegisterFunction("_IsDedicatedServer", Lua_IsDedicatedServer, "Returns whether dedicated server or not.");
 
 	// GMod 9 Helper Functions
 	CLuaIntegration::RegisterFunction("IsPlayer", Lua_IsPlayer, "Check if entity is a player. Syntax: <entindex>");

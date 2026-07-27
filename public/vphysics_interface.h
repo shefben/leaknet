@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: Public interfaces to vphysics DLL
 //
@@ -344,7 +344,7 @@ class IPhysicsPlayerController
 public:
 	virtual ~IPhysicsPlayerController( void ) {}
 
-	virtual void Update( const Vector &position, const Vector &velocity, bool onground, IPhysicsObject *ground ) = 0;
+	virtual void Update( const Vector &position, const Vector &velocity, float secondsToArrival, bool onground, IPhysicsObject *ground ) = 0;
 	virtual void SetEventHandler( IPhysicsPlayerControllerEvent *handler ) = 0;
 	virtual bool IsInContact( void ) = 0;
 	virtual void MaxSpeed( const Vector &maxVelocity ) = 0;
@@ -355,6 +355,22 @@ public:
 	// UNDONE: Refactor this and shadow controllers into a single class/interface through IPhysicsObject
 	virtual int GetShadowPosition( Vector *position, QAngle *angles ) = 0;
 	virtual void StepUp( float height ) = 0;
+
+	// The velocity vphysics actually gave the shadow this tick (relative to the
+	// ground it's standing on, if any).
+	virtual void GetShadowVelocity( Vector *velocity ) = 0;
+	// Was the shadow's core frozen by the solver this tick?
+	virtual bool WasFrozen( void ) = 0;
+	// Force the shadow to be beamed to the game position on the next simulation step.
+	virtual void ForceTeleportToCurrentPosition( void ) = 0;
+
+	// Objects heavier than this, and immovable objects, are never pushed by the player.
+	// Objects that can be pushed are pushed no faster than the speed limit, which stops
+	// the player from burying itself in a prop and then being unable to separate.
+	virtual void SetPushMassLimit( float maxPushMass ) = 0;
+	virtual void SetPushSpeedLimit( float maxPushSpeed ) = 0;
+	virtual float GetPushMassLimit( void ) = 0;
+	virtual float GetPushSpeedLimit( void ) = 0;
 };
 
 // UNDONE: At some point allow this to be parameterized using hlshadowcontrol_params_t.

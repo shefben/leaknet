@@ -24,6 +24,7 @@
 #endif
 
 #include "physics_shared.h"
+#include "utlvector.h"
 
 class CBaseEntity;
 class IPhysicsMaterial;
@@ -69,6 +70,9 @@ void PhysCleanupFrictionSounds( CBaseEntity *pEntity );
 
 // force a physics entity to sleep immediately
 void PhysForceEntityToSleep( CBaseEntity *pEntity, IPhysicsObject *pObject );
+
+// Returns entities currently reported as penetrating pSearch by VPhysics.
+void PhysGetListOfPenetratingEntities( CBaseEntity *pSearch, CUtlVector<CBaseEntity *> &list );
 
 // teleport an entity to it's position relative to an object it's constrained to
 void PhysTeleportConstrainedEntity( CBaseEntity *pTeleportSource, IPhysicsObject *pObject0, IPhysicsObject *pObject1, const Vector &prevPosition, const QAngle &prevAngles, bool physicsRotate );

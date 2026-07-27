@@ -60,6 +60,20 @@ ConCommandBase::ConCommandBase( char const *pName, char const *pHelpString /*=0*
 //-----------------------------------------------------------------------------
 ConCommandBase::~ConCommandBase( void )
 {
+	// Drop out of this module's list.
+	RemoveFromList( this );
+
+	// ...and out of whatever list the accessor linked us into (normally the engine's).
+	// Without this, any ConVar/ConCommand that isn't a file-scope static leaves a
+	// dangling pointer behind in the engine's list, and the next walk of that list
+	// (ConCommandBase::RemoveFlaggedCommands at shutdown) reads freed memory.
+	if ( m_bRegistered && s_pAccessor )
+	{
+		s_pAccessor->UnregisterConCommandBase( this );
+	}
+	m_bRegistered = false;
+	m_pParent = NULL;
+	m_pNext = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -160,9 +174,41 @@ const ConCommandBase *ConCommandBase::GetCommands( void )
 void ConCommandBase::AddToList( ConCommandBase *var )
 {
 	// This routine is only valid on root ConCommandBases
-	Assert(var->m_pParent == var);	
+	Assert(var->m_pParent == var);
 	var->m_pNext = s_pConCommandBases;
 	s_pConCommandBases = var;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Unlink var from this module's list, and orphan any command that was
+//			using it as its parent so nothing keeps pointing at it.
+// Input  : *var -
+//-----------------------------------------------------------------------------
+void ConCommandBase::RemoveFromList( ConCommandBase *var )
+{
+	if ( !var )
+		return;
+
+	ConCommandBase **ppPrev = &s_pConCommandBases;
+	for ( ConCommandBase *pCommand = s_pConCommandBases; pCommand; pCommand = *ppPrev )
+	{
+		if ( pCommand == var )
+		{
+			*ppPrev = pCommand->m_pNext;
+			pCommand->m_pNext = NULL;
+			break;
+		}
+		ppPrev = &pCommand->m_pNext;
+	}
+
+	// Anything that linked to var as its parent has to stop doing that.
+	for ( ConCommandBase *pCommand = s_pConCommandBases; pCommand; pCommand = pCommand->m_pNext )
+	{
+		if ( pCommand->m_pParent == var )
+		{
+			pCommand->m_pParent = pCommand;
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------

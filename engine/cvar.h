@@ -36,6 +36,8 @@ public:
 	
 	virtual ConCommandBase	*GetCommands( void );
 
+	virtual void			UnregisterConCommandBase ( ConCommandBase *variable );
+
 public:	// Internal interface
 	void			Init( void );
 	void			Shutdown( void );

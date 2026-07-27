@@ -138,6 +138,7 @@ public:
 	// IPhysicsCollisionSolver
 	int ShouldCollide( IPhysicsObject *pObj0, IPhysicsObject *pObj1, void *pGameData0, void *pGameData1 );
 	int ShouldSolvePenetration( IPhysicsObject *pObj0, IPhysicsObject *pObj1, void *pGameData0, void *pGameData1, float dt );
+	void GetListOfPenetratingEntities( CBaseEntity *pSearch, CUtlVector<CBaseEntity *> &list );
 
 private:
 	void UpdateFrictionSounds();
@@ -512,14 +513,49 @@ static void ReportPenetration( CBaseEntity *pEntity, float duration )
 	}
 }
 
+static void UpdateEntityPenetrationFlag( CBaseEntity *pEntity, bool isPenetrating )
+{
+	if ( !pEntity )
+		return;
+
+	IPhysicsObject *pList[64];
+	int count = pEntity->VPhysicsGetObjectList( pList, ARRAYSIZE(pList) );
+	for ( int i = 0; i < count; i++ )
+	{
+		if ( !pList[i] || pList[i]->IsStatic() )
+			continue;
+
+		if ( isPenetrating )
+			PhysSetGameFlags( pList[i], FVPHYSICS_PENETRATING );
+		else
+			PhysClearGameFlags( pList[i], FVPHYSICS_PENETRATING );
+	}
+}
+
+void CCollisionEvent::GetListOfPenetratingEntities( CBaseEntity *pSearch, CUtlVector<CBaseEntity *> &list )
+{
+	for ( int i = m_penetrateEvents.Count()-1; i >= 0; --i )
+	{
+		if ( m_penetrateEvents[i].hEntity0.Get() == pSearch && m_penetrateEvents[i].hEntity1.Get() )
+		{
+			list.AddToTail( m_penetrateEvents[i].hEntity1 );
+		}
+		else if ( m_penetrateEvents[i].hEntity1.Get() == pSearch && m_penetrateEvents[i].hEntity0.Get() )
+		{
+			list.AddToTail( m_penetrateEvents[i].hEntity0 );
+		}
+	}
+}
+
 void CCollisionEvent::UpdatePenetrateEvents( void )
 {
 	for ( int i = m_penetrateEvents.Count()-1; i >= 0; --i )
 	{
+		CBaseEntity *pEntity0 = m_penetrateEvents[i].hEntity0;
+		CBaseEntity *pEntity1 = m_penetrateEvents[i].hEntity1;
+
 		if ( m_penetrateEvents[i].collisionState == COLLSTATE_TRYDISABLE )
 		{
-			CBaseEntity *pEntity0 = m_penetrateEvents[i].hEntity0;
-			CBaseEntity *pEntity1 = m_penetrateEvents[i].hEntity1;
 			if ( pEntity0 && pEntity1 )
 			{
 				IPhysicsObject *pObj0 = pEntity0->VPhysicsGetObject();
@@ -535,15 +571,11 @@ void CCollisionEvent::UpdatePenetrateEvents( void )
 				m_penetrateEvents[i].collisionState = COLLSTATE_DISABLED;
 				continue;
 			}
-			// missing entity or object, clear event
-			m_penetrateEvents.FastRemove(i);
 		}
-		if ( gpGlobals->curtime - m_penetrateEvents[i].timeStamp > 1.0 )
+		else if ( gpGlobals->curtime - m_penetrateEvents[i].timeStamp > 1.0 )
 		{
 			if ( m_penetrateEvents[i].collisionState == COLLSTATE_DISABLED )
 			{
-				CBaseEntity *pEntity0 = m_penetrateEvents[i].hEntity0;
-				CBaseEntity *pEntity1 = m_penetrateEvents[i].hEntity1;
 				if ( pEntity0 && pEntity1 )
 				{
 					IPhysicsObject *pObj0 = pEntity0->VPhysicsGetObject();
@@ -555,9 +587,29 @@ void CCollisionEvent::UpdatePenetrateEvents( void )
 					}
 				}
 			}
-			// haven't penetrated for 1 second, so remove
-			m_penetrateEvents.FastRemove(i);
 		}
+		else
+		{
+			continue;
+		}
+
+		// Missing entities, or no penetration for one second: clear the event.
+		m_penetrateEvents.FastRemove(i);
+
+		bool entity0StillPenetrating = false;
+		bool entity1StillPenetrating = false;
+		for ( int j = m_penetrateEvents.Count()-1; j >= 0; --j )
+		{
+			CBaseEntity *pOther0 = m_penetrateEvents[j].hEntity0;
+			CBaseEntity *pOther1 = m_penetrateEvents[j].hEntity1;
+			entity0StillPenetrating |= (pOther0 == pEntity0 || pOther1 == pEntity0);
+			entity1StillPenetrating |= (pOther0 == pEntity1 || pOther1 == pEntity1);
+		}
+
+		if ( !entity0StillPenetrating )
+			UpdateEntityPenetrationFlag( pEntity0, false );
+		if ( !entity1StillPenetrating )
+			UpdateEntityPenetrationFlag( pEntity1, false );
 	}
 }
 
@@ -580,10 +632,17 @@ penetrateevent_t &CCollisionEvent::FindOrAddPenetrateEvent( CBaseEntity *pEntity
 		event.hEntity1 = pEntity1;
 		event.startTime = gpGlobals->curtime;
 		event.collisionState = COLLSTATE_ENABLED;
+		UpdateEntityPenetrationFlag( pEntity0, true );
+		UpdateEntityPenetrationFlag( pEntity1, true );
 	}
 	penetrateevent_t &event = m_penetrateEvents[index];
 	event.timeStamp = gpGlobals->curtime;
 	return event;
+}
+
+void PhysGetListOfPenetratingEntities( CBaseEntity *pSearch, CUtlVector<CBaseEntity *> &list )
+{
+	g_Collisions.GetListOfPenetratingEntities( pSearch, list );
 }
 
 
@@ -1300,6 +1359,13 @@ void CCollisionEvent::LevelShutdown( void )
 			ShutdownFriction( m_current[i] );
 		}
 	}
+
+	for ( int i = m_penetrateEvents.Count()-1; i >= 0; --i )
+	{
+		UpdateEntityPenetrationFlag( m_penetrateEvents[i].hEntity0, false );
+		UpdateEntityPenetrationFlag( m_penetrateEvents[i].hEntity1, false );
+	}
+	m_penetrateEvents.Purge();
 }
 
 
@@ -1620,4 +1686,3 @@ void DumpCollideToGlView( CPhysCollide *pCollide, const Vector &origin, const QA
 	physcollision->DestroyDebugMesh( vertCount, outVerts );
 }
 #endif
-

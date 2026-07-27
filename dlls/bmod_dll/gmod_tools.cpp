@@ -531,16 +531,40 @@ void CMD_gm_toolmode(void)
     CBaseCombatWeapon* pWeapon = pPlayer->Weapon_OwnsThisType("weapon_tool");
     if (!pWeapon)
     {
-        pWeapon = dynamic_cast<CBaseCombatWeapon*>(pPlayer->GiveNamedItem("weapon_tool"));
+        // GiveNamedItem hands the new weapon to BumpWeapon, which is what puts
+        // it in the inventory - re-query instead of trusting the returned
+        // entity, which is still un-owned (and un-deployable) if the pickup was
+        // refused.
+        pPlayer->GiveNamedItem("weapon_tool");
+        pWeapon = pPlayer->Weapon_OwnsThisType("weapon_tool");
     }
 
     CWeaponTool* pTool = dynamic_cast<CWeaponTool*>(pWeapon);
-    if (pTool)
+    if (!pTool)
     {
-        pTool->SetToolMode(mode);
-        if (pPlayer->GetActiveWeapon() != pTool)
+        ClientPrint(pPlayer, HUD_PRINTTALK, "Could not equip the tool gun (weapon_tool)");
+        return;
+    }
+
+    pTool->SetToolMode(mode);
+
+    // Picking a tool always brings the tool gun (v_crossbow) up, like real GMod.
+    if (pPlayer->GetActiveWeapon() != pTool)
+    {
+        if (!pPlayer->Weapon_Switch(pTool))
         {
-            pPlayer->Weapon_Switch(pTool);
+            // Weapon_Switch gives up when the weapon being put away refuses to
+            // holster (physcannon while holding a prop, empty-weapon autoswitch
+            // rules, ...). The menu selection still has to take effect, so do
+            // the swap by hand.
+            CBaseCombatWeapon* pActive = pPlayer->GetActiveWeapon();
+            if (pActive && pActive != pTool)
+            {
+                pActive->Holster(pTool);
+            }
+
+            pPlayer->SetActiveWeapon(pTool);
+            pTool->Deploy();
         }
     }
 

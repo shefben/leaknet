@@ -396,7 +396,8 @@ public:
 	void					SetVCollisionState( int collisionState );
 	void					PostThinkVPhysics( void );
 	virtual void			UpdatePhysicsShadowToCurrentPosition();
-	void					UpdateVPhysicsPosition( const Vector &position, const Vector &velocity );
+	void					UpdateVPhysicsPosition( const Vector &position, const Vector &velocity, float secondsToArrival );
+	IPhysicsObject			*GetGroundVPhysics( void );
 
 	// Accessor methods
 	int		FragCount() const		{ return m_iFrags; }
