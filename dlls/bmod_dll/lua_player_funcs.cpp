@@ -630,7 +630,15 @@ int Lua_PlayerSetModel_New(lua_State *L)
 	if (!pPlayer)
 		return CLuaUtility::LuaError(L, "_PlayerSetModel: Invalid player ID");
 
-	pPlayer->SetModel(model);
+	// GMod 9 scripts request models that may not be present in this content set.
+	// Degrade to the known-good default rather than rendering an error/invisible
+	// player.
+	const char *pszModel = BMod_ResolvePlayerModel( model );
+
+	// The model has to be in the precache list before SetModel can use it.
+	pPlayer->PrecacheModel( pszModel );
+
+	pPlayer->SetModel( pszModel );
 	return 0;
 }
 

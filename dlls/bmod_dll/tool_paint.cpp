@@ -36,12 +36,12 @@ static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFor
 //-----------------------------------------------------------------------------
 // Console variables for paint tool
 //-----------------------------------------------------------------------------
-ConVar bm_paint_decal("bm_paint_decal", "scorch", FCVAR_ARCHIVE, "Current decal to paint");
-ConVar bm_paint_size("bm_paint_size", "32", FCVAR_ARCHIVE, "Paint decal size (8-128)");
-ConVar bm_paint_color_r("bm_paint_color_r", "255", FCVAR_ARCHIVE, "Paint red component (0-255)");
-ConVar bm_paint_color_g("bm_paint_color_g", "255", FCVAR_ARCHIVE, "Paint green component (0-255)");
-ConVar bm_paint_color_b("bm_paint_color_b", "255", FCVAR_ARCHIVE, "Paint blue component (0-255)");
-ConVar bm_paint_permanent("bm_paint_permanent", "0", FCVAR_ARCHIVE, "Paint permanent decals (1) or temporary (0)");
+ConVar gmod_paint_decal("gmod_paint_decal", "scorch", FCVAR_ARCHIVE, "Current decal to paint");
+ConVar gmod_paint_size("gmod_paint_size", "32", FCVAR_ARCHIVE, "Paint decal size (8-128)");
+ConVar gmod_paint_color_r("gmod_paint_color_r", "255", FCVAR_ARCHIVE, "Paint red component (0-255)");
+ConVar gmod_paint_color_g("gmod_paint_color_g", "255", FCVAR_ARCHIVE, "Paint green component (0-255)");
+ConVar gmod_paint_color_b("gmod_paint_color_b", "255", FCVAR_ARCHIVE, "Paint blue component (0-255)");
+ConVar gmod_paint_permanent("gmod_paint_permanent", "0", FCVAR_ARCHIVE, "Paint permanent decals (1) or temporary (0)");
 
 //-----------------------------------------------------------------------------
 // Available decal types for painting
@@ -291,7 +291,7 @@ static void CycleDecal( CWeaponTool *pTool, PaintState_t *pState )
 	} while ( g_PaintDecals[pState->nSelectedDecal] == NULL );
 
 	// Update ConVar
-	bm_paint_decal.SetValue( g_PaintDecals[pState->nSelectedDecal] );
+	gmod_paint_decal.SetValue( g_PaintDecals[pState->nSelectedDecal] );
 
 	// Inform player
 	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
@@ -325,7 +325,7 @@ static void CycleBrush( CWeaponTool *pTool, PaintState_t *pState )
 		case BRUSH_AIRBRUSH: nSize = 12; break;
 	}
 
-	bm_paint_size.SetValue( nSize );
+	gmod_paint_size.SetValue( nSize );
 
 	// Inform player
 	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
@@ -349,9 +349,9 @@ static void CreatePaintEffect( const Vector &vecPos, const Vector &vecNormal, Pa
 	data.m_flScale = 1.0f;
 
 	// Use paint color
-	int r = bm_paint_color_r.GetInt();
-	int g = bm_paint_color_g.GetInt();
-	int b = bm_paint_color_b.GetInt();
+	int r = gmod_paint_color_r.GetInt();
+	int g = gmod_paint_color_g.GetInt();
+	int b = gmod_paint_color_b.GetInt();
 	data.m_nColor = (r << 16) | (g << 8) | b;
 
 	DispatchEffect( "Sparks", data );
@@ -393,7 +393,7 @@ static void CreatePaintEffect( const Vector &vecPos, const Vector &vecNormal, Pa
 static const char *GetCurrentDecal( PaintState_t *pState )
 {
 	// Find decal matching the current ConVar
-	const char *pszCurrentDecal = bm_paint_decal.GetString();
+	const char *pszCurrentDecal = gmod_paint_decal.GetString();
 
 	for ( int i = 0; g_PaintDecals[i]; i++ )
 	{
@@ -413,7 +413,7 @@ static const char *GetCurrentDecal( PaintState_t *pState )
 //-----------------------------------------------------------------------------
 static int GetPaintSize( PaintState_t *pState )
 {
-	int nBaseSize = bm_paint_size.GetInt();
+	int nBaseSize = gmod_paint_size.GetInt();
 
 	// Modify size based on brush type
 	switch ( pState->nBrushType )
@@ -448,7 +448,7 @@ static bool CanPaint( PaintState_t *pState )
 //-----------------------------------------------------------------------------
 // Console command for paint context menu
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_context_paint, "Opens paint tool context menu" )
+CON_COMMAND( gmod_context_paint, "Opens paint tool context menu" )
 {
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( !pPlayer )
@@ -470,10 +470,10 @@ CON_COMMAND( bm_context_paint, "Opens paint tool context menu" )
 		ClientPrintf( pPlayer, HUD_PRINTTALK, "  %s", g_PaintDecals[i] );
 	}
 
-	ClientPrintf( pPlayer, HUD_PRINTTALK, "Current decal: %s", bm_paint_decal.GetString() );
-	ClientPrintf( pPlayer, HUD_PRINTTALK, "Paint size: %d", bm_paint_size.GetInt() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Current decal: %s", gmod_paint_decal.GetString() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Paint size: %d", gmod_paint_size.GetInt() );
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Color: R%d G%d B%d",
-		bm_paint_color_r.GetInt(), bm_paint_color_g.GetInt(), bm_paint_color_b.GetInt() );
+		gmod_paint_color_r.GetInt(), gmod_paint_color_g.GetInt(), gmod_paint_color_b.GetInt() );
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Secondary fire: cycle decals" );
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Use + Secondary fire: cycle brushes" );
 }
@@ -481,7 +481,7 @@ CON_COMMAND( bm_context_paint, "Opens paint tool context menu" )
 //-----------------------------------------------------------------------------
 // Console command to clear all painted decals
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_paint_clear, "Clear all painted decals" )
+CON_COMMAND( gmod_paint_clear, "Clear all painted decals" )
 {
 	// In a full implementation, this would remove all temporary decals
 	// For now, just inform the player

@@ -41,13 +41,13 @@ static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFor
 //-----------------------------------------------------------------------------
 // Console variables
 //-----------------------------------------------------------------------------
-ConVar bm_thruster_force( "gm_thrust_power", "2000", FCVAR_ARCHIVE, "Continuous force (in kg*in/s^2) the Thruster tool applies to attached props" );
+ConVar gmod_thruster_force( "gm_thrust_power", "2000", FCVAR_ARCHIVE, "Continuous force (in kg*in/s^2) the Thruster tool applies to attached props" );
 
 // "0 means don't change" for mass, "-1 means don't change" for friction/elasticity,
 // matching the existing "sentinel value" convention used elsewhere in this codebase.
-ConVar bm_physprops_mass( "bm_physprops_mass", "0", FCVAR_ARCHIVE, "Mass to force onto the targeted prop with the PhysProps tool (0 = don't change)" );
-ConVar bm_physprops_friction( "bm_physprops_friction", "-1", FCVAR_ARCHIVE, "Friction to force onto the targeted prop with the PhysProps tool (-1 = don't change, currently unsupported)" );
-ConVar bm_physprops_elasticity( "bm_physprops_elasticity", "-1", FCVAR_ARCHIVE, "Elasticity to force onto the targeted prop with the PhysProps tool (-1 = don't change, currently unsupported)" );
+ConVar gmod_physprops_mass( "gmod_physprops_mass", "0", FCVAR_ARCHIVE, "Mass to force onto the targeted prop with the PhysProps tool (0 = don't change)" );
+ConVar gmod_physprops_friction( "gmod_physprops_friction", "-1", FCVAR_ARCHIVE, "Friction to force onto the targeted prop with the PhysProps tool (-1 = don't change, currently unsupported)" );
+ConVar gmod_physprops_elasticity( "gmod_physprops_elasticity", "-1", FCVAR_ARCHIVE, "Elasticity to force onto the targeted prop with the PhysProps tool (-1 = don't change, currently unsupported)" );
 
 //-----------------------------------------------------------------------------
 // Thruster tool state - just a list of props that get a continuous upward
@@ -321,7 +321,7 @@ void Tool_Attach_OnUse( CWeaponTool *pTool, int nMode, CBaseEntity *pEntity, tra
 			{
 				g_ThrusterEntities.AddToTail( pEntity );
 				pTool->PlayToolSound( "buttons/button14.wav" );
-				ClientPrintf( pOwner, HUD_PRINTTALK, "Thruster attached to %s (force %.0f)", pEntity->GetClassname(), bm_thruster_force.GetFloat() );
+				ClientPrintf( pOwner, HUD_PRINTTALK, "Thruster attached to %s (force %.0f)", pEntity->GetClassname(), gmod_thruster_force.GetFloat() );
 			}
 			else
 			{
@@ -357,16 +357,16 @@ void Tool_Attach_OnUse( CWeaponTool *pTool, int nMode, CBaseEntity *pEntity, tra
 		{
 			bool bChanged = false;
 
-			if ( bm_physprops_mass.GetFloat() > 0.0f )
+			if ( gmod_physprops_mass.GetFloat() > 0.0f )
 			{
-				pPhys->SetMass( bm_physprops_mass.GetFloat() );
+				pPhys->SetMass( gmod_physprops_mass.GetFloat() );
 				bChanged = true;
 			}
 
 			// No IPhysicsObject setter exists for friction/elasticity in this engine
 			// (only SetMaterialIndex(), which swaps the whole physical material) -
 			// tell the player rather than silently doing nothing.
-			if ( bm_physprops_friction.GetFloat() >= 0.0f || bm_physprops_elasticity.GetFloat() >= 0.0f )
+			if ( gmod_physprops_friction.GetFloat() >= 0.0f || gmod_physprops_elasticity.GetFloat() >= 0.0f )
 			{
 				ClientPrintf( pOwner, HUD_PRINTTALK, "PhysProps: friction/elasticity overrides aren't supported by this engine yet" );
 			}
@@ -378,7 +378,7 @@ void Tool_Attach_OnUse( CWeaponTool *pTool, int nMode, CBaseEntity *pEntity, tra
 			}
 			else
 			{
-				ClientPrintf( pOwner, HUD_PRINTTALK, "PhysProps: bm_physprops_mass is 0, nothing changed" );
+				ClientPrintf( pOwner, HUD_PRINTTALK, "PhysProps: gmod_physprops_mass is 0, nothing changed" );
 			}
 		}
 		else
@@ -510,7 +510,7 @@ void Tool_Attach_OnTrace( CWeaponTool *pTool, int nMode, trace_t &tr, bool bPrim
 //-----------------------------------------------------------------------------
 static void Attach_ThrusterThink()
 {
-	float flForce = bm_thruster_force.GetFloat();
+	float flForce = gmod_thruster_force.GetFloat();
 
 	for ( int i = g_ThrusterEntities.Count() - 1; i >= 0; i-- )
 	{
@@ -566,7 +566,7 @@ void Tool_Attach_OnThink( CWeaponTool *pTool, int nMode )
 //-----------------------------------------------------------------------------
 // Console command helpers
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_attach_list, "List entities/constraints tracked by the Attach tool family (Thruster/Wheel)" )
+CON_COMMAND( gmod_attach_list, "List entities/constraints tracked by the Attach tool family (Thruster/Wheel)" )
 {
 	Msg( "Thruster entities: %d\n", g_ThrusterEntities.Count() );
 	for ( int i = 0; i < g_ThrusterEntities.Count(); i++ )
@@ -585,7 +585,7 @@ CON_COMMAND( bm_attach_list, "List entities/constraints tracked by the Attach to
 	}
 }
 
-CON_COMMAND( bm_thruster_removeall, "Remove all thrusters created by the Thruster tool" )
+CON_COMMAND( gmod_thruster_removeall, "Remove all thrusters created by the Thruster tool" )
 {
 	int nRemoved = g_ThrusterEntities.Count();
 	g_ThrusterEntities.RemoveAll();
@@ -597,7 +597,7 @@ CON_COMMAND( bm_thruster_removeall, "Remove all thrusters created by the Thruste
 	}
 }
 
-CON_COMMAND( bm_wheel_removeall, "Remove all wheel hinge constraints created by the Wheel tool" )
+CON_COMMAND( gmod_wheel_removeall, "Remove all wheel hinge constraints created by the Wheel tool" )
 {
 	int nRemoved = 0;
 

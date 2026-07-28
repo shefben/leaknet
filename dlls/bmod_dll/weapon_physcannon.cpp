@@ -53,10 +53,10 @@ ConVar physcannon_chargetime("physcannon_chargetime", "2" );
 ConVar physcannon_pullforce( "physcannon_pullforce", "4000" );
 
 // BMOD: New console variables
-ConVar bm_snapangles( "bm_snapangles", "15", 0, "Snap angle increment for physcannon rotation in degrees" );
-ConVar bm_physcannon_distance( "bm_physcannon_distance", "80", 0, "Default distance for holding objects" );
-ConVar bm_physcannon_mindist( "bm_physcannon_mindist", "24", 0, "Minimum distance for holding objects" );
-ConVar bm_physcannon_maxdist( "bm_physcannon_maxdist", "300", 0, "Maximum distance for holding objects" );
+ConVar gmod_snapangles( "gmod_snapangles", "15", 0, "Snap angle increment for physcannon rotation in degrees" );
+ConVar gmod_physcannon_distance( "gmod_physcannon_distance", "80", 0, "Default distance for holding objects" );
+ConVar gmod_physcannon_mindist( "gmod_physcannon_mindist", "24", 0, "Minimum distance for holding objects" );
+ConVar gmod_physcannon_maxdist( "gmod_physcannon_maxdist", "300", 0, "Maximum distance for holding objects" );
 
 extern ConVar hl2_normspeed;
 extern ConVar hl2_walkspeed;
@@ -628,7 +628,7 @@ CWeaponPhysCannon::CWeaponPhysCannon( void )
 	ClearLaunch();
 
 	// BMOD: Initialize new member variables
-	m_flHoldDistance		= bm_physcannon_distance.GetFloat();
+	m_flHoldDistance		= gmod_physcannon_distance.GetFloat();
 	m_flLastRKeyTime		= 0.0f;
 	m_angRotationOffset.Init();
 	m_bRotationMode			= false;
@@ -2109,7 +2109,7 @@ void CWeaponPhysCannon::HandleDistanceAdjustment( void )
 	if ( distanceChange != 0.0f )
 	{
 		m_flHoldDistance += distanceChange;
-		m_flHoldDistance = clamp( m_flHoldDistance, bm_physcannon_mindist.GetFloat(), bm_physcannon_maxdist.GetFloat() );
+		m_flHoldDistance = clamp( m_flHoldDistance, gmod_physcannon_mindist.GetFloat(), gmod_physcannon_maxdist.GetFloat() );
 	}
 }
 
@@ -2156,7 +2156,7 @@ void CWeaponPhysCannon::HandleRotation( void )
 		if ( bShiftHeld )
 		{
 			// Snap angle rotation
-			float snapAngle = bm_snapangles.GetFloat();
+			float snapAngle = gmod_snapangles.GetFloat();
 			if ( fabs(deltaX) > 5.0f ) // Threshold for snap
 			{
 				float rotationAmount = (deltaX > 0) ? snapAngle : -snapAngle;

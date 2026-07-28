@@ -12,6 +12,8 @@
 
 #include <game_controls/clientmotd.h>
 #include <vgui/ISurface.h>
+#include <vgui/IScheme.h>
+#include <vgui_controls/Panel.h>
 
 // Keep this in sync with MAX_MOTD_LENGTH in multiplay_gamerules.cpp.
 #define BMOD_MAX_MOTD_LENGTH 16384
@@ -53,13 +55,76 @@ static CClientMOTD *GetBModMOTDPanel()
 	return g_pBModMOTD;
 }
 
-static void CenterBModMOTDPanel( CClientMOTD *pMOTD )
-{
-	int wide, tall;
-	pMOTD->GetSize( wide, tall );
+// The MOTD panel gets its size from Resource/UI/MOTD.res, which is authored in
+// the 640x480 proportional base.  Proportional scaling only uses the screen
+// *height* (screenTall / 480), so an .res width of 600 becomes 600 * screenTall
+// / 480 - which is 94..100% of the screen width on any 4:3 mode (e.g. 1280x1024
+// -> 1280 wide).  That is what makes the dialog look full-screen.  Rescale it
+// once to a sane centred dialog and clamp it to 75% of the screen.
+#define BMOD_MOTD_BASE_WIDE		512		// in the 640x480 proportional base
+#define BMOD_MOTD_BASE_TALL		384
+#define BMOD_MOTD_MIN_WIDE		320
+#define BMOD_MOTD_MIN_TALL		240
 
+static bool g_bBModMOTDResized = false;
+
+static void LayoutBModMOTDPanel( CClientMOTD *pMOTD )
+{
 	int screenWide, screenTall;
 	vgui::surface()->GetScreenSize( screenWide, screenTall );
+
+	if ( !g_bBModMOTDResized )
+	{
+		int curWide, curTall;
+		pMOTD->GetSize( curWide, curTall );
+
+		int wantWide = vgui::scheme()->GetProportionalScaledValue( BMOD_MOTD_BASE_WIDE );
+		int wantTall = vgui::scheme()->GetProportionalScaledValue( BMOD_MOTD_BASE_TALL );
+
+		// never larger than ~75% of the screen in either axis
+		const int maxWide = ( screenWide * 3 ) / 4;
+		const int maxTall = ( screenTall * 3 ) / 4;
+		if ( wantWide > maxWide )
+			wantWide = maxWide;
+		if ( wantTall > maxTall )
+			wantTall = maxTall;
+		if ( wantWide < BMOD_MOTD_MIN_WIDE )
+			wantWide = BMOD_MOTD_MIN_WIDE;
+		if ( wantTall < BMOD_MOTD_MIN_TALL )
+			wantTall = BMOD_MOTD_MIN_TALL;
+
+		if ( curWide > 0 && curTall > 0 && ( wantWide != curWide || wantTall != curTall ) )
+		{
+			// Scale the .res-placed children by the same factor so the HTML view,
+			// the server name label and the OK button stay where they belong.
+			const float sx = (float)wantWide / (float)curWide;
+			const float sy = (float)wantTall / (float)curTall;
+
+			for ( int i = 0; i < pMOTD->GetChildCount(); i++ )
+			{
+				vgui::Panel *pChild = pMOTD->GetChild( i );
+				if ( !pChild )
+					continue;
+
+				int x, y, w, t;
+				pChild->GetPos( x, y );
+				pChild->GetSize( w, t );
+				pChild->SetPos( (int)( x * sx ), (int)( y * sy ) );
+				pChild->SetSize( (int)( w * sx ), (int)( t * sy ) );
+			}
+
+			pMOTD->SetSize( wantWide, wantTall );
+			pMOTD->InvalidateLayout();
+
+			DevMsg( "MOTD: resized panel from %dx%d to %dx%d (screen %dx%d)\n",
+				curWide, curTall, wantWide, wantTall, screenWide, screenTall );
+		}
+
+		g_bBModMOTDResized = true;
+	}
+
+	int wide, tall;
+	pMOTD->GetSize( wide, tall );
 
 	pMOTD->SetPos( ( screenWide - wide ) / 2, ( screenTall - tall ) / 2 );
 }
@@ -83,9 +148,12 @@ static void ShowBModMOTDPanel()
 		}
 	}
 
-	DevMsg( "MOTD: Showing BMod MOTD panel with %d bytes of content\n", (int)strlen( g_szBModMOTD ) );
+	DevMsg( "MOTD: Showing BMod MOTD panel with %d bytes of content (%s)\n",
+		(int)strlen( g_szBModMOTD ),
+		CClientMOTD::IsURL( g_szBModMOTD ) ? "URL" :
+			( CClientMOTD::IsHTML( g_szBModMOTD ) ? "inline HTML" : "plain text" ) );
 	pMOTD->Activate( title, g_szBModMOTD );
-	CenterBModMOTDPanel( pMOTD );
+	LayoutBModMOTDPanel( pMOTD );
 	pMOTD->MoveToFront();
 	pMOTD->RequestFocus();
 }

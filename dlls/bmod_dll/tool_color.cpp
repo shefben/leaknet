@@ -32,10 +32,10 @@ static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFor
 //-----------------------------------------------------------------------------
 // Console variables for color tool
 //-----------------------------------------------------------------------------
-ConVar bm_color_r("bm_color_r", "255", FCVAR_ARCHIVE, "Red component (0-255)");
-ConVar bm_color_g("bm_color_g", "255", FCVAR_ARCHIVE, "Green component (0-255)");
-ConVar bm_color_b("bm_color_b", "255", FCVAR_ARCHIVE, "Blue component (0-255)");
-ConVar bm_color_a("bm_color_a", "255", FCVAR_ARCHIVE, "Alpha component (0-255)");
+ConVar gmod_color_r("gmod_color_r", "255", FCVAR_ARCHIVE, "Red component (0-255)");
+ConVar gmod_color_g("gmod_color_g", "255", FCVAR_ARCHIVE, "Green component (0-255)");
+ConVar gmod_color_b("gmod_color_b", "255", FCVAR_ARCHIVE, "Blue component (0-255)");
+ConVar gmod_color_a("gmod_color_a", "255", FCVAR_ARCHIVE, "Alpha component (0-255)");
 
 //-----------------------------------------------------------------------------
 // Preset colors - common colors for quick selection
@@ -70,7 +70,7 @@ static ColorPreset_t g_ColorPresets[] =
 
 //-----------------------------------------------------------------------------
 // Per-player preset cycling state. The applied color itself lives in the
-// (server-wide) bm_color_* ConVars, but which preset index secondary-fire
+// (server-wide) gmod_color_* ConVars, but which preset index secondary-fire
 // should advance to next is naturally per-player.
 //-----------------------------------------------------------------------------
 struct ColorToolState_t
@@ -132,18 +132,18 @@ static bool ApplyColor( CBaseEntity *pEntity, int r, int g, int b, int a )
 //-----------------------------------------------------------------------------
 static void GetCurrentColor( int &r, int &g, int &b, int &a )
 {
-	r = bm_color_r.GetInt();
-	g = bm_color_g.GetInt();
-	b = bm_color_b.GetInt();
-	a = bm_color_a.GetInt();
+	r = gmod_color_r.GetInt();
+	g = gmod_color_g.GetInt();
+	b = gmod_color_b.GetInt();
+	a = gmod_color_a.GetInt();
 }
 
 static void SetCurrentColor( int r, int g, int b, int a )
 {
-	bm_color_r.SetValue( r );
-	bm_color_g.SetValue( g );
-	bm_color_b.SetValue( b );
-	bm_color_a.SetValue( a );
+	gmod_color_r.SetValue( r );
+	gmod_color_g.SetValue( g );
+	gmod_color_b.SetValue( b );
+	gmod_color_a.SetValue( a );
 }
 
 //-----------------------------------------------------------------------------
@@ -238,7 +238,7 @@ void Tool_Color_OnThink( CWeaponTool *pTool )
 //-----------------------------------------------------------------------------
 // Console command for color context menu
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_context_color, "Opens color tool context menu" )
+CON_COMMAND( gmod_context_color, "Opens color tool context menu" )
 {
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( !pPlayer )
@@ -262,18 +262,18 @@ CON_COMMAND( bm_context_color, "Opens color tool context menu" )
 	}
 
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Current: R%d G%d B%d A%d",
-		bm_color_r.GetInt(), bm_color_g.GetInt(), bm_color_b.GetInt(), bm_color_a.GetInt() );
+		gmod_color_r.GetInt(), gmod_color_g.GetInt(), gmod_color_b.GetInt(), gmod_color_a.GetInt() );
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Use secondary fire to cycle presets" );
 }
 
 //-----------------------------------------------------------------------------
 // Console command to set color directly
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_color_set, "Set color values directly" )
+CON_COMMAND( gmod_color_set, "Set color values directly" )
 {
 	if ( engine->Cmd_Argc() < 4 )
 	{
-		Msg( "Usage: bm_color_set <r> <g> <b> [a]\n" );
+		Msg( "Usage: gmod_color_set <r> <g> <b> [a]\n" );
 		return;
 	}
 
@@ -300,7 +300,7 @@ CON_COMMAND( bm_color_set, "Set color values directly" )
 //-----------------------------------------------------------------------------
 // Console command to randomize color
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_color_random, "Set random color values" )
+CON_COMMAND( gmod_color_random, "Set random color values" )
 {
 	int r = random->RandomInt( 0, 255 );
 	int g = random->RandomInt( 0, 255 );

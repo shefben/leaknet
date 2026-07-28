@@ -51,7 +51,9 @@ static void AddModCacheSearchPaths()
 	char modcacheDir[MAX_PATH];
 	Q_snprintf( modcacheDir, sizeof( modcacheDir ), "%s/%s", pModPath, MODCACHE_PATH );
 
-	if ( !g_pFullFilesystem->IsDirectory( modcacheDir, NULL ) )
+	// IsDirectory() resolves relative to the registered search paths, so it must
+	// be given the mod-relative path - handing it an absolute path never matches.
+	if ( !g_pFullFilesystem->IsDirectory( MODCACHE_PATH, "MOD" ) )
 		return;
 
 	g_pFullFilesystem->AddSearchPath( modcacheDir, "GAME", PATH_ADD_TO_TAIL );

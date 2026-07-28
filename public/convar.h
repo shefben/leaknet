@@ -183,9 +183,19 @@ protected:
 	// Next ConVar in chain
 	ConCommandBase				*m_pNext;
 
+	// Previous ConVar in chain. The list is doubly linked so a ConCommandBase can
+	// unlink itself in O(1) from its destructor without walking a chain that may
+	// already contain entries owned by a DLL that has been unloaded.
+	ConCommandBase				*m_pPrev;
+
 private:
 	// Has the cvar been added to the global list?
 	bool						m_bRegistered;
+
+	// Set when some other ConCommandBase has pointed its m_pParent at us. Only
+	// those need the (list-walking) orphan pass in RemoveFromList; skipping it for
+	// everything else keeps shutdown from touching the whole cross-module chain.
+	bool						m_bHasProxyChildren;
 
 	// Static data
 	char const 					*m_pszName;

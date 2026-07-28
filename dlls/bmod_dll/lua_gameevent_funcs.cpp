@@ -14,6 +14,7 @@
 #include "usermessages.h"
 #include "igameevents.h"
 #include "KeyValues.h"
+#include "hl2_player.h"		// BMod_GetDefaultPlayerModel
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -232,8 +233,8 @@ int Lua_PlayerSetDrawTeamCircle(lua_State *L)
 // _PlayerGetRandomAllowedModel - Get random allowed player model
 int Lua_PlayerGetRandomAllowedModel(lua_State *L)
 {
-	// Return a default model
-	lua_pushstring(L, "models/player/combine_soldier.mdl");
+	// Return a default model that is actually present in bmod/models/player.
+	lua_pushstring(L, BMod_GetDefaultPlayerModel());
 	return 1;
 }
 

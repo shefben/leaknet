@@ -386,6 +386,7 @@ void CCvar::RegisterConCommandBase ( ConCommandBase *variable )
 		if ( AreConCommandsLinkable( variable, pOther ) )
 		{
 			variable->m_pParent = pOther->m_pParent;
+			variable->m_pParent->m_bHasProxyChildren = true;
 		}
 		return;
 	}

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -37,18 +37,23 @@ public:
 	virtual void Activate(const char *title,const char *message);
 	virtual void Activate(const wchar_t *title,const wchar_t *message);
 
+	// Content sniffing for the MOTD body.  Retail GMod lets a server ship either
+	// an http(s) URL or an inline HTML document; anything else is plain text.
+	static bool IsURL( const char *str );
+	static bool IsHTML( const char *str );
+
 protected:
 	// vgui overrides
 	virtual void OnCommand( const char *command);
 	virtual void OnKeyCodeTyped( vgui::KeyCode key );
 
-	// helper functions
-	virtual bool IsURL( const char *str );
-
-private:	
+private:
 
 	// helper functions
 	void SetLabelText(const char *textEntryName, const wchar_t *text);
+
+	// writes the body to the temp file and points the HTML view at it
+	void ShowLocalContent( const char *msg );
 
 	vgui::HTML *m_pMessage;
 

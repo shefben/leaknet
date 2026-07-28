@@ -39,9 +39,9 @@ static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFor
 // dlls/ai_concommands.cpp, shared with npc_create).
 extern ConVar npc_create_equipment;
 
-ConVar bm_npc_type("bm_npc_type", "npc_citizen", FCVAR_ARCHIVE, "Default NPC type to spawn");
-ConVar bm_npc_health("bm_npc_health", "100", FCVAR_ARCHIVE, "Default NPC health");
-ConVar bm_npc_limit("bm_npc_limit", "20", FCVAR_ARCHIVE, "Maximum NPCs per player");
+ConVar gmod_npc_type("gmod_npc_type", "npc_citizen", FCVAR_ARCHIVE, "Default NPC type to spawn");
+ConVar gmod_npc_health("gmod_npc_health", "100", FCVAR_ARCHIVE, "Default NPC health");
+ConVar gmod_npc_limit("gmod_npc_limit", "20", FCVAR_ARCHIVE, "Maximum NPCs per player");
 
 //-----------------------------------------------------------------------------
 // NPC type definitions - common Half-Life 2 NPCs
@@ -101,6 +101,60 @@ struct NPCToolState_t
 };
 
 static CUtlVector<NPCToolState_t*> g_NPCToolStates;
+
+//-----------------------------------------------------------------------------
+// Who spawned which NPC.
+//
+// This deliberately does NOT use SetOwnerEntity(): an entity never collides with
+// its owner and traces started by the owner skip it, so an NPC "owned" by the
+// player who spawned it could be walked through and could not be shot or killed
+// by that player. Ownership is bookkeeping only, so keep it out of the entity.
+//-----------------------------------------------------------------------------
+struct SpawnedNPC_t
+{
+	EHANDLE hNPC;
+	EHANDLE hSpawner;
+};
+
+static CUtlVector<SpawnedNPC_t> g_SpawnedNPCs;
+
+static void PruneSpawnedNPCs()
+{
+	for ( int i = g_SpawnedNPCs.Count() - 1; i >= 0; i-- )
+	{
+		if ( !g_SpawnedNPCs[i].hNPC.Get() || !g_SpawnedNPCs[i].hSpawner.Get() )
+		{
+			g_SpawnedNPCs.Remove( i );
+		}
+	}
+}
+
+static void RegisterSpawnedNPC( CBaseEntity *pNPC, CBasePlayer *pSpawner )
+{
+	if ( !pNPC || !pSpawner )
+		return;
+
+	PruneSpawnedNPCs();
+
+	SpawnedNPC_t entry;
+	entry.hNPC = pNPC;
+	entry.hSpawner = pSpawner;
+	g_SpawnedNPCs.AddToTail( entry );
+}
+
+static CBasePlayer *GetNPCSpawner( CBaseEntity *pNPC )
+{
+	if ( !pNPC )
+		return NULL;
+
+	for ( int i = 0; i < g_SpawnedNPCs.Count(); i++ )
+	{
+		if ( g_SpawnedNPCs[i].hNPC.Get() == pNPC )
+			return ToBasePlayer( g_SpawnedNPCs[i].hSpawner.Get() );
+	}
+
+	return NULL;
+}
 
 static NPCToolState_t *FindNPCToolState( CWeaponTool *pTool )
 {
@@ -173,7 +227,7 @@ void Tool_NPC_OnUse( CWeaponTool *pTool, CBaseEntity *pEntity, trace_t &tr, bool
 			if ( !CanSpawnNPC( pOwner ) )
 			{
 				ClientPrintf( pOwner, HUD_PRINTTALK, "NPC limit reached (%d/%d)",
-					GetPlayerNPCCount( pOwner ), bm_npc_limit.GetInt() );
+					GetPlayerNPCCount( pOwner ), gmod_npc_limit.GetInt() );
 				return;
 			}
 
@@ -197,7 +251,7 @@ void Tool_NPC_OnUse( CWeaponTool *pTool, CBaseEntity *pEntity, trace_t &tr, bool
 					ClientPrintf( pOwner, HUD_PRINTTALK, "Spawned %s (%d/%d)",
 						pNPCInfo->pszDisplayName,
 						GetPlayerNPCCount( pOwner ),
-						bm_npc_limit.GetInt() );
+						gmod_npc_limit.GetInt() );
 				}
 				else
 				{
@@ -253,16 +307,14 @@ static CBaseEntity *SpawnNPC( CWeaponTool *pTool, const char *pszNPCClass, const
 		return NULL;
 	}
 
-	// Set position and angles
-	pNPC->SetAbsOrigin( vecPos );
+	// Angles can be set up front; the position is applied with Teleport() after
+	// Spawn() so the collision representation moves with it.
 	pNPC->SetAbsAngles( angFacing );
 
-	// Set owner for cleanup tracking
+	// Remember who spawned it for cleanup/limit tracking. Do NOT SetOwnerEntity()
+	// here - that would make the NPC non-solid to (and unshootable by) its spawner.
 	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
-	if ( pOwner )
-	{
-		pNPC->SetOwnerEntity( pOwner );
-	}
+	RegisterSpawnedNPC( pNPC, pOwner );
 
 	// Set health if specified
 	const NPCInfo_t *pNPCInfo = GetCurrentNPCInfo( GetNPCToolState( pTool ) );
@@ -278,6 +330,43 @@ static CBaseEntity *SpawnNPC( CWeaponTool *pTool, const char *pszNPCClass, const
 	pNPC->Activate();
 
 	CBaseEntity::SetAllowPrecache( bAllowPrecache );
+
+	CAI_BaseNPC *pBaseNPC = pNPC->MyNPCPointer();
+	if ( pBaseNPC && ( pBaseNPC->CapabilitiesGet() & bits_CAP_MOVE_FLY ) )
+	{
+		Vector vecFly = vecPos;
+		vecFly.z += 36;
+		pNPC->Teleport( &vecFly, NULL, NULL );
+	}
+	else
+	{
+		Vector vecDrop = vecPos;
+		vecDrop.z += 12;
+		pNPC->Teleport( &vecDrop, NULL, NULL );
+
+		if ( pBaseNPC )
+		{
+			UTIL_DropToFloor( pBaseNPC, MASK_NPCSOLID );
+		}
+	}
+
+	if ( pBaseNPC )
+	{
+		trace_t trFit;
+		Vector vUpBit = pBaseNPC->GetAbsOrigin();
+		vUpBit.z += 1;
+
+		AI_TraceHull( pBaseNPC->GetAbsOrigin(), vUpBit, pBaseNPC->GetHullMins(), pBaseNPC->GetHullMaxs(),
+			MASK_NPCSOLID, pBaseNPC, COLLISION_GROUP_NONE, &trFit );
+
+		if ( trFit.startsolid || trFit.fraction < 1.0f )
+		{
+			UTIL_Remove( pNPC );
+			return NULL;
+		}
+
+		pBaseNPC->Relink();
+	}
 
 	DevMsg( "Spawned NPC %s at (%f, %f, %f)\n",
 		pszNPCClass, vecPos.x, vecPos.y, vecPos.z );
@@ -298,7 +387,7 @@ static void DeleteNPC( CWeaponTool *pTool, CBaseEntity *pNPC )
 		return;
 
 	// Check if player owns this NPC
-	if ( pNPC->GetOwnerEntity() != pOwner )
+	if ( GetNPCSpawner( pNPC ) != pOwner )
 	{
 		ClientPrintf( pOwner, HUD_PRINTTALK, "You can only delete NPCs you spawned" );
 		return;
@@ -332,7 +421,7 @@ static void CycleNPCType( CWeaponTool *pTool, NPCToolState_t *pState )
 	} while ( g_NPCInfo[pState->nSelectedNPC].pszClassName == NULL );
 
 	// Update ConVar
-	bm_npc_type.SetValue( g_NPCInfo[pState->nSelectedNPC].pszClassName );
+	gmod_npc_type.SetValue( g_NPCInfo[pState->nSelectedNPC].pszClassName );
 
 	// Inform player
 	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
@@ -352,13 +441,12 @@ static int GetPlayerNPCCount( CBasePlayer *pPlayer )
 	if ( !pPlayer )
 		return 0;
 
-	int nCount = 0;
+	PruneSpawnedNPCs();
 
-	// Count NPCs owned by this player
-	CBaseEntity *pEntity = NULL;
-	while ( (pEntity = gEntList.NextEnt( pEntity )) != NULL )
+	int nCount = 0;
+	for ( int i = 0; i < g_SpawnedNPCs.Count(); i++ )
 	{
-		if ( pEntity->MyNPCPointer() && pEntity->GetOwnerEntity() == pPlayer )
+		if ( g_SpawnedNPCs[i].hSpawner.Get() == pPlayer )
 		{
 			nCount++;
 		}
@@ -377,7 +465,7 @@ static bool CanSpawnNPC( CBasePlayer *pPlayer )
 
 	// Check NPC limit
 	int nCurrentCount = GetPlayerNPCCount( pPlayer );
-	int nLimit = bm_npc_limit.GetInt();
+	int nLimit = gmod_npc_limit.GetInt();
 
 	return nCurrentCount < nLimit;
 }
@@ -410,7 +498,7 @@ static void CreateSpawnEffect( const Vector &vecPos )
 static const NPCInfo_t *GetCurrentNPCInfo( NPCToolState_t *pState )
 {
 	// Find NPC info matching the current ConVar
-	const char *pszCurrentType = bm_npc_type.GetString();
+	const char *pszCurrentType = gmod_npc_type.GetString();
 
 	for ( int i = 0; g_NPCInfo[i].pszClassName; i++ )
 	{
@@ -449,7 +537,7 @@ CON_COMMAND( gm_spawnnpc, "Spawns an NPC of the given class where you are lookin
 	if ( !CanSpawnNPC( pPlayer ) )
 	{
 		ClientPrintf( pPlayer, HUD_PRINTTALK, "NPC limit reached (%d/%d)",
-			GetPlayerNPCCount( pPlayer ), bm_npc_limit.GetInt() );
+			GetPlayerNPCCount( pPlayer ), gmod_npc_limit.GetInt() );
 		return;
 	}
 
@@ -483,12 +571,7 @@ CON_COMMAND( gm_spawnnpc, "Spawns an NPC of the given class where you are lookin
 	angSpawn.x = 0;
 	angSpawn.z = 0;
 
-	Vector vecSpawn = tr.endpos;
-	vecSpawn.z += 12;
-
-	pEntity->SetAbsOrigin( vecSpawn );
 	pEntity->SetAbsAngles( angSpawn );
-	pEntity->SetOwnerEntity( pPlayer );
 
 	const char *pszEquipment = npc_create_equipment.GetString();
 	if ( pszEquipment && pszEquipment[0] )
@@ -502,22 +585,62 @@ CON_COMMAND( gm_spawnnpc, "Spawns an NPC of the given class where you are lookin
 
 	CBaseEntity::SetAllowPrecache( bAllowPrecache );
 
+	// Place it the same way npc_create does (dlls/ai_concommands.cpp): move with
+	// Teleport() so the collision representation follows, drop walkers to the
+	// floor, then verify the hull actually fits before keeping the NPC. Setting
+	// the origin before Spawn() left the NPC unlinked at the aim point, which is
+	// why they ended up somewhere else and were not solid.
 	CAI_BaseNPC *pNPC = pEntity->MyNPCPointer();
-	if ( pNPC && !( pNPC->CapabilitiesGet() & bits_CAP_MOVE_FLY ) )
+	if ( pNPC && ( pNPC->CapabilitiesGet() & bits_CAP_MOVE_FLY ) )
 	{
-		UTIL_DropToFloor( pNPC, MASK_NPCSOLID );
+		Vector vecSpawn = tr.endpos - vecForward * 36;
+		pEntity->Teleport( &vecSpawn, NULL, NULL );
 	}
+	else
+	{
+		Vector vecSpawn = tr.endpos;
+		vecSpawn.z += 12;
+		pEntity->Teleport( &vecSpawn, NULL, NULL );
+
+		if ( pNPC )
+		{
+			UTIL_DropToFloor( pNPC, MASK_NPCSOLID );
+		}
+	}
+
+	if ( pNPC )
+	{
+		trace_t trFit;
+		Vector vUpBit = pNPC->GetAbsOrigin();
+		vUpBit.z += 1;
+
+		AI_TraceHull( pNPC->GetAbsOrigin(), vUpBit, pNPC->GetHullMins(), pNPC->GetHullMaxs(),
+			MASK_NPCSOLID, pNPC, COLLISION_GROUP_NONE, &trFit );
+
+		if ( trFit.startsolid || trFit.fraction < 1.0f )
+		{
+			UTIL_Remove( pEntity );
+			ClientPrintf( pPlayer, HUD_PRINTTALK, "Can't spawn %s there - not enough room", pszClass );
+			return;
+		}
+
+		pNPC->Relink();
+	}
+
+	// Bookkeeping only - see RegisterSpawnedNPC(): using SetOwnerEntity() here is
+	// what made spawned NPCs non-solid to, and unkillable by, the player.
+	RegisterSpawnedNPC( pEntity, pPlayer );
 
 	CreateSpawnEffect( pEntity->GetAbsOrigin() );
 
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Spawned %s (%d/%d)", pszClass,
-		GetPlayerNPCCount( pPlayer ), bm_npc_limit.GetInt() );
+		GetPlayerNPCCount( pPlayer ), gmod_npc_limit.GetInt() );
 }
 
 //-----------------------------------------------------------------------------
 // Console command for NPC context menu (matching IDA finding)
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_context_npc, "Opens NPC tool context menu" )
+CON_COMMAND( gmod_context_npc, "Opens NPC tool context menu" )
 {
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( !pPlayer )
@@ -541,30 +664,30 @@ CON_COMMAND( bm_context_npc, "Opens NPC tool context menu" )
 			g_NPCInfo[i].pszDisplayName, g_NPCInfo[i].pszDescription );
 	}
 
-	ClientPrintf( pPlayer, HUD_PRINTTALK, "Current: %s", bm_npc_type.GetString() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Current: %s", gmod_npc_type.GetString() );
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Use secondary fire to cycle NPC types" );
 }
 
 //-----------------------------------------------------------------------------
 // Console command to clean up player NPCs
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_npc_cleanup, "Removes all NPCs spawned by the player" )
+CON_COMMAND( gmod_npc_cleanup, "Removes all NPCs spawned by the player" )
 {
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( !pPlayer )
 		return;
 
-	int nCount = 0;
+	PruneSpawnedNPCs();
 
-	// Remove all NPCs owned by this player
-	CBaseEntity *pEntity = NULL;
-	while ( (pEntity = gEntList.NextEnt( pEntity )) != NULL )
+	int nCount = 0;
+	for ( int i = g_SpawnedNPCs.Count() - 1; i >= 0; i-- )
 	{
-		if ( pEntity->MyNPCPointer() && pEntity->GetOwnerEntity() == pPlayer )
-		{
-			UTIL_Remove( pEntity );
-			nCount++;
-		}
+		if ( g_SpawnedNPCs[i].hSpawner.Get() != pPlayer )
+			continue;
+
+		UTIL_Remove( g_SpawnedNPCs[i].hNPC.Get() );
+		g_SpawnedNPCs.Remove( i );
+		nCount++;
 	}
 
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Removed %d NPCs", nCount );

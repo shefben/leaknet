@@ -41,7 +41,7 @@ static bool BM_IsSpecialFindName( const char *pFileName )
 //-----------------------------------------------------------------------------
 // Console variables matching Garry's Mod
 //-----------------------------------------------------------------------------
-ConVar bm_snapangles("bm_snapangles", "45", FCVAR_ARCHIVE, "Snap angles for rotation in spawn menu");
+ConVar gmod_snapangles("gmod_snapangles", "45", FCVAR_ARCHIVE, "Snap angles for rotation in spawn menu");
 
 //-----------------------------------------------------------------------------
 // Global spawn menu instance

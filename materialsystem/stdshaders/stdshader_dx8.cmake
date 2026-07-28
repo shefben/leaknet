@@ -30,6 +30,7 @@ BEGIN_SRC( STDSHADER_DX8_SOURCE_FILES "Source Files" )
 			"${STDSHADER_DX8_DIR}/predator.cpp"
  "${STDSHADER_DX8_DIR}/refract_dx80.cpp"
  "${STDSHADER_DX8_DIR}/retail_fallbacks_dx8.cpp"
+"${STDSHADER_DX8_DIR}/setz.cpp"
 			"${STDSHADER_DX8_DIR}/shadowbuild.cpp"
 			"${STDSHADER_DX8_DIR}/shadowmodel.cpp"
 			"${STDSHADER_DX8_DIR}/shadow_dx8.cpp"

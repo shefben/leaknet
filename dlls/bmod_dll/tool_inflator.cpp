@@ -2,7 +2,7 @@
 //
 // Purpose: BarrysMod Inflator Tool - Implementation of entity resizing tool
 //          (TOOL_INFLATOR, mode 33 - no authentic gm_toolmode slot, reachable
-//          only via "bm_toolmode 33").
+//          only via "gmod_toolmode 33").
 //
 //          Dispatched here as free functions (declared in tool_dispatch.h)
 //          rather than as a CWeaponTool subclass, since "weapon_tool" is the
@@ -44,11 +44,11 @@ static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFor
 //-----------------------------------------------------------------------------
 // Console variables for inflator tool
 //-----------------------------------------------------------------------------
-ConVar bm_inflator_scale("bm_inflator_scale", "1.5", FCVAR_ARCHIVE, "Scale multiplier for inflation");
-ConVar bm_inflator_min("bm_inflator_min", "0.1", FCVAR_ARCHIVE, "Minimum scale factor");
-ConVar bm_inflator_max("bm_inflator_max", "10.0", FCVAR_ARCHIVE, "Maximum scale factor");
-ConVar bm_inflator_physics("bm_inflator_physics", "1", FCVAR_ARCHIVE, "Scale physics objects");
-ConVar bm_inflator_mass("bm_inflator_mass", "1", FCVAR_ARCHIVE, "Scale mass with size");
+ConVar gmod_inflator_scale("gmod_inflator_scale", "1.5", FCVAR_ARCHIVE, "Scale multiplier for inflation");
+ConVar gmod_inflator_min("gmod_inflator_min", "0.1", FCVAR_ARCHIVE, "Minimum scale factor");
+ConVar gmod_inflator_max("gmod_inflator_max", "10.0", FCVAR_ARCHIVE, "Maximum scale factor");
+ConVar gmod_inflator_physics("gmod_inflator_physics", "1", FCVAR_ARCHIVE, "Scale physics objects");
+ConVar gmod_inflator_mass("gmod_inflator_mass", "1", FCVAR_ARCHIVE, "Scale mass with size");
 
 //-----------------------------------------------------------------------------
 // Entity scale information storage
@@ -170,7 +170,7 @@ void Tool_Inflator_OnUse( CWeaponTool *pTool, CBaseEntity *pEntity, trace_t &tr,
 	if ( bPrimary )
 	{
 		// Primary attack - inflate (make bigger)
-		float flScaleFactor = bm_inflator_scale.GetFloat();
+		float flScaleFactor = gmod_inflator_scale.GetFloat();
 
 		if ( pOwner->m_nButtons & IN_USE )
 		{
@@ -199,7 +199,7 @@ void Tool_Inflator_OnUse( CWeaponTool *pTool, CBaseEntity *pEntity, trace_t &tr,
 	else
 	{
 		// Secondary attack - deflate (make smaller)
-		float flScaleFactor = 1.0f / bm_inflator_scale.GetFloat();
+		float flScaleFactor = 1.0f / gmod_inflator_scale.GetFloat();
 
 		if ( DeflateEntity( pEntity, flScaleFactor ) )
 		{
@@ -251,7 +251,7 @@ static bool InflateEntity( CBaseEntity *pEntity, float flScaleFactor )
 
 	// Calculate new scale
 	float flNewScale = pScaleInfo->flCurrentScale * flScaleFactor;
-	float flMaxScale = bm_inflator_max.GetFloat();
+	float flMaxScale = gmod_inflator_max.GetFloat();
 
 	if ( flNewScale > flMaxScale )
 	{
@@ -263,10 +263,10 @@ static bool InflateEntity( CBaseEntity *pEntity, float flScaleFactor )
 	pScaleInfo->flCurrentScale = flNewScale;
 
 	// Scale physics if enabled
-	if ( bm_inflator_physics.GetBool() )
+	if ( gmod_inflator_physics.GetBool() )
 	{
 		IPhysicsObject *pPhysics = pEntity->VPhysicsGetObject();
-		if ( pPhysics && bm_inflator_mass.GetBool() )
+		if ( pPhysics && gmod_inflator_mass.GetBool() )
 		{
 			// Scale mass with volume (scale^3)
 			float flMassScale = flNewScale * flNewScale * flNewScale;
@@ -292,7 +292,7 @@ static bool DeflateEntity( CBaseEntity *pEntity, float flScaleFactor )
 
 	// Calculate new scale
 	float flNewScale = pScaleInfo->flCurrentScale * flScaleFactor;
-	float flMinScale = bm_inflator_min.GetFloat();
+	float flMinScale = gmod_inflator_min.GetFloat();
 
 	if ( flNewScale < flMinScale )
 	{
@@ -304,10 +304,10 @@ static bool DeflateEntity( CBaseEntity *pEntity, float flScaleFactor )
 	pScaleInfo->flCurrentScale = flNewScale;
 
 	// Scale physics if enabled
-	if ( bm_inflator_physics.GetBool() )
+	if ( gmod_inflator_physics.GetBool() )
 	{
 		IPhysicsObject *pPhysics = pEntity->VPhysicsGetObject();
-		if ( pPhysics && bm_inflator_mass.GetBool() )
+		if ( pPhysics && gmod_inflator_mass.GetBool() )
 		{
 			// Scale mass with volume (scale^3)
 			float flMassScale = flNewScale * flNewScale * flNewScale;
@@ -336,10 +336,10 @@ static bool ResetEntityScale( CBaseEntity *pEntity )
 	pScaleInfo->flCurrentScale = pScaleInfo->flOriginalScale;
 
 	// Reset physics
-	if ( bm_inflator_physics.GetBool() )
+	if ( gmod_inflator_physics.GetBool() )
 	{
 		IPhysicsObject *pPhysics = pEntity->VPhysicsGetObject();
-		if ( pPhysics && bm_inflator_mass.GetBool() )
+		if ( pPhysics && gmod_inflator_mass.GetBool() )
 		{
 			pPhysics->SetMass( pScaleInfo->flOriginalMass );
 		}
@@ -486,7 +486,7 @@ static void SetEntityScale( CBaseEntity *pEntity, float flScale )
 		return;
 
 	// Clamp scale to limits
-	flScale = clamp( flScale, bm_inflator_min.GetFloat(), bm_inflator_max.GetFloat() );
+	flScale = clamp( flScale, gmod_inflator_min.GetFloat(), gmod_inflator_max.GetFloat() );
 
 	// For older SDK compatibility - model scale functions don't exist
 	// Store scale in keyvalue for potential custom rendering system
@@ -501,7 +501,7 @@ static void SetEntityScale( CBaseEntity *pEntity, float flScale )
 	// 3. Physics object scaling (if physics exists)
 
 	// Scale physics collision if enabled
-	if ( bm_inflator_physics.GetBool() )
+	if ( gmod_inflator_physics.GetBool() )
 	{
 		IPhysicsObject *pPhysics = pEntity->VPhysicsGetObject();
 		if ( pPhysics )
@@ -518,7 +518,7 @@ static void SetEntityScale( CBaseEntity *pEntity, float flScale )
 //-----------------------------------------------------------------------------
 // Console command for inflator context menu
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_context_inflator, "Opens inflator tool context menu" )
+CON_COMMAND( gmod_context_inflator, "Opens inflator tool context menu" )
 {
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( !pPlayer )
@@ -536,16 +536,16 @@ CON_COMMAND( bm_context_inflator, "Opens inflator tool context menu" )
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Left click: Inflate (make bigger)" );
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Right click: Deflate (make smaller)" );
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Use + Left click: Reset to original size" );
-	ClientPrintf( pPlayer, HUD_PRINTTALK, "Scale factor: %.2fx", bm_inflator_scale.GetFloat() );
-	ClientPrintf( pPlayer, HUD_PRINTTALK, "Scale range: %.1f - %.1f", bm_inflator_min.GetFloat(), bm_inflator_max.GetFloat() );
-	ClientPrintf( pPlayer, HUD_PRINTTALK, "Scale physics: %s", bm_inflator_physics.GetBool() ? "Yes" : "No" );
-	ClientPrintf( pPlayer, HUD_PRINTTALK, "Scale mass: %s", bm_inflator_mass.GetBool() ? "Yes" : "No" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Scale factor: %.2fx", gmod_inflator_scale.GetFloat() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Scale range: %.1f - %.1f", gmod_inflator_min.GetFloat(), gmod_inflator_max.GetFloat() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Scale physics: %s", gmod_inflator_physics.GetBool() ? "Yes" : "No" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Scale mass: %s", gmod_inflator_mass.GetBool() ? "Yes" : "No" );
 }
 
 //-----------------------------------------------------------------------------
 // Console command to reset all entity scales
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_inflator_resetall, "Reset all entity scales to original" )
+CON_COMMAND( gmod_inflator_resetall, "Reset all entity scales to original" )
 {
 	int nReset = 0;
 

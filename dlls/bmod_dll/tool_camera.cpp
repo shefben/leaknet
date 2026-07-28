@@ -34,8 +34,8 @@ static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFor
 //-----------------------------------------------------------------------------
 // Console variables for camera tool
 //-----------------------------------------------------------------------------
-ConVar bm_camera_fov("bm_camera_fov", "90", FCVAR_ARCHIVE, "Camera tool field of view");
-ConVar bm_camera_quality("bm_camera_quality", "high", FCVAR_ARCHIVE, "Camera tool screenshot quality");
+ConVar gmod_camera_fov("gmod_camera_fov", "90", FCVAR_ARCHIVE, "Camera tool field of view");
+ConVar gmod_camera_quality("gmod_camera_quality", "high", FCVAR_ARCHIVE, "Camera tool screenshot quality");
 
 //-----------------------------------------------------------------------------
 // Per-weapon camera state - CWeaponTool is not subclassed, so the state that
@@ -250,22 +250,22 @@ static void AdjustCameraSettings( CWeaponTool *pTool )
 	// 3. Preview changes in real-time
 
 	// For now, just cycle FOV
-	float currentFOV = bm_camera_fov.GetFloat();
+	float currentFOV = gmod_camera_fov.GetFloat();
 	if ( currentFOV <= 60 )
-		bm_camera_fov.SetValue( 90 );
+		gmod_camera_fov.SetValue( 90 );
 	else if ( currentFOV <= 90 )
-		bm_camera_fov.SetValue( 120 );
+		gmod_camera_fov.SetValue( 120 );
 	else
-		bm_camera_fov.SetValue( 60 );
+		gmod_camera_fov.SetValue( 60 );
 
 	// Inform player
-	ClientPrintf( pOwner, HUD_PRINTTALK, "Camera FOV set to %.0f", bm_camera_fov.GetFloat() );
+	ClientPrintf( pOwner, HUD_PRINTTALK, "Camera FOV set to %.0f", gmod_camera_fov.GetFloat() );
 }
 
 //-----------------------------------------------------------------------------
 // Console command for camera context menu (matching IDA finding)
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_context_camera, "Opens camera tool context menu" )
+CON_COMMAND( gmod_context_camera, "Opens camera tool context menu" )
 {
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( !pPlayer )
@@ -282,7 +282,7 @@ CON_COMMAND( bm_context_camera, "Opens camera tool context menu" )
 	// In a full implementation, this would open the camera context menu
 	// For now, just show camera info
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Camera Tool Settings:" );
-	ClientPrintf( pPlayer, HUD_PRINTTALK, "FOV: %.0f", bm_camera_fov.GetFloat() );
-	ClientPrintf( pPlayer, HUD_PRINTTALK, "Quality: %s", bm_camera_quality.GetString() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "FOV: %.0f", gmod_camera_fov.GetFloat() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Quality: %s", gmod_camera_quality.GetString() );
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Use secondary fire to adjust settings" );
 }

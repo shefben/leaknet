@@ -872,7 +872,7 @@ void Tool_Constraint_OnThink( CWeaponTool *pTool, int nMode )
 //-----------------------------------------------------------------------------
 // Console command to remove all tool constraints
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_constraint_removeall, "Remove all tool constraints" )
+CON_COMMAND( gmod_constraint_removeall, "Remove all tool constraints" )
 {
 	int nRemoved = g_ToolConstraints.Count();
 
@@ -897,7 +897,7 @@ CON_COMMAND( bm_constraint_removeall, "Remove all tool constraints" )
 //-----------------------------------------------------------------------------
 // Console command to list all tool constraints
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_constraint_list, "List all tool constraints" )
+CON_COMMAND( gmod_constraint_list, "List all tool constraints" )
 {
 	Msg( "Active tool constraints: %d\n", g_ToolConstraints.Count() );
 

@@ -37,11 +37,13 @@ ConCommandBase::ConCommandBase( void )
 {
 	m_pParent				= NULL;
 	m_bRegistered			= false;
+	m_bHasProxyChildren		= false;
 	m_pszName				= NULL;
 	m_pszHelpString			= NULL;
 
 	m_nFlags				= 0;
 	m_pNext					= NULL;
+	m_pPrev					= NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -60,20 +62,21 @@ ConCommandBase::ConCommandBase( char const *pName, char const *pHelpString /*=0*
 //-----------------------------------------------------------------------------
 ConCommandBase::~ConCommandBase( void )
 {
-	// Drop out of this module's list.
-	RemoveFromList( this );
-
-	// ...and out of whatever list the accessor linked us into (normally the engine's).
-	// Without this, any ConVar/ConCommand that isn't a file-scope static leaves a
-	// dangling pointer behind in the engine's list, and the next walk of that list
-	// (ConCommandBase::RemoveFlaggedCommands at shutdown) reads freed memory.
+	// Drop out of whatever list we are actually linked into. Because the list is
+	// doubly linked this only touches our immediate neighbours, so it is safe even
+	// when the chain spans several modules. Do the accessor (normally the engine's
+	// list) first so the head owned by that module gets fixed up, then this
+	// module's own head.
 	if ( m_bRegistered && s_pAccessor )
 	{
 		s_pAccessor->UnregisterConCommandBase( this );
 	}
+	RemoveFromList( this );
+
 	m_bRegistered = false;
 	m_pParent = NULL;
 	m_pNext = NULL;
+	m_pPrev = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -98,6 +101,7 @@ void ConCommandBase::Create( char const *pName, char const *pHelpString /*= 0*/,
 	m_pParent			= this;
 
 	m_bRegistered		= false;
+	m_bHasProxyChildren	= false;
 
 	// Name should be static data
 	Assert( pName );
@@ -108,13 +112,13 @@ void ConCommandBase::Create( char const *pName, char const *pHelpString /*= 0*/,
 
 	if ( !( m_nFlags & FCVAR_UNREGISTERED ) )
 	{
-		m_pNext		= s_pConCommandBases;
-		s_pConCommandBases	= this;
+		AddToList( this );
 	}
 	else
 	{
 		// It's unregistered
 		m_pNext		= NULL;
+		m_pPrev		= NULL;
 	}
 
 	// If s_pAccessor is already set (this ConVar is not a global variable),
@@ -175,7 +179,12 @@ void ConCommandBase::AddToList( ConCommandBase *var )
 {
 	// This routine is only valid on root ConCommandBases
 	Assert(var->m_pParent == var);
+	var->m_pPrev = NULL;
 	var->m_pNext = s_pConCommandBases;
+	if ( s_pConCommandBases )
+	{
+		s_pConCommandBases->m_pPrev = var;
+	}
 	s_pConCommandBases = var;
 }
 
@@ -189,25 +198,40 @@ void ConCommandBase::RemoveFromList( ConCommandBase *var )
 	if ( !var )
 		return;
 
-	ConCommandBase **ppPrev = &s_pConCommandBases;
-	for ( ConCommandBase *pCommand = s_pConCommandBases; pCommand; pCommand = *ppPrev )
+	// O(1) unlink. Never walk the chain looking for var: at shutdown the chain is
+	// shared between modules and may already contain entries whose owning DLL has
+	// gone away, and walking it is what used to fault here.
+	if ( var->m_pPrev )
 	{
-		if ( pCommand == var )
-		{
-			*ppPrev = pCommand->m_pNext;
-			pCommand->m_pNext = NULL;
-			break;
-		}
-		ppPrev = &pCommand->m_pNext;
+		var->m_pPrev->m_pNext = var->m_pNext;
+	}
+	else if ( s_pConCommandBases == var )
+	{
+		// Only move this module's head if var really is this module's head.
+		s_pConCommandBases = var->m_pNext;
 	}
 
-	// Anything that linked to var as its parent has to stop doing that.
-	for ( ConCommandBase *pCommand = s_pConCommandBases; pCommand; pCommand = pCommand->m_pNext )
+	if ( var->m_pNext )
 	{
-		if ( pCommand->m_pParent == var )
+		var->m_pNext->m_pPrev = var->m_pPrev;
+	}
+
+	var->m_pNext = NULL;
+	var->m_pPrev = NULL;
+
+	// Anything that linked to var as its parent has to stop doing that, otherwise
+	// GetName()/GetHelpText() would follow a freed pointer. Nothing ever proxies to
+	// the vast majority of cvars, so only pay for the walk when it can matter.
+	if ( var->m_bHasProxyChildren )
+	{
+		for ( ConCommandBase *pCommand = s_pConCommandBases; pCommand; pCommand = pCommand->m_pNext )
 		{
-			pCommand->m_pParent = pCommand;
+			if ( pCommand->m_pParent == var )
+			{
+				pCommand->m_pParent = pCommand;
+			}
 		}
+		var->m_bHasProxyChildren = false;
 	}
 }
 
@@ -238,17 +262,23 @@ void ConCommandBase::RemoveFlaggedCommands( int flag )
 		if ( !( pCommand->m_nFlags & flag ) )
 		{
 			pCommand->m_pNext = pNewList;
+			pCommand->m_pPrev = NULL;
+			if ( pNewList )
+			{
+				pNewList->m_pPrev = pCommand;
+			}
 			pNewList = pCommand;
 		}
 		else
 		{
 			// Unlink
 			pCommand->m_pNext = NULL;
+			pCommand->m_pPrev = NULL;
 		}
 
 		pCommand = pNext;
 	}
-	
+
 	s_pConCommandBases = pNewList;
 }
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -86,6 +86,21 @@ void CClientMOTD::OnCommand( const char *command)
 // IClientMOTD interface calls
 
 //-----------------------------------------------------------------------------
+// Purpose: skips leading whitespace so a motd.txt that starts with a newline
+//			still resolves to the URL/HTML it contains
+//-----------------------------------------------------------------------------
+static const char *SkipMOTDLeadingWhitespace( const char *str )
+{
+	if ( !str )
+		return "";
+
+	while ( *str == ' ' || *str == '\t' || *str == '\r' || *str == '\n' )
+		str++;
+
+	return str;
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: shows the MOTD
 //-----------------------------------------------------------------------------
 void CClientMOTD::Activate( const char *title, const char *msg )
@@ -97,39 +112,14 @@ void CClientMOTD::Activate( const char *title, const char *msg )
 
 	if( IsURL( msg ) )
 	{
-		m_pMessage->OpenURL( msg );
+		m_pMessage->OpenURL( SkipMOTDLeadingWhitespace( msg ) );
 	}
 	else
-	{ 
-		// save the file to disk and then load it
-		if( filesystem()->FileExists( m_szTempFileName ) )
-		{
-			filesystem()->RemoveFile( m_szTempFileName ,"GAME");
-		}
-		
-		FileHandle_t f = filesystem()->Open( m_szTempFileName, "w+", "GAME" );
-
-		if ( f )
-		{
-			filesystem()->Write( msg, strlen( msg ), f);
-			filesystem()->Close( f );
-
-			char localURL[ MAX_PATH + 7 ];
-			strcpy( localURL, "file:///");
-			
-			int len = filesystem()->GetLocalPathLen( m_szTempFileName );
-			char *pPathData = (char*)stackalloc( len );
-
-			filesystem()->GetLocalPath( m_szTempFileName, pPathData );
-			Q_strncat( localURL, pPathData, sizeof( localURL ) );
-			
-			m_pMessage->OpenURL( localURL );
-
-		}
-
+	{
+		ShowLocalContent( msg );
 	}
-	
-	if ( m_iScoreBoardKey == KEY_NONE ) 
+
+	if ( m_iScoreBoardKey == KEY_NONE )
 	{
 		m_iScoreBoardKey = gameuifuncs->GetVGUI2KeyCodeForBind( "showscores" );
 	}
@@ -143,42 +133,94 @@ void CClientMOTD::Activate( const wchar_t *title, const wchar_t *msg )
 
 	SetTitle( title, false );
 	SetLabelText( "serverName", title );
-	char ansiURL[256];
-	localize()->ConvertUnicodeToANSI( msg, ansiURL, sizeof( ansiURL ));
 
-	if( IsURL( ansiURL ) )
+	// The old code wrote the raw wchar_t buffer out with a byte count of
+	// wcslen(), which truncated the body to half its length and emitted UTF-16
+	// bytes into a file the browser reads as ANSI.  Convert first.
+	int nAnsiLen = ( msg ? (int)wcslen( msg ) : 0 ) * 4 + 1;
+	char *pAnsi = (char *)stackalloc( nAnsiLen );
+	pAnsi[0] = 0;
+	if ( msg )
 	{
-		m_pMessage->OpenURL( ansiURL );
+		localize()->ConvertUnicodeToANSI( msg, pAnsi, nAnsiLen );
+	}
+
+	if( IsURL( pAnsi ) )
+	{
+		m_pMessage->OpenURL( SkipMOTDLeadingWhitespace( pAnsi ) );
 	}
 	else
-	{ 
-		// save the file to disk and then load it
-		if( filesystem()->FileExists( m_szTempFileName ) )
-		{
-			filesystem()->RemoveFile( m_szTempFileName ,"GAME");
-		}
-		
-		FileHandle_t f = filesystem()->Open( m_szTempFileName, "w+", "GAME" );
-
-		if ( f )
-		{
-			filesystem()->Write( msg, wcslen( msg ), f);
-			filesystem()->Close( f );
-
-			char localURL[ MAX_PATH + 7 ];
-			strcpy( localURL, "file:///");
-
-			int len = filesystem()->GetLocalPathLen( m_szTempFileName );
-			char *pPathData = (char*)stackalloc( len );
-
-			filesystem()->GetLocalPath( m_szTempFileName, pPathData );
-			Q_strncat( localURL, pPathData, sizeof( localURL ) );
-			
-			m_pMessage->OpenURL( localURL );
-
-		}
+	{
+		ShowLocalContent( pAnsi );
 	}
+
 	SetVisible( true );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: renders an inline MOTD body in the HTML view.  Bodies that already
+//			are an HTML document are handed straight to the browser; anything
+//			else is plain text and gets wrapped so line breaks survive instead
+//			of collapsing into one run-on paragraph.
+//-----------------------------------------------------------------------------
+void CClientMOTD::ShowLocalContent( const char *msg )
+{
+	if ( !msg )
+	{
+		msg = "";
+	}
+
+	// save the file to disk and then load it
+	if( filesystem()->FileExists( m_szTempFileName ) )
+	{
+		filesystem()->RemoveFile( m_szTempFileName ,"GAME");
+	}
+
+	FileHandle_t f = filesystem()->Open( m_szTempFileName, "w+", "GAME" );
+	if ( !f )
+	{
+		return;
+	}
+
+	if ( IsHTML( msg ) )
+	{
+		filesystem()->Write( msg, strlen( msg ), f );
+	}
+	else
+	{
+		// plain-text fallback - no HTML control markup in the body, so present
+		// it as preformatted text rather than letting the browser reflow it.
+		const char *pHeader =
+			"<html><body bgcolor=\"#000000\" text=\"#ffffff\">"
+			"<pre style=\"font-family:Verdana,Arial,sans-serif;font-size:12px;white-space:pre-wrap;\">";
+		const char *pFooter = "</pre></body></html>";
+
+		filesystem()->Write( pHeader, strlen( pHeader ), f );
+		filesystem()->Write( msg, strlen( msg ), f );
+		filesystem()->Write( pFooter, strlen( pFooter ), f );
+	}
+
+	filesystem()->Close( f );
+
+	char localURL[ MAX_PATH + 8 ];
+	Q_strncpy( localURL, "file:///", sizeof( localURL ) );
+
+	int len = filesystem()->GetLocalPathLen( m_szTempFileName );
+	if ( len <= 0 )
+	{
+		return;
+	}
+
+	char *pPathData = (char*)stackalloc( len + 1 );
+	pPathData[0] = 0;
+	if ( !filesystem()->GetLocalPath( m_szTempFileName, pPathData ) )
+	{
+		return;
+	}
+
+	Q_strncat( localURL, pPathData, sizeof( localURL ) );
+
+	m_pMessage->OpenURL( localURL );
 }
 
 //-----------------------------------------------------------------------------
@@ -219,14 +261,34 @@ void CClientMOTD::OnKeyCodeTyped( KeyCode key )
 //-----------------------------------------------------------------------------
 bool CClientMOTD::IsURL( const char *str )
 {
-	bool isUrl = false;
+	if ( !str )
+		return false;
 
-	if( strlen( str ) > 7 && str[0] == 'h' && str[1] == 't' && str[2] == 't' && str[3] == 'p' && str[4] == ':' 
-		&& str[5] == '/' && str[6] =='/')
-	{
-		isUrl = true;
-	}
+	// tolerate leading whitespace/newlines from motd.txt
+	while ( *str == ' ' || *str == '\t' || *str == '\r' || *str == '\n' )
+		str++;
 
-	return isUrl;
+	if ( !_strnicmp( str, "http://", 7 ) && strlen( str ) > 7 )
+		return true;
+
+	if ( !_strnicmp( str, "https://", 8 ) && strlen( str ) > 8 )
+		return true;
+
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: returns true if the body is an inline HTML document rather than
+//			plain text
+//-----------------------------------------------------------------------------
+bool CClientMOTD::IsHTML( const char *str )
+{
+	if ( !str )
+		return false;
+
+	while ( *str == ' ' || *str == '\t' || *str == '\r' || *str == '\n' )
+		str++;
+
+	return ( *str == '<' );
 }
 

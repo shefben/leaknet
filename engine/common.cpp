@@ -33,6 +33,7 @@
 #include "gl_matsysiface.h"
 #include "materialsystem/imaterialsystemhardwareconfig.h"
 #include "vstdlib/icommandline.h"
+#include "KeyValues.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -1626,6 +1627,242 @@ void COM_ParseDirectoryFromCmd( const char *pCmdName, char *pDirName, const char
 	COM_StripTrailingSlash( pDirName );
 }
 
+//-----------------------------------------------------------------------------
+// Additional game content mounting.
+//
+// Retail Garry's Mod pulls models/materials/sounds/maps out of the other Source
+// games the player owns, and it names those games by Steam AppID (240 = CS:S,
+// 220 = HL2, 440 = TF2, ...). The 2003 engine predates Steam AppIDs entirely and
+// only knows about directories next to the base dir, so anything that asks for
+// content "by AppID" has to be translated into a directory before it can be
+// turned into a search path.
+//
+// The table below is that translation. Everything else here just resolves a
+// directory for an entry and hands it to the filesystem.
+//-----------------------------------------------------------------------------
+#define MAX_MOUNT_DIR_ALIASES 3
+
+struct MountAppId_t
+{
+	int			appId;
+	const char *pGameName;								// human readable, for logging
+	const char *pDirNames[MAX_MOUNT_DIR_ALIASES];		// directory names to try, in order
+};
+
+static const MountAppId_t g_MountAppIds[] =
+{
+	{  220, "Half-Life 2",					{ "hl2",		NULL,		NULL } },
+	{  240, "Counter-Strike: Source",		{ "cstrike",	"css",		NULL } },
+	{  280, "Half-Life: Source",			{ "hl1",		NULL,		NULL } },
+	{  300, "Day of Defeat: Source",		{ "dod",		NULL,		NULL } },
+	{  320, "Half-Life 2: Deathmatch",		{ "hl2mp",		NULL,		NULL } },
+	{  340, "Half-Life 2: Lost Coast",		{ "lostcoast",	NULL,		NULL } },
+	{  360, "Half-Life Deathmatch: Source",	{ "hl1mp",		NULL,		NULL } },
+	{  380, "Half-Life 2: Episode One",		{ "episodic",	"ep1",		NULL } },
+	{  400, "Portal",						{ "portal",		NULL,		NULL } },
+	{  420, "Half-Life 2: Episode Two",		{ "ep2",		NULL,		NULL } },
+	{  440, "Team Fortress 2",				{ "tf",			"tf2",		NULL } },
+	{ 4000, "Garry's Mod",					{ "garrysmod",	NULL,		NULL } },
+};
+
+//-----------------------------------------------------------------------------
+// AppID -> table entry. NULL for an AppID we have no mapping for.
+//-----------------------------------------------------------------------------
+static const MountAppId_t *COM_FindMountAppId( int appId )
+{
+	for ( int i = 0; i < ARRAYSIZE( g_MountAppIds ); i++ )
+	{
+		if ( g_MountAppIds[i].appId == appId )
+			return &g_MountAppIds[i];
+	}
+
+	return NULL;
+}
+
+//-----------------------------------------------------------------------------
+// Add one resolved game directory to the search paths. Mounted content is
+// read-only reference content and must never win over the mod's own files, so
+// it always goes on the tail.
+//-----------------------------------------------------------------------------
+static bool COM_MountGameDirectory( const char *pFullPath, const char *pLabel )
+{
+	if ( !pFullPath || !pFullPath[0] )
+		return false;
+
+	if ( !g_pFileSystem->IsDirectory( pFullPath, NULL ) )
+		return false;
+
+	g_pFileSystem->AddSearchPath( pFullPath, "GAME", PATH_ADD_TO_TAIL );
+
+	Msg( "mount: %s -> %s\n", pLabel, pFullPath );
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Mount a game by AppID: try each directory alias under the base dir until one
+// of them actually exists.
+//-----------------------------------------------------------------------------
+static void COM_MountAppId( const char *pBaseDir, int appId )
+{
+	if ( appId <= 0 )
+		return;
+
+	const MountAppId_t *pApp = COM_FindMountAppId( appId );
+	if ( !pApp )
+	{
+		Warning( "mount: AppID %i is not in the AppID->directory table, skipping. "
+			"Add it to g_MountAppIds or mount it by path in cfg/mount.cfg\n", appId );
+		return;
+	}
+
+	char fullPath[MAX_OSPATH];
+	for ( int i = 0; i < MAX_MOUNT_DIR_ALIASES; i++ )
+	{
+		if ( !pApp->pDirNames[i] )
+			break;
+
+		Q_snprintf( fullPath, sizeof( fullPath ), "%s/%s", pBaseDir, pApp->pDirNames[i] );
+		if ( COM_MountGameDirectory( fullPath, pApp->pGameName ) )
+			return;
+	}
+
+	Msg( "mount: %s (AppID %i) is not installed next to the base dir, skipping\n",
+		pApp->pGameName, appId );
+}
+
+//-----------------------------------------------------------------------------
+// A mount key is either an AppID ("240") or a directory name ("cstrike").
+//-----------------------------------------------------------------------------
+static bool COM_MountKeyIsAppId( const char *pKey )
+{
+	if ( !pKey || !pKey[0] )
+		return false;
+
+	for ( const char *p = pKey; *p; p++ )
+	{
+		if ( *p < '0' || *p > '9' )
+			return false;
+	}
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Mount everything the mod's gameinfo.txt asks for.
+//
+// GMod's gameinfo.txt names its content by AppID:
+//
+//   FileSystem
+//   {
+//       SteamAppId            220     // 240=CS:S, 220=HL2
+//       AdditionalContentId   240
+//   }
+//
+// The 2003 engine has no AppID concept, so each one is translated to a sibling
+// directory of the base dir before it becomes a search path.
+//-----------------------------------------------------------------------------
+static void COM_MountContentFromGameInfo( const char *pBaseDir, const char *pModDir )
+{
+	char gameInfoFile[MAX_OSPATH];
+	Q_snprintf( gameInfoFile, sizeof( gameInfoFile ), "%s/%s/gameinfo.txt", pBaseDir, pModDir );
+
+	KeyValues *pGameInfo = new KeyValues( "GameInfo" );
+	if ( !pGameInfo->LoadFromFile( g_pFileSystem, gameInfoFile, NULL ) )
+	{
+		pGameInfo->deleteThis();
+		return;
+	}
+
+	KeyValues *pFileSystem = pGameInfo->FindKey( "FileSystem" );
+	if ( pFileSystem )
+	{
+		// SteamAppId is the game whose content this mod is built on top of.
+		COM_MountAppId( pBaseDir, pFileSystem->GetInt( "SteamAppId", 0 ) );
+
+		// Any number of AdditionalContentId entries may follow (CS:S, TF2, ...).
+		for ( KeyValues *pEntry = pFileSystem->GetFirstValue(); pEntry; pEntry = pEntry->GetNextValue() )
+		{
+			if ( !Q_stricmp( pEntry->GetName(), "AdditionalContentId" ) )
+			{
+				COM_MountAppId( pBaseDir, pEntry->GetInt() );
+			}
+		}
+
+		// ToolsAppId is deliberately not mounted - it is SDK content, not game
+		// content, and retail only uses it for the editor materials.
+	}
+
+	pGameInfo->deleteThis();
+}
+
+//-----------------------------------------------------------------------------
+// Reads <basedir>/<mod>/cfg/mount.cfg and mounts everything it lists. This is
+// the user-facing override: it can name a game by AppID or by directory, and
+// can point at an install that is not next to the base dir.
+//
+//   "mountcfg"
+//   {
+//       "240"      ""                          // CS:S from <basedir>/cstrike
+//       "440"      "D:/Steam/.../tf"           // TF2 from an explicit path
+//       "cstrike"  ""                          // same as "240"
+//   }
+//-----------------------------------------------------------------------------
+static void COM_MountContentFromMountCfg( const char *pBaseDir, const char *pModDir )
+{
+	char mountFile[MAX_OSPATH];
+	Q_snprintf( mountFile, sizeof( mountFile ), "%s/%s/cfg/mount.cfg", pBaseDir, pModDir );
+
+	KeyValues *pMountKV = new KeyValues( "mountcfg" );
+	if ( !pMountKV->LoadFromFile( g_pFileSystem, mountFile, NULL ) )
+	{
+		// No mount.cfg is the normal case - nothing extra to mount.
+		pMountKV->deleteThis();
+		return;
+	}
+
+	for ( KeyValues *pEntry = pMountKV->GetFirstValue(); pEntry; pEntry = pEntry->GetNextValue() )
+	{
+		const char *pKey = pEntry->GetName();
+		const char *pExplicitPath = pEntry->GetString();
+
+		// No explicit path: resolve the key against the base dir.
+		if ( !pExplicitPath || !pExplicitPath[0] )
+		{
+			if ( COM_MountKeyIsAppId( pKey ) )
+			{
+				COM_MountAppId( pBaseDir, atoi( pKey ) );
+			}
+			else
+			{
+				char fullPath[MAX_OSPATH];
+				Q_snprintf( fullPath, sizeof( fullPath ), "%s/%s", pBaseDir, pKey );
+				if ( !COM_MountGameDirectory( fullPath, pKey ) )
+				{
+					Warning( "mount: \"%s\" does not exist, skipping\n", fullPath );
+				}
+			}
+			continue;
+		}
+
+		char fullPath[MAX_OSPATH];
+		Q_strncpy( fullPath, pExplicitPath, sizeof( fullPath ) );
+		COM_StripTrailingSlash( fullPath );
+
+		if ( !COM_MountGameDirectory( fullPath, pKey ) )
+		{
+			Warning( "mount: %s -> \"%s\" does not exist, skipping\n", pKey, fullPath );
+		}
+	}
+
+	pMountKV->deleteThis();
+}
+
+static void COM_MountAdditionalContent( const char *pBaseDir, const char *pModDir )
+{
+	COM_MountContentFromGameInfo( pBaseDir, pModDir );
+	COM_MountContentFromMountCfg( pBaseDir, pModDir );
+}
+
 /*
 ================
 COM_InitFilesystem
@@ -1663,6 +1900,10 @@ void COM_InitFilesystem (void)
 	char platform_dir[MAX_OSPATH];
 	Q_snprintf( platform_dir, sizeof( platform_dir ), "%s/platform", host_parms.basedir );
 	g_pFileSystem->AddSearchPath( platform_dir, "PLATFORM", PATH_ADD_TO_TAIL );
+
+	// Mount whatever other Source games cfg/mount.cfg asks for (CS:S, HL2, TF2,
+	// ...). Done last so mounted content never shadows the mod's own files.
+	COM_MountAdditionalContent( host_parms.basedir, pModDir );
 
 	// Set LOGDIR to be something reasonable
 	COM_SetupLogDir( NULL );

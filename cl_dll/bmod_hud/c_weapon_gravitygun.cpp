@@ -49,10 +49,16 @@ public:
 	void			UpdateHeldObjectGlow( void );
 	void			UpdateEffectState( void );
 	void			RenderPrimaryBeam( void );
-	void			RenderOverlayBeam( void );
+
+	// Recomputes the beam end point from the client-side (interpolated) held
+	// object every frame instead of using the stale networked world position.
+	// This is what removes the visible beam lag - m_worldPosition only changes
+	// at snapshot rate, the held prop's render transform changes every frame.
+	void			CacheHeldObjectOffset( void );
+	const Vector	&ComputeBeamEndPoint( void );
 
 	// IClientRenderable
-	virtual const Vector&			GetRenderOrigin( void ) { return m_worldPosition; }
+	virtual const Vector&			GetRenderOrigin( void ) { return m_vecBeamEnd; }
 	virtual const QAngle&			GetRenderAngles( void ) { return vec3_angle; }
 	virtual bool					ShouldDraw( void ) { return true; }
 	virtual bool					IsTransparent( void ) { return true; }
@@ -82,6 +88,12 @@ public:
 	bool					m_bIsCurrentlyRotating;
 	bool					m_bIsCurrentlyHolding;
 	int						m_serversidebeams;
+
+	// Client-only: grab point in the held object's local space, plus the entity
+	// the offset was cached against. Not networked, not saved.
+	Vector					m_vecHeldLocalOffset;
+	EHANDLE					m_hOffsetEntity;
+	Vector					m_vecBeamEnd;
 };
 
 
@@ -154,6 +166,48 @@ C_BeamQuadratic::C_BeamQuadratic()
 	m_bIsCurrentlyRotating = false;
 	m_bIsCurrentlyHolding = false;
 	m_serversidebeams = 0;
+
+	m_vecHeldLocalOffset.Init();
+	m_hOffsetEntity = NULL;
+	m_vecBeamEnd.Init();
+}
+
+//-----------------------------------------------------------------------------
+// Store the networked grab point in the held object's local space. Done once per
+// network update; the per-frame path then just transforms it by the object's
+// current (interpolated) matrix, so the beam end tracks the prop at framerate.
+//-----------------------------------------------------------------------------
+void C_BeamQuadratic::CacheHeldObjectOffset( void )
+{
+	C_BaseEntity *pHeld = m_heldObject.Get();
+	if ( !pHeld )
+	{
+		m_hOffsetEntity = NULL;
+		return;
+	}
+
+	pHeld->WorldToEntitySpace( m_worldPosition, &m_vecHeldLocalOffset );
+	m_hOffsetEntity = pHeld;
+}
+
+//-----------------------------------------------------------------------------
+// Per-frame beam end point.
+//-----------------------------------------------------------------------------
+const Vector &C_BeamQuadratic::ComputeBeamEndPoint( void )
+{
+	C_BaseEntity *pHeld = m_heldObject.Get();
+	if ( pHeld && m_hOffsetEntity.Get() == pHeld )
+	{
+		pHeld->EntityToWorldSpace( m_vecHeldLocalOffset, &m_vecBeamEnd );
+	}
+	else
+	{
+		// Nothing held (or the offset is stale) - the networked point is the
+		// player's aim point, which is already what we want.
+		m_vecBeamEnd = m_worldPosition;
+	}
+
+	return m_vecBeamEnd;
 }
 
 void C_BeamQuadratic::Update( C_BaseEntity *pOwner )
@@ -162,6 +216,9 @@ void C_BeamQuadratic::Update( C_BaseEntity *pOwner )
 
 	// Update effect state based on network variables
 	UpdateEffectState();
+
+	CacheHeldObjectOffset();
+	ComputeBeamEndPoint();
 
 	if ( m_active )
 	{
@@ -187,14 +244,9 @@ int	C_BeamQuadratic::DrawModel( int )
 	if ( !m_active )
 		return 0;
 
-	// Render primary beam
+	// Retail Garry's Mod draws exactly one quadratic beam with sprites/physbeam.
+	// No overlay pass, no second material.
 	RenderPrimaryBeam();
-
-	// Render overlay beam based on effect state
-	if ( m_effectState == EFFECT_HOLDING || m_effectState == EFFECT_READY )
-	{
-		RenderOverlayBeam();
-	}
 
 	return 1;
 }
@@ -230,56 +282,40 @@ void C_BeamQuadratic::RenderPrimaryBeam( void )
 		return;
 	pEnt->GetAttachment( 1, points[0], tmpAngle );
 
-	// Calculate beam path
-	Vector beamDir = m_worldPosition - points[0];
-	float beamLength = beamDir.Length();
-	VectorNormalize( beamDir );
+	// End point is recomputed every frame from the held object's interpolated
+	// transform, so the beam does not trail behind the prop.
+	points[2] = ComputeBeamEndPoint();
 
-	// Add dynamic bending based on movement speed
-	Vector velocity = m_worldPosition - m_targetPosition;
-	float bendAmount = min( velocity.Length() * 0.01f, 8.0f ); // Max 8 units of bend
-	Vector rightVector = CrossProduct( beamDir, Vector(0,0,1) );
-	VectorNormalize( rightVector );
+	// Control point: midpoint between the muzzle and the *aim* point, exactly as
+	// retail GMod does it. Deriving the bend from (world - target) instead made
+	// the beam whip around whenever the prop lagged behind the cursor, which is
+	// what read as input lag.
+	points[1] = 0.5f * ( m_targetPosition + points[0] );
 
-	points[1] = points[0] + beamDir * (beamLength * 0.5f) + rightVector * bendAmount;
-	points[2] = m_worldPosition;
-
-	// Select material and color based on effect state
+	// Retail GMod beam material.
 	const char *materialName = "sprites/physbeam";
-	// ConVar-driven beam color (GMod-style physgun color)
+
+	// ConVar-driven beam color (GMod physgun color)
 	float c_r = clamp( physgun_r.GetFloat() / 255.0f, 0.0f, 1.0f );
 	float c_g = clamp( physgun_g.GetFloat() / 255.0f, 0.0f, 1.0f );
 	float c_b = clamp( physgun_b.GetFloat() / 255.0f, 0.0f, 1.0f );
 	Vector beamColor( c_r, c_g, c_b );
+
+	// GMod's width is a flat 13 regardless of state.
 	float beamWidth = 13.0f;
 
-	switch ( m_effectState )
+	if ( m_glueTouching )
 	{
-		case EFFECT_READY:
-			beamColor = Vector( c_r, max( c_g, 0.3f ), max( c_b, 0.7f ) );  // Tint with physgun color
-			beamWidth = 11.0f;
-			break;
-		case EFFECT_HOLDING:
-			beamColor = Vector( max( c_r, 1.0f ), max( c_g, 0.6f ), max( c_b, 0.2f ) );  // Brighten when holding
-			beamWidth = 15.0f;
-			break;
-		case EFFECT_LAUNCH:
-			beamColor = Vector( max( c_r, 1.0f ), max( c_g, 1.0f ), max( c_b, 0.5f ) );  // Yellowish launch flash
-			beamWidth = 18.0f;
-			break;
-		default:
-			if ( m_glueTouching )
-			{
-				beamColor = Vector(1,0,0);  // Red when touching
-			}
-			break;
+		beamColor.Init( 1, 0, 0 );
 	}
 
 	int subdivisions = 16;
 	IMaterial *pMat = materials->FindMaterial( materialName, 0, 0 );
 
 	CBeamSegDraw beamDraw;
-	beamDraw.Start( subdivisions, pMat );
+	// The loop below emits subdivisions+1 segments - Start() must be told the
+	// real count or the mesh builder overruns its reserved vertices.
+	beamDraw.Start( subdivisions + 1, pMat );
 
 	CBeamSeg seg;
 	seg.m_flAlpha = 1.0;
@@ -298,94 +334,6 @@ void C_BeamQuadratic::RenderPrimaryBeam( void )
 
 		seg.m_vPos = p0 * points[0] + p1 * points[1] + p2 * points[2];
 		seg.m_flTexCoord = u - t;
-
-		if ( i == subdivisions )
-		{
-			// Fade out the end
-			seg.m_vColor = beamColor * 0.1f;
-		}
-		beamDraw.NextSeg( &seg );
-	}
-
-	beamDraw.End();
-}
-
-void C_BeamQuadratic::RenderOverlayBeam( void )
-{
-	Vector points[3];
-	QAngle tmpAngle;
-
-	C_BaseEntity *pEnt = cl_entitylist->GetEnt( m_viewModelIndex );
-	if ( !pEnt )
-		return;
-	pEnt->GetAttachment( 1, points[0], tmpAngle );
-
-	// Calculate beam path (same as primary)
-	Vector beamDir = m_worldPosition - points[0];
-	float beamLength = beamDir.Length();
-	VectorNormalize( beamDir );
-
-	Vector velocity = m_worldPosition - m_targetPosition;
-	float bendAmount = min( velocity.Length() * 0.01f, 8.0f );
-	Vector rightVector = CrossProduct( beamDir, Vector(0,0,1) );
-	VectorNormalize( rightVector );
-
-	points[1] = points[0] + beamDir * (beamLength * 0.5f) + rightVector * bendAmount;
-	points[2] = m_worldPosition;
-
-	// Overlay beam properties - pulsing effect
-	float pulseTime = gpGlobals->curtime * 3.0f;
-	float pulseAlpha = clamp( 0.3f + 0.4f * sin( pulseTime ), 0.0f, 1.0f );
-
-	// ConVar-driven base color
-	float c_r = clamp( physgun_r.GetFloat() / 255.0f, 0.0f, 1.0f );
-	float c_g = clamp( physgun_g.GetFloat() / 255.0f, 0.0f, 1.0f );
-	float c_b = clamp( physgun_b.GetFloat() / 255.0f, 0.0f, 1.0f );
-
-	Vector overlayColor;
-	float overlayWidth;
-
-	if ( m_effectState == EFFECT_HOLDING )
-	{
-		overlayColor = Vector( max( c_r, 1.0f ), max( c_g, 0.8f ), max( c_b, 0.4f ) );  // Bright overlay driven by physgun color
-		overlayWidth = 8.0f;
-	}
-	else // EFFECT_READY
-	{
-		overlayColor = Vector( max( c_r, 0.5f ), max( c_g, 0.9f ), max( c_b, 1.0f ) );  // Bright overlay driven by physgun color
-		overlayWidth = 6.0f;
-	}
-
-	int subdivisions = 12; // Fewer subdivisions for overlay
-	IMaterial *pMat = materials->FindMaterial( "sprites/physgbeam", 0, 0 ); // Different material for overlay
-
-	CBeamSegDraw beamDraw;
-	beamDraw.Start( subdivisions, pMat );
-
-	CBeamSeg seg;
-	seg.m_flAlpha = pulseAlpha;
-	seg.m_flWidth = overlayWidth;
-	seg.m_vColor = overlayColor;
-
-	float t = 0;
-	float u = gpGlobals->curtime * 2.0f - (int)(gpGlobals->curtime * 2.0f); // Faster scrolling for overlay
-	float dt = 1.0 / (float)subdivisions;
-	for( int i = 0; i <= subdivisions; i++, t += dt )
-	{
-		float omt = (1-t);
-		float p0 = omt*omt;
-		float p1 = 2*t*omt;
-		float p2 = t*t;
-
-		seg.m_vPos = p0 * points[0] + p1 * points[1] + p2 * points[2];
-		seg.m_flTexCoord = u - t;
-
-		// Alpha falloff toward the end
-		if ( i > subdivisions * 0.8f )
-		{
-			float falloff = 1.0f - ((float)(i - subdivisions * 0.8f) / (subdivisions * 0.2f));
-			seg.m_flAlpha = pulseAlpha * falloff;
-		}
 
 		beamDraw.NextSeg( &seg );
 	}

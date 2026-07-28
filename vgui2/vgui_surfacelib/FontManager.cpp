@@ -149,6 +149,27 @@ bool CFontManager::AddGlyphSetToFont(HFont font, const char *windowsFontName, in
 	if (!winFont)
 		return false;
 
+	// A scheme font block only rarely declares an explicit "range" key (the beta
+	// ClientScheme.res only does so for DefaultFixed/Marlett/console fonts).  When
+	// it is absent CScheme::LoadFonts hands us lowRange == highRange == 0, and
+	// CFontAmalgam::GetFontForChar then rejects every printable character
+	// (ch >= 0 && ch <= 0 is only true for the NUL glyph) - the amalgam has a font
+	// but resolves nothing, so the text silently draws as nothing at all.
+	// Retail Source never propagates the parsed range for the primary face, it
+	// always registers it as 0x0000..0xFFFF (see CFontManager::SetFontGlyphSet).
+	// Mirror that: no explicit range == full range.
+	if (lowRange <= 0 && highRange <= 0)
+	{
+		lowRange = 0x0000;
+		highRange = 0xFFFF;
+	}
+	else if (highRange < lowRange)
+	{
+		int temp = lowRange;
+		lowRange = highRange;
+		highRange = temp;
+	}
+
 	// add to the amalgam
 	m_FontAmalgams[font].AddFont(winFont, lowRange, highRange);
 	return true;

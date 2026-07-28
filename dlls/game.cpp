@@ -62,8 +62,8 @@ public:
 			defvalue = ( ( ConVar * )pCommand)->GetDefault();
 		}
 
-		// Unlink from client .dll only list
-		pCommand->SetNext( NULL );
+		// Unlink from the game .dll only list (keeps the list's prev pointers intact)
+		ConCommandBase::RemoveFromList( pCommand );
 
 		// Link to engine's list instead
 		cvar->RegisterConCommandBase( pCommand );

@@ -20,8 +20,8 @@ public:
 		// Mark for easy removal
 		pCommand->AddFlags( FCVAR_MATERIAL_SYSTEM );
 
-		// Unlink from client .dll only list
-		pCommand->SetNext( 0 );
+		// Unlink from this module's list (keeps the list's prev pointers intact)
+		ConCommandBase::RemoveFromList( pCommand );
 
 		// Link to engine's list instead
 		s_pCVar->RegisterConCommandBase( pCommand );

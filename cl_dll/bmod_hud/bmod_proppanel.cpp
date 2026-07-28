@@ -793,13 +793,16 @@ void CPropCategoryList::LoadCategories()
 			// Icons typically live in the mod cache's spawnicons folder
 			// (mods/-modcache/spawnicons/materials/gmod/...); a loose
 			// mods/spawnicons folder is also supported.
-			const char *iconDirs[] = { "mods/-modcache/spawnicons", "mods/spawnicons" };
-			for ( int i = 0; i < 2; i++ )
+			// mods/-modcache itself holds the merged materials/gmod/... tree.
+			const char *iconDirs[] = { "mods/-modcache", "mods/-modcache/spawnicons", "mods/spawnicons" };
+			for ( int i = 0; i < ARRAYSIZE( iconDirs ); i++ )
 			{
 				char spawnicons_path[MAX_PATH];
 				Q_snprintf( spawnicons_path, sizeof(spawnicons_path), "%s/%s", pModPath, iconDirs[i] );
 
-				if ( g_pFullFilesystem->IsDirectory( spawnicons_path, NULL ) )
+				// IsDirectory() is search-path relative, so query the relative
+				// path; AddSearchPath() still needs the absolute one.
+				if ( g_pFullFilesystem->IsDirectory( iconDirs[i], "MOD" ) )
 				{
 					g_pFullFilesystem->AddSearchPath( spawnicons_path, "GAME", PATH_ADD_TO_TAIL );
 					Msg( "SpawnMenu: Added spawnicons search path: %s\n", spawnicons_path );

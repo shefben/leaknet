@@ -27,7 +27,7 @@
 //-----------------------------------------------------------------------------
 // Console variables - matching Garry's Mod
 //-----------------------------------------------------------------------------
-ConVar bm_toolsound("bm_toolsound", "1", FCVAR_ARCHIVE, "Enable tool sounds");
+ConVar gmod_toolsound("gmod_toolsound", "1", FCVAR_ARCHIVE, "Enable tool sounds");
 
 //-----------------------------------------------------------------------------
 // Tool information table, indexed by the authentic ToolMode_t values.
@@ -416,7 +416,7 @@ bool CWeaponTool::CanUseOnEntity( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 void CWeaponTool::StartToolSound()
 {
-	if ( !bm_toolsound.GetBool() )
+	if ( !gmod_toolsound.GetBool() )
 		return;
 
 	const ToolInfo_t *pToolInfo = GetToolInfo( m_nToolMode );
@@ -550,7 +550,7 @@ void CWeaponTool::CreateSparkEffect( const Vector &vecPos )
 //-----------------------------------------------------------------------------
 void CWeaponTool::PlayToolSound( const char *pszSound )
 {
-	if ( !bm_toolsound.GetBool() )
+	if ( !gmod_toolsound.GetBool() )
 		return;
 
 	EmitSound( pszSound );
@@ -896,10 +896,10 @@ const char *GetToolDescription( int nMode )
 // which also equips weapon_tool if the player doesn't have it out. This
 // command is kept only as a convenient console alias that does the same
 // thing directly on the invoking player's weapon_tool instance - there is
-// deliberately no "bm_toolmode" ConVar anymore (a global ConVar can't hold a
+// deliberately no "gmod_toolmode" ConVar anymore (a global ConVar can't hold a
 // different value per connected player, and a ConVar/ConCommand pair sharing
 // one name is itself an engine registration collision).
-CON_COMMAND( bm_toolmode, "Sets the current tool mode on your equipped tool gun" )
+CON_COMMAND( gmod_toolmode, "Sets the current tool mode on your equipped tool gun" )
 {
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( !pPlayer )
@@ -912,7 +912,7 @@ CON_COMMAND( bm_toolmode, "Sets the current tool mode on your equipped tool gun"
 		int nCurrent = pTool ? pTool->GetToolMode() : TOOL_NONE;
 
 		Msg( "Current tool mode: %d (%s)\n", nCurrent, GetToolName( nCurrent ) );
-		Msg( "Usage: bm_toolmode <mode>\n" );
+		Msg( "Usage: gmod_toolmode <mode>\n" );
 		Msg( "Available modes:\n" );
 		for ( int i = 0; i < TOOL_MAX; i++ )
 		{
@@ -930,7 +930,15 @@ CON_COMMAND( bm_toolmode, "Sets the current tool mode on your equipped tool gun"
 	CBaseCombatWeapon *pWeapon = pPlayer->Weapon_OwnsThisType( "weapon_tool" );
 	if ( !pWeapon )
 	{
-		pWeapon = dynamic_cast<CBaseCombatWeapon*>( pPlayer->GiveNamedItem( "weapon_tool" ) );
+		// Runtime weapon creation needs the precache window open, otherwise
+		// Spawn()'s Precache() fails and the entity is discarded.
+		const bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+		CBaseEntity::SetAllowPrecache( true );
+
+		pPlayer->GiveNamedItem( "weapon_tool" );
+		pWeapon = pPlayer->Weapon_OwnsThisType( "weapon_tool" );
+
+		CBaseEntity::SetAllowPrecache( bAllowPrecache );
 	}
 
 	CWeaponTool *pTool = dynamic_cast<CWeaponTool*>( pWeapon );
@@ -949,14 +957,18 @@ CON_COMMAND( bm_toolmode, "Sets the current tool mode on your equipped tool gun"
 	Msg( "Tool mode set to: %d (%s)\n", pTool->GetToolMode(), GetToolName( pTool->GetToolMode() ) );
 }
 
-CON_COMMAND( bm_toolweapon, "Switches to tool weapon" )
+CON_COMMAND( gmod_toolweapon, "Switches to tool weapon" )
 {
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( !pPlayer )
 		return;
 
-	// Give player the tool weapon
+	// Give player the tool weapon (precache window has to be open for a runtime
+	// weapon spawn, see gmod_toolmode above)
+	const bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+	CBaseEntity::SetAllowPrecache( true );
 	pPlayer->GiveNamedItem( "weapon_tool" );
+	CBaseEntity::SetAllowPrecache( bAllowPrecache );
 
 	// Switch to it
 	CBaseCombatWeapon *pWeapon = pPlayer->Weapon_OwnsThisType( "weapon_tool" );

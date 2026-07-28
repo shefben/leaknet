@@ -159,9 +159,10 @@ void CSpawnMenuManager::DestroySpawnMenu()
 }
 
 //-----------------------------------------------------------------------------
-// Console command to show spawn menu
+// Console command to show spawn menu (legacy toggle - kept so existing binds
+// and scripts calling "spawnmenu" keep working)
 //-----------------------------------------------------------------------------
-CON_COMMAND( spawnmenu, "Opens the BarrysMod spawn menu" )
+CON_COMMAND( spawnmenu, "Toggles the BarrysMod spawn menu (prefer bind q +menu)" )
 {
 	CClientSpawnDialog *pSpawnMenu = g_SpawnMenuManager.GetSpawnMenu();
 	if ( pSpawnMenu )
@@ -187,7 +188,7 @@ CON_COMMAND( spawnmenu, "Opens the BarrysMod spawn menu" )
 //-----------------------------------------------------------------------------
 // Console command to reload spawn menu
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_reloadspawnmenu, "Reloads the BarrysMod spawn menu configuration" )
+CON_COMMAND( gmod_reloadspawnmenu, "Reloads the BarrysMod spawn menu configuration" )
 {
 	CClientSpawnDialog *pSpawnMenu = g_SpawnMenuManager.GetSpawnMenu();
 	if ( pSpawnMenu )
@@ -204,12 +205,12 @@ CON_COMMAND( bm_reloadspawnmenu, "Reloads the BarrysMod spawn menu configuration
 //-----------------------------------------------------------------------------
 // Console command to create complete spawn list
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_makecompletespawnlist, "Creates a complete spawn list for props" )
+CON_COMMAND( gmod_makecompletespawnlist, "Creates a complete spawn list for props" )
 {
 	if ( engine->Cmd_Argc() < 2 )
 	{
-		Msg( "Usage: bm_makecompletespawnlist <path>\n" );
-		Msg( "Example: bm_makecompletespawnlist cstrike/models/\n" );
+		Msg( "Usage: gmod_makecompletespawnlist <path>\n" );
+		Msg( "Example: gmod_makecompletespawnlist cstrike/models/\n" );
 		Msg( "WARNING: this WILL take a long time.\n" );
 		return;
 	}
@@ -230,7 +231,7 @@ CON_COMMAND( bm_makecompletespawnlist, "Creates a complete spawn list for props"
 //-----------------------------------------------------------------------------
 // Test command to show spawn menu information
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_spawnmenu_info, "Shows information about the spawn menu" )
+CON_COMMAND( gmod_spawnmenu_info, "Shows information about the spawn menu" )
 {
 	CClientSpawnDialog *pSpawnMenu = g_SpawnMenuManager.GetSpawnMenu();
 	if ( pSpawnMenu )
@@ -259,11 +260,11 @@ CON_COMMAND( bm_spawnmenu_info, "Shows information about the spawn menu" )
 //-----------------------------------------------------------------------------
 // Console command for tool mode switching
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_toolmode, "Sets the current tool mode" )
+CON_COMMAND( gmod_toolmode, "Sets the current tool mode" )
 {
 	if ( engine->Cmd_Argc() < 2 )
 	{
-		Msg( "Usage: bm_toolmode <mode_number>\n" );
+		Msg( "Usage: gmod_toolmode <mode_number>\n" );
 		Msg( "Available modes (authentic gm_toolmode IDs, see weapon_tool.h):\n" );
 		Msg( "  0 - Rope        1 - Elastic     2 - Weld       3 - Ballsocket\n" );
 		Msg( "  4 - Pulley      5 - EasyWeld    6 - EasyBall   7 - Axis\n" );
@@ -301,12 +302,12 @@ CON_COMMAND( bm_toolmode, "Sets the current tool mode" )
 //-----------------------------------------------------------------------------
 // Console command for context menu
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_context, "Shows a context menu" )
+CON_COMMAND( gmod_context, "Shows a context menu" )
 {
 	if ( engine->Cmd_Argc() < 2 )
 	{
-		Msg( "Usage: bm_context <context_type>\n" );
-		Msg( "Examples: bm_context npc, bm_context camera\n" );
+		Msg( "Usage: gmod_context <context_type>\n" );
+		Msg( "Examples: gmod_context npc, gmod_context camera\n" );
 		return;
 	}
 

@@ -35,7 +35,7 @@ static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFor
 //-----------------------------------------------------------------------------
 // Console variables for duplicator tool
 //-----------------------------------------------------------------------------
-ConVar bm_duplicator_limit("bm_duplicator_limit", "50", FCVAR_ARCHIVE, "Maximum entities per duplication");
+ConVar gmod_duplicator_limit("gmod_duplicator_limit", "50", FCVAR_ARCHIVE, "Maximum entities per duplication");
 
 //-----------------------------------------------------------------------------
 // Snapshot of a single entity's state for later re-creation
@@ -293,9 +293,9 @@ static bool CopyArea( DupeClipboard_t *pClip, const Vector &vecCenter, float flR
 		if ( !pEntity->VPhysicsGetObject() )
 			continue;
 
-		if ( nCount >= bm_duplicator_limit.GetInt() )
+		if ( nCount >= gmod_duplicator_limit.GetInt() )
 		{
-			DevMsg( "Duplicator: hit entity limit (%d)\n", bm_duplicator_limit.GetInt() );
+			DevMsg( "Duplicator: hit entity limit (%d)\n", gmod_duplicator_limit.GetInt() );
 			break;
 		}
 
@@ -460,7 +460,7 @@ void Tool_Duplicator_OnThink( CWeaponTool *pTool )
 //-----------------------------------------------------------------------------
 // Console command for duplicator context menu
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_context_duplicator, "Opens duplicator tool context menu" )
+CON_COMMAND( gmod_context_duplicator, "Opens duplicator tool context menu" )
 {
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( !pPlayer )
@@ -479,7 +479,7 @@ CON_COMMAND( bm_context_duplicator, "Opens duplicator tool context menu" )
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Left click: Copy single entity" );
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Use + Left click: Copy area" );
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Right click: Paste entities" );
-	ClientPrintf( pPlayer, HUD_PRINTTALK, "Entity limit: %d", bm_duplicator_limit.GetInt() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Entity limit: %d", gmod_duplicator_limit.GetInt() );
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Clipboard: %s (%d entities)",
 		( pClip && pClip->bValid ) ? "Ready" : "Empty",
 		pClip ? pClip->entities.Count() : 0 );

@@ -548,12 +548,22 @@ void IN_MenuDown(void)
 	KeyDown(&in_menu);
 
 #ifdef BMOD_CLIENT_DLL
-	// Q is bound to +menu. Toggle the already-created client panel directly so
-	// the binding does not depend on a second console-command dispatch:
-	// opens the build menu when closed, closes it when already open.
+	// Q is bound to +menu. GMod shows the build menu for as long as the key is
+	// held, so this opens it and IN_MenuUp closes it again.
+	//
+	// Exception: once a tool's settings box has been secluded (the "advanced
+	// tool menu" split out into its own panel) it is a standalone window - it
+	// survives the key release and this press is what dismisses it.
 	if ( g_pSpawnMenu )
 	{
-		g_pSpawnMenu->ShowPanel( !g_pSpawnMenu->IsVisible() );
+		if ( g_pSpawnMenu->IsVisible() && g_pSpawnMenu->IsSecluded() )
+		{
+			g_pSpawnMenu->ShowPanel( false );
+		}
+		else
+		{
+			g_pSpawnMenu->ShowPanel( true );
+		}
 	}
 #else
 	engine->ClientCmd_Unrestricted("spawnmenu\n");
@@ -563,9 +573,15 @@ void IN_MenuDown(void)
 void IN_MenuUp(void)
 {
 	KeyUp(&in_menu);
-	// Hide the spawn menu on key release for hold-to-show behavior
-	// Comment this line out if you want toggle behavior instead
-	// engine->ClientCmd_Unrestricted("spawnmenu\n");
+
+#ifdef BMOD_CLIENT_DLL
+	// Hold-to-show: releasing Q puts the build menu away again. A secluded tool
+	// settings box stays on screen until the next +menu (see IN_MenuDown).
+	if ( g_pSpawnMenu && !g_pSpawnMenu->IsSecluded() )
+	{
+		g_pSpawnMenu->ShowPanel( false );
+	}
+#endif
 }
 
 void IN_MLookUp (void)

@@ -74,7 +74,7 @@ enum ToolMode_t
 	// tool which has no authentic gm_toolmode slot at all. Given internal
 	// slots here so the existing tool_camera.cpp/tool_npc.cpp/tool_gun.cpp/
 	// tool_inflator.cpp implementations are reachable via direct console
-	// command (bm_toolmode 30-33) even though no menu button wires to them.
+	// command (gmod_toolmode 30-33) even though no menu button wires to them.
 	TOOL_GUN		= 30,
 	TOOL_CAMERA		= 31,
 	TOOL_NPCSPAWN	= 32,
@@ -242,7 +242,7 @@ private:
 	void			CreateToolConstraint( CBaseEntity *pEnt1, CBaseEntity *pEnt2, int nType );
 };
 
-extern ConVar bm_toolsound;
+extern ConVar gmod_toolsound;
 
 //-----------------------------------------------------------------------------
 // Global tool functions

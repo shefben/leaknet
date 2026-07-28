@@ -37,8 +37,8 @@ public:
 		// Mark for easy removal
 		pCommand->AddFlags( FCVAR_CLIENTDLL );
 
-		// Unlink from client .dll only list
-		pCommand->SetNext( 0 );
+		// Unlink from client .dll only list (keeps the list's prev pointers intact)
+		ConCommandBase::RemoveFromList( pCommand );
 
 		// Link to engine's list instead
 		cvar->RegisterConCommandBase( pCommand );

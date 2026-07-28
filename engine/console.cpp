@@ -44,6 +44,10 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+// Console scrollback capture used by the "condump" command (defined below).
+void Con_AppendToDumpBuffer( const char *msg );
+void Con_ClearDumpBuffer( void );
+
 qboolean	con_debuglog;
 qboolean	con_initialized;
 qboolean	con_usewonconsole = true;  // Always use Quake-style console (HL1/Quake style)
@@ -177,6 +181,7 @@ void Con_Clear_f (void)
 {
 	VGui_ClearConsole();
 	Con_ClearNotify();
+	Con_ClearDumpBuffer();
 }
 
 						
@@ -271,6 +276,103 @@ void Con_DebugLog(const char *file, const char *fmt, ...)
 #define	MAXPRINTMSG	4096
 static bool g_fIsDebugPrint = false;
 
+/*
+================
+Console scrollback kept for the "condump" command.
+
+Everything that reaches the console is mirrored into this buffer so condump works
+regardless of which console front end is active (Quake style, VGUI or dedicated).
+The buffer is capped and drops the oldest text once it is full.
+================
+*/
+#define CON_DUMP_MAX_BYTES	( 1024 * 1024 )
+
+static CUtlVector< char > g_ConDumpText;
+
+void Con_AppendToDumpBuffer( const char *msg )
+{
+	if ( !msg || !msg[0] )
+		return;
+
+	int len = Q_strlen( msg );
+	if ( len >= CON_DUMP_MAX_BYTES )
+	{
+		// Single print bigger than the whole buffer - keep the tail of it.
+		msg += ( len - CON_DUMP_MAX_BYTES ) + 1;
+		len = Q_strlen( msg );
+		g_ConDumpText.RemoveAll();
+	}
+
+	int overflow = ( g_ConDumpText.Count() + len ) - CON_DUMP_MAX_BYTES;
+	if ( overflow > 0 )
+	{
+		g_ConDumpText.RemoveMultiple( 0, overflow );
+	}
+
+	int base = g_ConDumpText.AddMultipleToTail( len );
+	Q_memcpy( &g_ConDumpText[ base ], msg, len );
+}
+
+void Con_ClearDumpBuffer( void )
+{
+	g_ConDumpText.RemoveAll();
+}
+
+/*
+================
+Con_Dump_f
+
+Writes the console scrollback to condumpNNN.txt in the mod directory.
+================
+*/
+void Con_Dump_f( void )
+{
+	char szFileName[ MAX_PATH ];
+
+	if ( Cmd_Argc() > 1 )
+	{
+		Q_snprintf( szFileName, sizeof( szFileName ), "%s", Cmd_Argv( 1 ) );
+		if ( !Q_strstr( szFileName, "." ) )
+		{
+			Q_strncat( szFileName, ".txt", sizeof( szFileName ) );
+		}
+	}
+	else
+	{
+		// Find the first unused condumpNNN.txt
+		int i;
+		for ( i = 0; i < 1000; i++ )
+		{
+			Q_snprintf( szFileName, sizeof( szFileName ), "condump%03i.txt", i );
+			if ( !g_pFileSystem->FileExists( szFileName ) )
+				break;
+		}
+
+		if ( i >= 1000 )
+		{
+			Con_Printf( "Unable to find a free condumpNNN.txt filename\n" );
+			return;
+		}
+	}
+
+	FileHandle_t fh = g_pFileSystem->Open( szFileName, "wb" );
+	if ( fh == FILESYSTEM_INVALID_HANDLE )
+	{
+		Con_Printf( "Couldn't write %s\n", szFileName );
+		return;
+	}
+
+	if ( g_ConDumpText.Count() > 0 )
+	{
+		g_pFileSystem->Write( g_ConDumpText.Base(), g_ConDumpText.Count(), fh );
+	}
+	g_pFileSystem->Close( fh );
+
+	Con_Printf( "Console dumped to %s (%i bytes)\n", szFileName, g_ConDumpText.Count() );
+}
+
+static ConCommand condump( "condump", Con_Dump_f, "Dump the text currently in the console to condumpNNN.txt" );
+
 #ifndef SWDS
 /*
 ================
@@ -299,6 +401,9 @@ void Con_ColorPrint( Color& clr, char const *msg )
 	// log all messages to file
 	if (con_debuglog)
 		Con_DebugLog("console.log", "%s", msg);
+
+	// keep it around for "condump"
+	Con_AppendToDumpBuffer( msg );
 
 	if (!con_initialized)
 	{
@@ -355,6 +460,7 @@ void Con_Print (const char *msg)
 		return;
 
 #ifdef SWDS
+	Con_AppendToDumpBuffer( msg );
 	Sys_Printf( "%s", msg );
 #else
 	Color clr(255, 255, 255, 255 );
@@ -373,6 +479,7 @@ void Con_Printf (const char *fmt, ...)
 	va_end (argptr);
 
 #ifdef SWDS
+	Con_AppendToDumpBuffer( msg );
 	Sys_Printf( "%s", msg );
 #else
 	Color clr(255, 255, 255, 255 );
@@ -422,6 +529,7 @@ void Con_DPrintf (const char *fmt, ...)
 	g_fIsDebugPrint = true;
 
 #ifdef SWDS
+	Con_AppendToDumpBuffer( msg );
 	Sys_Printf( "%s", msg );
 #else
 	Color clr( 196, 181, 80, 255 );

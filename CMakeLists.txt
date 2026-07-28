@@ -162,6 +162,23 @@ file( MAKE_DIRECTORY "${BMOD_ASSET_DESTINATION}/resource/ui" )
 file( COPY "${SRCDIR}/resource/ui/menu_toolbuttons.res"
 	DESTINATION "${BMOD_ASSET_DESTINATION}/resource/ui" )
 
+# The MOTD dialog layout.  The GMod 9 original is a 640x480 frame, which after
+# proportional scaling covers the whole screen; ship the smaller BMod layout.
+file( COPY "${SRCDIR}/resource/ui/MOTD.res"
+	DESTINATION "${BMOD_ASSET_DESTINATION}/resource/ui" )
+
+# CMultiplayRules::SendMOTDToClient loads "motd.txt" through the GAME search
+# path.  The extracted GMod 9 content keeps it at the mod root, which the asset
+# loop above does not copy (it only walks directories), so deploy it here.
+if( EXISTS "${BMOD_ASSET_SOURCE}/motd.txt" AND
+	NOT EXISTS "${BMOD_ASSET_DESTINATION}/motd.txt" )
+	configure_file(
+		"${BMOD_ASSET_SOURCE}/motd.txt"
+		"${BMOD_ASSET_DESTINATION}/motd.txt"
+		COPYONLY
+	)
+endif()
+
 # GameUI only resolves its Create Server pages and localization from the active
 # mod's resource path.  Keep these base UI assets with BMod instead of relying
 # on the mounted HL2 search path, which can be absent after a beta reinstall.

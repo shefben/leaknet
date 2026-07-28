@@ -30,6 +30,7 @@
 
 #include "effect_dispatch_data.h"
 #include "te_effect_dispatch.h"
+#include "filesystem.h"
 
 extern ConVar weapon_showproficiency;
 extern proficiencyinfo_t g_WeaponProficiencyTable[];
@@ -55,6 +56,12 @@ ConVar player_showpredictedposition_timestep( "player_showpredictedposition_time
 
 LINK_ENTITY_TO_CLASS( player, CHL2_Player );
 PRECACHE_REGISTER(player);
+
+// NOTE: BMod_GetDefaultPlayerModel()/BMod_ResolvePlayerModel() are defined in
+// dlls/hl2_dll/hl2_player.cpp, which is the copy server_bmod.cmake actually
+// compiles.  This file is currently unreferenced by any build target; keep it
+// free of a second definition so it cannot produce duplicate symbols if it is
+// ever added back.
 
 CBaseEntity *FindEntityForward( CBasePlayer *pMe );
 
@@ -507,7 +514,7 @@ void CHL2_Player::Spawn(void)
 	const int nPrevSpawningPlayer = s_nSpawningPlayerIndex;
 	s_nSpawningPlayerIndex = entindex();
 
-	SetModel( "models/player.mdl" );
+	SetModel( BMod_GetDefaultPlayerModel() );
     g_ulModelIndexPlayer = GetModelIndex();
 
 	const bool bGModGamemodeActive = CGModGamemodeSystem::GetActiveGamemode() != NULL;

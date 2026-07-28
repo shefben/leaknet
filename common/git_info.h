@@ -1,7 +1,7 @@
 #if !defined( GIT_INFO_H )
 #define GIT_INFO_H
 
-#define GIT_COMMIT_HASH "5b9087f-dirty"
+#define GIT_COMMIT_HASH "898666e-dirty"
 #define GIT_CURRENT_BRANCH "master"
 
 #endif

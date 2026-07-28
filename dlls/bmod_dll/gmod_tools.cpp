@@ -531,12 +531,21 @@ void CMD_gm_toolmode(void)
     CBaseCombatWeapon* pWeapon = pPlayer->Weapon_OwnsThisType("weapon_tool");
     if (!pWeapon)
     {
+        // Creating a weapon after level load runs its Precache() outside the
+        // precache window, which fails and throws the new entity away - so the
+        // player never got a tool gun and the switch below silently did nothing.
+        // Open the window the same way npc_create/gm_spawnnpc do.
+        const bool bAllowPrecache = CBaseEntity::IsPrecacheAllowed();
+        CBaseEntity::SetAllowPrecache(true);
+
         // GiveNamedItem hands the new weapon to BumpWeapon, which is what puts
         // it in the inventory - re-query instead of trusting the returned
         // entity, which is still un-owned (and un-deployable) if the pickup was
         // refused.
         pPlayer->GiveNamedItem("weapon_tool");
         pWeapon = pPlayer->Weapon_OwnsThisType("weapon_tool");
+
+        CBaseEntity::SetAllowPrecache(bAllowPrecache);
     }
 
     CWeaponTool* pTool = dynamic_cast<CWeaponTool*>(pWeapon);

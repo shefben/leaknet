@@ -102,8 +102,9 @@ CBaseEntity* FindEntity( edict_t *pEdict, char *classname)
 //-----------------------------------------------------------------------------
 void ClientGamePrecache( void )
 {
-	// TODO: Fix
-	engine->PrecacheModel("models/player.mdl");
+	// The BMod content set has no "models/player.mdl"; precache whichever
+	// default player model actually exists (see BMod_GetDefaultPlayerModel).
+	engine->PrecacheModel( BMod_GetDefaultPlayerModel() );
 	engine->PrecacheModel( "models/gibs/metalgibs.mdl");
 	engine->PrecacheModel( "models/gibs/agibs.mdl" );
 }

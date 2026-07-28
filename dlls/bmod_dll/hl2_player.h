@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose:		Player for HL2.
 //
@@ -47,6 +47,19 @@ public:
 	float	GetDeviceDrainRate( void ) const { return m_flDrainRate; }
 };
 
+
+//-----------------------------------------------------------------------------
+// Default player model handling.
+//
+// The BMod content set (gmod_9_0_4b/models/Player, deployed to bmod/models/player)
+// does not contain the engine-era "models/player.mdl", so spawning with it gives
+// an error/invisible player.  BMod_GetDefaultPlayerModel() returns the first
+// model of the fallback list that actually exists in the search path, and
+// BMod_ResolvePlayerModel() validates a requested model and degrades to that
+// default instead of handing a missing path to SetModel().
+//-----------------------------------------------------------------------------
+const char *BMod_GetDefaultPlayerModel( void );
+const char *BMod_ResolvePlayerModel( const char *pszRequestedModel );
 
 //=============================================================================
 // >> HL2_PLAYER

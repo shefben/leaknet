@@ -30,6 +30,7 @@
 
 #include "effect_dispatch_data.h"
 #include "te_effect_dispatch.h"
+#include "filesystem.h"
 
 extern ConVar weapon_showproficiency;
 extern proficiencyinfo_t g_WeaponProficiencyTable[];
@@ -55,6 +56,65 @@ ConVar player_showpredictedposition_timestep( "player_showpredictedposition_time
 
 LINK_ENTITY_TO_CLASS( player, CHL2_Player );
 PRECACHE_REGISTER(player);
+
+//-----------------------------------------------------------------------------
+// Default player model.
+//
+// "models/player.mdl" is not part of the BMod content set - bmod/models/player/
+// is populated from the GMod 9.0.4b data - so spawning with it produces the
+// error model or an invisible player.  Prefer models that ship complete
+// (.mdl + .vvd + .vtx + .phy) in that folder.  Verified against
+// gmod_9_0_4b/models/Player: gordon_classic, classic, charple01, corpse1 and
+// stripped are the ones with a full file set; the rest only ship .mdl + .phy.
+// "models/player.mdl" stays last so a plain HL2 mount still resolves to it.
+//-----------------------------------------------------------------------------
+static const char *g_pszBModDefaultPlayerModels[] =
+{
+	"models/player/gordon_classic.mdl",
+	"models/player/classic.mdl",
+	"models/player/stripped.mdl",
+	"models/player/kleiner.mdl",
+	"models/player/police.mdl",
+	"models/player.mdl",			// engine-era fallback if a base game is mounted
+};
+
+const char *BMod_GetDefaultPlayerModel( void )
+{
+	static const char *s_pszResolved = NULL;
+
+	if ( s_pszResolved )
+		return s_pszResolved;
+
+	for ( int i = 0; i < ARRAYSIZE( g_pszBModDefaultPlayerModels ); i++ )
+	{
+		if ( filesystem && filesystem->FileExists( g_pszBModDefaultPlayerModels[i], "GAME" ) )
+		{
+			s_pszResolved = g_pszBModDefaultPlayerModels[i];
+			DevMsg( "BMod: default player model resolved to '%s'\n", s_pszResolved );
+			return s_pszResolved;
+		}
+	}
+
+	// Nothing on disk - return the first entry so the string is at least stable.
+	Warning( "BMod: none of the default player models exist, falling back to '%s'\n",
+		g_pszBModDefaultPlayerModels[0] );
+	s_pszResolved = g_pszBModDefaultPlayerModels[0];
+	return s_pszResolved;
+}
+
+const char *BMod_ResolvePlayerModel( const char *pszRequestedModel )
+{
+	if ( !pszRequestedModel || !pszRequestedModel[0] )
+		return BMod_GetDefaultPlayerModel();
+
+	if ( filesystem && filesystem->FileExists( pszRequestedModel, "GAME" ) )
+		return pszRequestedModel;
+
+	const char *pszDefault = BMod_GetDefaultPlayerModel();
+	Warning( "BMod: player model '%s' not found, using '%s' instead\n",
+		pszRequestedModel, pszDefault );
+	return pszDefault;
+}
 
 CBaseEntity *FindEntityForward( CBasePlayer *pMe );
 
@@ -535,7 +595,7 @@ void CHL2_Player::Spawn(void)
 	const int nPrevSpawningPlayer = s_nSpawningPlayerIndex;
 	s_nSpawningPlayerIndex = entindex();
 
-	SetModel( "models/player.mdl" );
+	SetModel( BMod_GetDefaultPlayerModel() );
     g_ulModelIndexPlayer = GetModelIndex();
 
 	// GMod: let the active gamemode pick the spawn team BEFORE the base spawn placement.

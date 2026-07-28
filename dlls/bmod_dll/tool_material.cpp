@@ -35,8 +35,8 @@ static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFor
 //-----------------------------------------------------------------------------
 // Console variables for material tool
 //-----------------------------------------------------------------------------
-ConVar bm_material_path("gm_matmode", "models/debug/debugwhite", FCVAR_ARCHIVE, "Current material to apply");
-ConVar bm_material_submesh("bm_material_submesh", "0", FCVAR_ARCHIVE, "Target submesh index (0 = all)");
+ConVar gmod_material_path("gm_matmode", "models/debug/debugwhite", FCVAR_ARCHIVE, "Current material to apply");
+ConVar gmod_material_submesh("gmod_material_submesh", "0", FCVAR_ARCHIVE, "Target submesh index (0 = all)");
 
 //-----------------------------------------------------------------------------
 // Common materials list - based on common Half-Life 2 materials
@@ -259,7 +259,7 @@ static void CycleMaterial( CWeaponTool *pTool, MaterialState_t *pState )
 	} while ( g_CommonMaterials[pState->nSelectedMaterial] == NULL );
 
 	// Update ConVar
-	bm_material_path.SetValue( g_CommonMaterials[pState->nSelectedMaterial] );
+	gmod_material_path.SetValue( g_CommonMaterials[pState->nSelectedMaterial] );
 
 	// Inform player
 	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
@@ -298,7 +298,7 @@ static void CreateMaterialEffect( const Vector &vecPos )
 static const char *GetCurrentMaterial( MaterialState_t *pState )
 {
 	// Find material matching the current ConVar
-	const char *pszCurrentMaterial = bm_material_path.GetString();
+	const char *pszCurrentMaterial = gmod_material_path.GetString();
 
 	for ( int i = 0; g_CommonMaterials[i]; i++ )
 	{
@@ -332,7 +332,7 @@ static bool IsValidMaterial( const char *pszMaterial )
 //-----------------------------------------------------------------------------
 // Console command for material context menu
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_context_material, "Opens material tool context menu" )
+CON_COMMAND( gmod_context_material, "Opens material tool context menu" )
 {
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( !pPlayer )
@@ -354,24 +354,24 @@ CON_COMMAND( bm_context_material, "Opens material tool context menu" )
 		ClientPrintf( pPlayer, HUD_PRINTTALK, "  %s", g_CommonMaterials[i] );
 	}
 
-	ClientPrintf( pPlayer, HUD_PRINTTALK, "Current: %s", bm_material_path.GetString() );
-	ClientPrintf( pPlayer, HUD_PRINTTALK, "Submesh: %d (0 = all)", bm_material_submesh.GetInt() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Current: %s", gmod_material_path.GetString() );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Submesh: %d (0 = all)", gmod_material_submesh.GetInt() );
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Use secondary fire to cycle materials" );
 }
 
 //-----------------------------------------------------------------------------
 // Console command to set material directly
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_material_set, "Set material path directly" )
+CON_COMMAND( gmod_material_set, "Set material path directly" )
 {
 	if ( engine->Cmd_Argc() < 2 )
 	{
-		Msg( "Usage: bm_material_set <material_path>\n" );
+		Msg( "Usage: gmod_material_set <material_path>\n" );
 		return;
 	}
 
 	const char *pszMaterial = engine->Cmd_Argv(1);
-	bm_material_path.SetValue( pszMaterial );
+	gmod_material_path.SetValue( pszMaterial );
 
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( pPlayer )
@@ -383,7 +383,7 @@ CON_COMMAND( bm_material_set, "Set material path directly" )
 //-----------------------------------------------------------------------------
 // Console command to list available materials
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_material_list, "List available materials" )
+CON_COMMAND( gmod_material_list, "List available materials" )
 {
 	Msg( "Available materials:\n" );
 	for ( int i = 0; g_CommonMaterials[i]; i++ )

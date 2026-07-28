@@ -44,10 +44,21 @@ static void SpawnByClassname( CBasePlayer *pPlayer, const char *classname )
 	Vector forward;
 	pPlayer->EyeVectors( &forward );
 	Vector start = pPlayer->EyePosition();
-	Vector end   = start + forward * 80.0f;
+
+	// Trace as far as the player can actually see. The old 80 unit limit meant
+	// everything landed just in front of the player's face instead of where they
+	// were aiming, and if nothing was within 80 units the entity was dropped in
+	// mid-air.
+	Vector end = start + forward * MAX_TRACE_LENGTH;
 
 	trace_t tr;
 	UTIL_TraceLine( start, end, MASK_SOLID, pPlayer, COLLISION_GROUP_NONE, &tr );
+	if ( tr.fraction == 1.0f )
+	{
+		ClientPrint( pPlayer, HUD_PRINTTALK, "Aim at something solid to spawn there\n" );
+		return;
+	}
+
 	Vector spawnPos = tr.endpos + tr.plane.normal * 4.0f;
 
 	// See SpawnPropModel() - runtime spawns need the precache gate lifted or
@@ -63,10 +74,31 @@ static void SpawnByClassname( CBasePlayer *pPlayer, const char *classname )
 	}
 
 	DispatchSpawn( pEnt );
-	pEnt->Teleport( &spawnPos, &pPlayer->EyeAngles(), NULL );
+
+	QAngle angSpawn = pPlayer->EyeAngles();
+	angSpawn.x = 0;
+	angSpawn.z = 0;
+
+	pEnt->Teleport( &spawnPos, &angSpawn, NULL );
 	pEnt->Activate();
 
 	CBaseEntity::SetAllowPrecache( bAllowPrecache );
+
+	// NPCs need to end up standing on the floor and relinked, otherwise they sit
+	// at the impact point with a stale collision representation.
+	CAI_BaseNPC *pNPC = pEnt->MyNPCPointer();
+	if ( pNPC )
+	{
+		if ( !( pNPC->CapabilitiesGet() & bits_CAP_MOVE_FLY ) )
+		{
+			Vector vecDrop = spawnPos;
+			vecDrop.z += 12;
+			pNPC->Teleport( &vecDrop, NULL, NULL );
+			UTIL_DropToFloor( pNPC, MASK_NPCSOLID );
+		}
+
+		pNPC->Relink();
+	}
 }
 
 CON_COMMAND( gm_spawn, "Spawn an entity or model (server-side, gmod parity)" )

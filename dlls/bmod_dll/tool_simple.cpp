@@ -27,10 +27,10 @@
 //-----------------------------------------------------------------------------
 // Authentic GMod 9 cvar names - the build menu's context panels, third-party
 // mods and Lua scripts all reference these exact names.
-ConVar bm_ignite_duration( "gm_firelength", "30", FCVAR_ARCHIVE, "Fire duration (seconds) applied by the Ignite tool" );
+ConVar gmod_ignite_duration( "gm_firelength", "30", FCVAR_ARCHIVE, "Fire duration (seconds) applied by the Ignite tool" );
 
-ConVar bm_magnetise_force( "gm_magnetstrength", "400", FCVAR_ARCHIVE, "Acceleration (units/s^2) pulling magnetised props together" );
-ConVar bm_magnetise_range( "bm_magnetise_range", "512", FCVAR_ARCHIVE, "Max distance between two magnetised props for the pull to apply" );
+ConVar gmod_magnetise_force( "gm_magnetstrength", "400", FCVAR_ARCHIVE, "Acceleration (units/s^2) pulling magnetised props together" );
+ConVar gmod_magnetise_range( "gmod_magnetise_range", "512", FCVAR_ARCHIVE, "Max distance between two magnetised props for the pull to apply" );
 
 // Dynamite settings live in gmod_dynamite.cpp under their GMod 9 names.
 extern ConVar gm_dynamite_power;
@@ -38,13 +38,13 @@ extern ConVar gm_dynamite_delay;
 
 //-----------------------------------------------------------------------------
 // TOOL_MAGNETISE - entities currently marked magnetic. Every valid pair
-// within bm_magnetise_range of each other gets pulled together every think.
+// within gmod_magnetise_range of each other gets pulled together every think.
 //-----------------------------------------------------------------------------
 static CUtlVector<EHANDLE> g_MagnetisedEntities;
 
 //-----------------------------------------------------------------------------
 // TOOL_NOCOLLIDE - true pairwise no-collide via IPhysicsEnvironment, tracked
-// so secondary fire / bm_nocollide_removeall can turn collisions back on.
+// so secondary fire / gmod_nocollide_removeall can turn collisions back on.
 //-----------------------------------------------------------------------------
 struct NoCollideInfo_t
 {
@@ -174,11 +174,11 @@ static void Simple_Ignite_OnUse( CBasePlayer *pOwner, CWeaponTool *pTool, CBaseE
 
 	if ( bPrimary )
 	{
-		pAnim->Ignite( bm_ignite_duration.GetFloat() );
+		pAnim->Ignite( gmod_ignite_duration.GetFloat() );
 		pTool->PlayToolSound( "fire/ignite.wav" );
 
 		char buf[128];
-		Q_snprintf( buf, sizeof(buf), "Ignited %s for %.0f seconds", pEntity->GetClassname(), bm_ignite_duration.GetFloat() );
+		Q_snprintf( buf, sizeof(buf), "Ignited %s for %.0f seconds", pEntity->GetClassname(), gmod_ignite_duration.GetFloat() );
 		ClientPrint( pOwner, HUD_PRINTTALK, buf );
 	}
 	else
@@ -234,8 +234,8 @@ static void Simple_Magnetise_Think( void )
 			g_MagnetisedEntities.Remove( i );
 	}
 
-	float flRange = bm_magnetise_range.GetFloat();
-	float flForce = bm_magnetise_force.GetFloat();
+	float flRange = gmod_magnetise_range.GetFloat();
+	float flForce = gmod_magnetise_force.GetFloat();
 
 	int nCount = g_MagnetisedEntities.Count();
 	for ( int i = 0; i < nCount; i++ )
@@ -546,7 +546,7 @@ void Tool_Simple_OnThink( CWeaponTool *pTool, int nMode )
 //-----------------------------------------------------------------------------
 // Console command helpers
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_simple_list, "List active Ignite/Magnetise/NoCollide/Dynamite/Statue tool state" )
+CON_COMMAND( gmod_simple_list, "List active Ignite/Magnetise/NoCollide/Dynamite/Statue tool state" )
 {
 	Msg( "Magnetised props: %d\n", g_MagnetisedEntities.Count() );
 	Msg( "No-collide pairs: %d\n", g_NoCollidePairs.Count() );
@@ -554,7 +554,7 @@ CON_COMMAND( bm_simple_list, "List active Ignite/Magnetise/NoCollide/Dynamite/St
 	Msg( "Pending dynamite: %d\n", g_PendingDynamite.Count() );
 }
 
-CON_COMMAND( bm_magnetise_clearall, "Remove magnetism from all props" )
+CON_COMMAND( gmod_magnetise_clearall, "Remove magnetism from all props" )
 {
 	int nCount = g_MagnetisedEntities.Count();
 	g_MagnetisedEntities.RemoveAll();
@@ -568,7 +568,7 @@ CON_COMMAND( bm_magnetise_clearall, "Remove magnetism from all props" )
 	}
 }
 
-CON_COMMAND( bm_nocollide_removeall, "Restore collision for all no-collided pairs" )
+CON_COMMAND( gmod_nocollide_removeall, "Restore collision for all no-collided pairs" )
 {
 	int nRemoved = 0;
 	for ( int i = g_NoCollidePairs.Count() - 1; i >= 0; i-- )

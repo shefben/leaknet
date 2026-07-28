@@ -35,11 +35,11 @@ static void ClientPrintf( CBasePlayer *pPlayer, int msg_dest, const char *pszFor
 //-----------------------------------------------------------------------------
 // Console variables for remover tool
 //-----------------------------------------------------------------------------
-ConVar bm_remover_mode("bm_remover_mode", "0", FCVAR_ARCHIVE, "Removal mode: 0=single, 1=area, 2=type");
-ConVar bm_remover_radius("bm_remover_radius", "128", FCVAR_ARCHIVE, "Removal radius for area mode");
-ConVar bm_remover_filter("bm_remover_filter", "", FCVAR_ARCHIVE, "Entity class filter for type mode");
-ConVar bm_remover_confirm("bm_remover_confirm", "1", FCVAR_ARCHIVE, "Require confirmation for area/type removal");
-ConVar bm_remover_effects("bm_remover_effects", "1", FCVAR_ARCHIVE, "Show removal effects");
+ConVar gmod_remover_mode("gmod_remover_mode", "0", FCVAR_ARCHIVE, "Removal mode: 0=single, 1=area, 2=type");
+ConVar gmod_remover_radius("gmod_remover_radius", "128", FCVAR_ARCHIVE, "Removal radius for area mode");
+ConVar gmod_remover_filter("gmod_remover_filter", "", FCVAR_ARCHIVE, "Entity class filter for type mode");
+ConVar gmod_remover_confirm("gmod_remover_confirm", "1", FCVAR_ARCHIVE, "Require confirmation for area/type removal");
+ConVar gmod_remover_effects("gmod_remover_effects", "1", FCVAR_ARCHIVE, "Show removal effects");
 
 //-----------------------------------------------------------------------------
 // Removal modes
@@ -167,9 +167,9 @@ void Tool_Remover_OnUse( CWeaponTool *pTool, CBaseEntity *pEntity, trace_t &tr, 
 
 			case REMOVE_AREA:
 			{
-				float flRadius = bm_remover_radius.GetFloat();
+				float flRadius = gmod_remover_radius.GetFloat();
 
-				if ( bm_remover_confirm.GetBool() && !pState->bConfirmPending )
+				if ( gmod_remover_confirm.GetBool() && !pState->bConfirmPending )
 				{
 					// Show confirmation for area removal
 					pState->bConfirmPending = true;
@@ -204,11 +204,11 @@ void Tool_Remover_OnUse( CWeaponTool *pTool, CBaseEntity *pEntity, trace_t &tr, 
 				{
 					const char *pszClassName = pEntity->GetClassname();
 
-					if ( bm_remover_confirm.GetBool() && !pState->bConfirmPending )
+					if ( gmod_remover_confirm.GetBool() && !pState->bConfirmPending )
 					{
 						// Show confirmation for type removal
 						pState->bConfirmPending = true;
-						bm_remover_filter.SetValue( pszClassName );
+						gmod_remover_filter.SetValue( pszClassName );
 
 						ClientPrintf( pOwner, HUD_PRINTTALK, "Type removal: %s", pszClassName );
 						ClientPrintf( pOwner, HUD_PRINTTALK, "Click again to confirm, right-click to cancel" );
@@ -271,9 +271,9 @@ void Tool_Remover_OnTrace( CWeaponTool *pTool, trace_t &tr, bool bPrimary )
 		if ( mode == REMOVE_AREA )
 		{
 			// Area removal can work on empty space
-			float flRadius = bm_remover_radius.GetFloat();
+			float flRadius = gmod_remover_radius.GetFloat();
 
-			if ( bm_remover_confirm.GetBool() && !pState->bConfirmPending )
+			if ( gmod_remover_confirm.GetBool() && !pState->bConfirmPending )
 			{
 				pState->bConfirmPending = true;
 				pState->vecPendingPos = tr.endpos;
@@ -345,7 +345,7 @@ static bool RemoveSingleEntity( CBaseEntity *pEntity, CWeaponTool *pTool )
 		return false;
 
 	// Create removal effect before removing
-	if ( bm_remover_effects.GetBool() )
+	if ( gmod_remover_effects.GetBool() )
 	{
 		CreateRemovalEffect( pEntity->GetAbsOrigin() );
 	}
@@ -381,7 +381,7 @@ static int RemoveEntitiesInArea( const Vector &vecCenter, float flRadius, CWeapo
 		CBaseEntity *pEnt = entitiesToRemove[i];
 		if ( pEnt )
 		{
-			if ( bm_remover_effects.GetBool() )
+			if ( gmod_remover_effects.GetBool() )
 			{
 				CreateRemovalEffect( pEnt->GetAbsOrigin() );
 			}
@@ -420,7 +420,7 @@ static int RemoveEntitiesOfType( const char *pszClassName, CWeaponTool *pTool )
 		CBaseEntity *pEnt = entitiesToRemove[i];
 		if ( pEnt )
 		{
-			if ( bm_remover_effects.GetBool() )
+			if ( gmod_remover_effects.GetBool() )
 			{
 				CreateRemovalEffect( pEnt->GetAbsOrigin() );
 			}
@@ -476,7 +476,7 @@ static bool CanRemoveEntity( CBaseEntity *pEntity, CWeaponTool *pTool )
 //-----------------------------------------------------------------------------
 static void CreateRemovalEffect( const Vector &vecPos )
 {
-	if ( !bm_remover_effects.GetBool() )
+	if ( !gmod_remover_effects.GetBool() )
 		return;
 
 	// Create disintegration effect
@@ -541,9 +541,9 @@ static void CreateAreaEffect( const Vector &vecCenter, float flRadius )
 //-----------------------------------------------------------------------------
 static void CycleRemovalMode( CWeaponTool *pTool )
 {
-	int nCurrentMode = bm_remover_mode.GetInt();
+	int nCurrentMode = gmod_remover_mode.GetInt();
 	nCurrentMode = (nCurrentMode + 1) % REMOVE_MAX;
-	bm_remover_mode.SetValue( nCurrentMode );
+	gmod_remover_mode.SetValue( nCurrentMode );
 
 	CBasePlayer *pOwner = ToBasePlayer( pTool->GetOwner() );
 	if ( pOwner )
@@ -558,14 +558,14 @@ static void CycleRemovalMode( CWeaponTool *pTool )
 //-----------------------------------------------------------------------------
 static RemovalMode_t GetRemovalMode()
 {
-	int nMode = bm_remover_mode.GetInt();
+	int nMode = gmod_remover_mode.GetInt();
 	return (RemovalMode_t)clamp( nMode, 0, REMOVE_MAX - 1 );
 }
 
 //-----------------------------------------------------------------------------
 // Console command for remover context menu
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_context_remover, "Opens remover tool context menu" )
+CON_COMMAND( gmod_context_remover, "Opens remover tool context menu" )
 {
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 	if ( !pPlayer )
@@ -579,7 +579,7 @@ CON_COMMAND( bm_context_remover, "Opens remover tool context menu" )
 		return;
 	}
 
-	int nMode = bm_remover_mode.GetInt();
+	int nMode = gmod_remover_mode.GetInt();
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Remover Tool:" );
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Current mode: %s", g_RemovalModeNames[nMode] );
 	ClientPrintf( pPlayer, HUD_PRINTTALK, "Left click: Remove" );
@@ -592,26 +592,26 @@ CON_COMMAND( bm_context_remover, "Opens remover tool context menu" )
 			break;
 
 		case REMOVE_AREA:
-			ClientPrintf( pPlayer, HUD_PRINTTALK, "Mode: Remove entities in radius %.0f", bm_remover_radius.GetFloat() );
+			ClientPrintf( pPlayer, HUD_PRINTTALK, "Mode: Remove entities in radius %.0f", gmod_remover_radius.GetFloat() );
 			break;
 
 		case REMOVE_TYPE:
 			ClientPrintf( pPlayer, HUD_PRINTTALK, "Mode: Remove all entities of clicked type" );
-			if ( bm_remover_filter.GetString()[0] )
+			if ( gmod_remover_filter.GetString()[0] )
 			{
-				ClientPrintf( pPlayer, HUD_PRINTTALK, "Filter: %s", bm_remover_filter.GetString() );
+				ClientPrintf( pPlayer, HUD_PRINTTALK, "Filter: %s", gmod_remover_filter.GetString() );
 			}
 			break;
 	}
 
-	ClientPrintf( pPlayer, HUD_PRINTTALK, "Confirmation: %s", bm_remover_confirm.GetBool() ? "On" : "Off" );
-	ClientPrintf( pPlayer, HUD_PRINTTALK, "Effects: %s", bm_remover_effects.GetBool() ? "On" : "Off" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Confirmation: %s", gmod_remover_confirm.GetBool() ? "On" : "Off" );
+	ClientPrintf( pPlayer, HUD_PRINTTALK, "Effects: %s", gmod_remover_effects.GetBool() ? "On" : "Off" );
 }
 
 //-----------------------------------------------------------------------------
 // Console command for emergency cleanup
 //-----------------------------------------------------------------------------
-CON_COMMAND( bm_remover_cleanup, "Remove all props and physics objects" )
+CON_COMMAND( gmod_remover_cleanup, "Remove all props and physics objects" )
 {
 	int nRemoved = 0;
 	CUtlVector<CBaseEntity*> entitiesToRemove;

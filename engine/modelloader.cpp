@@ -30,6 +30,8 @@
 #include "utldict.h"
 #include "lzma_support.h"  // LZMA decompression for v48 compatibility
 #include "mempool.h"
+#include "convar.h"		// ConCommand for gmod_listmodels
+#include "cmd.h"		// Cmd_Argc / Cmd_Argv for gmod_listmodels
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -4663,3 +4665,149 @@ const char* CModelLoader::GetActiveMapName( void )
 
 	return m_pWorldModel->name;
 }
+
+//-----------------------------------------------------------------------------
+// gmod_listmodels
+//
+// Lists every model currently held by the engine model cache (the same
+// CModelLoader::m_Models dictionary that "mcache" prints), together with the
+// .mdl version of each loaded studio model.
+//
+// V44+ ISOLATION NOTE: the version is read straight out of the first two ints
+// of the loaded header rather than through studiohdr_t or studiohdr_v44_t.
+// Every MDL revision starts with { int id; int version; }, so this needs no
+// v37 header and no v44 header, and stays a pure runtime version check - it
+// never assumes a compile-time model format.
+//-----------------------------------------------------------------------------
+#define MODELLOADER_IDSTUDIOHEADER	(('T'<<24)+('S'<<16)+('D'<<8)+'I')	// "IDST"
+
+//-----------------------------------------------------------------------------
+// Returns the studio version of a loaded model, or -1 when the model is not a
+// studio model / is not resident / does not carry a valid IDST header.
+//-----------------------------------------------------------------------------
+static int Mod_GetLoadedStudioVersion( model_t *pModel )
+{
+	if ( !pModel || pModel->type != mod_studio )
+		return -1;
+
+	const int *pHeader = (const int *)pModel->cache.data;
+	if ( !pHeader )
+		return -1;
+
+	if ( pHeader[ 0 ] != MODELLOADER_IDSTUDIOHEADER )
+		return -1;
+
+	return pHeader[ 1 ];
+}
+
+static const char *Mod_TypeName( modtype_t type )
+{
+	switch ( type )
+	{
+	case mod_brush:		return "brush";
+	case mod_sprite:	return "sprite";
+	case mod_studio:	return "studio";
+	default:			return "bad";
+	}
+}
+
+void Mod_ListModels_f( void )
+{
+	if ( !modelloader )
+	{
+		Con_Printf( "gmod_listmodels: model loader not initialized\n" );
+		return;
+	}
+
+	// Optional substring filter: gmod_listmodels props_c17
+	const char *pFilter = ( Cmd_Argc() > 1 ) ? Cmd_Argv( 1 ) : NULL;
+
+	// Version tally.  Small fixed table - there have only ever been a handful
+	// of studio versions and we do not want to allocate here.
+	struct
+	{
+		int version;
+		int count;
+	} tally[ 32 ];
+	int nTallyCount = 0;
+
+	int nStudio = 0;
+	int nUnloaded = 0;
+	int nNonStudio = 0;
+	int nListed = 0;
+
+	Con_Printf( "----- Loaded models -----\n" );
+
+	const int nTotal = modelloader->GetCount();
+	for ( int i = 0; i < nTotal; i++ )
+	{
+		model_t *pModel = modelloader->GetModelForIndex( i );
+		if ( !pModel )
+			continue;
+
+		const char *pszPath = pModel->name;
+		if ( !pszPath )
+			pszPath = "";
+
+		if ( pFilter && pFilter[ 0 ] && !Q_stristr( pszPath, pFilter ) )
+			continue;
+
+		// "NAME" is the file name, "relative path" is the full game-relative
+		// path the model was registered under.
+		const char *pszName = Q_strrchr( pszPath, '/' );
+		if ( !pszName )
+			pszName = Q_strrchr( pszPath, '\\' );
+		pszName = pszName ? ( pszName + 1 ) : pszPath;
+
+		const int nVersion = Mod_GetLoadedStudioVersion( pModel );
+
+		char szVersion[ 32 ];
+		if ( nVersion >= 0 )
+		{
+			Q_snprintf( szVersion, sizeof( szVersion ), "(v%d)", nVersion );
+			nStudio++;
+
+			int t;
+			for ( t = 0; t < nTallyCount; t++ )
+			{
+				if ( tally[ t ].version == nVersion )
+				{
+					tally[ t ].count++;
+					break;
+				}
+			}
+			if ( t == nTallyCount && nTallyCount < ( int )( sizeof( tally ) / sizeof( tally[ 0 ] ) ) )
+			{
+				tally[ nTallyCount ].version = nVersion;
+				tally[ nTallyCount ].count = 1;
+				nTallyCount++;
+			}
+		}
+		else if ( pModel->type == mod_studio )
+		{
+			Q_strncpy( szVersion, "(not resident)", sizeof( szVersion ) );
+			nUnloaded++;
+		}
+		else
+		{
+			Q_snprintf( szVersion, sizeof( szVersion ), "(%s)", Mod_TypeName( pModel->type ) );
+			nNonStudio++;
+		}
+
+		Con_Printf( "[%4d] %-34s %-58s %s\n", i, pszName, pszPath, szVersion );
+		nListed++;
+	}
+
+	Con_Printf( "----- %d model(s) listed of %d in the cache -----\n", nListed, nTotal );
+	Con_Printf( "  studio (version known) : %d\n", nStudio );
+	Con_Printf( "  studio (not resident)  : %d\n", nUnloaded );
+	Con_Printf( "  brush/sprite/other     : %d\n", nNonStudio );
+
+	for ( int t = 0; t < nTallyCount; t++ )
+	{
+		Con_Printf( "  v%-3d : %d\n", tally[ t ].version, tally[ t ].count );
+	}
+}
+
+static ConCommand gmod_listmodels( "gmod_listmodels", Mod_ListModels_f,
+	"Lists every model in the engine model cache with its relative path and .mdl version. Optional argument filters by substring." );

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
@@ -2557,7 +2557,9 @@ int CGameMovement::CheckStuck( void )
 	int i;
 	trace_t traceresult;
 
-	static float rgStuckCheckTime[32][2]; // Last time we did a full
+	// Indexed by entindex, which runs 1..MAX_PLAYERS - the old [32] array was
+	// one short and player 32 wrote past the end of it.
+	static float rgStuckCheckTime[MAX_PLAYERS + 1][2]; // Last time we did a full
 
 	CreateStuckTable();
 
@@ -2571,11 +2573,31 @@ int CGameMovement::CheckStuck( void )
 	// Deal with stuckness...
 
 #ifndef SWDS
-	MoveHelper()->Con_NPrintf( player->IsServer() ? 1 : 0, "%s stuck on object %i/%s", 
+	MoveHelper()->Con_NPrintf( player->IsServer() ? 1 : 0, "%s stuck on object %i/%s",
 		player->IsServer() ? "server" : "client",
 		hitent.GetEntryIndex(),
 		MoveHelper()->GetName(hitent) );
 #endif
+
+	// Con_NPrintf only paints the on-screen notify area (and only with developer
+	// on), so being stuck was completely silent in the console. Say so there too,
+	// rate limited to one line a second per player so it cannot spam.
+	{
+		static float rgStuckReportTime[MAX_PLAYERS + 1][2];
+		const int reportIdx = player->IsServer() ? 0 : 1;
+		const int entIdx = clamp( player->entindex(), 0, MAX_PLAYERS );
+		const float flNow = engine->Time();
+
+		if ( flNow - rgStuckReportTime[entIdx][reportIdx] > 1.0f )
+		{
+			rgStuckReportTime[entIdx][reportIdx] = flNow;
+			Msg( "%s: player %i stuck on entity %i (%s)\n",
+				player->IsServer() ? "server" : "client",
+				entIdx,
+				hitent.GetEntryIndex(),
+				MoveHelper()->GetName(hitent) );
+		}
+	}
 
 	VectorCopy( mv->m_vecOrigin, base );
 
@@ -2627,10 +2649,11 @@ int CGameMovement::CheckStuck( void )
 	{
 		ResetStuckOffsets(player->entindex(), player->IsServer());
 
-		if ( i >= 27 )
-		{
-			VectorCopy(test, mv->m_vecOrigin);
-		}
+		// We found a free spot - always take it. The old "i >= 27" guard threw
+		// away every solution from the first half of the offset table, which is
+		// the near-origin half, so the small nudges that free you from a physics
+		// prop were the exact ones being discarded. Retail has no such guard.
+		VectorCopy(test, mv->m_vecOrigin);
 		return 0;
 	}
 
