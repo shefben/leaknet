@@ -468,6 +468,38 @@ void CMatSystemTexture::SetMaterial( IMaterial *pMaterial )
 	// Increment its reference count
 	m_pMaterial->IncrementReferenceCount();
 
+	// vgui draws in a 2D ortho pass after the 3D scene, with the world's depth
+	// buffer still populated, so anything used as a vgui texture has to ignore
+	// Z or it gets depth-rejected and never shows up. Materials authored for
+	// vgui set $ignorez themselves; content materials pulled in as vgui
+	// textures (GMod spawn icons, for one) don't. Vertex colour/alpha are what
+	// DrawSetColor() modulates through, so force those too.
+	if ( !IsProcedural() && !IsReference() )
+	{
+		bool bNeedsRecompute = false;
+
+		if ( !m_pMaterial->GetMaterialVarFlag( MATERIAL_VAR_IGNOREZ ) )
+		{
+			m_pMaterial->SetMaterialVarFlag( MATERIAL_VAR_IGNOREZ, true );
+			bNeedsRecompute = true;
+		}
+		if ( !m_pMaterial->GetMaterialVarFlag( MATERIAL_VAR_VERTEXCOLOR ) )
+		{
+			m_pMaterial->SetMaterialVarFlag( MATERIAL_VAR_VERTEXCOLOR, true );
+			bNeedsRecompute = true;
+		}
+		if ( !m_pMaterial->GetMaterialVarFlag( MATERIAL_VAR_VERTEXALPHA ) )
+		{
+			m_pMaterial->SetMaterialVarFlag( MATERIAL_VAR_VERTEXALPHA, true );
+			bNeedsRecompute = true;
+		}
+
+		if ( bNeedsRecompute )
+		{
+			m_pMaterial->RecomputeStateSnapshots();
+		}
+	}
+
 	// Compute texture size
 	m_iWide = m_pMaterial->GetMappingWidth();
 	m_iTall = m_pMaterial->GetMappingHeight();

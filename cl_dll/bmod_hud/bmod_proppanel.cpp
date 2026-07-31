@@ -142,26 +142,53 @@ void CPropItemButton::ApplySchemeSettings( IScheme *pScheme )
 
 	if ( m_Entry.bHasIcon )
 	{
-		// Image button style - transparent background
-		SetBgColor( Color( 0, 0, 0, 0 ) );
-		SetFgColor( Color( 255, 255, 255, 255 ) );
-		SetPaintBorderEnabled( false );
-
 		// Try to load the icon material
 		if ( !m_bImageLoaded && m_Entry.szIconPath[0] )
 		{
 			DevMsg( "SpawnMenu: Loading icon texture '%s' for '%s'\n", m_Entry.szIconPath, m_Entry.szDisplayName );
 			m_nTextureID = surface()->CreateNewTextureID();
 			surface()->DrawSetTextureFile( m_nTextureID, m_Entry.szIconPath, true, false );
-			m_bImageLoaded = true;
+
+			// A material that resolved to nothing has no mapping size - drop
+			// back to the text button rather than drawing an invisible icon
+			int iconWide = 0, iconTall = 0;
+			surface()->DrawGetTextureSize( m_nTextureID, iconWide, iconTall );
+			if ( iconWide <= 0 || iconTall <= 0 )
+			{
+				Msg( "SpawnMenu: icon material '%s' has no size - falling back to text for '%s'\n",
+					m_Entry.szIconPath, m_Entry.szDisplayName );
+				m_Entry.bHasIcon = false;
+				m_nTextureID = -1;
+				SetSize( PROP_BUTTON_WIDTH_TEXT, PROP_BUTTON_HEIGHT_TEXT );
+			}
+			else
+			{
+				m_bImageLoaded = true;
+			}
 		}
 		else if ( !m_Entry.szIconPath[0] )
 		{
 			DevMsg( "SpawnMenu: WARNING - bHasIcon=true but szIconPath is empty for '%s'\n", m_Entry.szDisplayName );
+			m_Entry.bHasIcon = false;
+			SetSize( PROP_BUTTON_WIDTH_TEXT, PROP_BUTTON_HEIGHT_TEXT );
 		}
+	}
+
+	if ( m_Entry.bHasIcon )
+	{
+		// Image button style - transparent background
+		SetBgColor( Color( 0, 0, 0, 0 ) );
+		SetFgColor( Color( 255, 255, 255, 255 ) );
+		SetPaintBorderEnabled( false );
 	}
 	else
 	{
+		// Dropping to text may have resized us after the grid was laid out
+		if ( GetParent() )
+		{
+			GetParent()->InvalidateLayout();
+		}
+
 		// Text button style - use scheme Button colors with visible defaults
 		SetBgColor( pScheme->GetColor( "Button.BgColor", Color( 80, 80, 80, 255 ) ) );
 		SetFgColor( pScheme->GetColor( "Button.TextColor", Color( 255, 255, 255, 255 ) ) );

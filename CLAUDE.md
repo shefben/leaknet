@@ -253,8 +253,20 @@ Master server functionality is included in "everything" builds but commented out
 
 - 2007 engine source code for v44+ reference: F:\back-ups\betahl2_codebases\SourceEngine2007-master\SourceEngine2007-master\src_main
 - Clean LeakNet codebase with v37 mdl support: F:\development\steam\emulator_bot\LeakNet
-- Game and engine directory: C:\anon-hl2\ with bmod located at C:\anon-hl2\bmod
+- Game and engine directory: V:\anon-hl2\ with bmod located at V:\anon-hl2\bmod
 - Only use runtime mdl version checking, never compile time
 - Only build as debug!
-- Working directory: C:\anon-hl2\
-- Console log: C:\anon-hl2\bmod\console.log
+- Working directory: V:\anon-hl2\
+- Console log: V:\anon-hl2\bmod\console.log
+
+### ALWAYS deploy built binaries to V:\anon-hl2
+
+**After every build, copy the compiled DLLs *and* their PDBs into the live game directory.** The
+CMake install step copies to `beta_build/`, which is NOT the directory the game runs from - skipping
+this means testing a stale build.
+
+- Engine/shared modules (`tier0`, `vstdlib`, `materialsystem`, `vphysics`, `vguimatsurface`,
+  `engine`, `studiorender`, `filesystem`, `shaderapidx8`, ...) -> `V:\anon-hl2\bin\`
+- Game modules (`client`, `server`) -> `V:\anon-hl2\bmod\bin\`
+- Copy the matching `.pdb` alongside each `.dll` - without it the debugger has no symbols and crash
+  reports come back as `server_?Detonate@CGrenadeAR2@@UAEXXZ+526B11`.

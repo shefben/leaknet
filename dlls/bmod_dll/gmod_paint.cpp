@@ -323,7 +323,9 @@ void CGModPaintSystem::ResetPlayerPaintData(CBasePlayer* pPlayer)
     int index = GetPlayerPaintIndex(pPlayer);
     if (index != -1)
     {
-        s_PlayerPaintData.Remove(index);
+        // Reset in place - removing the entry would shift every higher
+        // entindex's slot and hand the wrong data to other players
+        s_PlayerPaintData[index] = PaintData_t();
     }
 }
 
@@ -376,15 +378,14 @@ int CGModPaintSystem::GetPlayerPaintIndex(CBasePlayer* pPlayer)
     if (!pPlayer)
         return -1;
 
+    // s_PlayerPaintData is kept dense and indexed by entindex (see
+    // EnsurePlayerPaintData). Never call GetPlayerPaintData() from here - that
+    // recursed back into this function until the stack guard page blew.
     int playerIndex = pPlayer->entindex();
-    for (int i = 0; i < s_PlayerPaintData.Count(); i++)
-    {
-        // Use memory address comparison as unique identifier
-        if (&s_PlayerPaintData[i] == GetPlayerPaintData(pPlayer))
-            return i;
-    }
+    if (playerIndex < 0 || playerIndex >= s_PlayerPaintData.Count())
+        return -1;
 
-    return -1;
+    return playerIndex;
 }
 
 //-----------------------------------------------------------------------------
@@ -396,19 +397,11 @@ void CGModPaintSystem::EnsurePlayerPaintData(CBasePlayer* pPlayer)
         return;
 
     int playerIndex = pPlayer->entindex();
+    if (playerIndex < 0)
+        return;
 
-    // Check if data already exists
-    for (int i = 0; i < s_PlayerPaintData.Count(); i++)
-    {
-        // Simple check - expand array if needed
-        if (s_PlayerPaintData.Count() <= playerIndex)
-        {
-            s_PlayerPaintData.SetSize(playerIndex + 1);
-            break;
-        }
-    }
-
-    // Ensure we have enough entries
+    // Entries are indexed by entindex, so grow the array until the player's
+    // slot exists
     while (s_PlayerPaintData.Count() <= playerIndex)
     {
         PaintData_t newData;
@@ -433,6 +426,27 @@ bool CGModPaintSystem::ValidatePaintLocation(const Vector& origin, const Vector&
 // Console Commands
 //=============================================================================
 
+// The paint tool's decal selection lives in tool_paint.cpp
+extern ConVar gmod_paint_decal;
+
+//-----------------------------------------------------------------------------
+// Purpose: True only for a bare numeric mode argument ("0" / "1"), so paint
+//          names never get read as atoi() == 0 and silently disable painting
+//-----------------------------------------------------------------------------
+static bool IsPaintModeToggleArg(const char* pszArg)
+{
+    if (!pszArg || !pszArg[0])
+        return false;
+
+    for (const char* p = pszArg; *p; p++)
+    {
+        if (*p < '0' || *p > '9')
+            return false;
+    }
+
+    return true;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Toggle paint mode - Ggm_paintmode command from IDA
 //-----------------------------------------------------------------------------
@@ -444,7 +458,20 @@ void CMD_gm_paintmode(void)
 
     if (engine->Cmd_Argc() > 1)
     {
-        bool bEnabled = atoi(engine->Cmd_Argv(1)) != 0;
+        const char* pszArg = engine->Cmd_Argv(1);
+
+        // settings/gmod_paint.txt drives the paint tool's list, and its values
+        // are decal/effect names ("Blood", "Impact.Metal", ...) - only a bare
+        // 0/1 means "toggle the mode"
+        if (!IsPaintModeToggleArg(pszArg))
+        {
+            gmod_paint_decal.SetValue(pszArg);
+            CGModPaintSystem::SetPaintMode(pPlayer, true);
+            Msg("Paint set to '%s' for %s\n", pszArg, STRING(pPlayer->pl.netname));
+            return;
+        }
+
+        bool bEnabled = atoi(pszArg) != 0;
         CGModPaintSystem::SetPaintMode(pPlayer, bEnabled);
         Msg("Paint mode %s for %s\n", bEnabled ? "enabled" : "disabled", STRING(pPlayer->pl.netname));
     }
